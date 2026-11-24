@@ -134,7 +134,7 @@ def slot_bindings(meaning, slots, *, pair=None, source_evidence=None):
 
 
 def with_slots(meaning, slots, *, pair=None, source_evidence=None):
-    return replace(meaning, bindings=slot_bindings(meaning, slots, pair=pair, source_evidence=source_evidence))
+    return meaning.annotated(bindings=slot_bindings(meaning, slots, pair=pair, source_evidence=source_evidence))
 
 
 def validate_local_references(meaning):

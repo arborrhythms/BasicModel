@@ -280,8 +280,7 @@ class InterpretLayer(GrammarLayer):
             row = form_row(rows, word_ids)
             if row is None:
                 return atoms
-            address = torch.as_tensor(row, dtype=torch.long, device=atoms.device)
-            form = owner.similarity_codebook.lookup_rows(address, stream=0 if stream is None else stream)
+            form = owner.similarity_codebook.lookup_rows(row, stream=0 if stream is None else stream)
             return torch.cat((form[:width], atoms[width:]))
         rows = torch.as_tensor(rows, device=atoms.device, dtype=torch.long)
         if tuple(rows.shape) != tuple(atoms.shape[:-1]):

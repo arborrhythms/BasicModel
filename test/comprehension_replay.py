@@ -31,6 +31,10 @@ class Reads:
 
     def __getattr__(self, name):
         def read(*args, **kwargs):
+            # The recording used a scalar long tensor for a single bank row.
+            # Address the same recorded call when the reader already has its integer.
+            if self.prefix == 'bank' and name == 'lookup_rows' and type(args[0]) is int:
+                args = (torch.tensor(args[0], dtype=torch.long), *args[1:])
             return self.calls[self.prefix + '.' + RECORDED_AS.get(name, name)][key((args, kwargs))]
         return read
 

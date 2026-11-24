@@ -344,7 +344,7 @@ def with_extensions(clause, roots=None):
     if clause is None:
         return None
     extension=getattr(clause.composition,'extension',()) if roots is None else roots
-    return replace(clause,meaning=replace(clause.meaning,extension=extension),
+    return replace(clause,meaning=clause.meaning.annotated(extension=extension),
         children=tuple(with_extensions(child) for child in clause.children),
         companions=tuple(with_extensions(child) for child in clause.companions))
 

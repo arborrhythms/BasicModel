@@ -187,7 +187,7 @@ class Evaluation:
                     row = int(program.staged_object_rows[word])
             if row is None or row < 0:
                 raise ValueError('comprehension referent has no staged conceptual row')
-            atoms = owner.similarity_codebook.lookup_rows(self.ids.new_tensor(row), stream=self.stream)
+            atoms = owner.similarity_codebook.lookup_rows(row, stream=self.stream)
             atoms = owner.interpret.lexical_atoms(row, atoms, word_ids=lexical, stream=self.stream)
             evidence = (program.leaf_evidence[word] if program.leaf_evidence is not None else
                         torch.stack((program.activations[word].detach().to(value), value.new_zeros(()))))

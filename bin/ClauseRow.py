@@ -5,7 +5,7 @@ from typing import Any
 
 import torch
 
-from Meaning import ConceptualMeaning
+from Meaning import ConceptualMeaning, require_sentence_tensor
 
 
 class ClauseCapacityError(OverflowError):
@@ -115,16 +115,17 @@ class Clause:
             raise ValueError('a clause has three reference slots')
         if self.relation is None:
             if (not torch.is_tensor(self.point) or self.point.ndim != 1
-                    or self.point.shape != self.meaning.roles[0].shape
-                    or not bool(torch.isfinite(self.point).all())):
+                    or self.point.shape != self.meaning.roles[0].shape):
                 raise ValueError('an absolute clause requires its grammar-fused point')
+            require_sentence_tensor(torch.isfinite(self.point).all(), 'an absolute clause requires its grammar-fused point')
         elif self.point is not None:
             raise ValueError('a relative clause has no fused point')
         for name in ('where', 'when'):
             value = getattr(self, name)
-            if value is not None and (not torch.is_tensor(value) or value.shape != (4,)
-                                      or not bool(torch.isfinite(value).all())):
-                raise ValueError('an ended field has one finite four-coordinate band')
+            if value is not None:
+                if not torch.is_tensor(value) or value.shape != (4,):
+                    raise ValueError('an ended field has one finite four-coordinate band')
+                require_sentence_tensor(torch.isfinite(value).all(), 'an ended field has one finite four-coordinate band')
         if self.factored_refs is not None and len(self.factored_refs) != 3:
             raise ValueError('a factored clause has three reference slots')
         for reference in (*self.refs, *(self.factored_refs or ())):

@@ -319,10 +319,9 @@ class SentenceEndState:
             raise ValueError('completed references must be native addresses or -1')
         if self.query is not None and not isinstance(self.query, ConceptualMeaning):
             raise ValueError('a completed question requires a conceptual field')
-        # The owned copy validates the three canonical slots and requires an occupied one.
-        object.__setattr__(self, 'meaning', replace(self.meaning))
+        object.__setattr__(self, 'meaning', self.meaning.snapshot())
         if self.query is not None:
-            object.__setattr__(self, 'query', replace(self.query))
+            object.__setattr__(self, 'query', self.query.snapshot())
         for name in ('where', 'when'):
             value = getattr(self, name)
             if value is not None:

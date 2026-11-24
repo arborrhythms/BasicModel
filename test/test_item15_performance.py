@@ -6,6 +6,41 @@ from torch.nn import functional as F
 from PerceptProperties import counts_in_spans
 
 
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason="requires Metal")
+def test_compiled_sentence_rejects_an_invalid_operand_on_metal(tmp_path):
+    """Test the project's compiler hooks in isolation from the suite's device state."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    code = """
+import torch
+import util
+from Meaning import ConceptualMeaning
+
+def read(roles, mask):
+    return ConceptualMeaning(roles, mask).roles.sum()
+
+compiled = util.compile(read, fullgraph=True)
+assert compiled is not read
+values = torch.ones(3, 4, device='mps')
+mask = torch.tensor([True, False, True], device='mps')
+assert compiled(values, mask).item() == 8
+values[0, 0] = float('nan')
+try:
+    compiled(values, mask)
+    torch.mps.synchronize()
+except torch.AcceleratorError as exc:
+    assert 'non-finite occupied meaning role' in str(exc)
+else:
+    raise AssertionError('compiled reader accepted non-finite occupied content')
+"""
+    subprocess.run([sys.executable, '-c', code], check=True, cwd=root,
+        env={**os.environ, 'PYTHONPATH': str(root / 'bin'), 'MODEL_COMPILE': 'inductor',
+             'BASICMODEL_DEVICE': 'mps', 'TORCHINDUCTOR_CACHE_DIR': str(tmp_path)})
+
+
 def old_counts(byte_ids, spans, observed=None):
     batch, length = byte_ids.shape
     spans = spans.to(byte_ids.device).clamp(0, length)

@@ -848,8 +848,26 @@ def compile(model, verbose=True, fullgraph=False):
                 lambda self, cond, msg: None)
             _mps_cg.MetalKernel.check_bounds = (
                 lambda self, expr, size, lower, upper: None)
-            _msg("MPS: inductor device asserts disabled (check_bounds + "
-                 "device_assert_async) -- Metal 31-buffer limit vs error_buf")
+            # Model assertions must still fire. ATen's Metal assertion reads
+            # its scalar predicate on the GPU in a separate kernel, so a
+            # large fused producer needs no extra error-buffer binding.
+            from torch._inductor import lowering
+            assert_op = torch.ops.aten._assert_async.msg
+            lower_assert = lowering.lowerings[assert_op]
+            if not getattr(lower_assert, '_basicmodel_mps_assert', False):
+                metal_assert = lowering.fallback_handler(assert_op, add_to_fallback_set=False)
+
+                def lower_model_assert(condition, message):
+                    if condition.get_device().type == 'mps':
+                        return metal_assert(condition, message)
+                    return lower_assert(condition, message)
+
+                lower_model_assert._basicmodel_mps_assert = True
+                lowering.lowerings[assert_op] = lower_model_assert
+                # A graph cached under the old lowering omitted these checks.
+                torch.compiler.config.cache_key_tag += '/basicmodel-mps-aten-assert'
+            _msg("MPS: explicit assertions use native Metal kernels; fused "
+                 "index checks disabled for the 31-buffer limit")
             # torch 2.12 inductor-MPS ``DTYPE_TO_METAL`` omits ``uint16``, so
             # any kernel that casts to it (torch's ``arange``/``eye``
             # decomposition picks uint16 for small ranges) hard-fails codegen

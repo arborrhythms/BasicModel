@@ -5,6 +5,7 @@ are addresses beside semantic payloads, never numeric features of those payloads
 """
 from contextlib import contextmanager
 from contextvars import ContextVar
+from copy import copy
 from dataclasses import dataclass, field, replace
 from collections.abc import Mapping
 import math
@@ -93,6 +94,23 @@ class ClosingImage:
 
 
 
+def require_sentence_tensor(condition, message, error=ValueError):
+    """Check on the stream during a sentence, and report bad external inputs before use."""
+    if (condition.device.type != 'cpu' and not torch.compiler.is_compiling()
+            and _owned_metadata.get() is None):
+        # Eager admission and checkpoint migration can still recover from a
+        # malformed input before changing storage or scheduling more work.
+        if not bool(condition):
+            raise error(message)
+        return
+    try:
+        torch._assert_async(condition, message)
+    except RuntimeError as exc:
+        if condition.device.type != 'cpu' or str(exc) != message:
+            raise
+        raise error(message) from exc
+
+
 def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_dim=None):
     """Return infix NP1/VP/NP2 roles and their explicit occupancy mask.
 
@@ -102,8 +120,7 @@ def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_di
     """
     value, occupied = _role_layout(payload, depth, layout, role_mask, concept_dim)
     value = torch.where(occupied[:, None], value, torch.zeros_like(value))
-    if not bool(torch.isfinite(value).all()):
-        raise FloatingPointError("non-finite occupied meaning role")
+    require_sentence_tensor(torch.isfinite(value).all(), "non-finite occupied meaning role", FloatingPointError)
     return value, occupied
 
 
@@ -131,8 +148,8 @@ def _role_layout(payload, depth, layout, role_mask, concept_dim=None):
         occupied = torch.as_tensor(role_mask, device=value.device, dtype=torch.bool).clone()
         if occupied.shape != (3,):
             raise ValueError("canonical role mask must have shape [3]")
-        if depth < 3 and bool(occupied[depth:].any()):
-            raise ValueError("occupied role has no supplied payload")
+        if depth < 3:
+            require_sentence_tensor(~occupied[depth:].any(), "occupied role has no supplied payload")
     return value, occupied
 
 
@@ -221,19 +238,16 @@ class ConceptualMeaning:
             raise ValueError("canonical meaning roles must have shape [3, concept_dim]")
         roles, mask = _role_layout(self.roles, 3, "infix", self.role_mask)
         roles = torch.where(mask[:, None], roles, torch.zeros_like(roles))
-        *occupied, finite = torch.cat((mask, torch.isfinite(roles).all().reshape(1))).tolist()
-        if not finite:
-            raise FloatingPointError("non-finite occupied meaning role")
-        if not any(occupied):
-            raise ValueError("a conceptual meaning requires an occupied role")
+        require_sentence_tensor(torch.isfinite(roles).all(), "non-finite occupied meaning role", FloatingPointError)
+        require_sentence_tensor(mask.any(), "a conceptual meaning requires an occupied role")
         if self.sentence_kind not in (None, 'idea', 'relation'):
             raise ValueError('sentence kind must be idea, relation or unspecified')
         refs = _owned_tuple(self.role_refs)
         if not isinstance(refs, tuple) or len(refs) != 3:
             raise ValueError("role references must contain three canonical entries")
-        for present, ref in zip(occupied, refs):
-            if ref is not None and not present:
-                raise ValueError("an absent role cannot carry a semantic reference")
+        for index, ref in enumerate(refs):
+            if ref is not None:
+                require_sentence_tensor(mask[index], "an absent role cannot carry a semantic reference")
         object.__setattr__(self, "roles", roles)
         object.__setattr__(self, "role_mask", mask)
         object.__setattr__(self, "polarity", bool(self.polarity))
@@ -245,6 +259,24 @@ class ConceptualMeaning:
                or child.roles.shape[-1] != roles.shape[-1] for child in children):
             raise ValueError("constituents must be complete meanings of the same width")
         object.__setattr__(self, "constituents", children)
+
+    def annotated(self, *, bindings=None, extension=...):
+        """Attach closing metadata to the same, already formed numerical operands."""
+        result = copy(self) if _owned_metadata.get() is not None else replace(self)
+        if bindings is not None:
+            object.__setattr__(result, 'bindings', _owned_tuple(bindings))
+        if extension is not ...:
+            object.__setattr__(result, 'extension', extension)
+        return result
+
+    def snapshot(self):
+        """Give a published reader independent storage for the established operands."""
+        if _owned_metadata.get() is None:
+            return replace(self)
+        result = copy(self)
+        object.__setattr__(result, 'roles', self.roles.clone())
+        object.__setattr__(result, 'role_mask', self.role_mask.clone())
+        return result
 
     @classmethod
     def from_payload(cls, payload, *, depth, layout, role_mask=None, **metadata):

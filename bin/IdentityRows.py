@@ -25,6 +25,7 @@ def cache_rows(owner):
 
 def carrier(owner, point, *, region=None):
     """Validate the native carrier, excluding its separate location/time band."""
+    from Meaning import require_sentence_tensor
     like = owner.similarity_codebook.W
     if point is None:
         return like.new_zeros(like.shape[-1])
@@ -35,8 +36,7 @@ def carrier(owner, point, *, region=None):
     if derived is not None:
         value[..., derived.percept_width:derived.percept_event_width] = 0
     valid = ((value >= 0) & (value <= 1)) if region else torch.isfinite(value)
-    if not bool(valid.all()):
-        raise ValueError('identity content requires native concept coordinates in [0, 1]')
+    require_sentence_tensor(valid.all(), 'identity content requires native concept coordinates in [0, 1]')
     return value
 
 
