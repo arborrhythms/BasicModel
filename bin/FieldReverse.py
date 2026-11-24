@@ -115,31 +115,29 @@ def concatenate_parts(parts, width):
 
 
 def _spelling_definition(basic, row):
+    root = basic.form_root(row)
+    if root in getattr(basic.native, 'part_groups', {}):
+        children, end = [], 0
+        for leaf in basic._leaves()(root):
+            element = basic._part_text(leaf)
+            if element is None:
+                raise ValueError('a spelling element has no character translation')
+            children.append((element, end))
+            end += len(element)
+        return end, None, children
     raw = basic.form_of(row)
     if raw is not None:
         identity = getattr(basic.native, 'identity', None)
         children = () if identity is None else identity.nested.get(raw, ())
-        # The predicted form identifies its constituents. Its own occurrence
-        # cannot teach the inverse how to spell itself.
-        root = getattr(identity, 'word_rows', {}).get(raw)
-        if root in getattr(basic.native, 'part_groups', {}):
-            elements = [basic._part_text(leaf) for leaf in basic._leaves()(root)]
-            if any(element is None for element in elements):
-                raise ValueError('a spelling element has no character translation')
-            start, children = 0, []
-            for element in elements:
-                children.append((element, start))
-                start += len(element)
-            return raw, children
         if not children:
-            return raw, None
-        return raw, tuple((part, lo) for part, lo, hi in children
-                          if part != raw and 0 <= lo < hi <= len(raw) and hi - lo == len(part))
+            return len(raw), raw, None
+        return len(raw), None, tuple((part, lo) for part, lo, hi in children
+                                     if part != raw and 0 <= lo < hi <= len(raw) and hi - lo == len(part))
     run = basic.runs.get(int(row))
     if run is None:
         texts = [basic._part_text(part) for part in basic.occurrences[int(row)][0]]
         run = None if not texts or any(text is None for text in texts) else b''.join(texts)
-    return run, None
+    return 0 if run is None else len(run), run, None
 
 
 def _assemble_definitions(definitions, width, device):
@@ -164,10 +162,10 @@ def _assemble_definitions(definitions, width, device):
 
 def spelling(basic, row):
     """Host inspection of the bytes reconstructed from a basic percept's definition."""
-    raw, children = _spelling_definition(basic, row)
+    width, raw, children = _spelling_definition(basic, row)
     if children is None:
         return raw
-    result = _assemble_definitions([children], len(raw), 'cpu')[0]
+    result = _assemble_definitions([children], width, 'cpu')[0]
     return bytes(result[result >= 0].tolist())
 
 
@@ -183,14 +181,14 @@ def codebook(basic):
     for row in range(len(basic.index)):
         if row in basic.place_rows or row in basic.conjunctions or basic.is_value(row):
             continue
-        raw, children = _spelling_definition(basic, row)
-        if raw:
+        width, raw, children = _spelling_definition(basic, row)
+        if width:
             rows.append(row)
-            definitions.append((raw, children))
-    width = max((len(raw) for raw, _ in definitions), default=1)
+            definitions.append((width, raw, children))
+    width = max((length for length, _, _ in definitions), default=1)
     table = torch.full((len(rows), width), -1, dtype=torch.long, device='cpu')
     nested, seats = [], []
-    for n, (raw, children) in enumerate(definitions):
+    for n, (_, raw, children) in enumerate(definitions):
         if children is not None:
             seats.append(n)
             nested.append(children)

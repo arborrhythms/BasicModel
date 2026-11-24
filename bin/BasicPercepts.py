@@ -461,7 +461,7 @@ class BasicPercepts(nn.Module):
         self.conjunctions = {}
         # The stored form each row of a form spells, and the rows of each
         # form; each row's key in ``index``.
-        self.forms, self.form_rows, self._keys = {}, {}, {}
+        self._form_roots, self.form_rows, self._keys = {}, {}, {}
         # The run of characters of each row that spells no stored form and
         # whose parts are in order (:meth:`_run_of`).
         self.runs = {}
@@ -686,7 +686,7 @@ class BasicPercepts(nn.Module):
             if members is not None:
                 self.conjunctions[row] = tuple(members)
             else:
-                self.form_of(row)
+                self.form_root(row)
             if self.pi.append(self.member_keys(row), against=self.against_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             if place is not None:
@@ -717,7 +717,7 @@ class BasicPercepts(nn.Module):
             self._keys[row] = key
             self.occurrences[row] = (), ()
             self.place_rows[row] = plus, minus, what
-            self.forms[row] = None
+            self._form_roots[row] = None
             if self.pi.append(self.member_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             # The place's where entries start at the cone's code: the least
@@ -898,28 +898,43 @@ class BasicPercepts(nn.Module):
                 codes[n] = torch.cat((lower[i], bound))
         return codes
 
-    def _form_of(self, parts):
-        identity = getattr(self.native, 'identity', None)
-        if identity is None or min(parts) < -self.identity_width:
-            return None
-        try:
-            return identity.spelling(parts)
-        except (IndexError, KeyError):
-            return None
-
-    def form_of(self, row):
-        """The stored form a row spells, read from its parts when it is
-        reserved and kept, or ``None`` (a conjunction, a value)."""
+    def form_root(self, row):
+        """Resolve a percept's native form once, retaining its address as the inventory grows."""
         row = int(row)
-        if row in self.forms:
-            return self.forms[row]
-        raw = None if row in self.conjunctions else self._form_of(self.occurrences[row][0])
-        self.forms[row] = raw
-        if raw is not None:
-            self.form_rows.setdefault(raw, []).append(row)
+        identity = self._identity()
+        if row in self._form_roots:
+            root = self._form_roots[row]
+            if isinstance(root, bytes):
+                # Earlier checkpoints name forms by spelling. The native
+                # vocabulary may be restored after this module's extra state.
+                root = None if identity is None else identity.word_rows.get(root)
+                if root is not None:
+                    self._form_roots[row] = root
+            return root
+        root = None
+        parts = self.occurrences[row][0]
+        if row not in self.conjunctions and identity is not None and min(parts) >= -self.identity_width:
+            try:
+                root = identity.spelling_row(parts)
+            except (IndexError, KeyError):
+                pass
+        self._form_roots[row] = root
+        if root is not None:
+            self.form_rows.setdefault(self.native.bytes_for(root), []).append(row)
         elif row not in self.conjunctions:
             self._run_of(row)
-        return raw
+        return root
+
+    def form_of(self, row):
+        """Canonical bytes for APIs which inspect a named form."""
+        root = self.form_root(row)
+        if root is not None:
+            return self.native.bytes_for(root)
+        return self._form_roots[int(row)]  # None or a legacy name awaiting vocabulary restore
+
+    @property
+    def forms(self):
+        return {row: self.form_of(row) for row in self._form_roots}
 
     def _run_of(self, row):
         """A row of two or more parts in order that spells no stored form:
@@ -978,7 +993,7 @@ class BasicPercepts(nn.Module):
         if identity is None:
             return []
         for row in range(len(self.index)):
-            self.form_of(row)
+            self.form_root(row)
         if not self.form_rows:
             return []
         changed = set(changed)
@@ -1636,10 +1651,10 @@ class BasicPercepts(nn.Module):
         self.pi.clear()
         self._pi_stamp = None
         self.conjunctions = {}
-        self.forms, self.form_rows, self._keys = {}, {}, {}
+        self._form_roots, self.form_rows, self._keys = {}, {}, {}
         self.runs = {}
         for row, raw in state.get('forms', ()):
-            self.forms[int(row)] = bytes(raw)
+            self._form_roots[int(row)] = bytes(raw)
             self.form_rows.setdefault(bytes(raw), []).append(int(row))
         conjunctions = dict(state.get('conjunctions', ()))
         places = state.get('places', [-1] * len(state['occurrences']))

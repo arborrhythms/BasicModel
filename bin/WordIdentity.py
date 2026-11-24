@@ -1064,12 +1064,8 @@ class WordIdentity(nn.Module):
         rows = (self._row_for_key(key.tobytes(), full) for key in keys)
         return [None if row is None else self.store.bytes_for(row) for row in rows]
 
-    def spelling(self, rows):
-        """The stored form whose code is read from these rows: the fold of
-        their codes and their tightest whole.
-
-        A code that is no stored form has no spelling: ``None``.
-        """
+    def spelling_row(self, rows):
+        """Native form addressed by the fold of these parts and their tightest whole."""
         rows = list(map(int, rows))
         form = self.store._basis.fixed_row_codes[rows].amax(0).detach().cpu()[:self.width]
         if self.property_width:
@@ -1077,7 +1073,11 @@ class WordIdentity(nn.Module):
             if wholes is None:
                 return None
             form = torch.cat((form, wholes))
-        return self.read(form)
+        return self.row_for_form(form)
+
+    def spelling(self, rows):
+        root = self.spelling_row(rows)
+        return None if root is None else self.store.bytes_for(root)
 
     def vocab_extras(self):
         return dict(atoms=self.atoms, bits=self.bits, words=self.words,

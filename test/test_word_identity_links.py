@@ -167,7 +167,7 @@ def test_disjoint_reading_preserves_repeats_and_shifted_byte_intervals():
         assert counts[b, 3] == 0 and parts[b, 3].eq(-1).all()
 
 
-def test_inverse_follows_ordered_native_children_after_restore():
+def test_inverse_follows_ordered_native_children_after_restore(monkeypatch):
     from FieldReverse import spelling
 
     words = (b'a', b'b', b'ab', b'abab', b'aabb')
@@ -176,6 +176,9 @@ def test_inverse_follows_ordered_native_children_after_restore():
     other, restored, *_ = coded(words)
     other.store.load_vocab_extras(saved)
     for current, reader in ((identity, basic), (other, restored)):
+        def forbidden_name(row):
+            raise AssertionError('inverse requested the whole spelling')
+        monkeypatch.setattr(reader, 'form_of', forbidden_name)
         assert spelling(reader, rows[b'abab']) == b'abab'
         assert spelling(reader, rows[b'aabb']) == b'aabb'
         # A deliberately reversed native definition changes the inverse even
