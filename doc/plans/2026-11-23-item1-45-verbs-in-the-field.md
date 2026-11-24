@@ -366,6 +366,29 @@ first, and the symbols only if a measure asks for them; the LTM1 chain
 2. The bank doubles. The Pi's rows are sparse and nominated, so the cost is
    in the looks and the salience, which is item 1.5's matter.
 
+### 5.9 Alec: one activation is a sentence (2026-11-23, decided)
+
+Asked whether one activation is a look (a scene in the felt world) or a
+whole sentence, Alec: "A sentence".
+
+What follows, Claude's reading:
+
+- The delayed field is the basic percepts of the sentence before. This is
+  the model's clock as built: one tick is one sentence (§3), so the delayed
+  field is one tick back.
+- In the felt world a sentence comes with its scene, so the two fields are
+  the scene before and the scene now, and a change of a thing is read
+  between them place by place.
+- With text, the two fields are the letters of two sentences. What is
+  learned across them is what follows what from sentence to sentence, and
+  the change of a thing said in one and then in the next ("the cat runs.
+  the cat is tired."), which is the lesson `doc/Training.md` already gives
+  for verbs.
+- The order of words within a sentence is not learned by this. It stays
+  with the looks. So the tie to the last look in §5.8 does not hold: the
+  side input of item 1.7 (`Memory.ModelState`) is untouched by this item.
+- "A sequence of two" in §5.8 is of two sentences, or two scenes.
+
 ## 6. Episodic memory as percepts (Claude's proposal for Alec's decision)
 
 - *The entry.* A fixed number of the open field's basic percepts, each as
@@ -429,25 +452,20 @@ Each on the felt world of item 1.6, with a second scene for one object:
 
 ## 9. Open, for Alec
 
-1. *What one activation is.* "basic percepts from the last activation" is
-   read here as the last time the percepts ran: a look when reading, a
-   scene in the felt world. If it is the last sentence instead, the delayed
-   field of a text is the previous sentence's letters, and the sequence
-   learned is of sentences, not of words.
-2. *How the delayed field is told from the present one.* Either it is its
+1. *How the delayed field is told from the present one.* Either it is its
    own block of the Pi's inputs (a delay on the wires, nothing computed),
    or it lies in the same field one step back on `.when`, with `.when`
    read in relation to the present. The second makes time a further axis of
    the one perceptual space and lets attention choose a time as it chooses
    a place; it needs `.when` to be relative, which it is not today (§3).
    Claude leans to the second and has not traced what it changes.
-3. *How many percepts an episodic entry holds* (§6).
-4. *"The four forms".* Claude reads them as an operator's use on a point
+2. *How many percepts an episodic entry holds* (§6).
+3. *"The four forms".* Claude reads them as an operator's use on a point
    (compose, generate) and its two uses on the field (2026-11-12). If Alec
    means another four, §4 point 2 and §5.5 are to be reworded.
-5. *Whether `VerbLearning` stays as it is until then.* Claude proposes yes:
+4. *Whether `VerbLearning` stays as it is until then.* Claude proposes yes:
    it is the only teacher the verb's point has.
 
-Settled since first written: how the change reaches the hierarchy (§5.8,
+Settled since first written: one activation is a sentence (§5.9); how the change reaches the hierarchy (§5.8,
 in place of §5.2 and §5.7); not said is not lost (§5.7, 2: "OK"); the form
 of the difference (learned, §5.8).
