@@ -75,11 +75,12 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
     refs = (program.reference_ids if program.reference_ids is not None else program.concept_ids) if numerics is None else numerics.native_ids
     # A word keeps its lexical identity across this formula. Numerical
     # reference decisions below still read their live, per-action operands.
-    if program.word_ids is None:
-        word_ids = None
-        opening_refs = refs.tolist()
-    else:
-        opening_refs, word_ids = torch.stack((refs, program.word_ids)).tolist()
+    columns = (refs, program.concept_ids, program.word_ids, program.reference_relations,
+               program.identity_leaves, orders if numerics is None else None, program.reference_orders)
+    present = [column.reshape(-1) for column in columns if column is not None]
+    host_columns = iter(torch.stack(present).tolist())
+    opening_refs, concepts, word_ids, relations, handles, initial_orders, requested_orders = (
+        next(host_columns) if column is not None else None for column in columns)
     native_ids = set(opening_refs) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
     store = store_ref() if callable(store_ref) else None
@@ -99,7 +100,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         # independently of the current word-to-object interpretation.
         if word_ids is not None and word_ids[leaf] > 0:
             return word_ids[leaf]
-        concept = int(program.concept_ids[leaf])
+        concept = concepts[leaf]
         return concept if concept > 0 else None
     def forward_fields(leaf):
         name = forward_name(leaf)
@@ -110,14 +111,16 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         raise ValueError('the open reading has no numerical operation journal')
     identity_actions = None if program.identity_actions is None else program.identity_actions.tolist()
     relation_actions = None if program.operation_relations is None else program.operation_relations.tolist()
+    origins = (program.identity_origins[:, :2].tolist()
+               if identity_actions and program.identity_origins is not None else None)
     stack, introductions = [], {}
     local_uses = set()
     if program.identity_actions is not None:
         # Subject, object and selected bind read the same handle table. Carry
         # their actual introducing shift or grammar action into this close.
-        for subject, obj, bound in program.identity_actions[:, (1, 2, 4)].tolist():
+        for _, subject, obj, _, bound, _ in identity_actions:
             local_uses.update(h for h in (subject, obj, bound)
-                              if h > 0 and int(program.identity_origins[h - 1, 0]) in (3, 4))
+                              if h > 0 and origins[h - 1][0] in (3, 4))
     def region(node):
         """Read the declared meaning without replaying numerical operators."""
         if not node['has_point']:
@@ -153,15 +156,22 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         # views keep their old base; this action reads the current version.
         frames = number('operation_values')
         if kind == 0:
-            reference = int(refs[word])
-            has_point = reference_has_point(reference,
-                program.reference_relations is None or not bool(program.reference_relations[word]))
+            if numerics is None:
+                reference = opening_refs[word]
+                order = -1 if initial_orders is None else initial_orders[word]
+            else:
+                # Comprehension has just pushed this operand. Its live identity
+                # and order already include this shift's binding choice.
+                operand = numerics.stack[-1]
+                reference = numerics.native_leaf_reference(operand.reference, concepts[word])
+                order = operand.order
+            has_point = reference_has_point(reference, relations is None or not relations[word])
             stack.append(dict(value=values[word], composed_value=values[word], ref=reference, rule=None,
-                              order=-1 if orders is None else int(orders[word]),
+                              order=order,
                               children=(), leaves=(word,), has_point=has_point,
                               interpretation='no_op' if interpretations[word] == 'no_op' else 'symbol'))
-            handle = 0 if program.identity_leaves is None else int(program.identity_leaves[word])
-            addressed = handle in local_uses and int(program.identity_origins[handle - 1, 0]) == 4
+            handle = 0 if handles is None else handles[word]
+            addressed = handle in local_uses and origins[handle - 1][0] == 4
             owner = getattr(registry, 'space', None)
             # An objectless lexical reference remains a binding request at
             # order zero. Its physical word row does not stand in for the
@@ -265,8 +275,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 pending_order = False
                 if not selected['children'] and program.reference_orders is not None:
                     leaf = selected['leaves'][0]
-                    pending_order = (int(program.reference_orders[leaf]) >= 0
-                                     and reference == int(program.concept_ids[leaf])
+                    pending_order = (requested_orders[leaf] >= 0
+                                     and reference == concepts[leaf]
                                      and int(refs[leaf]) not in (-1, 0))
                     if pending_order:
                         reference = int(refs[leaf])
@@ -359,13 +369,13 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             request.update(mode='bind', leaves=source['leaves'],
                 content=request.get('content', frames[action, 0]),
                 cue=request.get('cue', frames[action, 0]),
-                compose_bind=int(program.identity_actions[action, 4]),
+                compose_bind=identity_actions[action][4],
                 record=frames[action, 1])
             parent['close_request'] = request
         if program.identity_actions is not None:
             handle, subject, _, _, selected, _ = parent['identity_event']
             if handle > 0 and not subject and selected <= 0:
-                tag, source = program.identity_origins[handle - 1, :2].tolist()
+                tag, source = origins[handle - 1]
                 addressed = handle in local_uses and tag == 3 and source == action
                 if tag == 3 and (addressed or parent['order'] == 1 or catalog[local].method_name == 'bind'):
                     if addressed:
@@ -494,7 +504,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             if event is not None and rule.method_name == 'bind' and event[4] > 0:
                 # This is the chooser's selected identity, already used by
                 # the numerical journal. Its lexical child is only the cue.
-                origin = program.identity_origins[event[0]-1]
+                origin = origins[event[0]-1]
                 if int(origin[0]) in (1, 2):
                     reference = int(origin[1])
             composition_cache[key] = Composition(

@@ -152,10 +152,15 @@ class Evaluation:
         bank = self.program.case_bank
         return None if bank is None else bank.view(self.ids.new_tensor([identity]))
 
+    def native_leaf_reference(self, identity, original):
+        if identity > 0 and self.owner._concept_row_of(identity) is None:
+            return original
+        return identity
+
     def leaf(self, word):
         program, owner = self.program, self.owner
         value = program.leaves[word]
-        identity = int(program.concept_ids[word])
+        original = identity = int(program.concept_ids[word])
         lexical = -1 if program.word_ids is None else int(program.word_ids[word])
         order = int(self.orders[word])
         admitted = program.staged_object_rows is None or int(program.staged_object_rows[word]) >= 0
@@ -182,8 +187,7 @@ class Evaluation:
         self.choices.append((lexical, tuple(owner.interpret.denotations(lexical)) if lexical > 0 else (), identity))
         self.leaves[word] = value
         self.ids[word] = identity
-        self.native_ids[word] = (program.concept_ids[word] if identity > 0 and
-            owner._concept_row_of(identity) is None else identity)
+        self.native_ids[word] = self.native_leaf_reference(identity, original)
         self.orders[word] = order
         # Occurrence bands belong to the input location, not to the dictionary.
         point = value.clone()
