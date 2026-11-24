@@ -15,7 +15,7 @@ def evidence_pair(meaning):
     return tuple(bindings(meaning).get('_evidence_pair', (0., 0.)))
 
 
-def open_slots(meaning, *, declared=None):
+def open_slots(meaning, *, declared=None, selected=None):
     """An omitted relational operand is open even without an annotation.
 
     A fused idea has one role. A relational row has three roles, including
@@ -23,6 +23,16 @@ def open_slots(meaning, *, declared=None):
     An annotation cannot preserve an already filled reference.
     """
     result = []
+    if selected is None:
+        named = tuple(ref is not None for ref in meaning.role_refs)
+        any_named = any(meaning.role_refs)
+    else:
+        # A not-yet-written clause carries its chosen native references.
+        # Only their presence on occupied operands enters this read.
+        slots = tuple(ref not in (-1, 0) for ref in selected)
+        occupied = meaning.role_mask.tolist() if any(slots) else slots
+        named = tuple(present and live for present, live in zip(slots, occupied, strict=True))
+        any_named = any(named)
     data = bindings(meaning)
     forward_roles = {role for role, _ in data.get('_forward_references', ())}
     if declared is None:
@@ -36,7 +46,7 @@ def open_slots(meaning, *, declared=None):
             raise ValueError('unknown open-reference kind')
         if role not in (0, 1, 2):
             raise ValueError('an open role must name a canonical row slot')
-        elif (meaning.role_refs[role] is None or role in forward_roles or
+        elif (not named[role] or role in forward_roles or
               (data.get('_chain_view') and (kind, role) not in data.get('_bound_roles', ()))):
             # A structural address to an anonymous constituent is still the
             # raw pending site. Its refined working read clears the forward
@@ -46,8 +56,8 @@ def open_slots(meaning, *, declared=None):
             (meaning.sentence_kind is None and int(meaning.role_mask.sum()) > 1)):
         for role in range(3):
             if (not bool(meaning.role_mask[role]) or
-                    (meaning.role_refs[role] is None and
-                     (meaning.sentence_kind == 'relation' or any(meaning.role_refs)))):
+                    (not named[role] and
+                     (meaning.sentence_kind == 'relation' or any_named))):
                 result.append(('relation' if role == 1 else 'referent', role))
     return tuple(dict.fromkeys(result))
 

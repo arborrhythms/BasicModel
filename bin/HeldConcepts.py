@@ -86,7 +86,7 @@ class Evaluation:
             raise ValueError('held-concept publication has no constructed initial field')
         if found:
             self.read((index,identity,timeline))
-        prior = frames[earlier,0] if kind == 1 else result
+        prior = frames[earlier,0].clone() if kind == 1 else result
         value = publication_value(kind, operands, result, prior)
         where = concepts.where[index] if found else head.where
         when = concepts.when[index] if found else head.when

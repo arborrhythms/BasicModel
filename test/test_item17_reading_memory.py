@@ -7,6 +7,38 @@ from test_item17_one_reconstruction import _grammar_free_text_model
 from test_item17_places import nominate
 
 
+def test_closed_operand_keeps_its_explicit_identity_and_gradient_through_stm():
+    from Meaning import ConceptualMeaning
+    from SentenceStrata import IdeaStack
+    native, previous = [IdeaStack(4, capacity=8, relation_capacity=4) for _ in range(2)]
+    points = torch.randn(3, 4, requires_grad=True)
+    copied = points.detach().clone().requires_grad_()
+    for store, values in ((native, points), (previous, copied)):
+        store.append_words(values[:1], [7])
+        for i, identity in enumerate((('sym', 7), None), 1):
+            evidence = (.8, .4) if i == 1 else (0., 0.)
+            if store is native:
+                store.append_closed_idea(values[i], identity=identity, evidence=evidence,
+                                         entry=None, surprise=-1., name=None)
+            else:
+                meaning = ConceptualMeaning.from_description(values[i],
+                    bindings={'_identity': identity} if identity is not None else {})
+                store.append_meaning(meaning, evidence=evidence)
+    for row in range(4):
+        assert native.raw_meaning_of(row).metadata() == previous.raw_meaning_of(row).metadata()
+    assert torch.equal(native.slots, previous.slots)
+    native.slots.square().sum().backward()
+    previous.slots.square().sum().backward()
+    assert torch.equal(points.grad, copied.grad)
+    for store in (native, previous):
+        store.compact_rows([2, 3])
+    for row in range(2):
+        assert native.raw_meaning_of(row).metadata() == previous.raw_meaning_of(row).metadata()
+    native.expire()
+    native.append_words(points[:1], [7])
+    assert '_identity' not in dict(native.raw_meaning_of(0).bindings)
+
+
 def test_batch_word_write_matches_individual_ideas_and_their_gradients():
     from dataclasses import replace
     from Meaning import ConceptualMeaning

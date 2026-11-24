@@ -12,6 +12,52 @@ from ReadingIndex import ReadingIndex
 
 class IdeaStack(STM0):
     """A trial's native semantic entries, beside its immutable word tree."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A semantic binding can explicitly name the idea's referent. A
+        # lexical row may have the same referent without that annotation.
+        self.register_buffer('_identity_bound', self.row_names.new_zeros(self.capacity, dtype=torch.bool),
+                             persistent=False)
+
+    def append_closed_idea(self, point, *, identity, evidence, entry, surprise, name):
+        if point.shape != (self.nDim,):
+            raise ValueError('idea width differs from its store')
+        if not bool(point.isfinite().all()):
+            raise FloatingPointError('non-finite occupied meaning role')
+        reference = self._reference_value(identity)
+        self._reserve_idea_name(name)
+        first = len(self)
+        try:
+            row = self._append_point(point, evidence, reference, entry, surprise, None)
+        finally:
+            self.__dict__.pop('_next_row_name', None)
+        self._identity_bound[first:len(self)] = identity is not None
+        return row
+
+    def raw_meaning_of(self, index):
+        if isinstance(index, tuple):
+            return self.part_row(index[1])['meaning']
+        if not 0 <= int(index) < len(self):
+            raise IndexError('unavailable idea')
+        # Only compatibility readers request the owned grammatical view.
+        tag, value, bound = torch.cat((self.referent[index], self._identity_bound[index, None])).tolist()
+        reference = self._decode_referent(tag, value)
+        metadata = self.working.get(self.row_name(index))
+        if metadata is None:
+            metadata = dict(role_refs=(reference, None, None), sentence_kind='idea',
+                            bindings={'_identity': reference} if bound else ())
+        meaning = ConceptualMeaning.from_description(self.slots[index].detach(), **metadata)
+        owner = self.owner()
+        return meaning if owner is None else owner.mtm.pending_meaning(self.occurrence_of(index), meaning)
+
+    def compact_rows(self, keep):
+        indices = torch.as_tensor(keep, device=self._identity_bound.device, dtype=torch.long).reshape(-1)
+        super().compact_rows(indices)
+        kept = self._identity_bound.index_select(0, indices.sort().values) if len(indices) else None
+        self._identity_bound.zero_()
+        if kept is not None:
+            self._identity_bound[:len(kept)].copy_(kept)
+
     def prepare(self, source, tree, sites):
         self.__dict__.pop('_concept_owner', None)
         self.expire()

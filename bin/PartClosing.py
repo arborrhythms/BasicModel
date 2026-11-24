@@ -494,16 +494,24 @@ class PartClosing:
             if 'percept_value' in record or term.operation=='sign':
                 content=record.get('percept_value')
                 if content is None: content=torch.zeros_like(term.point)
-            value = ConceptualMeaning.from_description(self.store._fit(content),
-                bindings=marks, polarity=True if metadata is None else metadata.polarity,
-                extension=getattr(term, 'extension', ()) or ())
-            if self.working is not None and entry is None and value.extension:
-                from EpisodicMemory import for_meaning
-                entry = for_meaning(self.store, value)
+            point = self.store._fit(content)
+            positive = metadata is None or metadata.polarity
+            extension = getattr(term, 'extension', ()) or ()
+            if (self.working is not None and entry is None and extension
+                    and self.store.episodic_capacity and self.store.owner() is not None):
+                from EpisodicMemory import tree_entry
+                entry = tree_entry(self.store, extension)
             names = {} if self.working is None else {'name': self.working.name_for(term,
                 sentence=sentence, count=max(1, sum(pole > 0 for pole in pair)))}
-            row=destination.append_meaning(value,evidence=pair,surprise=surprise,
-                entry=entry, **names)
+            native_binding = not marks or (marks.keys() == {'_identity'} and marks['_identity'] is not None)
+            if self.working is not None and positive and native_binding:
+                row = destination.append_closed_idea(point, identity=marks.get('_identity'),
+                    evidence=pair, entry=entry, surprise=surprise, **names)
+            else:
+                value = ConceptualMeaning.from_description(point, bindings=marks, polarity=positive,
+                                                          extension=extension)
+                row = destination.append_meaning(value, evidence=pair, surprise=surprise,
+                                                 entry=entry, **names)
             if metadata is not None and self.working is None:
                 for index in range(first, len(destination)):
                     self.owner.mtm.hold_pending(self.store.occurrence_of(index),

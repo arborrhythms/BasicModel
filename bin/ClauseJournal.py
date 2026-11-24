@@ -152,9 +152,6 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         if kind < 0:
             break
         yield action
-        # Comprehension replaces its journal functionally. Earlier operand
-        # views keep their old base; this action reads the current version.
-        frames = number('operation_values')
         if kind == 0:
             if numerics is None:
                 reference = opening_refs[word]
@@ -208,10 +205,11 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             raise ValueError('invalid clause derivation')
         operands = tuple(stack[-arity:])
         del stack[-arity:]
+        frame = frames[action] if numerics is None else numerics.current_frame
         relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
         selected_refs = (None if number('operation_refs') is None else
                          list(number('operation_refs')[action].tolist()))
-        for role, (operand, actual) in enumerate(zip(operands, frames[action, :arity])):
+        for role, (operand, actual) in enumerate(zip(operands, frame[:arity])):
             operand['value'] = actual
             if program.operation_relations is not None:
                 operand['has_point'] = not bool(relation_actions[action][role])
@@ -301,7 +299,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                     # looking up its head must not flatten the whole field.
                     operand['has_point'] = (operand['has_point']
                         and reference_has_point(reference, True))
-        parent = dict(action=action, value=frames[action, 2], composed_value=frames[action, 2], local=local, ref=-1,
+        parent = dict(action=action, value=frame[2], composed_value=frame[2], local=local, ref=-1,
                           order=denoted_order(catalog[local], tuple(child['order'] for child in operands),
                               tuple(OrderReference(child['ref'], child.get('timeline', False)) for child in operands), None),
                           rule=catalog[local], children=operands,
@@ -367,10 +365,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             request.pop('introduction', None)
             request.pop('addressed_introduction', None)
             request.update(mode='bind', leaves=source['leaves'],
-                content=request.get('content', frames[action, 0]),
-                cue=request.get('cue', frames[action, 0]),
+                content=request.get('content', frame[0]),
+                cue=request.get('cue', frame[0]),
                 compose_bind=identity_actions[action][4],
-                record=frames[action, 1])
+                record=frame[1])
             parent['close_request'] = request
         if program.identity_actions is not None:
             handle, subject, _, _, selected, _ = parent['identity_event']
@@ -388,7 +386,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                             rule = catalog[local]
                             description = operands[(getattr(rule, 'head_role', 0) or 1) - 1]
                             request.update(mode=getattr(rule, 'determiner_mode', None) or 'bind',
-                                leaves=description['leaves'], content=frames[action, 2], compose_bind=0)
+                                leaves=description['leaves'], content=frame[2], compose_bind=0)
                             if not parent['has_point']:
                                 request.update(introduction=True, determined=True)
                         if addressed:
@@ -839,8 +837,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             roles = torch.stack((zero if left is None else left,
                                  zero if predicate is None else predicate.to(zero),
                                  zero if right is None else right))
-            mask = torch.tensor([True, True, right is not None or right_ref != -1],
-                                device=roles.device)
+            occupied = (True, True, right is not None or right_ref != -1)
+            mask = torch.tensor(occupied, device=roles.device)
             described = ConceptualMeaning(roles, mask, polarity=polarity)
             references = ((left_ref, predicate_ref, right_ref) if relation is not None else
                           (left_ref, concept(operands[1]), -1))
@@ -876,8 +874,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 contextual.append(child)
             children = contextual
         else:
-            described = replace(ConceptualMeaning.from_description(value(root)),
-                                polarity=polarity)
+            point = value(root)
+            described = ConceptualMeaning.from_description(point, polarity=polarity)
+            depth = 1 if point.ndim == 1 else point.shape[0]
+            occupied = tuple(role < depth for role in range(3))
             references = (node['ref'], -1, -1)
         equality = relation == 'equal'
         if equality:
@@ -891,6 +891,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             references = references[2], references[1], references[0]
             factored_refs = references
             role_nodes = role_nodes[2], role_nodes[1], role_nodes[0]
+            occupied = occupied[::-1]
             described = replace(described, roles=described.roles[[2, 1, 0]],
                                 role_mask=described.role_mask[[2, 1, 0]])
 
@@ -935,19 +936,17 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             data = bindings(described)
             data['_formation_records'] = formations
             described = replace(described, bindings=data)
-        from ThoughtReferences import with_slots
+        from ThoughtReferences import slot_bindings, with_slots
         opened = tuple(('relation' if role == 1 else 'referent', role)
                        for role, item in enumerate(role_nodes) if item is not None
                        and (item.get('open_reference') or head(item).get('open_reference')))
         resolver = getattr(getattr(getattr(registry, 'space', None), 'components', None),
                            'reference_close', None)
-        if resolver is not None and bool(described.role_mask[1]):
+        if resolver is not None and occupied[1]:
             opened = tuple(dict.fromkeys((*opened, *(('referent', role) for role in
-                resolver.expected_roles(described.roles[1]) if not bool(described.role_mask[role])))))
+                resolver.expected_roles(described.roles[1]) if not occupied[role]))))
         if opened:
-            described = with_slots(described, opened, pair=evidence['evidence'])
-            from ThoughtReferences import bindings
-            data = bindings(described)
+            data = slot_bindings(described, opened, pair=evidence['evidence'])
             data['_forward_references'] = tuple((role, name) for role, name in ((role,
                 head(role_nodes[role]).get('forward_identity',
                     forward_name(head(role_nodes[role])['leaves'][0])))
@@ -963,14 +962,14 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                         content=request['content'].detach().cpu().tolist(),
                         cue=request['cue'].detach().cpu().tolist(),
                         predicate=described.roles[1].detach().cpu().tolist()
-                            if bool(described.role_mask[1]) else None)
+                            if occupied[1] else None)
             if sites:
                 data['_reference_sites'] = tuple(sites.items())
             described = replace(described, bindings=data)
-            if relation is None and int(described.role_mask.sum()) > 1:
+            if relation is None and sum(occupied) > 1:
                 # Pending roles live in MTM; the durable entry is the fused idea.
                 references = factored_refs or references
-                if (references[1] == -1 and bool(described.role_mask[1])
+                if (references[1] == -1 and occupied[1]
                         and ('relation', 1) not in opened):
                     # An observed predicate can lack a dictionary identity.
                     # Ending the pending row must retain that observed point,
@@ -983,7 +982,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                     references = tuple(refs_with_predicate)
                     factored_refs = references
                 missing = tuple(('relation' if role == 1 else 'referent', role)
-                                for role in range(3) if not bool(described.role_mask[role]))
+                                for role in range(3) if not occupied[role])
                 described = with_slots(replace(described,
                     role_mask=torch.ones_like(described.role_mask)), (*opened, *missing),
                     pair=evidence['evidence'])

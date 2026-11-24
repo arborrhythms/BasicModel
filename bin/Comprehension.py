@@ -132,7 +132,7 @@ class Evaluation:
         self.native_ids = self.ids.clone()
         self.orders = (torch.full_like(self.ids, -1) if program.leaf_orders is None
                        else program.leaf_orders.clone())
-        self.frames = torch.zeros_like(program.operation_values)
+        self._frames = torch.zeros_like(program.operation_values)
         self.held_writes = None if program.held_writes is None else program.held_writes.tolist()
         self.refs = (program.actions.new_full((len(program.actions), 2), -1)
                      if program.operation_refs is None else program.operation_refs.clone())
@@ -313,13 +313,14 @@ class Evaluation:
         reference = refs[head-1] if head and head <= len(refs) else -1
         if rule.method_name == 'bind' and refs[-1] not in (-1, 0):
             reference = refs[-1]
-        # Closing roles and saved backward values can still view earlier rows.
-        # Replacing a later row must not mutate their shared tensor version.
+        # Append to this candidate's reserved action slab. Consumers that
+        # survive another write keep the three live operands for this action.
         frame = torch.stack((operands[0][0], operands[1][0] if len(operands) == 2 else value*0, value))
-        self.frames = self.frames.index_copy(0, self.ids.new_tensor([at]), frame[None])
+        self._frames[at].copy_(frame)
+        self.current_frame = frame
         if self.held_writes is not None:
             for witness in self.held_writes[at]:
-                self.held.publish(witness,self.frames[at,:2],value,self.frames,physical)
+                self.held.publish(witness,frame[:2],value,self._frames,physical)
         if self.timeline is not None:
             self.timeline[at, 0] = order
         working = value
@@ -343,8 +344,13 @@ class Evaluation:
         node = self.extensions.get(action)
         return () if node is None else (node,)
 
+    @property
+    def frames(self):
+        """An external snapshot may be differentiated after later appends."""
+        return self._frames.clone()
+
     def closing_value(self, name):
-        return getattr(self, dict(leaf_orders='orders', operation_values='frames',
+        return getattr(self, dict(leaf_orders='orders', operation_values='_frames',
             operation_refs='refs', timeline_actions='timeline', case_values='case_values',
             case_selected='case_selected', identity_values='identity_values',
             timeline_values='timeline_values', end_state='end_state')[name])

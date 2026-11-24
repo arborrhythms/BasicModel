@@ -72,12 +72,14 @@ def test_comprehension_later_action_preserves_operand_views_and_gradients(reader
         compose_from_grammar_context=lambda operands, context: operands[0]+operands[1])
     with saved_sentence_values():
         evaluation = Evaluation(model, program, 0)
+        frame_storage = evaluation.closing_value('operation_values').data_ptr()
         evaluation.leaf(0); evaluation.leaf(1)
         evaluation.operation(2, 1, 0, -1, rule, operator)
         left, right = evaluation.frames[2, :2].unbind()
         loss = left.square().sum()+right.square().sum()
         evaluation.leaf(2)
         evaluation.operation(4, 1, 0, -1, rule, operator)
+        assert evaluation.closing_value('operation_values').data_ptr() == frame_storage
         if reader == 'roles':
             torch.testing.assert_close(torch.stack((left, right)), points[:2], rtol=0, atol=0)
         loss.backward()

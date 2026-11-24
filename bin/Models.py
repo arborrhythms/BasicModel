@@ -249,10 +249,13 @@ def _boundary_observation_view(language, registry, entries, payloads, depths,
     if any(selected):
         # Roles remain the live grammar's working form. Prediction and the
         # closing image compare the single entry written by that reading.
-        observed, occupied = [], []
+        observed, occupied, observed_depths = [], [], []
         for meaning, clause in zip(meanings, clauses or (None,) * len(meanings)):
             if meaning is None:
-                observed.append(None); occupied.append(None); continue
+                observed.append(None)
+                occupied.append(None)
+                observed_depths.append(0)
+                continue
             point = meaning.roles[0]
             if clause is not None and registry is not None:
                 from PartClosing import PartClosing
@@ -268,10 +271,11 @@ def _boundary_observation_view(language, registry, entries, payloads, depths,
             if point is not None:
                 value[0] = point; mask[0] = True
             observed.append(value); occupied.append(mask)
+            observed_depths.append(int(point is not None))
         return (
             meanings,
             observed,
-            [0 if mask is None else int(mask.any()) for mask in occupied],
+            observed_depths,
             "infix",
             occupied,
         )

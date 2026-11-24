@@ -2283,7 +2283,9 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         return None if ref is None else ref()
 
     def referent_of(self, index):
-        tag, value = self.referent[int(index)].tolist()
+        return self._decode_referent(*self.referent[int(index)].tolist())
+
+    def _decode_referent(self, tag, value):
         return ('sym',value) if tag == SYMBOL else ('ltm',self.address_domain,value) if tag == OCCURRENCE else None
 
     def order_of_row(self, row, seen=None):
@@ -3193,9 +3195,11 @@ class STM0(IdeaRows):
         # Functional replacement retains the live graph of the pinned tree.
         with torch.enable_grad():
             self.slots=self.slots.index_copy(0,self.count.new_tensor([row]),point[None])
-        name = self.__dict__.get('_next_row_name', int(self.names_issued))
+        name = self.__dict__.get('_next_row_name')
+        if name is None:
+            name = int(self.names_issued)
         self._write_name(row, name)
-        self.names_issued.fill_(max(int(self.names_issued), name + 1))
+        self.names_issued.clamp_min_(name + 1)
         if '_next_row_name' in self.__dict__:
             self._next_row_name = name + 1
 
@@ -3214,11 +3218,14 @@ class STM0(IdeaRows):
         owner=self.owner()
         return value if owner is None else owner.mtm.pending_meaning(self.occurrence_of(index),value)
 
-    def append_meaning(self,meaning,*,name=None,**kwargs):
+    def _reserve_idea_name(self, name):
         if name is not None:
             if type(name) is not int or name < 0 or self.index_of_row(name) is not None:
                 raise ValueError('working occurrence name must be fresh and nonnegative')
             self._next_row_name = name
+
+    def append_meaning(self,meaning,*,name=None,**kwargs):
+        self._reserve_idea_name(name)
         try:
             return super().append_meaning(meaning,**kwargs)
         finally:

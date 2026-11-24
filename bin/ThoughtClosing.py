@@ -18,19 +18,18 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
     index = None if written_rows is None else written_rows.get(id(clause))
     if isinstance(index, tuple) and index[:1] == ('sym',) and not store.parts.contains(index[1]):
         return None  # a referenced concept is not a second sentence entry
-    committed = None if store is None or index is None else store.raw_meaning_of(index)
-    if written_rows is not None:
-        committed = written_rows.get(('meaning', id(clause)), committed)
+    written_meaning = ('meaning', id(clause))
+    if written_rows is not None and written_meaning in written_rows:
+        committed = written_rows[written_meaning]
+    else:
+        committed = None if store is None or index is None else store.raw_meaning_of(index)
     if committed is not None:
         # At this boundary the chosen open formation still owns its binder.
         # The row now closing cannot use its own complement to suppress that
         # episode. Other retained witnesses still resolve it normally.
         committed = store.read_reference_bindings(index, committed, exclude=(index,))
-    named = committed if committed is not None else replace(clause.meaning, role_refs=tuple(
-        ('selected', ref.identity if hasattr(ref, 'identity') else ref)
-        if bool(clause.meaning.role_mask[role]) and ref not in (-1, 0) else None
-        for role, ref in enumerate(clause.refs)))
-    clause_open = open_slots(named)
+    clause_open = (open_slots(committed) if committed is not None
+                   else open_slots(clause.meaning, selected=clause.refs))
     if not clause_open:
         # A headed outer phrase does not close a reference left in one of
         # its completed constituents. Ask on that existing inner row.
