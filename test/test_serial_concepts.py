@@ -25,7 +25,7 @@ def fixture():
         symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(episodic_capacity=4, episodic_orders=len(cs._order_caps()))),
         _sentence_episodes={},
         inputSpace=SimpleNamespace(_packed_sentence_ids=torch.tensor([[0, 0, 1, 1]]),
-                                  _word_active_mask=torch.ones(1, 4, dtype=torch.bool)),
+                                  _word_active_mask=torch.ones(1, 4, dtype=torch.bool), _scenes=None),
         perceptualSpace=SimpleNamespace(_forward_input=native),
         wholeSpace=SimpleNamespace(subspace=SimpleNamespace(what=SimpleNamespace(primitive_properties=None)),
                                    _staged_word_property_spans=torch.zeros(1, 4, 1, 2, dtype=torch.long)),

@@ -6607,3 +6607,261 @@ Keep tmp/item1-6/field_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 33. Step C: the return (Claude on Opus, 2026-11-24) (Claude on Opus, 2026-11-24)
+
+The work of §32.2 on the text model with the scene's box. No git was run;
+nothing is committed. Progress was kept in `tmp/item1-6/field_progress.md`.
+Every file changed was copied first to `/tmp/item1-6-2026-11-24/field_before/`
+(`bin/FamiliarTier.py`, `bin/Models.py`, `bin/BasicPercepts.py`,
+`test/test_serial_concepts.py`). Nothing was removed.
+
+### 33.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/ImagePercepts.py` (new) | Points 1 to 5. `image_bank` (the batch's images as one `value_bank`), `perceive` (values perceived and nominated, places met, as the numeric stem does), `image_rows` (the rows of the image's space), `joined` (the one table of lanes), `read` (the opening's reading), `put_back`, `felt`, `charge`. |
+| `bin/FamiliarTier.py` | `open_sentence` reads its bank through `ImagePercepts.read` in place of `owner.cs_read_bank(bank)`; `read` is `cs_read_bank(bank)` itself where no row of the batch has an image. |
+| `bin/Models.py` | At the opening's reconstruction (beside `SentenceField.charge`, where `_opening_errors` is made), `ImagePercepts.charge` books the image's term in `_opening_errors`. Three lines. |
+| `bin/BasicPercepts.py` | `property_presence` passes over a value's row. Found on the way (33.7, 1): on a text model shown an image before any word, the value's row is row 0, the row a word slot with no reference reads, and its whole (a value's reference, below zero) indexed the primitive properties out of range. One line. |
+| `test/test_item16_scene_field.py` (new) | C1 to C5. |
+| `test/test_serial_concepts.py` | Ported (33.5): its stand-in `inputSpace` gains `_scenes=None`, the attribute every `InputSpace` has. |
+
+`data/` is untouched: no key was added (the image's reading uses
+`architecture.intensityWhereWidth`, step T's, whose default sets no limit).
+Neither stopping gate's file nor anything it uses is touched.
+
+### 33.2 Where the two modalities' lanes meet
+
+In `FamiliarTier.open_sentence`, between the sentence's one lookup
+(`cs_lookup`, which meets the sentence's places) and the Not. Where some row
+of the batch has an image and the sentence is the first (`sid == 0`, as the
+value beside the words is joined), `ImagePercepts.read`:
+
+1. builds the image's bank (`image_bank`) and perceives it (`perceive`):
+   each value perceived (`perceive_value`), its row counted under
+   `('value', row)` and, on nomination, promoted with its concept
+   (`Places.bring`); the places met (`Places.meet`). This comes before
+   either Pi reads, because a row nominated here writes its where entries
+   and the Sigma's entries, and a reading saved for backward must not see
+   them change (the first build, which perceived after the sentence's
+   `read_bank`, failed "a sentence intermediate was mutated before
+   backward");
+2. reads the sentence's bank by the first Pi over forms
+   (`BasicPercepts.read_bank`) and the image's by numerical parthood
+   (`read_values`, over `image_rows`: the values' rows, the places' rows
+   whose cone decodes to an address of `scene`, and conjunctions over these
+   alone);
+3. joins them (`joined`) into one `PerceptField`: its keys the sentence's
+   then the image's rows not already among them; its readings the
+   sentence's, then the image's; a form's row (any row not the image's) is
+   nothing at an image's reading, and an image's row is set to nothing at
+   the sentence's readings; events, spans, brackets, times, the when band,
+   the boundaries, each event's reading and occurrence joined the same way;
+   and each reading's `.where` wires (`Places.readings` of each bank);
+4. sends it to `cs_read_percept_field`, whose loop calls `order_zero_field`
+   once for each stream with all of it, and publishes the wires.
+
+The opened field (`SentenceField.open_field`) is then made as today; the
+value beside the words (`ScalarPercepts.join`) is joined after the image's
+readings.
+
+### 33.3 Which readings an image has
+
+The places its pixels hold, each one place of the box (in the order of
+their addresses), and the bracket over the whole box. Not every place of
+the box: 513 more readings on every opening would carry through every
+order for no pixel. Within a batch the image's columns are as many as the
+greatest count of pixels, plus the bracket; a row's columns beyond its own
+pixels are empty brackets (`[lo, lo]`). A row with no image (`null`) has
+every column empty, the bracket too: it joins no reading. An empty image
+(`[]`) has the bracket alone, which reads nothing. Every reading of an
+image is at the present moment (`model.present()`).
+
+### 33.4 The certificates, as printed
+
+From the final run (33.6). The model is the echo test's text model with
+`sceneShape` `8 8 8` (`test_item17_echo.echo_model` with
+`architecture_overrides`), the eager reading of the echo test; rows from
+`felt_world_corpus.rows`. It is built for one stream (its STM's `nStreams`
+is the training `batchSize`, 1), so a batch of several rows cannot be
+presented; where a certificate speaks of a batch of rows, the bank or the
+charge is read on one (C3, C5).
+
+- **C1, text as it was.** Two models built from the same state of the
+  generator, each step taken by one and then by the other from the same
+  state (no seed is set): `C1 'this is eight.' as a string and as a row
+  with scene null: field (15, 1, 8, 2) same True, wires same True; put back
+  'this is eight.' and 'this is eight.'; errors
+  ['reconstruction_order_zero.pyramid'] same True` (`torch.equal` on the
+  field's ids, evidence, `.where`, `.when` and wires, and on every term of
+  the opening's errors; no image term on either). Both gates and the seven
+  echo tests: 33.6.
+- **C2, one Not.** `C2 {'text': 'this is eight.', 'scene': [[3, 2, 0,
+  200]]}: order_zero_field called 1 time(s) at the opening, lanes (12, 1,
+  10, 2); its rows hold 4 forms' rows, 1 values' rows (values [0.7843]), 1
+  places' rows of the box` (the sentence's 8 readings and the image's 2).
+- **C3, in the field.** `C3 scene range 4370..4882; 1 values' and 1
+  places' concepts; each row alone: {'image': {'readings': [(4389, 4390),
+  (4370, 4882)], 'value': [(4389, 4390)], 'place': [(4389, 4390)], 'reads':
+  True}, 'null': {'readings': [], 'value': [], 'place': [], 'reads':
+  False}, 'empty': {'readings': [(4370, 4882)], 'value': [], 'place': [],
+  'reads': False}}; one batch of the three, its readings by row: [[(4389,
+  4390), (4370, 4882)], [], [(4370, 4882)]]`. The pixel (3, 2, 0) is
+  address 4389; the value's and the place's concepts read for there; the
+  null row (with the same words) has no reading in the box; the empty
+  image's bracket reads nothing.
+- **C4, put back.** The first images of category 1 (train) in order, as
+  many as order zero has room for (eight), each presented as often as
+  nominates and once more, then each read again: `C4 category 1, 8 images
+  (7 steps, 8 places), put back: [([[7, 4, 0, 200]], [(39, 0.7843)], True),
+  ([[5, 2, 0, 127]], [(21, 0.498)], True), ([[2, 3, 0, 122]], [(26,
+  0.4784)], True), ([[2, 1, 0, 200]], [(10, 0.7843)], True), ([[3, 0, 0,
+  73]], [(3, 0.2863)], True), ([[7, 6, 0, 28]], [(55, 0.1098)], True), ([[5,
+  6, 0, 24]], [(53, 0.0941)], True), ([[3, 6, 0, 197]], [(51, 0.7725)],
+  True)]` (each: the image, the places of the box put back with their
+  values, and `torch.equal` of what was put back over all 512 places with
+  what was felt). `C4 category 2, {'text': 'this is eight.', 'scene': [[3,
+  2, 0, 200]]}: the sentence put back 'this is eight.' (alone 'this is
+  eight.'); the image put back exactly True`.
+- **C5, charged.** `C5 {'text': '', 'scene': [[3, 2, 0, 200]]}: the
+  image's term at first sight 1.0000, once known 0.0000; with a row with no
+  image, by row: numerators [0.0, 0.0], entries [512.0, 0.0]; a batch with
+  no image has the term False; the image taken as empty, term and
+  |gradient| at the Sigma of order zero, last (0.0012014610692858696,
+  0.0010091656586155295)`. The pair is charged on the field the image's row
+  opened, given to two rows, one with the image and one with none: the
+  second has no entry. The empty image is charged inside a training
+  opening on that opening's field, and its gradient taken at
+  `order_zero.value`.
+
+### 33.5 Tests ported
+
+| Test | Old | New |
+|---|---|---|
+| `test_serial_concepts.py`: its `fixture` (used by `test_open_pass_reads_once_before_composition_and_never_mints`, `test_open_pass_ignores_later_attention_narrowing_and_respects_inactive_streams`, `test_prime_boundary_joins_lexical_and_open_field_rows_in_one_step`) | a stand-in `inputSpace=SimpleNamespace(_packed_sentence_ids=..., _word_active_mask=...)` | the same with `_scenes=None`: `open_sentence` now asks the input space whether a row has an image (point 1). No assertion changed |
+
+No assertion was weakened, skipped or marked; no seed chosen.
+
+### 33.6 The runs, and the two times
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools
+.venv/bin/python test/test_report.py` with the 42 selectors of
+`tmp/item1-6/field_run_files.txt`: the gate of `test_item25_completion.py`,
+`test_mm_xor.py` whole (with the other gate), §32.2 step 5's list, the 31
+other test files that name `open_field`, `_opening_errors` or
+`reconstruction_order_zero` (none names `ScalarPercepts.join`), and
+`test_item17_looks.py` (it wraps `open_sentence`).
+
+- Run 1 (`output/tests/20261124-084034-d15637`): 5 failed. Three were
+  `test_serial_concepts.py`'s, ported (33.5).
+- **Final run, `output/tests/20261124-090136-5f5c1b/result.json`:
+  `Result: test_failure, exit 1; 355/355 cases completed.`** 1256 s. 349
+  passed, 4 skipped, 2 failed. **Both stopping gates passed**, and
+  `test_mm_xor.py` whole, the seven echo tests, `test_reading_pretraining.py`,
+  G1 to G9 of the grid, S1 to S4, the values' V1 to V11, C1 to C5. The two:
+  `test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`,
+  on the list of chance; and
+  `test_percept_collection_binding::test_bind_percept_collection_reads_membership_not_coordinate_overlap[2.0-True]`,
+  `failed` in the sweep. The four skipped are skipped in the sweep. Every
+  other test has the sweep's outcome.
+
+**The two times**, each from a run of the bounded runner with
+`test/test_item17_echo.py` and `test/test_reading_pretraining.py` alone
+(the per-test durations of its workers):
+
+| | Before (unchanged tree, `20261124-082518-8d80b7`) | After (`20261124-092249-42a745`) | In the final run (`20261124-090136-5f5c1b`) |
+|---|---|---|---|
+| The seven echo tests | 284.1 s (4.4, 41.2, 87.4, 12.7, 13.2, 83.4, 41.9) | 312.2 s (4.5, 49.5, 86.7, 13.1, 13.4, 54.0, 91.1) | 267.4 s |
+| The reading lesson (6 tests) | 120.2 s (the checkpoint test 112.9) | 160.0 s (the checkpoint test 150.4) | 170.8 s |
+
+Both are dominated by training that runs until a criterion is met: an
+echo cell trains round by round until every word is echoed in two rounds
+running (from a start drawn afresh), and the reading lesson trains epoch by
+epoch, its rows in a fresh order, until it qualifies
+(`pretrain_reading.train_reader`). Their tests move against each other
+from run to run (the echo's sixth 83 then 54, its seventh 42 then 91), and a
+third run of the checkpoint test alone took 403 s
+(`20261124-093140-96fd05`). On a batch with no image, which is every batch
+of these tests, the change adds two tests of `InputSpace._scenes`
+(`ImagePercepts.imaged`) to each opening and one `is_value` to each row of
+`property_presence`; no difference above the spread of the runs is
+attributable to it, and none is claimed to be shown absent by these
+numbers.
+
+### 33.7 What in §32.1 could not be built as written, and what was built
+
+1. *"The degree to which a concept of the field reads for it"* (point 4)
+   cannot put a pixel back exactly: a concept of order zero is the Sigma's
+   `tanh` of its entries, so a value's concept fully read is 0.7616 and
+   the value times it is not the value. **Built:** the degree is whether
+   the concept reads for (its for lane above zero), one or nothing, with
+   the derivative of the for lane passed through (`(for > 0) + (for -
+   for.detach())`, the zero added first so that the value comes back to the
+   last bit). This is `NumericPercepts.reverse`'s rule with a gradient.
+   *Marked.*
+2. *The weight of the term* (point 5). Booked in `_opening_errors` as
+   `reconstruction_order_zero.image`, by `Error.squared` (the squared
+   difference at each of the 512 places against the felt image's own
+   square, the codebase's uninformed baseline; an empty image, whose
+   baseline is nothing, is a penalty per place), weight
+   `model.loss.reconstruction_scale`, category `reconstruction`: the
+   sentence's term (`reconstruction_order_zero.pyramid`) has the same
+   weight and category, and `SentenceField.reconstruct` sums every
+   `reconstruction_order_zero.*` term into the sentence's cost. Masked by
+   the active rows that have an image. *Marked.*
+3. *"order_zero_field is called once"* (C2): `cs_read_percept_field` calls
+   it once for each stream, so once for a batch of one, which the test
+   model is (33.4). The certificate counts calls inside the opening's
+   reading.
+4. *A batch of rows with and without images* cannot be presented to the
+   echo test's model (one stream). The masking is built for it (empty
+   columns for a `null` row, the charge's mask) and read at the bank and
+   the charge (C3, C5) rather than through `runBatch`. *Marked.*
+5. *C4's "each presented until its values and places are known"*: on the
+   echo model order zero has room for about eight images of one pixel
+   (each needs a value's and a place's concept, and category 1's 93 train
+   images have 37 steps and 52 places). The test takes them in the corpus's
+   order as long as they fit half of order zero's room, reading the room
+   from the model; eight, seven distinct steps.
+6. *Found on the way:* `BasicPercepts.property_presence` read a value's
+   row's whole as a primitive property (33.1). On any model whose row 0 is
+   a value's row it indexed outside the properties (here, a text model
+   shown an image before any word). It now passes a value's row over. On
+   a model whose row 0 is a form, as every existing test's, nothing
+   changes.
+7. *Not built*, as §32.1 point 6 says: a look that takes a felt thing;
+   objects, names and `createMetaConcepts`; parts wider than a place. The
+   image's readings are not given to the looks. `read_values` is given
+   `architecture.intensityWhereWidth` (no limit on the text model), so a
+   value's row may read at the bracket; in C3 its concept did not read for
+   there, which was not looked into further.
+
+### 33.9 Review of step C (Claude, 2026-11-24)
+
+**Accepted.** Claude read the changes to the existing files (nine lines)
+and the new reader's entry, and ran both stopping gates,
+`test_item16_scene_field.py`, `test_item16_scene.py`,
+`test_item16_values.py`, `test_item17_echo.py`,
+`test_reading_pretraining.py` and `test_item18_scalar.py` (run
+`20261124-093948-c9cd66`): 52 of 52 passed.
+
+- *Text as it was.* Where no row of a batch has an image, `ImagePercepts.read`
+  returns `cs_read_bank(bank)` and `charge` returns at once.
+- *Times.* In Claude's run the seven echo tests took 301 s and the reading
+  lesson 79 s; the implementer's were 312 s and 160 s after, 284 s and
+  120 s before; §18.3's were 225 s and 129 s. Both train to a criterion and
+  swing by more than any of these differences, so no slowing is shown and
+  none is ruled out. The closing sweep times them again.
+- *A concept reads or does not.* A concept fully read gives the tanh of
+  its entry, .76, so a value times that degree never comes back exactly;
+  the image is put back from whether a concept reads for, with the
+  gradient of its for lane passed through. Accepted.
+- *Room at order zero.* The test's small model holds about eight
+  one-pixel images, since each value and each place brings a concept. The
+  felt world's configuration needs room for 64 places and some 80 values
+  at order zero before round D2; its sizes are set then.
+- *One stream.* A batch that mixes rows with and without images is not
+  run through the test's model, which takes one stream; the mask is
+  checked on the charge directly.
+

@@ -943,8 +943,8 @@ record that carries an image. Where it is declared the registry has a range
 `scene` of that shape after every other range, on a stretch of the first
 axis of its own. `InputSpace` keeps the scenes of the last batch beside its
 texts, and a record with an image and no words is a moment of its own, as
-one with a value is. No reader reads a scene: the model's field is what it
-is without one. `data/scene/BasicModel_scene.xml` is `data/BasicModel.xml`
+one with a value is. The image is read with its sentence at the opening,
+put back from the field and charged ([Spaces](Spaces.md#percept-modalities)). `data/scene/BasicModel_scene.xml` is `data/BasicModel.xml`
 with the box declared.
 
 `MM_xor.xml`, `MM_xor_fixture.xml` and `XOR_exact.xml` have two numeric

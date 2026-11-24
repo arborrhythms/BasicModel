@@ -21050,6 +21050,9 @@ class BasicModel(BaseModel):
                 self._opening_errors = Error(row_mask=present)
                 self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
                     self._sentence_order_zero_reverse, opened, present, hidden=False)
+                # A row's image is put back from the field and charged beside it.
+                from ImagePercepts import charge as charge_image
+                charge_image(self, self._opening_errors, sid, opened, present)
             from SentenceLooks import WordForecast, Looks
             word_forecast = WordForecast(self)
             self.languageSpace._compose_primed_bank = self._sentence_primed_bank

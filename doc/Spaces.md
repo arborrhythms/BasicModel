@@ -577,8 +577,22 @@ for dim 3."
   range moves. A row of input may then carry a `scene` beside its `text`:
   pixels `[x, y, z, steps]`, each kept as its place and its value, the
   steps over 255. No image (`null`) and an image with nothing in it (an
-  empty list) are kept apart. Nothing reads a scene yet: it is kept
-  beside the row's text (`InputSpace._scenes`).
+  empty list) are kept apart (`InputSpace._scenes`).
+- **The image is read with its sentence** (`ImagePercepts`). At a
+  sentence's opening a row's image has a bank of its own in the box; its
+  rows, read by numerical parthood, and the sentence's, read by the first
+  Pi over forms, stand in one table and go through the one Not and the
+  Sigma of order zero together. A form's row reads nothing at an image's
+  reading and an image's row nothing at a sentence's. The image's readings
+  are columns of the opened field after the sentence's. Where no row of a
+  batch has an image the sentence is read as it is without one.
+- **Put back and charged.** At the opening the image is put back from the
+  field: at each place of the box, the greatest value whose row a concept
+  of the field reads for there. The opening's errors hold
+  `reconstruction_order_zero.image`, the squared difference place by place
+  over the box, weighted as the sentence's reconstruction is. A row with
+  no image is charged nothing for one; an empty image is charged for
+  whatever is put back.
 
 - **A percept is a level; its occurrence has the place.** A pixel is an
   occurrence of its value's percept at a place on two axes, as a letter is

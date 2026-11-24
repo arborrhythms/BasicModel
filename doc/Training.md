@@ -610,8 +610,9 @@ The same module's `load(category, split)` returns the documents with their
 images, and `rows(document)` gives a document as the rows a model takes, one
 for each entry in order, each its `text` and its `scene`, with the
 document's question and answer. A model that declares a scene's box
-(`architecture.sceneShape`) takes every such row at `prepInput` and keeps
-the scene beside the text; nothing reads it there. No loader of the model
+(`architecture.sceneShape`) takes every such row at `prepInput`, reads its
+image with its sentence at the opening, and is charged for putting the
+image back. No loader of the model
 reads these files, and they are not in the staged training manifest.
 
 Learning is judged by four measurements, each reported per epoch: the cost

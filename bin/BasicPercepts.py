@@ -1356,7 +1356,8 @@ class BasicPercepts(nn.Module):
         primitive = self.whole.primitive_properties.on_counts(counts)
         result = primitive.new_zeros(*primitive.shape[:-1], shape[-1])
         for row in torch.unique(rows).tolist():
-            if not 0 <= row < len(self.index): continue
+            # A value's row holds no primitive property: its whole is a value.
+            if not 0 <= row < len(self.index) or self.is_value(row): continue
             wholes = self.occurrences[row][1]
             presence = primitive[..., list(wholes)].amin(-1) if wholes else primitive.new_ones(primitive.shape[:-1])
             result = result + presence[..., None] * (rows == row).unsqueeze(-2)

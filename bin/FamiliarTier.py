@@ -376,7 +376,9 @@ def open_sentence(model, sid, present):
     # The sentence's one lookup, held for its looks.
     model.__dict__.setdefault('_sentence_banks', {})[int(sid)] = bank
     model._sentence_bank = bank
-    field = owner.cs_read_bank(bank)
+    # A row's image, where the batch has one, is read with the sentence.
+    from ImagePercepts import read as read_opening
+    field = read_opening(model, sid, bank)
     from SentenceField import open_field
     owner._cs_last_a0 = field.detach()
     acts = owner.cs_forward_content(field)
