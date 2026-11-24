@@ -385,7 +385,11 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   trial's choice and for the probability of drawing its walk and round.
   Equal outcomes give zero credit. The opening reconstruction is shared
   across both trials. The independent expectation term measures how the
-  preceding look changed the forecast of the next observation.
+  preceding look changed the forecast of the next observation. It gathers
+  that occurrence, pools evidence by concept and pole, and compares the two
+  forecasts by squared error. The location selects the observation. The loss
+  itself has no spatial axis. Input reconstruction and textual answers use
+  the spatial pyramid at their respective boundaries.
 
 - **The where parameter is fixed.** The `.where` stamped
   onto percepts flows from one parameter that holds the constant sinusoid, a

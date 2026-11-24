@@ -70,3 +70,25 @@ def test_emitted_percepts_charge_content_place_and_silence(tmp_path, monkeypatch
               max(gradients), max(sigma_gradients), max(walk_gradients, default=0.))
     finally:
         model.End()
+
+
+def test_returned_words_pay_for_a_transposition_with_the_same_byte_counts(tmp_path, monkeypatch, eager_reading):
+    from test_item17_echo import answer_text
+    texts = ('This That', 'That This')
+    model = echo_model(tmp_path, monkeypatch)
+    try:
+        nominate(model, ('This', 'That', *texts))
+        data = model.inputSpace.data
+        monkeypatch.setattr(data, 'has_supervised_outputs', True)
+        monkeypatch.setattr(data, 'text_answers', {'train': texts})
+        for index, text in enumerate(texts):
+            batch = echo(model, index, text, train=False, optimizer=None)
+            assert answer_text(batch.outputPred) == text
+            answer = model._last_answer_construction
+            with torch.no_grad():
+                exact = model._output_target_cost(answer, [text])
+                transposed = model._output_target_cost(answer, [texts[1 - index]])
+            assert exact.item() < transposed.item()
+            model.End()
+    finally:
+        model.End()
