@@ -56,6 +56,12 @@ the Pi of order one, which has no dimensions: "To remove the .when and
 .where elements, which is necessary for nouns, I think we need the
 first-order pi." So a word as a thing and an object as a thing are symbols
 of order one, and what joins a word to its object is at order one or above.
+A concept of order zero all of whose members lie in the range of text is
+promoted to its symbol of order one, a row of that one member, when MTM
+promotes the concept (`FamiliarTier.promoted_alone`): "in text, there is no
+need to generalize over correctly written text (other than typos)", so the
+Pi has nothing to gather there. A concept with a member of another modality
+is not promoted so.
 
 **What makes what**. "A basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their

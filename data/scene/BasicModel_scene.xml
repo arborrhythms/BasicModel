@@ -186,8 +186,9 @@
     <weightsPath>BasicModel_scene.ckpt</weightsPath>
     <!-- A box of 8 by 8 by 8 places for a row's scene. -->
     <sceneShape>8 8 8</sceneShape>
-    <!-- A name is learned here, not made by interpret. -->
-    <createMetaConcepts>false</createMetaConcepts>
+    <!-- MTM promotes from the opened field, by which a word and its object
+         are united. -->
+    <attentionPromotion>true</attentionPromotion>
   </architecture>
 
   <!-- Raw UTF-8/byte surface.  The parameter budget is controlled by D and

@@ -33,83 +33,79 @@ def is_place(owner, row):
     return cid is not None and 'place' in _concept_alloc_of(owner).symbol_types.get(cid, ())
 
 
-#: The two modalities whose concepts a unit across modality joins: the
-#: ranges of the registry that hold a word's readings and an image's.
+#: The two ranges of the registry whose concepts a unit across modality
+#: joins: the one that holds a word's readings and the image's.
 MODALITIES = ('scene', 'text')
 
-#: The literal of a unit across modality: ``(ACROSS, ((range, concept), ...))``.
-ACROSS = 'across'
+
+def percept_range(owner, percept):
+    """The range of the registry that the places of the basic percept
+    ``percept`` lie in: of a place's row, the range holding its place (its
+    cone decoded); of a conjunction, its members' where they share one; of a
+    value's row, the range ``scene`` (a value is read at an image's places);
+    of any other row of the first Pi, the range ``text``, which holds the word
+    brackets of the sentence it is read at. ``None`` where none holds it."""
+    basic = owner.basic_percepts
+    if percept in basic.conjunctions:
+        found = {percept_range(owner, member) for member in basic.conjunctions[percept]}
+        return next(iter(found)) if len(found) == 1 else None
+    if percept in basic.place_rows:
+        registry = owner._model.where_registry
+        address = int(registry.decode(basic.place_rows[percept][0].to(registry.grid)))
+        return next((name for name, (lo, hi) in registry.slices.items() if lo <= address < hi), None)
+    if basic.is_value(percept):
+        return 'scene'
+    return 'text'
 
 
-def modalities(owner, field, batch, rows, wanted):
-    """The modality of each concept of ``wanted`` (rows of the inventory;
-    ``rows`` gives the row of each slot of ``field``, ``[S, B, L, 2]``, in
-    ``batch``): the one range of :data:`MODALITIES` that
-    holds every reading at which it reads, on either lane; ``None`` where its
-    readings lie in no such range or in more than one. Empty where the model
-    has no range ``scene`` or the field's readings are not the perceived
-    ones."""
-    registry = getattr(owner, 'where_registry', None)
-    perception = getattr(owner, '_percept_field', None)
-    if (registry is None or 'scene' not in registry.slices or perception is None
-            or perception.where.shape[1] != field.shape[2]):
-        return {}
-    where = perception.where[batch].to(field.device)                                       # [L, 2]
-    held = {name: (where[:, 0] >= lo) & (where[:, 1] <= hi) & (where[:, 1] > where[:, 0])
-            for name, (lo, hi) in ((name, registry.slices[name]) for name in MODALITIES)}
+def ranges(owner, concept, members):
+    """The ranges of the registry that ``concept`` lies in: of a concept of
+    order zero, those of its basic percepts (:func:`percept_range`); above
+    order zero, those of the concepts its Sigma reads through symbols
+    (``members``, by concept)."""
+    row = owner._concept_row_of(concept)
+    if row is None:
+        return set()
+    if owner._row_order(row) == 0:
+        return {percept_range(owner, percept) for percept in owner.concept_percepts(row)}
+    return set().union(*(ranges(owner, member, members) for member in members.get(concept, ())), set())
+
+
+def held_members(owner):
+    """Each concept above order zero with the concepts it reads, ``{concept:
+    (member, ...)}``: the constituents of each symbol on which its row has an
+    entry of weight above zero (an entry at zero, offered by part learning,
+    is not a member until it is learned)."""
+    alloc = owner._concept_allocator
+    store, table = alloc.layer(0), alloc.symbol_table()
+    bias = store.bias_column()
     found = {}
-    slots = {int(row): slot for slot, row in enumerate(rows.tolist()) if int(row) in wanted}
-    for row, slot in slots.items():
-        reads = field[slot, batch].amax(-1) > 0                                            # [L]
-        names = {name for name, inside in held.items() if bool((reads & inside).any())}
-        outside = bool((reads & ~torch.stack(tuple(held.values())).any(0)).any())
-        found[row] = next(iter(names)) if len(names) == 1 and not outside else None
-    return found
-
-
-def apart(kinds, row, other):
-    """Whether two concepts lie in two modalities (:func:`modalities`)."""
-    return kinds.get(row) is not None and kinds.get(other) is not None and kinds[row] != kinds[other]
-
-
-def observe_units(owner, batch, present, kinds):
-    """Each pair of concepts of order zero present together in the field
-    (``present``: each offered concept's for lane) and lying in two
-    modalities is counted for itself: a candidate of order one whose support
-    is the pair, under a literal that names it. A concept read only against
-    is not present. On the count that nominates the candidate becomes a unit
-    across modality, a Sigma of order one over the two concepts' symbols
-    (:func:`promote_candidates`)."""
-    nouns = {row: weight for row, weight in present.items()
-             if weight > owner.concept_use_floor and kinds.get(row) is not None and owner._row_order(row) == 0}
-    for row, weight in nouns.items():
-        for other, other_weight in nouns.items():
-            if not (kinds[row] < kinds[other]):
-                continue
-            literal = (ACROSS, ((kinds[row], owner.concept_id_at_row(row)),
-                                (kinds[other], owner.concept_id_at_row(other))))
-            observe_candidate(owner, 1, {row: weight, other: other_weight}, batch=batch,
-                              pair=(min(weight, other_weight), 0.), literal=literal, literal_key=literal)
+    for (row, column), position in store._index.items():
+        if column == bias or float(store.values[position]) <= 0 or owner._row_order(row) == 0:
+            continue
+        cid = owner.concept_id_at_row(row)
+        if cid is not None:
+            held = found.setdefault(int(cid), [])
+            held.extend(member for member in table.members(column) if member not in held)
+    return {cid: tuple(held) for cid, held in found.items()}
 
 
 def units(owner):
-    """Each unit across modality: its concept, its order, and the concepts
-    of the pair it was nominated from whose symbols its Sigma reads with a
-    weight above zero (the zero entries that today's learning offers on any
-    concept of the context are not members until they are learned)."""
+    """Each unit across modality: a concept of order one or above that the
+    ordinary promotion made, among whose members one lies in the range
+    ``scene`` alone and one in the range ``text`` alone (:func:`ranges`).
+    Each is ``(concept, order, members)``, the members those of one range.
+    None where the registry has no range ``scene``."""
+    if 'scene' not in owner._model.where_registry.slices:
+        return []
     alloc = owner._concept_allocator
-    store = alloc.layer(0)
+    members = held_members(owner)
     found = []
-    for cid in sorted(alloc.raised - alloc.retired):
-        row = owner._concept_row_of(cid)
-        literal = next((value for role, value in alloc.store_of(cid).constituents(cid)
-                        if role == 'candidate_literal' and isinstance(value, tuple) and value[:1] == (ACROSS,)), None)
-        if row is None or literal is None:
-            continue
-        members = tuple(member for _, member in literal[1]
-                        if (source := owner._concept_row_of(member)) is not None
-                        and any(float(store.values[at]) > 0 for at in owner.concept_entries(row, source)))
-        found.append((cid, alloc.order_of(cid), members))
+    for cid in sorted(set(members) - alloc.retired):
+        lying = {member: ranges(owner, member, members) for member in members[cid]}
+        single = tuple(member for member, held in lying.items() if len(held) == 1)
+        if {next(iter(lying[member])) for member in single} == set(MODALITIES):
+            found.append((cid, alloc.order_of(cid), single))
     return found
 
 
@@ -146,6 +142,22 @@ def across(owner, concept):
     concept = int(concept)
     return tuple(dict.fromkeys(member for _, _, members in units(owner) if concept in members
                                for member in members if member != concept))
+
+
+def promoted_alone(owner, concept, handle):
+    """A concept of order zero whose basic percepts all lie in the range
+    ``text``, promoted by MTM, is promoted alone by the Pi of order one: a
+    row of that one member, its symbol, which makes it available to a Sigma.
+    Text is written the same way every time, so the Pi has nothing to
+    generalize over there. A concept with a member in another range gets its
+    symbol only as the Pi of order one ordinarily makes one. Wherever MTM's
+    promotion is on (``ConceptualSpace.attentionPromotion``); a symbol that
+    already holds the concept (its fit) is kept, else one is nominated under
+    ``handle``. ``None`` where nothing is promoted."""
+    if not owner._promotion_enabled or ranges(owner, concept, {}) != {'text'}:
+        return None
+    found = owner._concept_allocator.symbol_table().fit(int(concept))
+    return found if found is not None else owner.nominate_symbol(handle, int(concept))
 
 
 def support_order(owner, support, candidate_order=None):
@@ -381,13 +393,9 @@ def observe_field(owner, field=None, *, active_streams=None):
         # co-occurrence tells nothing of what stands there: it is neither a
         # focal row nor a context of a conjunction by co-occurrence.
         offered = {row: weight for row, weight in used.items() if not is_place(owner, row)}
-        # Within one modality a conjunction is promoted from its context; a
-        # concept of another modality is no part of it (``observe_units``).
-        kinds = modalities(owner, field, batch, rows, offered)
         for focal in offered:
             order = owner._row_order(focal)
-            context = {row: weight for row, weight in offered.items()
-                       if row != focal and not apart(kinds, focal, row)}
+            context = {row: weight for row, weight in offered.items() if row != focal}
             if not context:
                 continue
             context_order = support_order(owner, context, order)
@@ -403,7 +411,6 @@ def observe_field(owner, field=None, *, active_streams=None):
                     break
             observe_candidate(owner, order, context, batch=batch,
                               pair=tuple(float(x) for x in paired[focal]), focal=focal)
-        observe_units(owner, batch, {row: float(paired[row][0]) for row in offered}, kinds)
         observe_native_cases(owner, batch, used)
         # MTM's leading entries are read through their live member codes;
         # their share of this field's size is use, not an invented positive
@@ -1050,8 +1057,11 @@ def promote_candidates(owner):
         pool.promote(key, cid)
         if derived > 0:
             # Above order zero the nomination makes a symbol, which brings
-            # this concept; at order zero it is the basic percept's row.
+            # this concept; at order zero it is the basic percept's row,
+            # promoted alone where it lies in the text.
             owner.nominate_symbol(key, cid)
+        else:
+            promoted_alone(owner, cid, key)
         alloc.raised.add(cid)
         alloc.relate_idx['part-base', cid] = ('candidate', key[1])
         cover_members(owner, cid, entry.support, conjunctive=literal is not None and literal[0] == 'field')
@@ -1080,9 +1090,7 @@ def promote_candidates(owner):
                 percept = owner.basic_percepts.reserve(literal[1], wholes)
                 owner.basic_percepts.promote(percept)
                 owner.bring_concept(percept, row)
-            elif literal[0] != ACROSS:
-                # A unit across modality is its Sigma over its members'
-                # symbols, written by the cover above.
+            else:
                 owner.add_concept_feature(row, literal[0], literal[1], 1.)
         result.append(cid)
     return result

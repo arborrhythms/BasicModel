@@ -7706,3 +7706,397 @@ Keep tmp/item1-6/promotion_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 39. Step D3: the return (Claude on Opus, 2026-11-24) (Claude on Opus, 2026-11-24)
+
+The work of §38.2, with the owner's two changes sent during it (39.3 and
+39.6). No git was run; nothing is committed. Progress was kept in
+`tmp/item1-6/promotion_progress.md`. Every file changed was first copied to
+`/tmp/item1-6-2026-11-24/promotion_before/`. What was removed (step D2's
+counter, `ImagePercepts.noun`) is there in those copies; nothing was
+deleted otherwise.
+
+**The result in four lines.** The ordinary promotion makes no unit of a
+word and its object, in set (a) or in set (b). A candidate that holds a word
+and a value never recurs: each opening opens a new one, with one reading,
+because MTM identifies a candidate across openings only by the exact
+proportions of its support's weights, and a word's lane and a value's lane
+differ in their fifth digit and drift with learning
+(`MediumTermMemory.match_candidate`; the parthood match beside it gives 0.0
+for every pair, identical supports included). What it does promote is
+concepts of order zero over values alone, whose weights are equal: an
+image's value with the lesser values read against at it.
+
+### 39.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/FamiliarTier.py` | **Step 1.** `MODALITIES`' old use, `ACROSS`, `modalities`, `apart`, `observe_units` removed; `observe_field` offers every concept's context as before step D2 (the focal row's context is every other offered row), and `promote_candidates` has no branch for `ACROSS`. The code of `observe_field` and of `promote_candidates`' literal branch is now that of before step D2 (`/tmp/item1-6-2026-11-24/naming_before/bin/FamiliarTier.py`). **Step 2.** `promoted_alone(owner, concept, handle)`: the owner's revised point 2 (39.3). **Step 5.** `percept_range`, `ranges`, `held_members`, and `units` rewritten: a unit is read from what the promotion made, not from a tag (39.4). `raised` and `across` unchanged. |
+| `bin/ImagePercepts.py` | `noun` removed, and its call in `perceive`. |
+| `bin/Interpret.py` | At a word's admission (both of `lookup_word`'s making paths), `promoted_alone(cs, word, ('alone', word))`. Nothing else. |
+| `data/scene/BasicModel_scene.xml` | **Step 3.** `<attentionPromotion>true</attentionPromotion>` in `architecture`, beside `createMetaConcepts`. No other configuration changed; `data/BasicModel.xml`, `model.xml`, `model.xsd` untouched. |
+| `test/test_item16_naming.py` | **Step 6.** Set (a) in the stages fixture; the words said back first (`said_back`, the echo test's teaching); N4 now of set (a); `attentionPromotion` read from the scene's configuration; N3 to N6 marked expected-to-fail by the owner's word (39.6). |
+| `test/test_item16_scene.py` | S1 ported (39.7). |
+| `test/test_item17_symbols.py` | `test_71`'s list of the callers of `nominate_symbol` ported (39.7). |
+| `tmp/item1-6/promotion_measure.py`, `promotion_measure_{a,b}.json`, `promotion_compare.py`, `promotion_run*` | The measurement of step 4, its records, and the runs. Not source. |
+
+`bin/Places.py` was changed and changed back (the first form of point 2
+gave every concept MTM brings its symbol there); it is as it was.
+
+### 39.2 Step 1: no rule of its own for a name
+
+A concept of an image and a concept of a word in one opened field are now
+offered to MTM as any two concepts are: in `observe_field`, each witnessed
+concept that reads above `conceptUseFloor` (on either lane; places' concepts
+excepted, as before) is a focal row, its context the other such rows, and
+`observe_candidate(owner, order of the focal, context, pair = the focal's
+(for, against))` opens or updates a candidate. `promote_candidates`
+promotes a candidate whose readings within the horizon number
+`conceptMintCount` and that is not read both (`min(max for, max against) >
+0` refuses it).
+
+### 39.3 Step 2: a Pi promotes one element, of text alone
+
+The owner, sent during the step:
+
+> The text modality promotes its zero-order concepts to first order symbols
+> automatically. The reason for this is that in text, there is no need to
+> generalize over correctly written text (other than typos). A concept
+> (word) is represented in ASCII the same way, every time, so that the
+> purpose of the PI in generalizing over that zeroth-order conceptual space
+> is not needed. Presumably we should do this only for concepts whose
+> members are exclusively from text modality.
+
+*Where.* `FamiliarTier.promoted_alone(owner, concept, handle)`: where MTM's
+promotion is on (`ConceptualSpace.attentionPromotion`) and every basic
+percept of the concept of order zero lies in the range `text`
+(`ranges(owner, concept) == {'text'}`), the concept is promoted alone by the
+Pi of order one: the symbol that already holds it (its fit) is kept, else
+one is nominated (`nominate_symbol(handle, concept)`), a row of that one
+member. It is called where MTM's nomination brings a concept of order zero:
+at a word's admission (`Interpret.lookup_word`, after the nomination
+`('form', …)`, handle `('alone', word)`) and in `promote_candidates` for a
+candidate promoted at order zero (handle the MTM key). Above order zero
+`promote_candidates` already made the concept's symbol and still does.
+
+*The range of a basic percept* (`percept_range`) is read from its places,
+not from its being a word: a place's row by its cone decoded to an address
+of the registry; a conjunction by its members; a value's row is read at an
+image's places (`scene`); any other row of
+the first Pi is read at a sentence's word brackets, which lie in `text`.
+*Marked:* a value's row and a form's row carry no place of their own
+(their `.where` entries are empty), so their range is the range of the bank
+that reads them, which is fixed by their kind of row.
+
+*A concept with any member outside the text* (an intensity's, a place's) is
+not promoted automatically. Nothing new gives an intensity's concept its
+symbol; `ImagePercepts.noun` is gone. What the ordinary promotion gives it
+is in 39.5: nothing. No value's concept has a symbol after set (a) or set
+(b), so the two or three region rows that one value's steps fall in (in set
+(b): 23 rows for 9 values, e.g. steps 23, 24 and 28 for one) come under no
+symbol and are gathered by nothing.
+
+*Which makers of a word's symbol it duplicates.* The kind of words'
+`things_reading` (`('kind', words, word)`, through `add_concept_edge` /
+`_populate_concept_weights` / part learning). In the naming model the
+kind's symbol is made first: `promoted_alone` finds it as the fit and makes
+none (probe: the word 93's call returned symbol 0, handle `('kind', 91, 93)`).
+`things_reading` cannot go: every kind's entry on a member with no symbol
+is made there, it is the sole maker of symbols in the lesson's model
+(`test_71`, 22 symbols, all `('kind', …)` or MTM's), and the gates' models
+use it.
+
+*How a text model with `createMetaConcepts` true is kept as it was* (step
+7, and the coordinator's question). The rule acts only where
+`attentionPromotion` is true; `data/model.xml` and `data/BasicModel.xml`
+have it false, so the text model does exactly as before. Where a text model
+has it true (the corpus lesson configurations, `MM_corpus_*`,
+`BasicModel_corpus`), a word's symbol is made at admission unless one
+already holds it; in the lesson's model of `test_71` every word was already
+held by the kind's symbol when the rule ran, so it made none (22 symbols,
+every handle `('kind', …)` or an MTM key; `test_71` passes). No passing test of the runs changed its outcome (39.8). Both
+gates pass untouched.
+
+### 39.4 Step 5: what reads a unit
+
+`FamiliarTier.units(owner)`: each concept above order zero whose Sigma has
+an entry of weight above zero on a symbol holding a concept that lies in
+`scene` alone and on one holding a concept that lies in `text` alone
+(`held_members`: the store's entries, symbol columns, the symbols' members;
+`ranges`). No tag marks it. `across`, `Interpret.named` and
+`Assessment.units_across_modality` read `units` and are unchanged. A model
+with no range `scene` has none.
+
+### 39.5 Step 4: the measurement
+
+`tmp/item1-6/promotion_measure.py`, on the text model with the scene's box
+(`test_item16_naming.naming_model`: the echo model, the scene's
+`createMetaConcepts` false and `attentionPromotion` true, room
+`CORPUS_ROWS` 512 and buckets `8,256`). Records:
+`tmp/item1-6/promotion_measure_a.json`, `…_b.json`.
+
+*Words first.* Each word taught alone (`known`, four presentations), then
+as the supervised answer of itself as the echo test teaches it, until it is
+said back: set (a)'s `three` and `is` were said back after one round; set
+(b)'s 13 words (`eight five four is nine one seven six that this three two
+what`; the marks `.` and `?` not taught alone) after one round, 13 of 13.
+*Values* alone, each image four times, until its region's row and its place
+were known: set (a) 3 values (steps 90, 200, 240); set (b) 23 region rows.
+*Trials:* set (a) 120 (30 cycles of `three` with step 200, then `is` with
+200, 240 and 90); set (b) all 200 rows of category 2 (train), in order.
+Recorded after each ten.
+
+Columns: the candidates MTM held that have a member of each modality; the
+greatest number of readings any of them had within the horizon; how many
+were read both (for and against at once); what was promoted; units across
+modality; symbols in the table (all of one member); whether the number word
+and its value stand under one concept.
+
+**Set (a).**
+
+| Trials | Mixed candidates | Most readings | Read both | Promoted | Units | Symbols | `three` and v200 under one |
+|---|---|---|---|---|---|---|---|
+| 10 | 18 | 1 | 0 | c103, order 0, over v200, v90 (no symbol: not text) | none | 2 | no |
+| 20 | 28 | 1 | 0 | c104, order 0, over v200, v240, v90 | none | 2 | no |
+| 30 | 30 | 1 | 0 | nothing | none | 2 | no |
+| 40 to 120 | 28 or 30 | 1 | 0 | nothing | none | 2 | no |
+
+The two symbols are `three`'s and `is`'s. No value has a symbol. A mixed
+candidate's readings are its focal value's lanes: e.g. focal v200, support
+`{'three': 0.761632, v90: 0.761594}`, for 0.762, against 0; focal v90 (read
+against at 200), support `{'three', v200}`, for 0, against 0.762; focal
+v240 with `is`, for 0.762; focal v200 at `is` with 240, against 0.762. At the
+next `three` trial the same focal opens a new candidate with `{'three':
+0.761654, v90: 0.761604}`. The keys run from 2 to 188 over the 120 trials.
+
+**Set (b).**
+
+| Trials | Mixed candidates | Most readings | Read both | Promoted | Units | Symbols | Number words under one with a value |
+|---|---|---|---|---|---|---|---|
+| 10 | 34 | 1 | 2 | nothing | none | 32 | none |
+| 20 | 27 | 1 | 3 | nothing | none | 32 | none |
+| 30 | 35 | 1 | 3 | nothing | none | 32 | none |
+| 40 | 33 | 1 | 3 | nothing | none | 34 | none |
+| 50 | 32 | 1 | 3 | nothing | none | 37 | none |
+| 60 | 24 | 1 | 2 | nothing | none | 40 | none |
+| 70 | 19 | 1 | 1 | nothing | none | 43 | none |
+| 80 | 23 | 1 | 2 | nothing | none | 43 | none |
+| 90 | 35 | 1 | 3 | nothing | none | 43 | none |
+| 100 | 34 | 1 | 1 | nothing | none | 46 | none |
+| 110 | 26 | 1 | 1 | nothing | none | 46 | none |
+| 120 | 32 | 1 | 2 | nothing | none | 46 | none |
+| 130 to 190 | 27 to 35 | 1 | 1 to 3 | nothing | none | 49 | none |
+| 200 | 25 | 1 | 0 | nothing | none | 52 | none |
+
+Every symbol is of one member, a concept of the text (the words, and text
+concepts admitted during the trials); no value's region row is under any
+symbol (`value_symbols` empty for all 23). A typical candidate: focal `?`,
+support `{'is', 'this', 'what', v23, v24, v28, v47}`, one reading: an image
+of step 47 reads the three rows of value 1 against, so every image brings
+every lesser value's rows into the context.
+
+**Two experiments, no source changed** (`scratchpad/d3/probe3.py`,
+`probe4.py`), to find the deciding condition:
+
+1. The parthood match in `match_candidate` scores `shared_part` 0.0 for every
+   pair of candidates, the same support included (e.g. `[0, 8]` against
+   `[0, 8]`): the members' codes in the similarity codebook give nothing.
+   With the bar at 0.99 instead of `conceptMatchPart` 1.0 nothing changes.
+2. With a candidate identified by its members alone (`set(support)`), set
+   (a) promotes after 10 trials concepts of **order zero**: `'three'` with
+   v200, `'three'` with v90, `'is'` with v200, `'is'` with v90, and later
+   `'is'` with v240 and v90, with v200 and v90, with v200 and v240; and the
+   same pair again and again (`'three'`/v200 as c105, c113, c120). `is` is
+   united as readily as `three`, and with the lesser value read against.
+   Still no unit across modality (order 0, not a Sigma over symbols).
+
+### 39.6 Step 6: the certificates, and the marks
+
+The owner, sent during the step: "lets leave the testpoint for automatic
+metaconcept formation, and mark it as Xfail". By that instruction alone,
+each of N3 to N6 that fails is marked `@pytest.mark.xfail(strict=False,
+reason=…)`; its body is the full certificate, so it reports XPASS the day
+the formation works. N1, N2 and N7 are not marked.
+
+| | Outcome | Mark and reason |
+|---|---|---|
+| N1 | passes | none |
+| N2 | **fails**: the value's concept has no symbol (`value_symbols []`; the word's `[0]`) | none (not to be marked). The cause is the owner's revised point 2: an intensity's concept is not promoted automatically, and the ordinary Pi of order one makes no symbol for it |
+| N3 | xfail | "The ordinary promotion makes no concept of order one over the word and its value: a candidate that holds both never recurs, since its support's proportions differ at every opening (MediumTermMemory.match_candidate), so no unit across modality is made." |
+| N4 | xfail | "The ordinary promotion unites neither word with any value; what set (a) promotes is concepts of order zero over values alone, an image's value with the lesser values read against it." |
+| N5 | xfail | "No unit is made by the ordinary promotion, so neither the word nor its pixel met alone raises one, and the way down raises nothing." |
+| N6 | xfail | "No unit is made by the ordinary promotion, so interpret of the word gives the word itself." |
+| N7 | passes (a measure): 300 rows; units by order `{}`; no word united with any step | none |
+
+What they print (final run): N1 `key true: {'definitions': 1,
+'blanks': 1}, the word's blank object 95; key false … {'definitions': 0,
+'blanks': 0}`; N2 said back `{'three': 'three', 'is': 'is', 'five': 'five'}`, the word
+`three` 93 symbols `[0]`, the pixel 99 symbols `[]`, units `{}`; N3 units `{}`; N4 `three` united with `()`, `is` with
+`()`; N5 the unit reads `(0.0, 0.0)` either way, the way down unchanged; N6
+interpret of `three` gives 93 (itself), not 99.
+
+In N5 the record of the unit's reading is `(0., 0.)` where there is no unit
+(it was `None`, which made the assertion a TypeError rather than a failure).
+No assertion changed.
+
+### 39.7 Tests ported
+
+| Test | Old | New |
+|---|---|---|
+| `test_item16_scene.py::test_s1_the_key` | the scene's configuration differs from `BasicModel.xml` in `createMetaConcepts`, `sceneShape`, `weightsPath` | and in `attentionPromotion` (step 3) |
+| `test_item17_symbols.py::test_71_…` | callers of `nominate_symbol`: `promote_candidates`, `promote_identity`, `ImagePercepts.noun`, `things_reading` | `promote_candidates`, `promote_identity`, `promoted_alone`, `things_reading` (point 2: `noun` goes, the rule is MTM's). The test's second half (every symbol MTM's or a kind's) is unchanged and passes |
+| `test_item16_naming.py` N4 | its own model: the word with its pixel, some times also with a greater one | set (a) of the stages fixture, as step 6 writes it |
+
+### 39.8 The runs
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py`
+on the 53 files of `tmp/item1-6/promotion_run_files.txt`: both gates'
+files, §38.2 step 8's list, every test file that names `observe_field`,
+`promote_candidates`, `nominate_symbol` or `maybe_raise_order`, and every
+test file that names a configuration with `attentionPromotion` true (where
+the automatic promotion of text can act). Outcomes compared with the sweep
+by `tmp/item1-6/promotion_compare.py`.
+
+- **Run 1** (`output/tests/20261124-124745-196580`): `Result: memory, exit
+  137; 338/769 cases completed.` A worker passed 8 GiB in
+  `test_compiled_lesson_step.py::test_one_lesson_sentence_trains_with_the_compiled_output_walk`
+  (passed in the sweep). Run alone it does the same on this tree (`Result:
+  memory`, 911.7 s, 8.00 GiB) and on a copy of the tree as it was before
+  this step (`scratchpad/d3/before_tree`, 913.3 s, 8.00 GiB): it is not this
+  step's. It is left out of the final run.
+- **Run 2** (the 431 cases run 1 did not reach): three failures of
+  `test_reading_round.py` (passed in the sweep) were this step's: an owner
+  with no model reached `percept_range`'s read of the registry from a word's
+  admission. Fixed: the registry is read only for a place's row. The three
+  pass.
+- **Final run**, the 768 cases of run 1 less the one above
+  (`tmp/item1-6/promotion_run3_selectors.txt`, log `promotion_run3.log`):
+  **`Result: test_failure, exit 1; 768/768 cases completed.`**
+  `output/tests/20261124-140636-9fc4c6/result.json`. 739 passed, 23 skipped,
+  4 xfailed, 2 failed. **Both stopping gates passed.** The failures: N2
+  (39.6) and `test_item17_symbols::test_54bd_…`, failed in the sweep. N3 to
+  N6 xfailed; N1 and N7 passed. Every other test has its sweep outcome.
+
+
+### 39.9 What I would propose
+
+1. *The identity of a candidate across openings.* The ordinary promotion
+   cannot count a pair it cannot recognize twice. `match_candidate`
+   recognizes by exact proportions of graded weights, and the parthood
+   match reads codes these concepts do not have. Recognize a candidate by
+   its members (as the experiment did), its weights summed as evidence.
+   That is a change to MTM for every candidate, not a rule for names, and
+   would need its own measure on the gates and the corpus models.
+2. *Then the order.* With (1), the context of a focal of order zero is
+   promoted at order zero, a field concept over a word and values, which
+   §19.5 point 2 and §22.1 put at order one. For the meta concept to come
+   of the ordinary promotion, a candidate over concepts of two modalities,
+   or any candidate over concepts that have symbols, would be promoted one
+   order above its members (`promote_candidates` already does so for
+   `entry.order > 0`), as a Sigma over their symbols. That needs the value's
+   concept to have a symbol, which after the owner's revision only the
+   ordinary Pi of order one gives, and it gives none here: what of order one
+   makes a symbol over a value's concept, or over the rows of one value's
+   steps, is the open point.
+3. *Negative evidence.* As built, a candidate's two lanes are its focal's
+   reading, not the pair's: "read both" asks whether the focal concept was
+   read for and against, not whether the word occurred without the object.
+   The owner's "`is` is often present without `10`" is not what the lane
+   against counts. With (1), `is` was united as readily as `three`. The
+   lane against a candidate would have to be written at an opening that
+   holds one member and not the other.
+4. *A lesser value read against is present.* `used` takes a concept whose
+   greater lane is above the floor, so a value read only against is part of
+   every greater image's context (v90 at 200; set (b)'s three rows of value
+   1 at step 47). A context of concepts read for would remove those pairs.
+
+### 39.10 After review: N2 ported, and the meta concepts minted again
+
+Done at the coordinator's request after the review. The files were copied
+first to `/tmp/item1-6-2026-11-24/promotion_before2/`.
+
+1. *N2 ported.* The owner's change (automatic promotion is for text alone)
+   makes its assertion that a value's concept has a symbol false.
+
+   | Test | Old | New |
+   |---|---|---|
+   | `test_item16_naming.py::test_n2_each_known_alone` | `alone['word_symbols'] and alone['value_symbols']` | `alone['word_symbols'] and not alone['value_symbols']`: the word has its concept and its symbol of order one, the value its concept and no symbol, and still no unit across modality. The docstring says so |
+
+2. *`createMetaConcepts` true in the scene's configuration.* This is the
+   owner's fallback: "If not, we can mint the meta concepts as before, and
+   hope that the object-concept that we created for the word concept will
+   begin to co-locate with its actual referent". The line is removed from
+   `data/scene/BasicModel_scene.xml`, so the default (`data/model.xml`,
+   true) holds. The file now differs from `data/BasicModel.xml` in
+   `attentionPromotion`, `sceneShape` and `weightsPath`.
+   `attentionPromotion` stays true.
+
+   | Test | Old | New |
+   |---|---|---|
+   | `test_item16_scene.py::test_s1_the_key` | differs in `attentionPromotion`, `createMetaConcepts`, `sceneShape`, `weightsPath` | differs in `attentionPromotion`, `sceneShape`, `weightsPath`; docstring likewise |
+   | `test_item16_naming.py::test_n1_the_key` | `assert scene_key() == 'false'` (the scene's configuration) | `assert KEY == 'false'` (the test's own model); the print names the test's model. The other assertions are unchanged |
+
+   *Where the naming tests set the key:* `test_item16_naming.KEY = 'false'`,
+   passed by `naming_model` as `architecture_overrides["createMetaConcepts"]`
+   unless a caller gives `key`. Only N1's key-true half gives
+   `key='true'`. `attentionPromotion` is still read from the scene's
+   configuration (`scene_key('attentionPromotion')`).
+
+**Run.** Both gates, `test_item16_naming.py`, `test_item16_scene.py`,
+`test_item16_scene_field.py`, `test_item17_symbols.py`:
+**`Result: test_failure, exit 1; 66/66 cases completed.`**
+`output/tests/20261124-143606-579b3a/result.json`. 60 passed, 4 xfailed,
+2 failed. **Both gates passed.** N1, N2 and N7 passed; N3 to N6 xfailed;
+S1 passed. The two failures:
+
+- `test_item17_symbols::test_54bd_…` failed in the sweep too.
+- `test_item17_symbols::test_cert_c_…` is on the list of tests that pass or
+  fail by chance. It passed in the final run of 39.8.
+
+### 39.11 Alec's two changes during the step, and the review (Claude, 2026-11-24)
+
+> The text modality promotes its zero-order concepts to first order
+> symbols automatically. The reason for this is that in text, there is no
+> need to generalize over correctly written text (other than typos). A
+> concept (word) is represented in ASCII the same way, every time, so that
+> the purpose of the PI in generalizing over that zeroth-order conceptual
+> space is not needed.
+>
+> Presumably we should do this only for concepts whose members are
+> exclusively from text modality.
+>
+> Does this make sense? it may get meta concepts to work. If not, we can
+> mint the meta concepts as before, and hope that the object-concept that
+> we created for the word concept will begin to co-locate with its actual
+> referent, experienced as an object, and they will be treated as the same
+> by higher-order reasoning (in virtue of the pi that collects them
+> together within that space).
+
+> OK. lets leave the testpoint for automatic metaconcept formation, and
+> mark it as Xfail
+
+**Accepted as a measurement.** Claude ran both stopping gates,
+`test_item16_scene.py`, `test_item16_scene_field.py`,
+`test_item16_values.py` and `test_item17_echo.py`: 42 of 42 passed. The
+implementer's run of the naming test: N1 and N2 passed, N3 to N6 expected
+to fail and failing, N7 reported.
+
+- *The result.* MTM's ordinary promotion does not unite a word with its
+  object. A candidate holding one of each is never met twice: MTM knows a
+  candidate again by the proportions of its members' weights, and a
+  word's and a value's differ in the fifth digit and move with learning.
+  No concept of an intensity gets a symbol of order one. The lane against
+  a candidate records that its focal concept was read against, which is
+  not "the word present and its object not".
+- *The fallback is taken:* the scene's configuration no longer sets
+  `createMetaConcepts`, so meta concepts are made as before. The key
+  stays, false only in the naming test's own model.
+- *The expected failures* N3 to N6 are the one exception to H.5's rule
+  against adding one, by his word.
+- *Left for after this item:* how MTM knows a candidate again, what it
+  writes against one, and what gives an intensity's concept its symbol
+  (39's four proposals). They are MTM's own, in every modality.
+- *Found:* `test_compiled_lesson_step::test_one_lesson_sentence_trains_with_the_compiled_output_walk`
+  passes the runner's 8 GiB on this tree and on the tree before this
+  step; the closing sweep finds which step it came with.
+

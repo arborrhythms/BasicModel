@@ -927,9 +927,10 @@ its regions and places are known. `architecture.intensityWhereWidth` is the grea
 `.where` width of a percept of intensities (0, the default, no limit); the
 XOR configurations set it to 1, so that a value is read at single places.
 `architecture.createMetaConcepts` (true) has `interpret` make a word's meta
-concept, and a blank object where the word has none; false, as
-`data/scene/BasicModel_scene.xml` sets it, `interpret` makes neither and
-gives a word's object from a unit that MTM has made. The output
+concept, and a blank object where the word has none; false, `interpret`
+makes neither and gives a word's object from a unit that MTM has made. No
+configuration sets it false: MTM's promotion does not yet make such a unit
+(`test/test_item16_naming.py` holds the certificates, expected to fail). The output
 reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
 `attentionPromotion` govern recurrent intersections, and `trustViews` governs
 scalar definition evidence. No scalar scale, box-learning rate or per-value
