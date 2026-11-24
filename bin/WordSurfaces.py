@@ -128,6 +128,25 @@ def reading_forms(surface, spans, active, *, trimmed=None):
     return bounds, torch.where(present, torch.cat(keys, 1), -1)
 
 
+def held_properties(surface, spans, memberships):
+    """Property rows held by any non-padding byte within each unit."""
+    lo, hi = spans.unbind(-1)
+    width = memberships.shape[0]
+    if not width:
+        return torch.zeros((*lo.shape, 0), device=surface.device, dtype=torch.bool)
+    # Bound scratch for a long page or a large property inventory. The
+    # reduction is over bytes in the interval and retains repeated letters.
+    group = max(1, (1 << 20) // max(1, surface.numel()))
+    blocks = []
+    for rows in memberships.split(group, dim=0):
+        held = (rows.T[surface.long()] > .5) & (surface != 0)[..., None]
+        prefix = torch.nn.functional.pad(held.cumsum(1, dtype=torch.int32), (0, 0, 1, 0))
+        ends = prefix.gather(1, hi[..., None].expand(-1, -1, len(rows)))
+        starts = prefix.gather(1, lo[..., None].expand(-1, -1, len(rows)))
+        blocks.append(ends > starts)
+    return torch.cat(blocks, -1)
+
+
 def reading_property_signatures(surface, spans, signatures, discard, *, latin1_text=True):
     """Intersect primitive memberships over each observed reading's spelling.
 

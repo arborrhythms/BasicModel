@@ -18129,8 +18129,24 @@ class BasicModel(BaseModel):
         texts = fi.get("word_texts"); codes = getattr(ps, "_embedded_input", None)
         if not texts or not torch.is_tensor(codes) or codes.dim() != 3:
             return
+        if getattr(ws, '_online_learning_frozen', False):
+            return
         primitive = ws.subspace.what.primitive_properties
         n_what = int(getattr(ws, "nWhat", codes.shape[-1]) or codes.shape[-1])
+        surface, spans = fi.get('sentence_bytes'), fi.get('unit_spans')
+        if torch.is_tensor(surface) and torch.is_tensor(spans):
+            from WordSurfaces import held_properties
+            masks = held_properties(surface, spans, primitive.coefficients().detach()).tolist()
+            rows, values, spellings = [], [], []
+            for b, stream in enumerate(masks):
+                for w, (mask, text) in enumerate(zip(stream, texts[b])):
+                    if text and any(mask):
+                        rows.append([row for row, held in enumerate(mask) if held])
+                        values.append(codes[b, w, :n_what])
+                        spellings.append(text.encode('latin1', 'replace'))
+            if rows:
+                ws.record_property_pulls(rows, torch.stack(values), spellings)
+            return
         # Which rows a byte holds: one [256, R] host table (the same
         # predicate LUT the tiling uses), so a unit's rows are a lookup.
         n_rows = int(primitive.members.shape[0])
