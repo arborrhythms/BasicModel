@@ -178,7 +178,7 @@ def _carry(values, source, target, share, negated, size):
     return 1. - rest
 
 
-def _flow(graph, observed, percepts, depth):
+def _flow(graph, observed, percepts, depth, *, native=False):
     """The sources, and the spread's up and down at every node, detached."""
     N = graph.size
     source = observed.new_zeros(N, *observed.shape[1:])
@@ -195,14 +195,20 @@ def _flow(graph, observed, percepts, depth):
     row = weight.new_zeros(N).index_add(0, graph.parent, weight).clamp_min(tiny)
     up_share = weight / fan.index_select(0, graph.child)
     down_share = weight / row.index_select(0, graph.parent)
-    for _ in range(depth):
+    # With no symbols, the only edges are concept -> percept -> part.
+    # Two passes exhaust the chain. When sources contain only concepts
+    # there is no upward message on either edge.
+    bounded = native and not graph.symbols
+    rounds = min(2, depth) if bounded else depth
+    check_convergence = not bounded and not torch.compiler.is_compiling()
+    for _ in range(0 if bounded and percepts is None else rounds):
         nxt = _carry(union(source, up), graph.child, graph.parent, up_share, graph.negated, N)
-        if torch.equal(nxt, up):
+        if check_convergence and torch.equal(nxt, up):
             break
         up = nxt
-    for _ in range(depth):
+    for _ in range(rounds):
         nxt = _carry(union(source, up, down), graph.parent, graph.child, down_share, graph.negated, N)
-        if torch.equal(nxt, down):
+        if check_convergence and torch.equal(nxt, down):
             break
         down = nxt
     return source, up, down, fan, row
@@ -219,14 +225,14 @@ def spread(owner, observed, *, percepts=None, structure_=None):
     graph = structure(owner, observed.device) if structure_ is None else structure_
     depth = 4 * (len(owner._order_caps()) + 1)
     with torch.no_grad():
-        _, up, down, _, _ = _flow(graph, observed, percepts, depth)
+        _, up, down, _, _ = _flow(graph, observed, percepts, depth, native=structure_ is None)
     return union(up, down), graph
 
 
 def _staged(owner, observed, percepts, stage):
     graph = structure(owner, observed.device)
     depth = 4 * (len(owner._order_caps()) + 1)
-    flow = _flow(graph, observed, percepts, depth)
+    flow = _flow(graph, observed, percepts, depth, native=True)
     return _read_stage(graph, flow, stage)
 
 
@@ -235,11 +241,10 @@ def _read_stage(graph, flow, stage):
     lo, hi = ((0, graph.concepts) if stage == 'concepts' else (graph.percept_start, graph.part_start))
     if fan is None:
         return union(up, down)[lo:hi]
-    own = (graph.parent >= lo) & (graph.parent < hi)
-    weight = graph.weight.to(source)[own]
-    child, parent = graph.child[own], graph.parent[own]
-    share = weight / fan.index_select(0, child)
-    reading = _carry(union(source, up), child, parent, share, graph.negated[own], graph.size)
+    # Each parent reduces its incoming edges independently. Slicing the
+    # destination stage keeps exactly its local pullback with fixed-size edges.
+    share = graph.weight.to(source) / fan.index_select(0, graph.child)
+    reading = _carry(union(source, up), graph.child, graph.parent, share, graph.negated, graph.size)
     return union(reading[lo:hi], down[lo:hi])
 
 
@@ -335,7 +340,7 @@ def look_cost(owner, before, arrived):
     # Both errors read this candidate's topology at the same instant.
     # Only the local stage reattaches its own weights to the detached flow.
     graph = structure(owner, observed.device)
-    flow = _flow(graph, observed, None, 4 * (len(owner._order_caps()) + 1))
+    flow = _flow(graph, observed, None, 4 * (len(owner._order_caps()) + 1), native=True)
     concepts = _read_stage(graph, flow, 'concepts')
     error = (concepts - target).square().mean((0, 2))
     with torch.no_grad():

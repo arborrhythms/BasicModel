@@ -559,3 +559,44 @@ def test_reading_property_intersections_follow_the_native_text_chart():
     actual = torch.compile(reading_property_signatures, backend='eager', fullgraph=True)(
         surface, bounds, lookup, discard)
     assert actual.tolist() == [wanted]
+
+
+@pytest.mark.parametrize('symbol_cycle', [False, True])
+def test_compiled_spread_preserves_local_stage_gradient(symbol_cycle):
+    import ConceptSpread as spread
+
+    # One concept reads one percept, which reads one part. In the second
+    # graph a symbol and the concept can also send evidence around a cycle.
+    symbols = int(symbol_cycle)
+    percept, part = 1 + symbols, 2 + symbols
+    parent = torch.tensor([0, percept] + ([0, 1] if symbol_cycle else []))
+    child = torch.tensor([percept, part] + ([1, 0] if symbol_cycle else []))
+    weight = torch.linspace(.3, .85, len(parent), requires_grad=True)
+    graph = spread.Structure(parent, child, weight, child == 1, 1, symbols, 1, 1, ('a',))
+    observed = torch.tensor([[[.3, .8], [.6, .1]]])
+    parts = observed.flip(-1)
+
+    def local_stage(graph, observed, parts):
+        flow = spread._flow(graph, observed, parts, 12, native=True)
+        return spread._read_stage(graph, flow, 'concepts'), *flow[:3]
+
+    actual, source, up, down = torch.compile(local_stage, fullgraph=True, backend='eager')(
+        graph, observed, parts)
+    fan = torch.zeros(graph.size).index_add(0, child, weight.detach()).clamp_min(torch.finfo(weight.dtype).tiny)
+    mass = torch.zeros(graph.size).index_add(0, parent, weight.detach()).clamp_min(torch.finfo(weight.dtype).tiny)
+    expected_up = torch.zeros_like(source)
+    expected_down = torch.zeros_like(source)
+    for _ in range(12):
+        expected_up = spread._carry(spread.union(source, expected_up), child, parent,
+                                    weight.detach() / fan[child], graph.negated, graph.size)
+    for _ in range(12):
+        expected_down = spread._carry(spread.union(source, expected_up, expected_down), parent, child,
+                                      weight.detach() / mass[parent], graph.negated, graph.size)
+    own = parent == 0
+    local = spread._carry(spread.union(source, expected_up), child[own], parent[own],
+                          weight[own] / fan[child[own]], graph.negated[own], graph.size)
+    expected = spread.union(local[:1], expected_down[:1])
+    for left, right in ((up, expected_up), (down, expected_down), (actual, expected)):
+        torch.testing.assert_close(left, right)
+    torch.testing.assert_close(torch.autograd.grad(actual.sum(), weight)[0],
+                               torch.autograd.grad(expected.sum(), weight)[0])
