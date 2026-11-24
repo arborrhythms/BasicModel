@@ -20318,8 +20318,7 @@ class BasicModel(BaseModel):
             cost = component_cost * components.weight
             self._sentence_expectation_comparison = (cost if self._sentence_expectation_comparison is None
                 else self._sentence_expectation_comparison + cost)
-        # The greedy sentence walk stages one arrival forecast. Every path
-        # is scored against that same forecast, including attention departures.
+        # Score each word against the forecast made from this path’s own prior arrivals.
         word_expected = getattr(self, '_word_expectation', None)
         if word_expected is not None and self.word_expectation_weight > 0:
             mask = self._word_expectation_mask & (self.inputSpace._packed_sentence_ids == sid)
@@ -21065,6 +21064,7 @@ class BasicModel(BaseModel):
                     self._sentence_order_zero_reverse, opened, present, hidden=False)
             from SentenceLooks import WordForecast, Looks
             word_forecast = WordForecast(self)
+            forecast_paths = []
             self.languageSpace._compose_primed_bank = self._sentence_primed_bank
             pool = self._concept_owner().mtm
             self.languageSpace._free_transient_ids[:pool.capacity].copy_(torch.where(pool.transient_used,-1,pool.transient_ids).to(stm[0].device))
@@ -21254,7 +21254,8 @@ class BasicModel(BaseModel):
                         lanes=None if field is None else field.placements()['lanes'].clamp(0,1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
-                word_forecast.begin_path()
+                path_forecast = word_forecast.begin_path()
+                forecast_paths.append(path_forecast)
                 def arrival(index, rows):
                     nonlocal sub, sym
                     from ModelAttention import forecast_percept, observe_percept
@@ -21264,7 +21265,7 @@ class BasicModel(BaseModel):
                     fresh = rows if old is None else rows & ~old[3]
                     lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
                              torch.stack((rows,torch.zeros_like(rows)),-1).to(words))
-                    word_forecast.arrive(index,rows,lanes)
+                    path_forecast.arrive(index,rows,lanes)
                     if bool(fresh.any()):
                         forecast = forecast_percept(self,fresh)
                         payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
@@ -21403,6 +21404,8 @@ class BasicModel(BaseModel):
                             candidate = compose(cache, first)
                         else:
                             candidate = first
+                            forecast_paths.append(forecast_paths[0])
+                            forecast_paths[0].publish()
                             attention_trials.append(attention_trials[0])
                             field_trials.append(field_trials[0])
                             look_trials.append(look_trials[0])
@@ -21415,6 +21418,7 @@ class BasicModel(BaseModel):
                 parts = torch.stack(cost_parts, 1)
                 audit = comparison(parts, present)
                 selected = audit['winner']
+                WordForecast.keep(forecast_paths, selected)
                 if growth:
                     GrowthTrial.keep_forecasts(self, growth, selected)
                 wins, costs = selected.ne(0), audit['costs']

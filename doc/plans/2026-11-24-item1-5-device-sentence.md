@@ -33,6 +33,10 @@ Alec specified that each sequence link addresses its own idea and the next link,
 
 Each trial owns its new STM rows. The opening can be shared. Each forecast sees only the observations already made by its own path. The single whole-field reconstruction and the existing clock cadence are preserved.
 
+Word expectation advances separately as each trial observes a word. For example, an exploration that opens on B scores B before observing A, even if the greedy walk reached B after A. Scoring an output-only departure can reuse the greedy reading because all arrivals are identical. A further optimization would share the forecasts up to the first differing observation, then batch the suffixes. Reuse requires identical causal inputs, including arrival order, active rows and evidence lanes. The same target word at the same source position is insufficient.
+
+A morphological basic percept is defined by its parts and wholes. The existing percept code assembles their for and against evidence and reads it through Pi. Spelling across the sentence boundary uses ordered observed bytes. The centroid and its associated evidence must still come from the percept definition, including learned parts and the evidence supplied by their holders.
+
 ## Copy the retained head into LTM
 
 Each stream has at most one root per tick. Four pages read together can each close with a different root at the same tick. Index ModelState by batch row to select the closing stream and its time. The current implementation broadcasts a scalar clock across rows. An idea root resolves to an LTM0 row. A relation root resolves to an LTM1 ordered pair whose endpoints retain their reference types. STM0 ideas copy to LTM0 and STM1 links copy to LTM1 under the same logical structure.

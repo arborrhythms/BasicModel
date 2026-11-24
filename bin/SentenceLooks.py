@@ -166,7 +166,7 @@ def word_request(model, concepts, index):
 
 
 class WordForecast:
-    """Shared first-arrival forecast and a ledger at each native word place."""
+    """One immutable opening and a separate causal word history for each path."""
     def __init__(self, model):
         from ModelAttention import stage_symbol_bank
         from WordExpectation import WordArrivals
@@ -186,27 +186,59 @@ class WordForecast:
         stage_symbol_bank(model, owner)
         self.reader = WordArrivals(owner, self.bank, self.valid, gain=model.word_expectation_gain,
                                   epsilon=model.expectation_epsilon, saturation=model.expectation_saturation)
-        self.arrived = torch.zeros_like(self.live)
-        self.targets = torch.full_like(self.identities, -1)
-        self.expected = None
-
     def begin_path(self):
         from copy import copy
-        # WordArrivals replaces its tensors on every observation. A shallow
-        # copy thus shares the immutable opening, never the next path's suffix.
-        self.path = copy(self.reader)
+        path = copy(self)
+        if self.reader is not None:
+            # WordArrivals replaces its context tensors on observation.
+            path.reader = copy(self.reader)
+            path.arrived = torch.zeros_like(self.live)
+            path.targets = torch.full_like(self.identities, -1)
+            path.expected = None
+            path.publish()
+        return path
+
+    def publish(self):
+        if self.reader is None:
+            return
+        self.model._word_expectation_input = (self.codes, self.bank, self.valid, self.targets)
+        self.model._word_expectation = self.expected
+        self.model._word_expectation_mask = self.arrived
+        self.model.conceptualSpace._word_column = None if self.expected is None else self.expected.content
+
+    @staticmethod
+    def keep(paths, winners):
+        from copy import copy
+        from WordExpectation import ExpectedWords
+        first = paths[0]
+        if first.reader is None:
+            return
+        if all(path is first for path in paths):
+            first.publish()
+            return
+        retained = copy(first)
+        streams = torch.arange(len(winners), device=winners.device)
+        def choose(values):
+            return torch.stack(values, dim=1)[streams, winners]
+        retained.targets = choose([path.targets for path in paths])
+        retained.arrived = choose([path.arrived for path in paths])
+        template = next((path.expected for path in paths if path.expected is not None), None)
+        if template is not None:
+            retained.expected = ExpectedWords(*(choose([
+                getattr(path.expected, item.name) if path.expected is not None
+                else torch.zeros_like(getattr(template, item.name)) for path in paths])
+                for item in fields(ExpectedWords)))
+        retained.publish()
 
     def arrive(self, index, rows, lanes):
         if self.reader is None:
             return
         from WordExpectation import ExpectedWords
         fresh = rows & ~self.arrived[:,index] & self.live[:,index]
-        shared = rows & ~fresh & self.live[:,index]
-        if bool(shared.any()):
-            self.path.observe(self.codes[:,index], shared, lanes)
-        if not bool(fresh.any()):
-            return
-        current = self.path.step(self.codes[:,index],self.identities[:,index],active=fresh,lanes=lanes)
+        # Score from this path's prefix. A repeated occurrence still enters
+        # its observed context, but only its first forecast occupies the ledger.
+        current = self.reader.step(self.codes[:, index], self.identities[:, index],
+                                   active=rows & self.live[:, index], lanes=lanes)
         mask = (torch.arange(self.live.shape[1],device=rows.device)==index)[None] & fresh[:,None]
         values=[]
         for item in fields(ExpectedWords):
@@ -216,12 +248,9 @@ class WordForecast:
             condition = mask.reshape(*mask.shape,*([1]*(value.ndim-2)))
             values.append(torch.where(condition,value,prior))
         self.expected = ExpectedWords(*values)
-        self.arrived |= mask
+        self.arrived = self.arrived | mask
         self.targets = torch.where(mask,self.identities,self.targets)
-        self.model._word_expectation_input = (self.codes,self.bank,self.valid,self.targets)
-        self.model._word_expectation = self.expected
-        self.model._word_expectation_mask = self.arrived
-        self.model.conceptualSpace._word_column = self.expected.content
+        self.publish()
 
 
 class Looks:

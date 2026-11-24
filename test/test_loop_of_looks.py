@@ -261,3 +261,49 @@ def test_5_a_read_with_no_sentence_admits_no_word(tmp_path, monkeypatch, eager_r
     assert not reading.accepted.any()
     assert not model.inputSpace._ar_grammar_leaf_mask.bool().any()
     assert int(reading.looks.sum()) == 0
+
+
+def test_explorations_score_their_own_prefix_and_keep_winning_gradients(monkeypatch):
+    from types import SimpleNamespace
+    from Layers import SymbolExpectation
+    from SentenceLooks import WordForecast
+    from WordExpectation import WordArrivals
+    import ModelAttention
+
+    torch.manual_seed(307)
+    owner = SymbolExpectation(n_symbols=4, max_depth=4, n_dim=4, concept_dim=4)
+    codes = torch.eye(4)[None].expand(2, -1, -1)
+    ids = torch.arange(4)[None].expand(2, -1)
+    active = torch.ones_like(ids, dtype=torch.bool)
+    owner.set_symbol_bank(codes[0])
+    owner.enabled_levels = ('word',)
+    model = SimpleNamespace(inputSpace=SimpleNamespace(), conceptualSpace=SimpleNamespace(),
+        symbolSpace=SimpleNamespace(expectation=owner), _attention_forms=(None, ids, codes, active),
+        word_expectation_gain=1., expectation_epsilon=1e-6, expectation_saturation='clip')
+    monkeypatch.setattr(ModelAttention, 'stage_symbol_bank', lambda *_: None)
+    opening = WordForecast(model)
+    lanes = torch.tensor([[1., 0.], [0., 1.]])
+    paths, costs = [], []
+    for sequence in ([0, 1, 2], [1, 0, 2], [2, 1, 0]):
+        path = opening.begin_path()
+        isolated = WordArrivals(owner, codes, active)
+        losses = []
+        for slot in sequence:
+            path.arrive(slot, active[:, slot], lanes)
+            expected = isolated.step(codes[:, slot], ids[:, slot], lanes=lanes)
+            torch.testing.assert_close(model._word_expectation.activation[:, slot], expected.activation[:, 0])
+            losses.append(expected.loss[:, 0])
+        costs.append(torch.stack(losses).sum(0))
+        paths.append(path)
+    assert not torch.equal(paths[0].expected.activation[:, 1], paths[1].expected.activation[:, 1])
+    winners = torch.tensor([2, 0])
+    WordForecast.keep(paths, winners)
+    assert model._word_expectation_mask.tolist() == [[True, True, True, False]] * 2
+    parameters = tuple(owner.word_predictor.parameters())
+    actual = torch.autograd.grad(model._word_expectation.loss.sum(), parameters, allow_unused=True)
+    reference = torch.autograd.grad(costs[2][0] + costs[0][1], parameters, allow_unused=True)
+    for left, right in zip(actual, reference, strict=True):
+        if right is None:
+            assert left is None
+        else:
+            torch.testing.assert_close(left, right)
