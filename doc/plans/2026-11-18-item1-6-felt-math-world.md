@@ -4151,3 +4151,140 @@ four wires to an axis or three is in `doc/FutureWork.md` with G9's measure.
 
 `origin/main` stands at `ad8fafea92`, where this branch was cut; there is
 nothing of item 1.5 to take in yet.
+
+## 19. Alec on the percept of a pixel, the object and the name (2026-11-24)
+
+Asked question 2 of C.5 (what the percept of a pixel is) and question 3
+(the object before its word), after the review of the grid:
+
+> The object should be made at the same time as the word, at this point,
+> because we don't treat the word as a representation of something else: it
+> is, prima facia, also an object. But in virtue of a test which we should
+> call "naming" (or perhaps the name of the corresponding Piagetian stage),
+> they come to be associated. We need to replace the logic that creates the
+> meta concepts directly, and that learns the association of the meta as a
+> PI that includes both concepts in virtue of them being presented at the
+> same time.
+>
+> Meta concepts should be introduced by a model variable
+> (createMetaConcepts) until we make sure the architecture supports it and
+> we develop a test that works reliably to introduce names for things.
+>
+> The percept of a pixel is just a value, 0..1 like other percepts. Percepts
+> grow in size on the two percept pyramids to include surrounding areas, and
+> their part structure is the same as their surface structure: they are
+> values sorted by < (improper parthood).
+
+### 19.1 The percept of a pixel (question 2, answered)
+
+**Decided.** The percept of a pixel is its value, from 0 to 1, and nothing
+of its place. Its place is on the occurrence, in the twelve wires. The same
+value at two places is one percept met twice.
+
+**Against the source.** `doc/Spaces.md` ("A level at a place") and
+`BasicPercepts` have it otherwise today: one basic percept for each pair of
+place and level, and for each place a table of values on coordinates of its
+own (`value_coordinates(width, place)` is a keyed permutation of the bins;
+`perceive_value(value, place=...)` reserves the row by its place). The
+reason given there is that XOR's two inputs stay distinct. With his answer
+they are told apart by their wires and by the reading each has at its own
+place in the field, and the table by place goes.
+
+*Values sorted by <.* This is `value_code` as built, with the bins in
+order: the code of a value is the bins at or below it, a lower value's code
+lies inside a higher one's, and `partOf` on two of them is less-than or
+equal, which is his improper parthood. "Their part structure is the same as
+their surface structure" is what `doc/Mereology.md` says of a scalar: the
+growth of the parts and the contraction of the wholes move one cut, so the
+two halves of the code are one.
+
+*What 0..1 is, for a pixel.* Claude takes it as the intensity over its
+greatest, the step over 255. The numeric stem's `feeling` is a chart of the
+numbers from zero to infinity onto 0..1 and is not needed for a number that
+already lies there. With 64 bins a bin is four steps: the variation of one
+value of the corpus (seven steps) falls in two or three neighbouring bins,
+and two values (25 steps apart) are six bins apart.
+
+*The two percept pyramids.* Claude reads them as the part tower and the
+whole tower (`PartSpace`, bottom-up; `WholeSpace`, top-down), on which a
+percept higher up covers a greater area than the percepts under it, as a
+form covers its characters. The rule that builds a form's code from its
+parts then builds an area's from its pixels: on the part tower the greatest
+of its parts' codes, which for values is the greatest value in the area; on
+the whole tower the least of its wholes' codes. Both are cuts of the one
+sorted line. **This reading is to be confirmed by him before the round that
+builds areas**; round one does not rest on it, since it builds the pixel
+alone.
+
+**One reader.** There is to be no second path (H.5), so the answer holds
+for every number the model feels: an image's pixels, the numeric stem's
+places (`NumericPercepts`) and the value beside the words
+(`ScalarPercepts`). Round one therefore changes how the numeric XOR proofs
+and `data/MM_image.xml` are read, and measures them before and after.
+
+### 19.2 The object and its word (question 3, answered otherwise than asked)
+
+**Decided.**
+
+1. *A word is an object.* It is not, at first, a representation of
+   anything. The object and the word are made alike and at the same time,
+   each from its own occurrences. Neither of C.5's two ways is taken: the
+   object is not made for the word (as built, `PerceptCollections.observe`
+   gathers what a word recurs with under `defining_word`), and it is not
+   made before the word by a rule of its own (Claude's proposal of gaps).
+2. *Naming.* The two come to be associated in virtue of a test, called
+   "naming". It is a stage in the sense of `doc/Training.md`: what gates is
+   the test, and nothing is gated inside the model. Piaget's name for what
+   appears there is the semiotic (or symbolic) function, at the close of
+   the sensorimotor period; Claude would keep "naming", which says what is
+   measured.
+3. *The meta concept is learned.* The logic that makes a meta concept
+   directly is to be replaced by one that learns it: a Pi that includes
+   both concepts, in virtue of their being presented at the same time.
+   Directly made today: `interpret` makes a word's meta concept, with a
+   blank object where the word has none, when it interprets a word whose
+   meta concept does not yet exist (`Interpret.blank`, `Interpret.define`;
+   `doc/Orders.md`, "A meta concept and the blank object"); and the tie of
+   the felt path gathers an object under its `defining_word` and keeps its
+   certainty in `WordTies`.
+4. *`createMetaConcepts`.* A model variable introduces meta concepts until
+   the architecture supports learning them and a test introduces names
+   reliably.
+
+**Claude's reading of 4, to be confirmed.** The key governs the direct
+making: where `createMetaConcepts` is true, `interpret` makes meta concepts
+as it does today; where it is false, none is made directly and a name is
+learned or not at all. Its default in `data/model.xml` is true, so that
+every model of item 1.7 and both stopping gates are as they are; the felt
+world's configurations set it false. When naming is reliable the key and
+the direct logic are removed together. This is a second path kept by his
+word, the one exception to H.5's rule against one.
+
+**What it agrees with.** Rule 31 as `doc/Training.md` has it: "the meta
+concept of the two ... is learned from their consistent association, when
+the word's concept and the object's have been present together on enough
+occasions", and Helen Keller at the well-house. `doc/Architecture.md` names
+three ways a symbol is made: implicitly by the Pi, by MTM's nomination "on
+recognizing that its constituents always occur together", or by `interpret`
+for a meta concept. His answer removes the third in favour of the second.
+
+**What it leaves open, for round two's design.** With no word to gather
+them, something must still make one object of the several steps of one
+value (72 to 78 are all "three"). The candidates: the bins of the value's
+code, which already hold neighbouring steps together; the contexts that
+teach the Sigma of order zero, the word among them; a larger percept of the
+pyramid. Claude proposes one in round two's design, after reading how the
+Sigma of order zero is taught, and before any text.
+
+### 19.3 The rounds, as they now stand
+
+C.4's table, with these answers:
+
+| Round | Builds | Measured from input to output | Waits on |
+|---|---|---|---|
+| One: the image is perceived | A value is a percept whatever its place, in one table of values, for every reader of numbers; an image's box beside its sentence's line; the `scene` of a row loaded, `null` told from `[]`; the opening pass puts the image back and is charged for it | An image alone is put back, at varied steps and at places not met; a sentence with its image puts both back; a sentence with no image is charged nothing for one; the numeric proofs and both gates hold | nothing |
+| Two: objects, words and naming | The felt thing's concept made from its own occurrences, as a word's is; `createMetaConcepts`; the name learned as a Pi over both concepts from their being present together; the test "naming" | Categories 1 and 2: with the key false, a word raises its object and an object its word, at the reserved step and the reserved places; with others present | his word on the reading of `createMetaConcepts`; Claude's proposal for what gathers the steps of one value |
+| Areas | Percepts that grow on the two pyramids | The categories about size | his word on the reading of the pyramids |
+| Three: the first milestone | What reads an arrangement | Category 14's contrast sets, per answer, on pairs held out | questions 4 and 5 of C.5 |
+
+Questions 4 to 8 of C.5 keep their defaults as defaults.
