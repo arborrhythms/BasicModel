@@ -20218,9 +20218,10 @@ class BasicModel(BaseModel):
         order = getattr(self, '_sentence_read_order', None)
         if field is None and order is None:
             return record.word_valid[row].nonzero().flatten()
-        positions = field.source_order(row) if field is not None else order[row]
-        return torch.tensor([w for w in positions if bool(record.word_valid[row, w])],
-                            dtype=torch.long, device=record.word_rows.device)
+        if field is None:
+            positions = torch.as_tensor(order[row], device=record.word_rows.device, dtype=torch.long)
+            return positions[record.word_valid[row, positions]]
+        return field.source_positions(row, valid=record.word_valid[row])
 
     def _student_compose_states(self, record, row):
         lesson = getattr(self.languageSpace, '_compose_lesson_states', None)
@@ -21049,13 +21050,14 @@ class BasicModel(BaseModel):
             # A sentence is perceived once, after its predecessor's commit.
             from PrependedSymbols import refresh_words
             refresh_words(self, sid)
+            word_slots = torch.arange(W, device=words.device)
             cache = {}
             if not self.grammar_phases.vector:
                 for w in range(W):
                     gate = active[:, w] & (sentence_ids[:, w] == sid)
                     if not bool(gate.any()):
                         continue
-                    index = torch.tensor(w, device=words.device)
+                    index = word_slots[w]
                     from ModelAttention import forecast_percept, observe_percept
                     forecast = forecast_percept(self, gate)
                     payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
@@ -21277,17 +21279,17 @@ class BasicModel(BaseModel):
                     latches = [latches[1], current_feedback]
                 path_forecast = word_forecast.begin_path(reading_walk)
                 forecast_paths.append(path_forecast)
-                def arrival(index, rows):
+                def arrival(word, rows):
                     nonlocal sub, sym
                     from ModelAttention import forecast_percept, observe_percept
                     from SentenceAttention import masked_payload
-                    word = int(index)
+                    index = word_slots[word]
                     old = cached.get(word)
                     fresh = rows if old is None else rows & ~old[3]
                     lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
                              torch.stack((rows,torch.zeros_like(rows)),-1).to(words))
                     path_forecast.arrive(index,rows,lanes)
-                    if bool(fresh.any()):
+                    if old is None or bool(fresh.any()):
                         forecast = forecast_percept(self,fresh)
                         payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
                         payload, sym = symbolize(payload,empty_feedback,index,None,sym)
@@ -21323,7 +21325,7 @@ class BasicModel(BaseModel):
                     for word in range(W):
                         rows = active[:,word] & (sentence_ids[:,word]==sid)
                         if bool(rows.any()):
-                            arrival(torch.tensor(word,device=words.device),rows)
+                            arrival(word,rows)
                 look_trials.append(looks)
                 attention_trials.append(reading)
                 if separate_closing:

@@ -136,8 +136,18 @@ class SentenceField:
         result['lanes'] = torch.einsum('bkw,bwf->bkf', self.support_window, self.support.sum(-2))
         return result
 
+    def source_positions(self, row, *, valid=None):
+        """Source columns of the accepted arrivals in this stream's read order."""
+        if not self.reads:
+            return self.positions.new_empty(0)
+        columns = torch.stack([entry['index'] for entry in self.reads])
+        accepted = torch.stack([entry['rows'][row] for entry in self.reads])
+        if valid is not None:
+            accepted = accepted & valid[columns]
+        return columns[accepted]
+
     def source_order(self, row):
-        return [int(entry['index']) for entry in self.reads if bool(entry['rows'][row])]
+        return self.source_positions(row).tolist()
 
     def full_admission(self):
         return self.support.new_zeros(self.scope.shape).scatter(1,

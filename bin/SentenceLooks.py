@@ -460,8 +460,11 @@ class Looks:
             model._sentence_look_fields[self.sid] = tuple(self.fields)
             # Batch rows can interpret different words at the same look.
             try:
-                for value in index[interpreted].unique().tolist():
-                    arrive(torch.tensor(value, device=index.device), interpreted & (index == value))
+                # Each stream offers at most one source slot per look. Keep
+                # the batch width fixed at the serial grammar handoff.
+                slots = torch.where(interpreted, index, -1).tolist()
+                for word in sorted(set(slots) - {-1}):
+                    arrive(word, interpreted & (index == word))
             finally:
                 model.__dict__.pop('_fragment_leaf', None)
         return state.reading()
