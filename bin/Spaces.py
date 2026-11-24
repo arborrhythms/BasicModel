@@ -11577,7 +11577,7 @@ class PartSpace(Space):
         }
         if track_parts and identity is not None and len(identity.added) > prior_parts:
             self._forward_input['block_parts'] = identity.block_part_visibility(
-                prior_parts, new_forms, batch, dev)
+                prior_parts, new_forms, batch, dev, sentence_starts=sentence_starts)
         if layout is not None:
             from FieldReverse import byte_rows
             width = byte_count

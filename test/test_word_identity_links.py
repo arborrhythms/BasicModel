@@ -327,3 +327,97 @@ def test_later_packed_sentence_cannot_teach_an_earlier_opening(monkeypatch, eage
         assert (first <= last).all() and (first < last).any()
     finally:
         model.End()
+
+
+def test_promoted_pi_changes_at_the_observing_streams_opening(monkeypatch, eager_reading):
+    import torch
+    from BasicPercepts import BasicPercepts, held_at
+    from Models import BaseModel
+    from What import What
+    from data import Data
+
+    model, _ = BaseModel.from_config('data/XOR_grammar.xml', data=Data())
+    data = model.inputSpace.data
+    optimizer = model.getOptimizer()
+    basic = model._concept_owner().basic_percepts
+
+    def present(pages):
+        with data.runtime_batch(pages):
+            data.has_supervised_outputs = False
+            source = model.inputSpace.prepInput(pages)
+            model.runBatch(train=True, optimizer=optimizer, batchSize=len(pages), split='runtime',
+                           questions=tuple(What.present(i, split='runtime') for i in range(len(pages))),
+                           batch_override=(source, source.new_empty(len(pages), 0)))
+        model.End()
+        model.dispatch_per_row_reset([True] * len(pages))
+
+    try:
+        for _ in range(4):
+            present(['abc', 'abc'])
+            promoted = [r for r, name in basic.forms.items() if name == b'abc' and basic.promoted[r]]
+            if promoted:
+                break
+        row, = promoted
+        before = basic.bank_codes((row,))[0].clone()
+        original = BasicPercepts.lookup
+        reads = []
+
+        def capture(self, percepts, brackets, rows, **options):
+            bank = original(self, percepts, brackets, rows, **options)
+            if self is basic and bank.revisions is not None and row in bank.rows and not reads:
+                at = bank.rows.index(row)
+                revised = bank.revisions
+                version = revised.at(bank.span[..., 0])[revised.indices.tolist().index(at)]
+                members = held_at(bank, bank.table)[0][at]
+                for b in range(2):
+                    index = bank.span[b].tolist().index([0, 3])
+                    reads.append((version[b, index].clone(), members[b, index].item()))
+            return bank
+        monkeypatch.setattr(BasicPercepts, 'lookup', capture)
+        present(['abc', 'abc ab'])
+        after = basic.bank_codes((row,))[0]
+        assert not torch.equal(before, after)
+        torch.testing.assert_close(reads[0][0], before, atol=0, rtol=0)
+        torch.testing.assert_close(reads[1][0], after, atol=0, rtol=0)
+        assert [score for _, score in reads] == [1., 1.]
+    finally:
+        model.End()
+
+
+def test_page_scoped_pi_and_inverse_match_independent_gradients():
+    import torch
+    from types import SimpleNamespace
+    from BasicPercepts import held_at
+    from BlockPercepts import RowRevisions
+    from FieldReverse import spelling_scores
+
+    # The two pages change different rows at different byte offsets. Binary
+    # coordinates deliberately exercise ties in the least-of-greater fold.
+    rng = torch.Generator().manual_seed(112)
+    coords = torch.randint(2, (4, 2, 12), generator=rng).float()
+    versions = torch.randint(2, (2, 2, 2, 2, 12), generator=rng).float()
+    revised = RowRevisions((0, 3), torch.tensor([0, 3]), torch.tensor([[0, 3], [0, 5]]), versions)
+    offsets = torch.tensor([[0, 3, 5], [0, 3, 5]])
+    spans = torch.stack((offsets, offsets + 1), -1)
+    b = SimpleNamespace(codes=coords, identity_width=6, width=12, span=spans, revisions=revised)
+    data = torch.randint(2, (2, 3, 12, 2), generator=rng).float().requires_grad_()
+    held = torch.rand(4, 2, 3, generator=rng, requires_grad=True)
+    selected = [3, 1, 0]
+    actual = (*held_at(b, data), spelling_scores(held, coords[:, 0], selected, offsets, revised))
+    expect = [torch.empty_like(x) for x in actual]
+    for stream, starts in enumerate(([0, 3], [0, 5])):
+        for i, position in enumerate((0, 3, 5)):
+            when = int(position >= starts[1])
+            codes = coords.clone()
+            codes[[0, 3]] = versions[:, stream, when]
+            cell = data[stream:stream+1, i:i+1]
+            for j, x in enumerate(held_at(b, cell, codes=codes)):
+                expect[j][:, stream, i] = x[:, 0, 0]
+            expect[-1][stream, i] = spelling_scores(held[:, stream:stream+1, i:i+1],
+                                                    codes[:, 0], selected, offsets[stream:stream+1, i:i+1])[0, 0]
+    for a, e in zip(actual, expect):
+        torch.testing.assert_close(a, e)
+    def gradients(outputs):
+        return torch.autograd.grad(sum(x.sum() for x in outputs), (data, held))
+    for a, e in zip(gradients(actual), gradients(expect)):
+        torch.testing.assert_close(a, e)

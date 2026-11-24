@@ -81,6 +81,7 @@ class PerceptBank:
     # holds: a part's event, a stored form, or a run of a row's parts.
     # ``None``: every occurrence can.
     holder: torch.Tensor = None
+    revisions: object = None
     # Derived from this table’s spans. Replacing its geometry starts a fresh scope.
     scope: torch.Tensor = field(default=None, init=False, repr=False, compare=False)
     # Request-independent Pi reads, scoped to this sentence's opening:
@@ -422,13 +423,6 @@ def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
     return parts, counts, locations
 
 
-def part_openings(rows, block_parts):
-    """First byte of the sentence where each page can use a part."""
-    born, openings = block_parts
-    at = torch.searchsorted(born, rows.contiguous()).clamp_max(len(born) - 1)
-    return torch.where(born[at] == rows, openings[:, at], 0)
-
-
 def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False, available_from=None):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
@@ -448,7 +442,7 @@ def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elem
     return torch.where(present, parts, 0.), torch.where(present, tight, 1.)
 
 
-def held_at(bank, table, codes=None):
+def held_at(bank, table, codes=None, *, spans=None):
     """Each row of ``bank`` at each attended percept of ``table`` ``[B, A,
     columns, 2]``, read from the graded what columns by the least and the
     greatest (each ``[rows, B, A]``): ``part``, the least of the percept's
@@ -459,6 +453,7 @@ def held_at(bank, table, codes=None):
     is graded too: ``max(wire, 1 - code)`` stands for a part it holds to the
     degree ``code``. At codes of 0 and 1 these are the read of
     :meth:`BasicPercepts.read_points`."""
+    local = getattr(bank, 'revisions', None) if codes is None else None
     codes = bank.codes if codes is None else codes
     iw, width = bank.identity_width, bank.width
     point = table[..., :width, 0].to(codes)
@@ -466,6 +461,21 @@ def held_at(bank, table, codes=None):
     part = least_of_greater(point[..., :iw], 1 - row[:, :iw])
     whole = least_of_greater(1 - point[..., iw:], row[:, iw:])
     added = 1 - least_of_greater(1 - point[..., :iw], 1 - against[:, :iw])
+    if local is not None:
+        offsets = (bank.span if spans is None else spans)[..., 0]
+        revised = local.at(offsets)
+        pos, neg = revised.unbind(-2)
+        def least(wires, constants):
+            if not wires.shape[-1]:
+                return constants.new_ones(constants.shape[:-1])
+            with torch.no_grad():
+                at = torch.maximum(wires[None], constants).argmin(-1, keepdim=True)
+            address = torch.arange(wires.shape[0] * wires.shape[1], device=wires.device).reshape(wires.shape[:2])
+            seen = wires.reshape(-1)[at.squeeze(-1) + address * wires.shape[-1]]
+            return torch.maximum(seen, constants.gather(-1, at).squeeze(-1))
+        part = part.index_copy(0, local.indices, least(point[..., :iw], 1 - pos[..., :iw]))
+        whole = whole.index_copy(0, local.indices, least(1 - point[..., iw:], pos[..., iw:]))
+        added = added.index_copy(0, local.indices, 1 - least(1 - point[..., :iw], 1 - neg[..., :iw]))
     return part, whole, added
 
 
@@ -1254,7 +1264,7 @@ class BasicPercepts(nn.Module):
             basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
             parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog,
                                             escaped_elements=identity.escaped_elements(device),
-                                            available_from=None if block_parts is None else part_openings(rows, block_parts))
+                                            available_from=None if block_parts is None else block_parts.openings(rows))
             codes[..., :self.identity_width] = parts
             held = torch.minimum(held, tight)
         elif identity is not None and O:
@@ -1397,7 +1407,7 @@ class BasicPercepts(nn.Module):
         if block_parts is not None:
             from WordIdentity import text_of
             addresses = rank.new_tensor([identity.atoms.get(('part', text_of(form)), -1) for form in forms])
-            available_from = part_openings(addresses, block_parts)
+            available_from = block_parts.openings(addresses)
         spelled, learned, keys = spelling_occurrences(surface, spellings, groups, rank, known, len(nominated),
                                                      available_from=available_from)
         return spelled, learned, keys, text.shape[1]
@@ -1523,9 +1533,11 @@ class BasicPercepts(nn.Module):
         observed = (seen.gather(1, ends[..., 1]) - seen.gather(1, ends[..., 0])) == spans[..., 1] - spans[..., 0]
         activity = (real & observed)[..., None].expand(-1, -1, 2).to(dtype)
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
+        from BlockPercepts import revisions
+        local = revisions(self, rows, options.get('block_parts'))
         bank = PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
-                           when_band, registry, holder)
+                           when_band, registry, holder, local)
         object.__setattr__(bank, 'scope', holds | containing)
         return bank
 
@@ -1593,7 +1605,7 @@ class BasicPercepts(nn.Module):
         B, A = presence.shape
         if rows:
             if basis is None:
-                part, whole, added = held_at(bank, look.table)
+                part, whole, added = held_at(bank, look.table, spans=look.span)
                 outside = self.outside(look.table, rows, bank.width)
                 factor = self.place_factor(look.table, rows)
             else:

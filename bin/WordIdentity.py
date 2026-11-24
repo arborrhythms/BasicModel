@@ -311,12 +311,14 @@ class WordIdentity(nn.Module):
         return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding,
                                     escaped_elements=escapes, form_rows=forms if identify else None)
 
-    def block_part_visibility(self, prior_count, observed, streams, device):
+    def block_part_visibility(self, prior_count, observed, streams, device, *, sentence_starts=None):
         """Which independent pages witnessed each new part before block consolidation."""
         from itertools import islice
         unavailable = torch.iinfo(torch.long).max
         born = []
+        runs = []
         for run in islice(reversed(self.added), len(self.added) - prior_count):
+            runs.append(bytes_of(run))
             between = self.added[run]
             if run in observed:
                 starts = [observed[run].get(b, unavailable) for b in range(streams)]
@@ -332,8 +334,13 @@ class WordIdentity(nn.Module):
                           for b in range(streams)]
             born.append((self.atoms[('part', run)], starts))
         born.sort()
-        return (torch.tensor([part for part, _ in born], dtype=torch.long, device=device),
-                torch.tensor([starts for _, starts in born], dtype=torch.long, device=device).T)
+        from BlockPercepts import BlockParts
+        starts = sentence_starts if sentence_starts is not None else [[0]] * streams
+        count = max(1, max(map(len, starts)))
+        return BlockParts(torch.tensor([part for part, _ in born], dtype=torch.long, device=device),
+                          torch.tensor([at for _, at in born], dtype=torch.long, device=device).T,
+                          torch.tensor([list(row) + [unavailable] * (count - len(row)) for row in starts],
+                                       dtype=torch.long, device=device), tuple(runs))
 
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""

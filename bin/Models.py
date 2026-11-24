@@ -21117,7 +21117,8 @@ class BasicModel(BaseModel):
             if self._sentence_reconstruction:
                 from SentenceField import reconstruction, charge
                 opened = self._sentence_open_fields[sid]
-                self._sentence_order_zero_reverse = reconstruction(self, opened)
+                block_parts = (getattr(self.perceptualSpace, '_forward_input', None) or {}).get('block_parts')
+                self._sentence_order_zero_reverse = reconstruction(self, opened, block_parts=block_parts)
                 self._opening_errors = Error(row_mask=present)
                 # These text brackets came from reading_forms on the delivered
                 # surface. A joined modality has its own coordinate range.
@@ -23966,13 +23967,17 @@ class BasicModel(BaseModel):
         """Reverse the perceptual boundary (percept space_role → input)."""
         return self.perceptualSpace.reverse(sub)
 
-    def reverse(self, x, *, field):
+    def reverse(self, x, *, field, block_parts=None):
         """The common grammar-free decoder, from order zero to input percepts."""
         if self.numeric_percepts is not None:
             value = self.numeric_percepts.reverse(field)
             x.set_event(value)
             return x
-        x = self._reverse_body(x, field=field)
+        if block_parts is None:
+            x = self._reverse_body(x, field=field)
+        else:
+            from FieldReverse import reverse
+            x = reverse(self, x, field, block_parts=block_parts)
         # Phase 7 (painting reverse): carry the conceptual reconstruction
         # branch across the PS handoff (the perceptual reverse may swap
         # subspace objects) so it reaches InputSpace.reverse riding the
