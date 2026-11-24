@@ -373,11 +373,11 @@ def credit(model, exploit, path, active):
 
 def objectives(paths, parts, active, draws, *, selected=None):
     """Train the sentence inverse on its admitted reading in each stream."""
-    from SentenceCredit import comparison, reader_weights
+    from SentenceCredit import costs_and_winner, reader_weights
     from ObjectiveOwnership import registry_costs
     from SentenceTraining import combine
     if selected is None:
-        selected = comparison(parts, active)['winner']
+        _, selected = costs_and_winner(parts, active)
     weights = reader_weights(parts, active, draws, winner=selected)
     result = {}
     scale = 2. / len(paths)
@@ -494,7 +494,7 @@ def keep_output(model, paths, selected, sid):
 @trial_activity(commit=True)
 def output_only(model, understanding, questions, *, score=None):
     """A batch without a sentence read uses the same path judge, over output."""
-    from SentenceCredit import comparison, departure, reader_weights
+    from SentenceCredit import costs_and_winner, departure, reader_weights
     from WalkTrials import ThoughtTrialState, generate_credit
     from ObjectiveOwnership import policy_objective
     closed = any(field is not None and field.thought_completed
@@ -537,8 +537,8 @@ def output_only(model, understanding, questions, *, score=None):
             effects.append(ThoughtTrialState(model))
         values = torch.stack(costs, 1)
         parts = torch.stack((torch.zeros_like(values), torch.zeros_like(values), values), -1)
-        winner = comparison(parts, active)['winner']
-        weights = reader_weights(parts, active, draws)
+        _, winner = costs_and_winner(parts, active)
+        weights = reader_weights(parts, active, draws, winner=winner)
         for index in range(len(costs)):
             if bool(weights[:, index].any()):
                 model.errors.add('answer', costs[index] * weights[:, index], category='prediction', objective='output')

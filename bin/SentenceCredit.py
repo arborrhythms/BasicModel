@@ -109,26 +109,42 @@ def components(registry, expectation, like, *, answer=None):
         value(expectation), value(answer)), -1)
 
 
-def comparison(parts, active):
-    """Keep the cheapest complete R + A path per row; the exploit wins ties."""
+def costs_and_winner(parts, active):
+    """Select a complete path per stream. The exploit wins a tie."""
     costs = (parts[..., 0] + parts[..., 2]).detach()
-    winner = torch.where(active, costs.argmin(-1), 0)
+    return costs, torch.where(active, costs.argmin(-1), 0)
+
+
+def path_comparison(parts, active):
+    """Retain the numerical comparison used by the sentence and its report."""
+    costs, winner = costs_and_winner(parts, active)
     delta = parts[:, 1:] - parts[:, :1]
     advantage = costs[:, 1:] - costs[:, :1]
     direction = advantage.sign()
-    supports = delta * direction[..., None] > 0
-    supports[..., 1] = False
-    names = ('reconstruction', 'expectation', 'answer')
-    deciding = [('+'.join(name for name, yes in zip(names, row) if yes)
-                 if sign else 'tie:greedy') for row, sign in
-                zip(supports.reshape(-1, 3).tolist(), direction.reshape(-1).tolist())]
     pair = costs.shape[1] == 2
     return dict(costs=costs, keep_costs=costs, components=parts.detach(), winner=winner,
         wins=winner.ne(0), delta=delta[:, 0].detach() if pair else delta.detach(),
-        deciding=deciding, keep_decision=['greedy' if i == 0 else 'explore' for i in winner.tolist()],
         advantage=advantage[:, 0] if pair else advantage,
         advantage_sign=direction[:, 0] if pair else direction,
         policy_against_keep=torch.zeros_like(active), answer_against_keep=torch.zeros_like(active))
+
+
+def describe_comparison(audit):
+    """Materialize human-readable reasons only when the audit is inspected."""
+    if 'deciding' not in audit:
+        direction = audit['advantage_sign'].reshape(-1)
+        supports = audit['delta'].reshape(-1, 3) * direction[:, None] > 0
+        supports[:, 1] = False
+        names = ('reconstruction', 'expectation', 'answer')
+        audit['deciding'] = [('+'.join(name for name, yes in zip(names, row) if yes)
+                             if sign else 'tie:greedy') for row, sign in
+                             zip(supports.tolist(), direction.tolist(), strict=True)]
+        audit['keep_decision'] = ['greedy' if i == 0 else 'explore' for i in audit['winner'].tolist()]
+    return audit
+
+
+def comparison(parts, active):
+    return describe_comparison(path_comparison(parts, active))
 
 
 def score_function(probabilities, scale, mask, costs):
@@ -160,7 +176,7 @@ def reader_weights(parts, active, draw, *, winner=None):
     if len(draws) != parts.shape[1] - 1:
         raise ValueError('one departure draw is required for every explore path')
     if winner is None:
-        winner = comparison(parts, active)['winner']
+        _, winner = costs_and_winner(parts, active)
     exposure = torch.nn.functional.one_hot(winner, parts.shape[1]).bool()
     compose = torch.stack([item['compose_round'] >= 0 for item in draws], -1) if draws else active[:, None][:, :0]
     exposure[:, 1:] |= compose

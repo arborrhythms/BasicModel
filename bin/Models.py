@@ -14279,7 +14279,7 @@ class BasicModel(BaseModel):
         # A reporting switch must not turn both compose objectives into zero.
         self._sentence_training = bool(training)
         self._sentence_supplied_answers = None
-        self._sentence_credit_audits = []
+        self._path_comparisons = []
         self._sentence_departure = None
         self._sentence_answer_questions = ()
         self._sentence_answer_cost = None
@@ -21069,6 +21069,18 @@ class BasicModel(BaseModel):
                                  components.reference_close.exclusion_pairs()).reshape(-1, 3)))
 
     @property
+    def _last_sentence_credit(self):
+        from SentenceCredit import describe_comparison
+        return describe_comparison(self._last_path_comparison)
+
+    @property
+    def _sentence_credit_audits(self):
+        from SentenceCredit import describe_comparison
+        for audit in self._path_comparisons:
+            describe_comparison(audit)
+        return self._path_comparisons
+
+    @property
     def _last_sentence_field(self):
         from functools import partial
         report = getattr(self, '_sentence_field_report', None)
@@ -21539,9 +21551,9 @@ class BasicModel(BaseModel):
                             if fork is not None:
                                 fork.start(dict(draw, narrowing=draw['narrowing']))
                         score(candidate, True)
-                from SentenceCredit import comparison
+                from SentenceCredit import path_comparison
                 parts = torch.stack(cost_parts, 1)
-                audit = comparison(parts, present)
+                audit = path_comparison(parts, present)
                 selected = audit['winner']
                 winner_indices = selected.tolist()
                 WordForecast.keep(forecast_paths, selected)
@@ -21651,8 +21663,8 @@ class BasicModel(BaseModel):
                 bind_choices=tuple(tuple(tuple({key: value.detach() if torch.is_tensor(value) else value
                     for key, value in decision.items()} for decision in plan['decisions'])
                     for plan in observation.get('reference_plans', ())) for observation in observations))
-            self._last_sentence_credit = audit
-            self.__dict__.setdefault('_sentence_credit_audits', []).append(audit)
+            self._last_path_comparison = audit
+            self.__dict__.setdefault('_path_comparisons', []).append(audit)
             from SentenceUnderstanding import SentenceUnderstanding
             record = observations[0]['record']
             for index, observation in enumerate(observations[1:], 1):
