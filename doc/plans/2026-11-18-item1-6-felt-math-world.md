@@ -6072,3 +6072,100 @@ among the cast's plural nouns, so that `how many are here ?` passes the
 check that `are` has a plural subject. Accepted: the word is a recipe's
 datum and no assertion changed.
 
+
+## 29. Alec on 28.8's three points (2026-11-24), and what they change
+
+### 29.1 What makes an object of values (28.3, point 3): not adjacency
+
+> Lets take an example of the binomial coefficients. [1,3,3,1] has as parts
+> [1,2,1] in two places, and [1,1] in three places. that is the part
+> structure that exists over the part/particle tower; the whole/property
+> tower could have the property [4] (it could also have the property "odd
+> numbers", but we keep it simple for now).
+> Those parts and wholes might combine into a basic percept: the formation
+> for that is just as it is for letter percepts.
+
+**Decided.** Claude's rule of touching bins is withdrawn. An object of
+intensities is a basic percept knit of parts and wholes, formed as a
+letter's percept is and nominated on recurrence.
+
+*Claude's reading of the example.* A pattern is a part of an image at a
+place when the image holds it there, value by value (each value of the
+part at or below the image's): [1,2,1] lies within [1,3,3,1] at its first
+place and at its second, and [1,1] at three places. That is improper
+parthood on values (19.1) carried over places, and the part tower holds
+such parts at growing widths. A whole is a property that holds of every
+place of its range (19.1): [4] is read as a bound no value exceeds, and
+"odd numbers" as a kind every value is of.
+
+*What it changes.* 28.3 (D1) and 28.5 (E) are one step, and the towers
+come first: parts found by containment at places, at growing widths;
+properties that pervade a range; a basic percept from both, as
+`doc/Mereology.md` has it for a form (the greatest of its parts' codes
+below, the least of its wholes' above). The steps of one value are then
+one object because they hold the same parts and lie under the same
+property, and for no other reason.
+
+### 29.2 XOR (28.3, point 4): the certificate is kept, by a setting
+
+> We need to ensure that the two values 1 and 0 are presented seperately,
+> and not chunked into a single percept or concept. We should be able to
+> limit the .where specification,: so just as we force word classes to stop
+> at spaces (we look for a whole that has a run of letters), we would need
+> to limit our concepts to a .where width of one (presumably a model setting
+> that is not very useful for non-xor cases, but lets do it as a proof).
+
+**Decided.** The assertion that XOR is not learned without its conjunction
+stays. A model setting limits the `.where` width of what a concept of a
+value is read over; at one, a value is read at single places and never
+over the bracket, so "1 somewhere" is no concept, and only the conjunction
+over two places' rows spans the two. Its default in `data/model.xml` sets
+no limit; the XOR configurations set it to one. It is the limit a run of
+letters sets for a word, on the where.
+
+### 29.3 The Pi over values (25.11): its own, and from positive evidence
+
+> This seems to mess with innards... If this is done for reconstruction, I
+> would think that we can reconstitute from positive evidence using a "most
+> likely composition" logic that I will leave you to derive.
+
+**Decided.** The Pi over values does not call the first Pi over forms'
+test (`held_at`); it is an operation of its own. And the way back does not
+need what tells against.
+
+**Derived (Claude).**
+
+1. *The Pi over values is containment.* A part reads for at an occurrence
+   that holds it: a row of value c at an occurrence of value v where c is
+   at or below v. Every lesser value so reads for a greater one, which is
+   improper parthood, and nothing tells against. A property reads for
+   where it holds: an upper bound u at v where v is at or below u. A basic
+   percept that knits a part and a whole reads for where both do, which is
+   an interval.
+2. *The most likely composition.* Zero is no presence, and a code is
+   "built up from all zeros by its parts". So of all the images that hold
+   every part read for at its place, the most likely is the least: at each
+   place the greatest part read for there, and nothing where none is. A
+   property read for over a range bounds it from above; where the greatest
+   part exceeds the least bound the evidence disagrees, the lesser is put
+   back and the difference is charged. With evidence in degrees, a part
+   counts by its degree.
+3. *What it says of his example.* From [1,2,1] at two places and [1,1] at
+   three the composition is [1,2,2,1]: the least image that holds them.
+   The threes come back only if parts that reach three are read; what is
+   left over is what was not analysed, and the cost shows it.
+
+*What it changes.* Step B's `read_values` (for on the same bin, against at
+a greater value, through `held_at`) and `place_bounds` are replaced by 1,
+and `NumericPercepts.reverse` by 2, in the step that builds the towers.
+The 0-or-1 match of a place goes with it if containment on the wires
+tells two places apart; that is measured there.
+
+### 29.4 The order, revised
+
+| Step | Builds |
+|---|---|
+| T | The two towers over intensities (29.1), the Pi over values as containment (29.3, 1), the `.where` width setting (29.2), on the numeric stem; the XOR gate and certificate as they are |
+| C1 | The scene's bank in its sentence's field, one Not (28.2) |
+| C2 | The image put back by the most likely composition and charged (29.3, 2) |
+| D2, F, G, H | as 28.2 |
