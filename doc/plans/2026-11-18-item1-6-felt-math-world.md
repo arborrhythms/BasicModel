@@ -4205,16 +4205,31 @@ already lies there. With 64 bins a bin is four steps: the variation of one
 value of the corpus (seven steps) falls in two or three neighbouring bins,
 and two values (25 steps apart) are six bins apart.
 
-*The two percept pyramids.* Claude reads them as the part tower and the
-whole tower (`PartSpace`, bottom-up; `WholeSpace`, top-down), on which a
-percept higher up covers a greater area than the percepts under it, as a
-form covers its characters. The rule that builds a form's code from its
-parts then builds an area's from its pixels: on the part tower the greatest
-of its parts' codes, which for values is the greatest value in the area; on
-the whole tower the least of its wholes' codes. Both are cuts of the one
-sorted line. **This reading is to be confirmed by him before the round that
-builds areas**; round one does not rest on it, since it builds the pixel
-alone.
+*The two percept pyramids.* They are the part tower and the whole tower
+(`PartSpace`, bottom-up; `WholeSpace`, top-down), with basic percepts on
+them as for text; a percept higher up covers a greater area than the
+percepts under it, as a form covers its characters. He confirmed it the
+same day, while this section was being written:
+
+> wholes are similar, on their tower they apply uniformly to a range of
+> positions (< 0.5 is a property of the entire object, it is a pervasion in
+> the buddhist sense).
+>
+> So we have two towers and basic percepts there, as elsewhere.
+
+*A whole pervades its range.* On the whole tower a whole is a property, a
+cut of the sorted line of values such as "below 0.5", and it is the whole
+of a range of positions when it holds at every one of them. It agrees with
+`doc/Spaces.md` ("properties that divide the input field into regions") and
+with a value's wholes half, which is the bound the value lies under. The
+tightest whole that pervades an area is then the cut at its greatest value,
+which is what `BasicPercepts.collection_code` calls the covering whole.
+*Not yet said:* the rule on the part tower. Two are in the source: the
+greatest of the parts' codes, by which a form is built of its characters
+(`doc/Mereology.md`), and the common part, the least, by which a collection
+is read. Claude proposes one in the design of the round that builds areas,
+and he chooses there. Round one does not rest on it, since it builds the
+pixel alone.
 
 **One reader.** There is to be no second path (H.5), so the answer holds
 for every number the model feels: an image's pixels, the numeric stem's
@@ -4284,7 +4299,7 @@ C.4's table, with these answers:
 |---|---|---|---|
 | One: the image is perceived | A value is a percept whatever its place, in one table of values, for every reader of numbers; an image's box beside its sentence's line; the `scene` of a row loaded, `null` told from `[]`; the opening pass puts the image back and is charged for it | An image alone is put back, at varied steps and at places not met; a sentence with its image puts both back; a sentence with no image is charged nothing for one; the numeric proofs and both gates hold | nothing |
 | Two: objects, words and naming | The felt thing's concept made from its own occurrences, as a word's is; `createMetaConcepts`; the name learned as a Pi over both concepts from their being present together; the test "naming" | Categories 1 and 2: with the key false, a word raises its object and an object its word, at the reserved step and the reserved places; with others present | his word on the reading of `createMetaConcepts`; Claude's proposal for what gathers the steps of one value |
-| Areas | Percepts that grow on the two pyramids | The categories about size | his word on the reading of the pyramids |
+| Areas | Percepts that grow on the two pyramids | The categories about size | Claude's proposal for the rule on the part tower, and his choice |
 | Three: the first milestone | What reads an arrangement | Category 14's contrast sets, per answer, on pairs held out | questions 4 and 5 of C.5 |
 
 Questions 4 to 8 of C.5 keep their defaults as defaults.
