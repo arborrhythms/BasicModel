@@ -45,10 +45,10 @@ class NumericPercepts:
     def read(self, inputs):
         """Each place and the bracket over the input are readings. The input
         is an image's bank: each place whose intensity is above zero is an
-        occurrence of its value's row of the table of values. A value's row
-        and its places are met, and each is nominated on the count that
-        nominates a form and brings its concept then; the promoted rows are
-        read by the Pi over values, no value's row over more places than
+        occurrence of the basic percept of intensity whose region holds it.
+        A basic percept and its places are met, and each is nominated on the
+        count that nominates a form and brings its concept then; the promoted
+        rows are read by the Pi over values, no value's row over more places than
         the greatest .where width of a percept of intensities, and the
         order-zero Sigma reads them through the one Not. The definitions
         above order zero are closed."""
@@ -64,12 +64,10 @@ class NumericPercepts:
         B, A = len(inputs), self.dimensions
         axes = torch.arange(A, device=values.device)
         places = self.model.where_registry.intervals('numeric', axes.expand(B, -1))
-        percepts = torch.full_like(places[..., 0], -1)
-        for value in values.unique():
-            if value > 0:
-                percept = basic.perceive_value(value)
-                percepts = torch.where(values == value, percept, percepts)
-                for b in (values == value).any(1).nonzero().flatten().tolist():
+        percepts = basic.perceive_intensities(values)
+        for percept in percepts.unique().tolist():
+            if percept >= 0:
+                for b in (percepts == percept).any(1).nonzero().flatten().tolist():
                     if owner.nominates(('value', percept), owner.reading(b)):
                         bring(owner, percept, 'value')
         bank = basic.value_bank(values, places, registry=self.model.where_registry,
@@ -78,7 +76,7 @@ class NumericPercepts:
         meet(owner, bank)
         nominated = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
         bank = replace(bank, rows=tuple(nominated), codes=basic.bank_codes(nominated).to(values.device))
-        presence = basic.read_values(bank, values, where_width=self.where_width)
+        presence = basic.read_values(bank, where_width=self.where_width)
         if self.model.training:
             # The places' concepts read together at the bracket recur, and
             # their conjunction is nominated.
@@ -98,13 +96,12 @@ class NumericPercepts:
         return ConceptualField(ids, evidence, bank.where, when, percepts)
 
     def reverse(self, field):
-        """The way back from what is read for: the values' rows placed by
-        their overlap. At each place, the greatest value among the values'
-        rows that a concept of order zero of the field reads, by an entry
-        that is not a Not, where the field at that place's reading reads
-        that concept for (its for lane above zero); nothing where none is.
-        A lesser value's row reads for at a greater value too, so the
-        greatest is the value itself where its own row is read."""
+        """The way back from what is read for: at each place, the centroid
+        of the basic percept of intensity that a concept of order zero of the
+        field reads, by an entry that is not a Not, where the field at that
+        place's reading reads that concept for (its for lane above zero);
+        nothing where none is. A row reads for only inside its region, so
+        one is read for at a place."""
         from Spaces import _concept_alloc_of
         owner = self.model._concept_owner()
         basic = owner.basic_percepts

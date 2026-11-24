@@ -1,10 +1,11 @@
 """An image of intensities read with its sentence.
 
 At a sentence's opening a row that carries an image (``InputSpace._scenes``)
-has an image's bank: each pixel an occurrence of its value's row of the
-table of values at its place of the box ``scene``. Its values are perceived
-and its places met, as the numeric stem does. The image's rows, read by
-numerical parthood (:meth:`BasicPercepts.BasicPercepts.read_values`), and
+has an image's bank: each pixel an occurrence of the basic percept of
+intensity whose region holds it, at its place of the box ``scene``. Its
+values are perceived and its places met, as the numeric stem does. The
+image's rows, read by the Pi over values
+(:meth:`BasicPercepts.BasicPercepts.read_values`), and
 the sentence's, read by the first Pi over forms
 (:meth:`BasicPercepts.BasicPercepts.read_bank`), stand in one table of
 lanes, the image's readings after the sentence's: a row of one reads
@@ -69,16 +70,16 @@ def image_bank(model):
 
 
 def perceive(model, bank, values):
-    """The image's values perceived, each value's row nominated on the count
-    that nominates a form and its concept brought then, and its places met,
+    """The image's values perceived, each basic percept of intensity
+    nominated on the count that nominates a form and its concept brought then, and its places met,
     as the numeric stem does."""
     from Places import meet, bring
     owner = model._concept_owner()
     basic = owner.basic_percepts
-    for value in values.unique().tolist():
-        if value > 0:
-            percept = basic.perceive_value(value)
-            for b in (values == value).any(1).nonzero().flatten().tolist():
+    percepts = basic.perceive_intensities(values)
+    for percept in percepts.unique().tolist():
+        if percept >= 0:
+            for b in (percepts == percept).any(1).nonzero().flatten().tolist():
                 if owner.nominates(('value', percept), owner.reading(b)):
                     bring(owner, percept, 'value')
                     noun(owner, percept)
@@ -132,11 +133,9 @@ def joined(model, bank, sentence, image, values):
     basic = model._concept_owner().basic_percepts
     rows = image_rows(model)
     image = replace(image, rows=tuple(rows), codes=basic.bank_codes(rows).to(values.device))
-    lanes = basic.read_values(image, values,                                          # [R, B, Ki, 2]
+    lanes = basic.read_values(image,                                                  # [R, B, Ki, 2]
                               where_width=int(TheXMLConfig.get('architecture.intensityWhereWidth')))
-    at = image.activity[None, ..., 0].to(image.table) * basic.parthood(image, values) if rows else \
-        image.table.new_zeros(0, *image.token.shape)
-    events = torch.stack((at, torch.zeros_like(at)), -1)                              # [R, B, Oi, 2]
+    events = basic.value_events(image) if rows else image.table.new_zeros(0, *image.token.shape, 2)
     own = set(rows)
     keys = tuple(sentence.keys) + tuple(('bp', row) for row in rows if ('bp', row) not in sentence.keys)
     N, B, K = len(keys), sentence.values.shape[1], sentence.values.shape[2]
@@ -184,7 +183,7 @@ def read(model, sid, bank):
 
 def put_back(model, field):
     """The image put back from the field alone, ``[B, places of the box]``:
-    at each place, the greatest over the values' rows of the row's value
+    at each place, the greatest over the values' rows of the row's centroid
     times whether a concept of the field reads for it at that place's
     reading (its for lane above zero), the derivative of that for lane
     passed through; nothing where none reads."""

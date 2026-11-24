@@ -7336,3 +7336,252 @@ Keep tmp/item1-6/regions_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 37. Step T2: the return (Claude on Opus, 2026-11-24)
+
+The work of §36.3, following §36.2. No git was run, and nothing is committed.
+Progress was kept in `tmp/item1-6/regions_progress.md`. Every file changed
+was first copied to `/tmp/item1-6-2026-11-24/regions_before/` (`bin/BasicPercepts.py`,
+`bin/NumericPercepts.py`, `bin/ImagePercepts.py`, `bin/ScalarPercepts.py`,
+`test/test_item16_values.py`). The V5 output from before any edit is
+`regions_before/v5_before.txt`. Nothing was removed from the tree:
+`parthood`'s `.what` half and `felt`'s read of a seat were rewritten in place,
+and the previous text is in `regions_before/bin/BasicPercepts.py`.
+
+### 37.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/BasicPercepts.py` | **Points 1 and 2.** `cut(index, width)` is the catalogs' cut at a bin, a seat of the table of values. `perceive_intensity(value, count)` makes the row over a part and a whole. `perceive_intensities(values)` does this for every pixel of a batch. `met(row, value, count)` keeps the centroid, a running mean held in two new buffers, `centroids` and `meets`. `value_keys(row)` gives the row's entries in `value_pi`, the Pi of the value space. `value_pi` is a new `SparsePiLayer3`. `reserve` and `reserve_place` write one row to it for each table row, and `set_extra_state` clears it. **Point 3.** `value_events(bank)` is `held_at` on two lanes, times `parthood`. `parthood(bank)` now reads only the `.where` and the `.when`; its `values` argument went, because step T's `.what` comparison went. `read_values(bank, *, where_width)` reads by `value_events`, and its `values` argument went. **Point 4.** `felt(rows)` returns the row's centroid. **Step 4.** `perceive_value` remains as the row of the value beside the words. `_felt_presence` and `_seat` are split out of it and shared. |
+| `bin/NumericPercepts.py` | `read` perceives with `perceive_intensities` and nominates under `('value', row)` once for each stream that holds the row. It calls `read_values` without `values`. `reverse` is unchanged as code, and its docstring now says centroid. |
+| `bin/ImagePercepts.py` | `perceive` changed the same way as `NumericPercepts.read`. `joined` takes the image's events from `value_events` and no longer calls `parthood`. Docstrings changed; the code of `put_back` is unchanged. |
+| `test/test_item16_values.py` | V3, V9 and V11 rewritten, V12 added, and V2, V4 and V10 ported (37.4). |
+
+`bin/ScalarPercepts.py`, `data/` and `doc/` are untouched, and `data/BasicModel.xml`
+gains nothing. No key was added: the bins are the ones `value_code` already
+lays out. Neither gate's file, nor anything a gate uses, was touched.
+
+### 37.2 The row, its key and its entries (step 1)
+
+- **The catalogs.** A cut is bin `k` of a half `w` wide. It is the seat in
+  the table of values of the bin's middle, `(k + ½)/w`
+  (`BasicPercepts.cut`). Its code in that half is `value_code`'s: the bins
+  at or below `k`. As a part it is a lower cut, and as a whole an upper
+  cut. The cuts are given by `value_code`, and a seat is written when the
+  cut is first named. *Marked:* a cut is held as a seat of the existing
+  table of values, so `_boundary_codes`, `subspace_bounds`, `is_value` and
+  `code` read it with no change.
+- **The row.** For an occurrence of value `v`, the row is over the
+  greatest part `v` holds, `cut(value_bin(v, iw), iw)`, and the least whole
+  it lies under, `cut(value_bin(v, pw), pw)`. That is its bin in each half.
+  - **Its key** in `index` is `((part,), (whole,))`, the two cuts and never
+    the value. V9 prints it: `((-4,), (-4,))` on MM_xor for the middle third.
+  - **Its code** is `subspace_bounds`, as for a form: the greatest of its
+    parts' codes and the least of its wholes' codes.
+  - **Its centroid** is the mean of the values met in it, counted once per
+    occurrence. `met` keeps it as a running mean, so a value met again
+    where it alone was met leaves the centroid exactly that value.
+  - **Nomination.** The row is reserved at first sight and nominated by MTM
+    on `conceptMintCount` readings under `('value', row)`. It is promoted
+    and brings its concept then (`Places.bring`, as in step T).
+- **Its entries in the Pi of the value space.** `('ps', (part,))` and
+  `('ws', whole)`: the same key shapes a form has in the first Pi.
+  - **Where that Pi lives:** `BasicPercepts.value_pi`, a `SparsePiLayer3` of
+    its own, sized `capacity` rows by `2 x capacity` entries.
+  - **Row numbering:** row `r` of `value_pi` is row `r` of the table. Places,
+    conjunctions and forms have empty rows there.
+  - **The first Pi is unchanged.** A value's row has no entries in it
+    (`member_keys` returns none for a value, as before). Its against
+    entries, `_refresh_pi` and `read_bank` are untouched.
+- **The reading (point 3).** `read_values` reads each occurrence by
+  `held_at(bank, bank.table)` on two lanes:
+  - for is `part * whole`;
+  - against is `part * (1 - whole)`;
+  - each is times activity and `parthood(bank)`, the `.where` read by bounds
+    and the `.when` by `field_factor`.
+
+  A place's row is read in the same way on the `.what` it keeps, which is the
+  cone of the values met at it, and by its wires. A conjunction is read
+  through the first Pi over its members, and `held` and `intensityWhereWidth`
+  apply as before. This is step B's first reading, now on rows that are
+  regions.
+
+### 37.3 The certificates, as printed
+
+From the development runs; the bounded run's outcomes are in 37.6. The
+widths are MM_xor and MM_image 3 and 3, and the scene model 64 and 64.
+
+- **V3, read as a form is.** MM_xor, with the values `[[.1,.2],[.5,0],[.9,1.],[.5,.2]]`.
+  - **Regions:** `.1` and `.2` share one row, `.9` and `1.` share one row,
+    so there are three rows in all.
+  - **Readings** (each pair is for, against): `region 0 at 0.1: (1,0)`,
+    `region 0 at 0.5: (0,1)`, `region 0 at 1.0: (0,1)`,
+    `region 1 at 0.2: (0,0)`, `region 1 at 0.5: (1,0)`,
+    `region 1 at 0.9: (0,1)`, `region 2 at 0.5: (0,0)`,
+    `region 2 at 1.0: (1,0)`, and `(0,0)` wherever nothing is.
+  - **Keys and entries:** `keys {0: ((-4,),(-4,)), 1: ((-5,),(-5,)), 2: ((-6,),(-6,))}`.
+    The entries are `([], [('ps', (-4,)), ('ws', -4)])` and so on: none in
+    the first Pi, and two in `value_pi`. The cuts' values are
+    `[0.1667, 0.5, 0.8333]`. `value_events` names `held_at`, `read_values`
+    names `value_events`, and `numeric_read_uses: ['read_values', 'value_bank']`.
+- **V9, a region nominated on recurrence.** MM_xor, `mint_count 3`. Three
+  different values in the middle third were presented once each:
+  - `0.4167`: rows `[0]`, not promoted, no concept;
+  - `0.5`: rows `[0]`, not promoted, no concept;
+  - `0.5833`: rows `[0]`, promoted, concept `0`.
+
+  The key is `((-4,),(-4,))`, equal to the region's cuts. The centroid is
+  `0.49999997` against a mean of `0.49999999`.
+- **V11, back to the centroids.** MM_image. The image holds `1/12` alone in
+  the first third, `11/12` alone in the last, and `5/12` and `7/12` in the
+  middle third. After recurrence, `back_by_value: {0.0833: [0.0833333358], 0.9167: [0.9166666865], 0.4167: [0.5], 0.5833: [0.5]}`.
+  The mean of the shared values is `0.49999999`; the two lone values come
+  back exact (`torch.equal`). `silent_greatest 0.0` and
+  `reverse_names_percepts False`.
+- **V12, the corpus's values.** On the scene model, every free step of
+  each of the nine values was perceived:
+  - **Rows:** `{1: [0,1,2], 2: [3,4,5], 3: [6,7], 4: [8,9], 5: [10,11,12], 6: [13,14,15], 7: [16,17], 8: [18,19], 9: [20,21,22]}`.
+    No row is shared between two values. With bins about 4 steps wide, a
+    band of 7 steps falls in 2 or 3 rows.
+  - **Reserved steps:** `{1: (26, 1), 2: (49, 4), 3: (76, 7), 4: (99, 8), 5: (126, 11), 6: (149, 14), 7: (176, 17), 8: (199, 18), 9: (226, 21)}`.
+    Each is in its value's rows, and `rows_made_by_reserved 0`.
+- **V2 (ported).** `first_presentation_greatest 0.0`. After recurrence, `back` equals
+  the centroid at every place (`0.17567566` for every grid value of the first
+  third); `silent_greatest 0.0`.
+- **V4 (ported).** `place_rows_at_the_two_places [[1,0],[0,1]]`; `lit 63, places 63`.
+- **V10 (ported).** The value's row at the places is `[[0,0],[0,1],[1,0],[1,1]]`
+  and nothing at the bracket. Its concept at the bracket is `[0,0,0,0]`, and
+  `as_the_readout_reads_it [0,0,0,0]`. The spans are
+  `{0: value 1, 1: place 1, 2: place 1, 3: conjunction 2}`.
+- **V5 and the gates.** In 37.5, and in 37.6.
+
+### 37.4 Tests ported
+
+Each port is in `test/test_item16_values.py`. No test outside that file was
+changed, and no seed was chosen.
+
+| Test | Old | New |
+|---|---|---|
+| V2 `test_v2_input_in_0_to_1` | after recurrence `torch.equal(back, given)` for the 37 grid values | `torch.equal(back, centroid)`, where `centroid` is `basic.felt` of each place's row read from the input. The grid's 37 values share three bins, so exactness is false by point 2. Every other assertion is as before |
+| V3 | step T's numerical parthood | rewritten as §36.2 says (37.3) |
+| V4 | `basic.parthood(bank, values)`; `basic.perceive_value(1.)` for the image's value row | `basic.parthood(bank)`, because the `.what` half went (point 3); `basic.perceive_intensity(1.)`, because `perceive_value` is now the scalar's row. The assertions are as before |
+| V9 | a value nominated on recurrence | rewritten (37.3) |
+| V10 | `basic.perceive_value(1.)`; `read_values(bank, values, where_width=1)` | `perceive_intensity(1.)`; `read_values(bank, where_width=1)`. The assertions are as before |
+| V11 | exact reconstruction of the 37 grid values | rewritten: back to the centroids (37.3) |
+| V12 | — | new |
+
+### 37.5 XOR before and after; `pooled` (step 3)
+
+| | Before | After |
+|---|---|---|
+| answers | `[1.8189894035458565e-11, 1.0, 1.0, 1.8189894035458565e-11]` | the same |
+| weights | `[1.313035249710083, 1.313035249710083, -2.626070499420166]` | the same |
+| against | `[0.0, 0.0, 0.0]` | the same |
+| mse | `1.6543612251060553e-22` | the same |
+| promoted_row | 3 | 3 |
+
+**`pooled` stays.** I measured it by bypassing `NumericPercepts.pooled` with
+a plugin that changes no file (`scratchpad/nopool/nopool_plugin.py`):
+
+- "without the intersection" failed three times out of three, at `3.0883973221700056e-14`.
+- The certificate's places' weights fell to `1.19e-8`, with the conjunction's at `-1.313`.
+
+The reason is that evidence against does not reach XOR. Its inputs are 0
+and 1, so there is one region, the last bin, and nothing lies above it.
+The value's row is therefore never read against, and the readout's
+greatest over the places is still an OR of the two inputs.
+
+### 37.6 N7 (step 6) and the run (step 7)
+
+N7 was run before and after this step, on two copies of the tree in the
+scratchpad: the unchanged tree and the changed one. No seed is set.
+
+| | units by order | words in a unit (number of steps) | number words united |
+|---|---|---|---|
+| §35 | `{1: 28}` | `is 10, this 2, what 2, ? 3, that 1, . 10` | none |
+| before, this run | `{1: 42}` | `that 2, seven 2, is 13, this 4, nine 1, two 1, what 3, ? 5, eight 1, . 10` | eight [175], nine [72], seven [51, 125], two [47] |
+| after | `{1: 10}` | `is 4, this 4, what 1, ? 1` | none |
+
+300 rows were taught and none refused, before and after. After this step a
+lesser value's concept no longer reads at a greater pixel, and the units
+fall from 42 to 10. No number word is united with its value.
+- **Why the frequent words are left:** pairs are still counted by being
+  present together (§35.9, cause b), and a frequent word is present with
+  every image.
+- **Why the number words reach no count:** at width 64 a value's band falls
+  in 2 or 3 rows (V12), so a number word's count is split across them.
+  Each row then falls further below the count that nominates a unit.
+
+**Bounded run.** `env -u RUN_TRAINED -u RUN_SLOW ... test/test_report.py`
+with the 60 selectors of `tmp/item1-6/regions_run_files.txt`: §36.3 step 7's
+list and `values_run4_files.txt`. The log is `tmp/item1-6/regions_run1.log`.
+
+**`Result: test_failure, exit 1; 533/533 cases completed.`**
+`output/tests/20261124-120650-171502/result.json`, 1291 s: 486 passed, 44
+skipped, 3 failed.
+
+- **Both gates passed:** `test_mm_xor::...::test_convergence` and
+  `test_item25_completion::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+- `test_concept_output.py` passed whole, including "without the intersection" [0], [1] and [2].
+- V1 to V12, N7, and G1 for `MM_xor` and `MM_image` passed.
+
+The three failures:
+
+- `test_item17_symbols::test_54bd_...` is `failed` in the sweep.
+- `test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`
+  is on the list of chance.
+- `test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`
+  is on the list of chance.
+
+The 44 skipped are skipped in the sweep, or are trained tests left out with
+RUN_TRAINED unset. Every other test has its sweep outcome.
+
+### 37.7 The value beside the words (step 4)
+
+It keeps its own reading. What it needs, and has, is `perceive_value`: a row
+whose part and whole are both the cut at the value itself, so its region
+holds that value alone. That row's centroid is the value, which is what
+`felt` returns for it, so `ScalarPercepts.decode` and `reconstruct` give
+the number they gave before. Rows of the scalar have entries in `value_pi`
+as well. `ScalarPercepts.py` is unchanged.
+
+### 37.8 What in §36.2 could not be built as written, and what was built
+
+1. *"A region met once has no row"* (V9). As for a form, the row is
+   reserved at first sight: the occurrence needs a row id for
+   `field.percepts`, and V1 reads that id on a fresh model. **Built:** "no
+   row" means not promoted, not read by the Pi over values, and no
+   concept. *Marked.*
+2. *The catalogs as given.* The cuts are seats of the table of values at
+   each bin's middle, written on first use, not a separate store.
+   - A value beside the words that falls exactly on a cut's middle shares
+     that seat, and with widths equal it would share that region's row.
+   - No model reads both modalities. *Marked.*
+3. *The centroid is weighted by occurrences:* each pixel of each
+   presentation counts. *Marked.*
+4. *The scalar keeps a row for its own value* (37.7), as step 4 asks. That
+   is the one row left whose region is a single value.
+5. *`pooled`* stays (37.5).
+6. *A saved state.* `centroids` and `meets` are new buffers. A state saved
+   before this step lacks them, so a strict load will refuse it (not run).
+   Nothing is kept for the older form.
+
+### 37.9 Review of step T2 (Claude, 2026-11-24)
+
+**Accepted.** Claude ran `test_mm_xor.py` whole, the other stopping gate,
+`test_item16_values.py`, `test_item16_scene_field.py`,
+`test_concept_output.py`, `test_item18_places.py` and
+`test_item18_scalar.py`: 42 of 42 passed.
+
+- A basic percept of intensity is now a row over a part and a whole in a
+  Pi of the value space's own, read for and against by `held_at`, with a
+  centroid: the text algorithm, on intensity.
+- `pooled` stays: XOR's one value lies in the last bin with nothing above
+  it, so nothing reads against its row, and the readout's pooling over
+  readings still makes an OR of the two places without it.
+- *N7 again:* ten units across modality, of `is`, `this`, `what` and `?`,
+  and no number word with its value. At 64 bins a value's steps fall in
+  two or three rows, which divides its count; and the pairs are still
+  counted by step D2's own counter, on positive evidence. §38 takes that
+  counter out.
+

@@ -917,15 +917,19 @@ bins at or below the value, the wholes half is all ones with the bins above it
 cut away, and the against lane holds what the wholes half cuts away, so a
 value lies between its parts and its wholes as a form does
 ([Mereology](Mereology.md)). There is one basic percept for each value met,
-whatever its place, nominated when the value recurs; a row is read by
-numerical parthood, less-than-or-equal on every coordinate, so a row of a
-lesser or equal value reads for and nothing reads against. A place is told by
+whatever its place; a basic percept of intensity is a row over a part and a
+whole, the cuts of its bin, nominated when occurrences recur in its region
+and read as a form is, for inside the region and against above it. A place is told by
 its wires, through a place's row that is nominated when occurrences recur at
-it. Zero is no presence. Reverse returns at each place the greatest value a
-concept of the field reads for there, so an input is put back once its values
-and places are known. `architecture.intensityWhereWidth` is the greatest
+it. Zero is no presence. Reverse returns at each place the centroid of the
+percept a concept of the field reads for there, so an input is put back once
+its regions and places are known. `architecture.intensityWhereWidth` is the greatest
 `.where` width of a percept of intensities (0, the default, no limit); the
-XOR configurations set it to 1, so that a value is read at single places. The output
+XOR configurations set it to 1, so that a value is read at single places.
+`architecture.createMetaConcepts` (true) has `interpret` make a word's meta
+concept, and a blank object where the word has none; false, as
+`data/scene/BasicModel_scene.xml` sets it, `interpret` makes neither and
+gives a word's object from a unit that MTM has made. The output
 reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
 `attentionPromotion` govern recurrent intersections, and `trustViews` governs
 scalar definition evidence. No scalar scale, box-learning rate or per-value

@@ -1,13 +1,15 @@
 """Values in an image's bank.
 
-The certificates V1 to V7 of §20.8 and V3 (replaced) and V9 to V11 of §30.1
-of doc/plans/2026-11-18-item1-6-felt-math-world.md, each printing what it
-measured. A value is one row of one table of values, whatever its place; a
-reader of intensities takes its input in 0..1 as it is; the numeric stem's
-input is an image's bank, read by the Pi over values; a place is told by its
-wires, by a place's row that keeps the value's ``.what``; one Not reads the
-rows of a pass. V7's tests of the image configurations and V8 are certified
-by the run that names them; V7's measure of the image's read is here.
+The certificates V1 to V7 of §20.8, V10 of §30.1, and V3, V9, V11 and V12
+of §36.2 of doc/plans/2026-11-18-item1-6-felt-math-world.md, each printing
+what it measured. A basic percept of intensity is a row over a part and a
+whole of the catalogs of cuts, the bins of the line: it identifies a region
+and has a centroid, whatever its place; a reader of intensities takes its
+input in 0..1 as it is; the numeric stem's input is an image's bank, read by
+the Pi over values as a form is read; a place is told by its wires, by a
+place's row that keeps the value's ``.what``; one Not reads the rows of a
+pass. V7's tests of the image configurations and V8 are certified by the run
+that names them; V7's measure of the image's read is here.
 """
 import ast
 import inspect
@@ -90,10 +92,10 @@ def test_v1_one_table():
 
 
 def test_v2_input_in_0_to_1():
-    """A reader of intensities takes a value in 0..1 as it is and gives it
-    back exactly through the field once a concept reads it there (a place's
-    row, nominated after the image has recurred as often as nominates a
-    form); on the first presentations, when no concept reads a value's row
+    """A reader of intensities takes a value in 0..1 as it is and gives
+    back the centroid of its basic percept through the field once a concept
+    reads it there (nominated after the image has recurred as often as
+    nominates a form); on the first presentations, when no concept reads a value's row
     or its place's row, and wherever the field reads nothing, it gives
     nothing back. It refuses a value below 0, above 1 or not a number; no
     reader applies the logarithmic chart."""
@@ -113,7 +115,8 @@ def test_v2_input_in_0_to_1():
         model.numeric_percepts.read(torch.tensor([[[2.], [0.]]]))
     # An image of every value of the grid and nothing between them. On its
     # first presentation to a fresh model no concept reads it, and nothing
-    # is given back; after it has recurred, each value is given back exactly.
+    # is given back; after it has recurred, each place is given back the
+    # centroid of the basic percept its value falls in.
     image, *_ = _build_model('data/MM_image.xml')
     given = torch.tensor(([0.] + _GRID) * 22)[:784].reshape(1, 28, 28)
     first = image.numeric_percepts.reverse(image.numeric_percepts.read(given))
@@ -122,9 +125,11 @@ def test_v2_input_in_0_to_1():
     _recur(image, given)
     field = image.numeric_percepts.read(given)
     back = image.numeric_percepts.reverse(field)
+    basic = image._concept_owner().basic_percepts
+    centroid = torch.where(field.percepts >= 0, basic.felt(field.percepts.clamp_min(0)), 0.).reshape(given.shape)
     print(dict(given=given[0, 0, :6].tolist(), back=back[0, 0, :6].tolist(),
-               places=len(image._concept_owner().basic_percepts.place_rows)))
-    assert torch.equal(back.to(given), given)
+               centroids=centroid[0, 0, :6].tolist(), places=len(basic.place_rows)))
+    assert torch.equal(back.to(given), centroid.to(given))
     # The way back goes through the field: where it reads nothing, nothing
     # is given back.
     silent = image.numeric_percepts.reverse(replace(field, evidence=torch.zeros_like(field.evidence)))
@@ -147,7 +152,7 @@ def _bank(model, values):
     basic = owner.basic_percepts
     B, A = values.shape
     places = model.where_registry.intervals('numeric', torch.arange(A).expand(B, -1))
-    rows = {float(v): basic.perceive_value(v) for v in values.unique() if v > 0}
+    rows = {float(v): basic.perceive_intensity(v) for v in values.unique() if v > 0}
     bank = basic.value_bank(values, places, registry=model.where_registry,
                             when_encoding=model.when_encoding, time=model.present())
     order = sorted(rows.values())
@@ -155,42 +160,53 @@ def _bank(model, values):
 
 
 def test_v3_the_pi_over_values():
-    """On an image's bank, a value's row reads for at an occurrence of an
-    equal or greater value and nothing at a lesser one or where nothing is,
-    a lesser value in the same bin among them; its against lane is nothing
-    everywhere: numerical parthood. It is a function of the value space and
-    names nothing of the first Pi over forms."""
+    """On an image's bank, a basic percept of intensity reads for at an
+    occurrence inside its region, against at one above it, where its part is
+    held, and nothing below it or where nothing is: the first Pi's test of
+    part and whole on two lanes (``held_at``). Its row is keyed by its part
+    and its whole of the catalogs of cuts, two values of one bin are one
+    row, and its entries are in the Pi of the value space, none in the first
+    Pi."""
     from BasicPercepts import BasicPercepts
     model = _xor()
     basic = model._concept_owner().basic_percepts
-    values = torch.tensor([[.5, .75], [.25, 0.], [.5, .5], [1., .25], [.3, .25]])
+    values = torch.tensor([[.1, .2], [.5, 0.], [.9, 1.], [.5, .2]])
     bank, rows = _bank(model, values)
-    lanes = basic.read_values(bank, values, where_width=model.numeric_percepts.where_width)
+    lanes = basic.read_values(bank, where_width=model.numeric_percepts.where_width)
+    width = basic.identity_width
+    bins = {v: int(BasicPercepts.value_bin(torch.tensor(v), width)) for v in rows}
+    print(dict(width=width, bins=bins, rows=rows))
+    assert rows[float(torch.tensor(.1))] == rows[float(torch.tensor(.2))]
+    assert rows[float(torch.tensor(.9))] == rows[1.]
+    assert len(set(rows.values())) == 3
     B, A = values.shape
     read = {}
     for value, row in rows.items():
-        r = bank.rows.index(row)
+        r, k = bank.rows.index(row), bins[value]
         for b in range(B):
             for a in range(A):
                 there = float(values[b, a])
-                expected = (1., 0.) if there > 0 and there >= value else (0., 0.)
+                j = int(BasicPercepts.value_bin(torch.tensor(there), width))
+                expected = ((0., 0.) if there <= 0 or j < k else (1., 0.) if j == k else (0., 1.))
                 got = tuple(lanes[r, b, a].tolist())
-                read[(value, there)] = got
+                read[(k, there)] = got
                 assert got == expected, (value, there, got)
-    bins = BasicPercepts.value_bin(torch.tensor([.25, .3]), basic.identity_width).tolist()
-    print(dict(width=basic.identity_width, bins_of_25_and_30=bins,
-               read={f'{v} at {t}': x for (v, t), x in sorted(read.items())}))
-    low, high = float(torch.tensor(.25)), float(torch.tensor(.3))
-    assert bins[0] == bins[1] and read[(high, low)] == (0., 0.) and read[(low, high)] == (1., 0.)
-    assert not bool(lanes[..., 1].any())
-    # The Pi over values names nothing of the first Pi over forms, and the
-    # numeric stem reads its bank by it.
-    for function in ('read_values', 'parthood'):
-        assert 'held_at' not in _names_in(_source('BasicPercepts.py'), function), function
+    print(dict(read={f'region {k} at {t}': x for (k, t), x in sorted(read.items())}))
+    keys = {row: basic._keys[row] for row in set(rows.values())}
+    entries = {row: (basic.pi.row_members(row), basic.value_pi.row_members(row)) for row in keys}
+    print(dict(keys=keys, entries_first_pi_and_value_pi=entries,
+               cuts={row: basic.value_codes[[-ref - width - 1 for ref in (*key[0], *key[1])]].tolist()
+                     for row, key in keys.items()}))
+    for row, (parts, wholes) in keys.items():
+        assert len(parts) == 1 and len(wholes) == 1
+        assert entries[row] == ([], [('ps', parts), ('ws', wholes[0])])
+        torch.testing.assert_close(basic.code(row), torch.cat((basic.part_codes(parts)[0], basic.whole_codes(wholes)[0])))
+    # Read as a form is read, and the numeric stem reads its bank by it.
+    assert 'held_at' in _names_in(_source('BasicPercepts.py'), 'value_events')
+    assert 'value_events' in _names_in(_source('BasicPercepts.py'), 'read_values')
     used = _names_in(_source('NumericPercepts.py'), 'read')
     assert 'read_values' in used and 'read_bank' not in used
-    print(dict(numeric_read_uses=sorted(used & {'read_values', 'read_bank', 'value_bank'}),
-               read_values_names_held_at=False))
+    print(dict(numeric_read_uses=sorted(used & {'read_values', 'read_bank', 'value_bank'})))
 
 
 def _recur(model, values):
@@ -229,7 +245,7 @@ def test_v4_a_place_by_its_wires():
     # Each place's row holds its own place and not the other.
     bank, _ = _bank(model, torch.tensor([[1., 1.]]))
     bank = replace(bank, rows=(places[0], places[1]), codes=basic.bank_codes([places[0], places[1]]))
-    held = basic.parthood(bank, torch.tensor([[1., 1.]]))[:, 0]
+    held = basic.parthood(bank)[:, 0]
     print(dict(place_rows_at_the_two_places=held.tolist()))
     assert held.tolist() == [[1., 0.], [0., 1.]]
     # An image: each lit place has a place's row keeping its value's .what.
@@ -244,7 +260,7 @@ def test_v4_a_place_by_its_wires():
     kept = {}
     for row, (plus, minus, what) in basic.place_rows.items():
         kept[int(registry.decode(plus[None].to(registry.grid))[0]) - base] = what
-    value = basic.perceive_value(torch.tensor(1.))
+    value = basic.perceive_intensity(torch.tensor(1.))
     code = basic.bank_codes([value])[0, 0].cpu()
     print(dict(lit=len(lit), places=len(kept), values=sorted(set(image.reshape(-1).tolist()))))
     assert set(kept) == lit
@@ -318,24 +334,40 @@ def test_v7_the_image_read_and_put_back():
     torch.testing.assert_close(rebuilt, sample, rtol=0, atol=0)
 
 
-def test_v9_a_value_is_nominated_on_recurrence():
-    """A value met once has no concept and its row is not promoted; met as
-    often as nominates a form, its row is promoted and has its concept."""
+def test_v9_a_region_is_nominated_on_recurrence():
+    """A region met once has no row of its own (its row is reserved, not
+    promoted, and has no concept); met as often as nominates a form, by a
+    different value each time, it has one row, promoted, with its concept,
+    whatever exact values fell in it, and its centroid is their mean; no
+    row is kept for an exact value."""
+    from BasicPercepts import BasicPercepts
     model = _xor()
     owner = model._concept_owner()
     basic = owner.basic_percepts
     model.train()
-    image = torch.tensor([[[.5], [0.]]])
+    n = owner.concept_mint_count
+    width = basic.identity_width
+    # n values inside the region of the middle bin, none chosen.
+    met = [(1 + (i + 1) / (n + 1)) / width for i in range(n)]
+    assert len({int(BasicPercepts.value_bin(torch.tensor(v), width)) for v in met}) == 1
     seen = []
-    for time in range(owner.concept_mint_count):
-        model.forward(image)
-        row = basic.perceive_value(torch.tensor(.5))
-        seen.append(dict(time=time + 1, promoted=bool(basic.promoted[row]),
-                         concept=owner.concept_of_basic_percept(row)))
-    print(dict(mint_count=owner.concept_mint_count, seen=seen))
-    assert not seen[0]['promoted'] and seen[0]['concept'] is None
-    assert all(not s['promoted'] and s['concept'] is None for s in seen[:-1])
-    assert seen[-1]['promoted'] and seen[-1]['concept'] is not None
+    for time, value in enumerate(met):
+        model.forward(torch.tensor([[[value], [0.]]]))
+        values = [r for r in range(len(basic.index)) if basic.is_value(r)]
+        seen.append(dict(time=time + 1, value=round(value, 4), value_rows=values,
+                         promoted=[bool(basic.promoted[r]) for r in values],
+                         concept=[owner.concept_of_basic_percept(r) for r in values]))
+    row, = seen[-1]['value_rows']
+    region = int(BasicPercepts.value_bin(torch.tensor(met[0]), width))
+    cuts = ((basic.cut(region, width),), (basic.cut(region, basic.property_width),))
+    print(dict(mint_count=n, seen=seen, key=basic._keys[row], cuts_of_the_region=cuts,
+               centroid=float(basic.felt([row])[0]), mean=sum(float(torch.tensor(v)) for v in met) / n))
+    assert seen[0]['value_rows'] == [row] and seen[0]['promoted'] == [False] and seen[0]['concept'] == [None]
+    assert all(s['value_rows'] == [row] and s['promoted'] == [False] for s in seen[:-1])
+    assert seen[-1]['promoted'] == [True] and seen[-1]['concept'][0] is not None
+    torch.testing.assert_close(basic.felt([row])[0], torch.tensor(met).mean().to(basic.centroids))
+    # Its key is the region's part and whole, and no value's own.
+    assert basic._keys[row] == cuts
 
 
 def test_v10_atomic_over_digits():
@@ -363,13 +395,13 @@ def test_v10_atomic_over_digits():
     wide = (field.where[..., 1] - field.where[..., 0]) > 1                     # [B, K]
     assert bool(wide[:, A].all()) and not bool(wide[:, :A].any())
     # The value's row, read by the Pi over values.
-    value = basic.perceive_value(torch.tensor(1.))
+    value = basic.perceive_intensity(torch.tensor(1.))
     rows = [r for r in range(len(basic.index)) if bool(basic.promoted[r])]
     assert value in rows
     bank, _ = _bank(model, values)
     from dataclasses import replace
     bank = replace(bank, rows=tuple(rows), codes=basic.bank_codes(rows))
-    lanes = basic.read_values(bank, values, where_width=1)
+    lanes = basic.read_values(bank, where_width=1)
     at_places = lanes[rows.index(value), :, :A, 0]
     print(dict(value_row_at_places=at_places.tolist(), value_row_at_bracket=lanes[rows.index(value), :, A].tolist()))
     assert torch.equal(at_places, values)
@@ -401,26 +433,65 @@ def test_v10_atomic_over_digits():
     assert [n for kind, n in spans.values() if kind == 'conjunction'] == [2]
 
 
-def test_v11_reconstituted_from_what_is_read_for():
-    """After its values and places are known an image comes back exactly,
-    at graded values, from the values' rows its concepts read for, placed
-    by their overlap; with the field's evidence at nothing, nothing comes
-    back; the way back reads no value percepts kept beside the field."""
+def test_v11_reconstituted_to_the_centroids():
+    """After its values and places are known an image comes back to its
+    percepts' centroids, from the basic percepts its concepts read for:
+    exactly where one value recurred in its region, and to the mean of the
+    values met in it where several did; with the field's evidence at
+    nothing, nothing comes back; the way back reads no value percepts kept
+    beside the field."""
     from dataclasses import replace
     from recon_bench import _build_model
+    from BasicPercepts import BasicPercepts
     image, *_ = _build_model('data/MM_image.xml')
-    given = torch.tensor(([0.] + _GRID) * 22)[:784].reshape(1, 28, 28)
+    basic = image._concept_owner().basic_percepts
+    width = basic.identity_width
+    # One value alone in the first region and in the last, two in the
+    # middle one, each the middle of a sixth of the line.
+    alone, shared = [1 / 6 / 2 + 0 / 6, 1 / 6 / 2 + 5 / 6], [1 / 6 / 2 + 2 / 6, 1 / 6 / 2 + 3 / 6]
+    regions = {v: int(BasicPercepts.value_bin(torch.tensor(v), width)) for v in alone + shared}
+    assert len({regions[v] for v in alone + shared}) == 3 and regions[shared[0]] == regions[shared[1]]
+    given = torch.tensor(([0.] + [alone[0], shared[0], shared[1], alone[1]]) * 157)[:784].reshape(1, 28, 28)
     _recur(image, given)
     field = image.numeric_percepts.read(given)
-    back = image.numeric_percepts.reverse(replace(field, percepts=None))
-    basic = image._concept_owner().basic_percepts
-    bins = sorted(set(basic.value_bin(torch.tensor(_GRID), basic.identity_width).tolist()))
-    print(dict(width=basic.identity_width, bins_of_the_grid=bins, given=given[0, 1, :6].tolist(),
-               back=back[0, 1, :6].tolist(), exact=bool(torch.equal(back.to(given), given))))
-    assert torch.equal(back.to(given), given)
+    back = image.numeric_percepts.reverse(replace(field, percepts=None)).to(given)
+    mean = given[(given == shared[0]) | (given == shared[1])].double().mean()
+    by_value = {round(v, 4): back[given == v].unique().tolist() for v in alone + shared}
+    print(dict(width=width, regions={round(v, 4): r for v, r in regions.items()}, back_by_value=by_value,
+               mean_of_the_shared=float(mean)))
+    for v in alone:
+        assert torch.equal(back[given == v], given[given == v])
+    middle = back[(given == shared[0]) | (given == shared[1])]
+    assert len(middle.unique()) == 1
+    torch.testing.assert_close(middle[0].double(), mean, rtol=0, atol=1e-6)
+    assert not bool(back[given == 0].any())
     silent = image.numeric_percepts.reverse(replace(field, evidence=torch.zeros_like(field.evidence), percepts=None))
     print(dict(silent_greatest=float(silent.abs().max())))
     assert not bool(silent.any())
     names = _names_in(_source('NumericPercepts.py'), 'reverse')
     print(dict(reverse_names_percepts='percepts' in names))
     assert 'percepts' not in names
+
+
+def test_v12_the_corpus_values_fall_in_rows_of_their_own(tmp_path, monkeypatch):
+    """On the felt world's model, the steps of each of the corpus's nine
+    values fall in rows of their own, which no other value's step falls in,
+    and a value's reserved step falls in a row its other steps made."""
+    from felt_world_corpus import VALUES, FREE_STEPS, reserved_step
+    from test_item16_scene_field import scene_model
+    model = scene_model(tmp_path, monkeypatch)
+    try:
+        basic = model._concept_owner().basic_percepts
+        felt = lambda steps: torch.tensor(steps / 255)
+        rows = {d: {basic.perceive_intensity(felt(s)) for s in FREE_STEPS[d]} for d in VALUES}
+        before = len(basic.index)
+        reserved = {d: basic.perceive_intensity(felt(reserved_step(d))) for d in VALUES}
+        print(dict(width=basic.identity_width, rows={d: sorted(r) for d, r in rows.items()},
+                   reserved={d: (reserved_step(d), r) for d, r in reserved.items()},
+                   rows_made_by_reserved=len(basic.index) - before))
+        for d in VALUES:
+            assert not any(rows[d] & rows[e] for e in VALUES if e != d), d
+            assert reserved[d] in rows[d], d
+        assert len(basic.index) == before
+    finally:
+        model.End()

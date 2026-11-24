@@ -483,25 +483,26 @@ places.
   and one only at infinity ("the log chart was to avoid clipping, and
   sensation seems to be log. But we can treat that as a preprocessing
   step"). No reader of the numeric stem applies it.
-- **A value is one percept wherever it lies.** A reading above zero is an
-  occurrence of its value's row of the table of values, keyed by the value
-  alone. The same value at two places is one percept met twice. Zero is no
+- **A basic percept of intensity identifies a region.** The catalogs of
+  parts and of wholes over intensity are the bins of the line of values,
+  in order, with values for codes: a part is a lower cut and a whole an
+  upper cut. A basic percept is a row over a part and a whole, the cuts of
+  its bin, with its entries in a Pi of the value space's own
+  (`BasicPercepts.value_pi`); the first Pi over forms is not used for it.
+  It has a centroid, the mean of the values met in it, and no exact value.
+  The same region at two places is one percept met twice. Zero is no
   presence.
 - **An image has a bank of occurrences,** as a sentence has
   (`BasicPercepts.value_bank`): each place with a value above zero is an
   occurrence, its `.what` the value's code on two lanes, its `.where` the
   twelve wires of its place, its `.when` the moment's. The readings are
   each place, then the bracket over the whole image.
-- **The Pi over values is numerical parthood** (`BasicPercepts.parthood`,
-  `read_values`): less-than-or-equal, element by element. A row reads for
-  at an occurrence where what the row keeps is less than or equal to what
-  the occurrence holds on every coordinate: on the `.what`, the row's value
-  against the occurrence's, so a row of a lesser or equal value is a part;
-  on the `.where`, the row's entries against the occurrence's wires.
-  Nothing tells against. It is an operation of its own and uses nothing of
-  the first Pi over forms.
-- **A value's row is nominated on recurrence** and brings its concept
-  then, as a form's does.
+- **Read as a form is** (`BasicPercepts.read_values`, by `held_at`): for
+  where the occurrence holds the row's part and lies under its whole,
+  against where it holds the part and lies above the whole, nothing where
+  it lies below the part.
+- **Nominated on recurrence.** A row is promoted, and brings its concept,
+  when occurrences recur in its region, as a form's does.
 - **A place is told by its wires.** A place's row of the first Pi is
   nominated for an image as for a sentence, when occurrences recur at it
   (`Places.meet`), and keeps the what met there; it is a part of an
@@ -522,10 +523,11 @@ places.
 - **What a fresh model reads.** A value's row and a place's row are
   nominated on recurrence, so an image's first presentations read no
   concept, and the way back gives nothing for them.
-- **Back from the field.** `NumericPercepts.reverse` places the parts that
-  are read for: at each place, the greatest value among the rows that a
-  concept of the field reads for there, which is the place's own value
-  once it is known. It reads nothing kept from the input.
+- **Back from the field.** `NumericPercepts.reverse` and
+  `ImagePercepts.put_back` give each place the centroid of the basic
+  percept that a concept of the field reads for there: the value itself
+  where one value recurred, and a value within the bin otherwise. Nothing
+  kept from the input is read.
 - **The scalar beside the words** is a row of the same table of values. It
   is charted by `feeling` before it is read, and it keeps a reading of its
   own, by its two bounds and not through the Sigma

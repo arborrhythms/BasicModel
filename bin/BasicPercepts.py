@@ -250,16 +250,26 @@ class BasicPercepts(nn.Module):
         self.index = {}
         self.words = {}
         self.selectors = {}
-        # The table of values: each value percept's felt value, exact. Its
-        # code is its place among the bins of the felt value (rule 55);
-        # the table is what the way back reads. Negative references below
-        # the fixed-axis namespace address it.
+        # The table of values: the value of each cut of the catalogs over
+        # intensity (:meth:`cut`) and of each value beside the words
+        # (:meth:`perceive_value`). A seat's code is its place among the
+        # bins of the felt value (rule 55). Negative references below the
+        # fixed-axis namespace address it.
         self.register_buffer('value_codes', torch.zeros(self.capacity))
         self.register_buffer('value_count', torch.zeros((), dtype=torch.long))
+        # Each value's row's centroid, the mean of the values met in it, and
+        # how many were met (:meth:`met`).
+        self.register_buffer('centroids', torch.zeros(self.capacity))
+        self.register_buffer('meets', torch.zeros(self.capacity, dtype=torch.long))
         self.revision = 0
         # Each basic percept is a row of the first Pi over its parts and
         # wholes; the rows are written in the order the percepts are reserved.
         self.pi = SparsePiLayer3(self.capacity, self.capacity * self.ENTRIES_PER_ROW)
+        # The Pi of the value space, a sparse matrix of its own: row ``r`` is
+        # row ``r`` of the table, and a value's row has its entries here, on
+        # its part and its whole of the catalogs of cuts (:meth:`value_keys`);
+        # every other row is empty here, as a value's row is in the first Pi.
+        self.value_pi = SparsePiLayer3(self.capacity, 2 * self.capacity)
         # A conjunction of basic percepts is a row whose members are rows.
         self.conjunctions = {}
         # The stored form each row of a form spells, and the rows of each
@@ -358,7 +368,7 @@ class BasicPercepts(nn.Module):
         return known[int(part)]
 
     def felt_of(self, references):
-        """The exact felt value in the table of each value reference."""
+        """The value in the table of each value reference."""
         ids = torch.as_tensor(references, device=self.value_codes.device, dtype=torch.long)
         seats = -ids - self.identity_width - 1
         if bool(((seats < 0) | (seats >= self.value_count)).any()):
@@ -366,14 +376,12 @@ class BasicPercepts(nn.Module):
         return self.value_codes[seats]
 
     def felt(self, rows):
-        """The way back: the exact felt value of each value percept row,
-        read from the table of values. A code gives only the bin, to 1/64 of
-        the felt chart (:meth:`bin_of`)."""
+        """The way back: each value's row's centroid, the mean of the values
+        met in it (:meth:`met`). A code gives only the region."""
         rows = torch.as_tensor(rows, dtype=torch.long)
-        references = [self.occurrences[int(row)][0][0] for row in rows.flatten().tolist()]
-        if any(reference >= -self.identity_width for reference in references):
+        if not all(self.is_value(row) for row in rows.flatten().tolist()):
             raise ValueError('only a value percept has a felt value')
-        return self.felt_of(references).reshape(rows.shape)
+        return self.centroids[rows.to(self.centroids.device)]
 
     def bin_of(self, codes):
         """The bin a value code cuts at, from its parts half: the last of its
@@ -389,14 +397,15 @@ class BasicPercepts(nn.Module):
             valid = valid & whole & ((other == count) | (self.property_width != self.identity_width))
         return torch.where(valid, count - 1, -1)
 
-    @torch.no_grad()
-    def perceive_value(self, value):
-        """Admit the exact value as both its tightest part and its whole: one
-        row of the table of values, keyed by the value alone. The row is
-        reserved, not promoted: its reader promotes it."""
+    def _felt_presence(self, value):
         value = torch.as_tensor(value, device=self.value_codes.device, dtype=self.value_codes.dtype)
         if value.ndim or not bool((value > 0) & (value <= 1)):
             raise ValueError('a value percept requires one felt presence in (0, 1]')
+        return value
+
+    def _seat(self, value):
+        """The reference of ``value``'s seat in the table of values, written
+        on first use."""
         known = (self.value_codes[:int(self.value_count)] == value).nonzero().flatten()
         if len(known):
             seat = int(known[0])
@@ -406,8 +415,62 @@ class BasicPercepts(nn.Module):
                 raise OverflowError('value percept capacity exhausted')
             self.value_codes[seat] = value
             self.value_count += 1
-        reference = -self.identity_width - 1 - seat
-        return self.reserve((reference,), (reference,))
+        return -self.identity_width - 1 - seat
+
+    def cut(self, index, width):
+        """The catalog's cut at bin ``index`` of a half ``width`` wide: the seat of
+        the bin's middle in the table of values, whose code in that half is
+        the bins at or below it (:meth:`value_code`). As a part it is a lower
+        cut, as a whole an upper cut."""
+        middle = (torch.as_tensor(index, dtype=self.value_codes.dtype, device=self.value_codes.device) + .5) / width
+        return self._seat(middle)
+
+    @torch.no_grad()
+    def met(self, row, value, count=1):
+        """``count`` occurrences of ``value`` met in a value's row: its
+        centroid moves to the mean of the values met in it. A value met
+        again where it alone was met leaves the centroid as it was."""
+        total = self.meets[row] + int(count)
+        self.centroids[row] += (value - self.centroids[row]) * (int(count) / total)
+        self.meets[row] = total
+        return row
+
+    @torch.no_grad()
+    def perceive_value(self, value):
+        """The value beside the words: a row whose part and whole are both
+        the cut at the value itself, so its region holds that value alone
+        and its centroid is the value. It keeps the scalar's own reading
+        (:mod:`ScalarPercepts`). The row is reserved, not promoted: its
+        reader promotes it."""
+        value = self._felt_presence(value)
+        reference = self._seat(value)
+        return self.met(self.reserve((reference,), (reference,)), value)
+
+    @torch.no_grad()
+    def perceive_intensity(self, value, count=1):
+        """A basic percept of intensity: the row over the greatest part an
+        occurrence of ``value`` holds and the least whole it lies under, of
+        the catalogs of cuts (:meth:`cut`), which is its bin in each half; a
+        region of the line, keyed by its part and its whole and never by the
+        value. ``count`` occurrences of the value are met in it
+        (:meth:`met`). The row is reserved, not promoted: its reader
+        nominates it."""
+        value = self._felt_presence(value)
+        part = (self.cut(self.value_bin(value, self.identity_width), self.identity_width),)
+        whole = ((self.cut(self.value_bin(value, self.property_width), self.property_width),)
+                 if self.property_width else ())
+        return self.met(self.reserve(part, whole), value, count)
+
+    def perceive_intensities(self, values):
+        """Each intensity of ``values`` above zero perceived
+        (:meth:`perceive_intensity`), with as many occurrences as it has: its
+        row at each, ``-1`` where nothing is."""
+        percepts = torch.full(values.shape, -1, dtype=torch.long, device=values.device)
+        for value in values.unique():
+            if value > 0:
+                here = values == value
+                percepts = torch.where(here, self.perceive_intensity(value, int(here.sum())), percepts)
+        return percepts
 
     def collection_code(self, rows):
         """Common part and covering whole of the observed basic percepts."""
@@ -475,6 +538,8 @@ class BasicPercepts(nn.Module):
                 self.form_of(row)
             if self.pi.append(self.member_keys(row), against=self.against_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
+            if self.value_pi.append(self.value_keys(row)) != row:
+                raise RuntimeError('the Pi of the value space disagrees with the basic percept rows')
             self.revision += 1
         if word is not None:
             self.words[int(word)] = row
@@ -502,7 +567,7 @@ class BasicPercepts(nn.Module):
             self.occurrences[row] = (), ()
             self.place_rows[row] = plus, minus, what
             self.forms[row] = None
-            if self.pi.append(self.member_keys(row)) != row:
+            if self.pi.append(self.member_keys(row)) != row or self.value_pi.append(()) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             # The place's where entries start at the cone's code: the least
             # of each wire's two lanes over the occurrences met.
@@ -530,32 +595,32 @@ class BasicPercepts(nn.Module):
         t = table[..., self.width + WHERE_WIRES:self.width + WHERE_WIRES + WHEN_WIRES, :]
         return place_factor_by_axis(w, where) * field_factor(t, when)
 
-    def parthood(self, bank, values):
-        """Numerical parthood, element by element: each row of an image's
-        bank at each of its occurrences, ``[rows, B, O]``, one where what
-        the row keeps is less than or equal to what the occurrence holds on
-        every coordinate, and nothing elsewhere. On the ``.what``, the row's
-        code against the occurrence's, and the row's value against the
-        occurrence's intensity in ``values`` ``[B, O]`` (a code tells values
-        apart only to its bin; a row that is no value's keeps nothing
-        there), so a row of a lesser or equal value is a part; on the
-        ``.where``, the row's entries against the occurrence's wires on
-        their two lanes (a row with no entries there, a value's, is a part
-        at every place; a place's row whose cone is one place, at that place
-        alone); times its entries on the ``.when``, read as
-        :meth:`place_factor` reads them. Nothing tells against."""
+    def parthood(self, bank):
+        """Each row's entries on the ``.where`` wires read at each occurrence
+        of an image's bank by numerical parthood, ``[rows, B, O]``: one where
+        the row's entries are less than or equal to the occurrence's wires on
+        their two lanes, on every wire (a row with no entries there, a
+        value's, at every place; a place's row whose cone is one place, at
+        that place alone), and nothing elsewhere; times its entries on the
+        ``.when``, read as :meth:`place_factor` reads them."""
         rows, table = list(bank.rows), bank.table
         where, when = self._entries(rows, table)
-        what = bank.codes[:, 0, :self.width].detach().to(table)
-        kept = torch.tensor([float(self.felt([row])[0]) if self.is_value(row) else 0. for row in rows],
-                            dtype=self.value_codes.dtype, device=values.device)
         w = table[..., self.width:self.width + WHERE_WIRES, :]
         t = table[..., self.width + WHERE_WIRES:self.width + WHERE_WIRES + WHEN_WIRES, :]
         tolerance = 1e-6
-        on_what = ((table[None, ..., :self.width, 0] >= what[:, None, None] - tolerance).all(-1)
-                   & (values.to(kept)[None] >= kept[:, None, None]))
         on_where = (w[None] >= where[:, None, None] - tolerance).flatten(-2).all(-1)
-        return (on_what & on_where).to(table) * field_factor(t, when)
+        return on_where.to(table) * field_factor(t, when)
+
+    def value_events(self, bank):
+        """Each row of an image's bank at each of its occurrences on two
+        lanes, ``[rows, B, O, 2]``, read as a form is (:func:`held_at`): for
+        where the occurrence holds the row's part and lies under its whole,
+        against where it holds the part and lies above the whole, nothing
+        where it lies below the part or where nothing is; times the row's
+        entries on the wires for its place (:meth:`parthood`)."""
+        part, whole, _added = held_at(bank, bank.table)
+        at = bank.activity[None, ..., 0].to(part) * self.parthood(bank)
+        return torch.stack((part * whole * at, part * (1 - whole) * at), -1)
 
     def kept_percept(self, rows):
         """The first Pi's way back (rule 79; §19.121, 1): for each row, the
@@ -885,6 +950,15 @@ class BasicPercepts(nn.Module):
         leaves = self._leaves()
         return [('ps', tuple(leaf for part in parts for leaf in leaves(part))),
                 *(('ws', whole) for whole in wholes)]
+
+    def value_keys(self, row):
+        """A value's row's entries in the Pi of the value space: its part, a
+        lower cut, and its whole, an upper cut, of the catalogs of cuts
+        (:meth:`cut`). Any other row has none there."""
+        if int(row) in self.conjunctions or int(row) in self.place_rows or not self.is_value(row):
+            return []
+        parts, wholes = self.occurrences[int(row)]
+        return [('ps', tuple(parts)), *(('ws', whole) for whole in wholes)]
 
     def read(self, percepts, brackets, rows, **options):
         """Tie both towers live, with the complementary pole from properties."""
@@ -1240,24 +1314,21 @@ class BasicPercepts(nn.Module):
                            where, torch.full_like(where, int(time.amax()) if time.numel() else 0),
                            self.width, self.identity_width, None, registry, None)
 
-    def read_values(self, bank, values, *, where_width):
-        """The Pi over values: each row of an image's bank of the
-        intensities ``values`` ``[B, O]`` at each of its readings, ``[rows,
-        B, readings, 2]``. A row reads for at an occurrence of which it is a
-        part by numerical parthood, element by element on the ``.what`` and
-        the ``.where`` (:meth:`parthood`), and nothing elsewhere or where
-        nothing is; nothing tells against. A
-        reading's value is the greatest over the occurrences it holds. Where
-        ``where_width`` is above zero, a value's row is read at no reading
-        wider than that many places, so it is never read over two places at
-        once. A conjunction is the first Pi over its members' readings, and
-        a member reads what its holders add (:meth:`held`)."""
+    def read_values(self, bank, *, where_width):
+        """The Pi over values: each row of an image's bank at each of its
+        readings, ``[rows, B, readings, 2]``, each occurrence read as a form
+        is, by its part and its whole on two lanes, and by the row's entries
+        on the wires (:meth:`value_events`). A reading's value is the
+        greatest over the occurrences it holds. Where ``where_width`` is
+        above zero, a value's row is read at no reading wider than that many
+        places, so it is never read over two places at once. A conjunction
+        is the first Pi over its members' readings, and a member reads what
+        its holders add (:meth:`held`)."""
         rows = list(bank.rows)
         B, K = bank.where.shape[:2]
         if not rows:
             return bank.table.new_zeros(0, B, K, 2)
-        at = bank.activity[None, ..., 0].to(bank.table) * self.parthood(bank, values)
-        events = torch.stack((at, torch.zeros_like(at)), -1)                           # [R, B, O, 2]
+        events = self.value_events(bank)                                               # [R, B, O, 2]
         # Each occurrence lies in its own reading; a reading that holds
         # several (the bracket) is the greatest over them.
         slot = torch.where(bank.token >= 0, bank.token, K)
@@ -1394,6 +1465,7 @@ class BasicPercepts(nn.Module):
         self.occurrences[:] = [None] * self.capacity
         self.index = {}
         self.pi.clear()
+        self.value_pi.clear()
         self._pi_stamp = None
         self.conjunctions = {}
         self.forms, self.form_rows, self._keys = {}, {}, {}
