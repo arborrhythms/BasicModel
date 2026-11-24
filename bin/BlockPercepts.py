@@ -11,9 +11,27 @@ class BlockParts:
     starts: torch.Tensor          # sorted sentence starts per stream, padded at the right
     runs: tuple                   # admitted names used by the existing holder links
 
+    repair_rows: torch.Tensor | None = None
+    coordinate_starts: torch.Tensor | None = None  # [stream, repaired part, coordinate]
+
     def openings(self, rows):
+        if not len(self.rows):
+            return rows.new_zeros(self.starts.shape[0], len(rows))
         at = torch.searchsorted(self.rows, rows.contiguous()).clamp_max(len(self.rows) - 1)
         return torch.where(self.rows[at] == rows, self.available[:, at], 0)
+
+    def coordinate_openings(self, rows, start, width):
+        if self.repair_rows is None:
+            return None
+        at = torch.searchsorted(self.repair_rows, rows.contiguous()).clamp_max(len(self.repair_rows) - 1)
+        starts = self.coordinate_starts[:, at, start:start + width]
+        return torch.where((self.repair_rows[at] == rows)[None, :, None], starts, 0)
+
+    def values(self, rows, codes, start):
+        openings = self.coordinate_openings(rows, start, codes.shape[-1])
+        if openings is None:
+            return codes
+        return torch.where(self.starts[..., None, None] >= openings[:, None], codes, 0.)
 
 
 @dataclass(frozen=True)
@@ -51,7 +69,7 @@ def _definition(basic, row, form, block):
                     ([identity.atoms[a] for a in nested[part]] if part in nested else [part])))
     ids = torch.tensor(members, device=device, dtype=torch.long)
     basis = basic.native._basis.lookup_rows(ids)[..., :iw]
-    lower = torch.where(active(members)[..., None], basis, 0.).amax(-2)
+    lower = torch.where(active(members)[..., None], block.values(ids, basis, 0), 0.).amax(-2)
     atoms = set(identity.words[form])
     if not basic.property_width:
         upper = lower[..., :0]
@@ -67,6 +85,7 @@ def _definition(basic, row, form, block):
             ordered = sorted(held)
             refs = [identity.atoms[atom] for atom in ordered]
             catalog = torch.stack([identity.catalog_code(atom) for atom in ordered]).to(lower)
+            catalog = block.values(ids.new_tensor(refs), catalog, iw)
             tight = torch.where(active(refs)[..., None], catalog, 0.).amax(-2)
             upper = torch.minimum(upper, tight)
         upper = upper.expand(*lower.shape[:-1], -1)
@@ -74,14 +93,15 @@ def _definition(basic, row, form, block):
     holders = sorted(identity.holders.get(form, ()))
     if holders:
         # The nearest holder can differ per page even for an established part.
-        holder_ids = [identity.atoms[('part', text_of(h))] for h in holders]
+        holder_ids = [identity.word_rows[h] for h in holders]
         lengths = ids.new_tensor(list(map(len, holders)))
         distance = torch.where(active(holder_ids), lengths, torch.iinfo(torch.long).max)
         nearest = (distance == distance.amin(-1, keepdim=True)) & (distance == lengths)
         for i, holder in enumerate(holders):
             extra = [identity.atoms[a] for a in identity.words[holder] if a not in atoms and name not in a[1]]
             if extra:
-                values = basic.native._basis.lookup_rows(ids.new_tensor(extra))[..., :iw]
+                other = ids.new_tensor(extra)
+                values = block.values(other, basic.native._basis.lookup_rows(other)[..., :iw], 0)
                 present = active(extra) & nearest[..., i, None]
                 opposed = torch.maximum(opposed, torch.where(present[..., None], values, 0.).amax(-2))
     positive = torch.cat((lower, upper), -1)

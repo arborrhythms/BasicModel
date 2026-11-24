@@ -423,7 +423,8 @@ def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
     return parts, counts, locations
 
 
-def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False, available_from=None):
+def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False,
+                     available_from=None, coordinate_starts=None):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
     if not spellings:
@@ -435,8 +436,14 @@ def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elem
         found = found & (spans[..., :1] >= available_from[:, None, :])
     coordinates = torch.cat((part_codes, catalog.to(part_codes)), -1)
     step = max(1, (1 << 22) // max(1, batch * coordinates.numel()))
-    joined = torch.cat([coordinates.masked_fill(~mask[..., None], -torch.inf).amax(-2)
-                        for mask in found.split(step, dim=1)], dim=1)
+    joined = []
+    for mask, places in zip(found.split(step, dim=1), spans.split(step, dim=1)):
+        available = coordinates
+        if coordinate_starts is not None:
+            visible = places[..., 0, None, None] >= coordinate_starts[:, None]
+            available = torch.where(visible, coordinates, 0.)
+        joined.append(available.masked_fill(~mask[..., None], -torch.inf).amax(-2))
+    joined = torch.cat(joined, dim=1)
     parts, tight = joined.split((part_codes.shape[-1], catalog.shape[-1]), dim=-1)
     present = found.any(-1, keepdim=True)
     return torch.where(present, parts, 0.), torch.where(present, tight, 1.)
@@ -1264,7 +1271,9 @@ class BasicPercepts(nn.Module):
             basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
             parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog,
                                             escaped_elements=identity.escaped_elements(device),
-                                            available_from=None if block_parts is None else block_parts.openings(rows))
+                                            available_from=None if block_parts is None else block_parts.openings(rows),
+                                            coordinate_starts=None if block_parts is None else
+                                            block_parts.coordinate_openings(rows, 0, self.width))
             codes[..., :self.identity_width] = parts
             held = torch.minimum(held, tight)
         elif identity is not None and O:

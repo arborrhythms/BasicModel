@@ -11382,12 +11382,14 @@ class PartSpace(Space):
         # An explicit suffix lesson teaches the marker against this presentation.
         # Ordinary openings read the part inventory available on entry.
         prior_parts = len(identity.added) if identity is not None else 0
+        prior_forms = len(identity.words) if identity is not None else 0
         sentence_rows = getattr(self, '_staged_sentence_rows', None)
         track_parts = batch > 1 or (sentence_rows is not None and any(len(row) > 1 for row in sentence_rows))
         from bisect import bisect_right
         sentence_starts = None if sentence_rows is None else [
             InputSpace.packed_sentence_starts(row) for row in sentence_rows]
         new_forms = {}
+        repairs = [] if track_parts else None
         def observe_new_form(unit, stream, offset):
             if track_parts:
                 from WordIdentity import text_of
@@ -11403,7 +11405,8 @@ class PartSpace(Space):
                     if changed is None or not changed[b][w]:
                         unit = raw[lo:hi]
                         observe_new_form(unit, b, lo)
-                        identity.observe_nested(unit)
+                        with identity.record_repairs(repairs, unit):
+                            identity.observe_nested(unit)
         located_parts = None
         if layout is not None and simple_parts and not hiding:
             # Register only observed characters. Cuts can split UTF-8, so decode
@@ -11536,7 +11539,7 @@ class PartSpace(Space):
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
         if identity is not None and admit and not teaching_marker:
             if observed_forms:
-                identity.observe_forms(observed_forms)
+                identity.observe_forms(observed_forms, repairs=repairs)
             if located_parts is not None:
                 identity.observe_rows(form_rows)
         self.subspace.whereEncoding.p = 0
@@ -11575,9 +11578,10 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
-        if track_parts and identity is not None and len(identity.added) > prior_parts:
+        if track_parts and identity is not None and (len(identity.words) > prior_forms or len(identity.added) > prior_parts or repairs):
             self._forward_input['block_parts'] = identity.block_part_visibility(
-                prior_parts, new_forms, batch, dev, sentence_starts=sentence_starts)
+                prior_parts, new_forms, batch, dev, sentence_starts=sentence_starts, repairs=repairs,
+                prior_forms=prior_forms)
         if layout is not None:
             from FieldReverse import byte_rows
             width = byte_count

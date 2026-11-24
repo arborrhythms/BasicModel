@@ -421,3 +421,59 @@ def test_page_scoped_pi_and_inverse_match_independent_gradients():
         return torch.autograd.grad(sum(x.sum() for x in outputs), (data, held))
     for a, e in zip(gradients(actual), gradients(expect)):
         torch.testing.assert_close(a, e)
+
+
+def test_repaired_atom_coordinates_stay_with_their_witnesses_until_consolidation():
+    import torch
+    from BasicPercepts import occurrence_parts
+    from BlockPercepts import revisions
+
+    identity, basic, _, rows = coded([b'aab', b'baa', b'bab'])
+    row = rows[b'bab']
+    before = basic.bank_codes([row])[0]
+    surface = torch.tensor([list(b'bab bab')] * 2)
+    spans = torch.tensor([[[0, 3], [4, 7]]] * 2)
+
+    def read(block=None):
+        spellings, ids, catalog, _ = identity.occurrence_bank(surface.device)
+        basis = basic.native._basis.lookup_rows(ids)[..., :identity.width]
+        return torch.cat(occurrence_parts(surface, spans, spellings, basis, catalog,
+                             available_from=None if block is None else block.openings(ids),
+                             coordinate_starts=None if block is None else block.coordinate_openings(ids, 0, basic.width)), -1)
+
+    original = read()
+    prior = len(identity.added)
+    repairs = []
+    identity.observe_forms([b'baab'], repairs=repairs)
+    after = basic.bank_codes([row])[0]
+    assert not torch.equal(before, after)
+    block = identity.block_part_visibility(prior, {'baab': {1: 4}}, 2, surface.device,
+                                           sentence_starts=[[0, 4], [0, 4]], repairs=repairs)
+    versions = revisions(basic, [row], block).at(spans[..., 0])[0]
+    torch.testing.assert_close(versions[0], before.expand_as(versions[0]), atol=0, rtol=0)
+    torch.testing.assert_close(versions[1, 0], before, atol=0, rtol=0)
+    torch.testing.assert_close(versions[1, 1], after, atol=0, rtol=0)
+    scoped, consolidated = read(block), read()
+    assert not torch.equal(consolidated, original)
+    torch.testing.assert_close(scoped[0], original[0], atol=0, rtol=0)
+    torch.testing.assert_close(scoped[1, 0], original[1, 0], atol=0, rtol=0)
+    torch.testing.assert_close(scoped[1, 1], consolidated[1, 1], atol=0, rtol=0)
+
+
+def test_preexisting_part_becomes_a_holder_only_on_the_observing_page():
+    import torch
+    from BlockPercepts import revisions
+
+    identity, basic, _, rows = coded([b'b'])
+    identity.admit_part(b'abc')
+    before = basic.bank_codes([rows[b'b']])[0]
+    prior_parts, prior_forms = len(identity.added), len(identity.words)
+    identity.admit(b'abc')
+    assert len(identity.added) == prior_parts
+    after = basic.bank_codes([rows[b'b']])[0]
+    assert (after[1] > before[1]).any()
+    block = identity.block_part_visibility(prior_parts, {'abc': {1: 0}}, 2, before.device,
+                                           prior_forms=prior_forms)
+    versions = revisions(basic, [rows[b'b']], block).at(torch.zeros(2, 1, dtype=torch.long))[0, :, 0]
+    torch.testing.assert_close(versions[0], before, rtol=0, atol=0)
+    torch.testing.assert_close(versions[1], after, rtol=0, atol=0)
