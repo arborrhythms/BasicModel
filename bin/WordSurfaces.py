@@ -79,6 +79,39 @@ def bytes_at(surface, spans, active, capacity):
     return data, valid
 
 
+def reading_forms(surface, spans, active):
+    """Trim byte whitespace and identify repeated ordered spellings within each page.
+
+    A name is the first live place with the same bytes on this page. It is
+    only an equality key for this reading. Identical multisets in different
+    orders, and repetitions with different lengths, remain distinct.
+    """
+    B, length = surface.shape
+    W = active.shape[1]
+    lo, hi = spans.unbind(-1)
+    if not length or not W:
+        return torch.zeros_like(spans), torch.full_like(lo, -1)
+    pos = torch.arange(length, device=surface.device)
+    # Match bytes.strip(), including vertical tab and form feed.
+    visible = (surface != 32) & ((surface < 9) | (surface > 13))
+    first = torch.where(visible, pos, length).flip((1,)).cummin(1).values.flip((1,))
+    last = torch.where(visible, pos + 1, 0).cummax(1).values
+    start = torch.nn.functional.pad(first, (0, 1), value=length).gather(1, lo)
+    end = torch.nn.functional.pad(last, (1, 0)).gather(1, hi)
+    present = active & (start < end)
+    bounds = torch.where(present[..., None], torch.stack((start, end), -1), 0)
+    # Bound transient pairwise comparison for larger constructed capacities.
+    spellings, _ = bytes_at(surface, bounds, present, length)
+    sizes = bounds[..., 1] - bounds[..., 0]
+    block = max(1, 1048576 // max(1, B * W * length))
+    keys = []
+    for i in range(0, W, block):
+        same = (spellings[:, i:i+block, None] == spellings[:, None]).all(-1)
+        same = same & (sizes[:, i:i+block, None] == sizes[:, None])
+        keys.append(same.long().argmax(-1))
+    return bounds, torch.where(present, torch.cat(keys, 1), -1)
+
+
 def primitive_support(data, valid):
     """Compatibility for explicit banks; only scatter indices become int64."""
     return torch.zeros(*data.shape[:2], 256, dtype=torch.int32, device=data.device).scatter_add(

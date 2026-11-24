@@ -448,3 +448,24 @@ def test_byte_rows_track_restore_and_leave_previous_gather_intact():
     assert before[[97, 98, 99]].tolist() == [0, -1, -1]
     assert restored[[97, 98, 99]].tolist() == [-1, 0, -1]
     assert byte_rows(store)[[97, 98, 99]].tolist() == [-1, 0, 1]
+
+
+def test_reading_forms_use_ordered_bytes_and_only_this_page():
+    from WordSurfaces import reading_forms
+
+    rows = [b' ab ba ab aab  \t', b' ba ab ba aba  \r']
+    raw = torch.tensor([list(row) for row in rows])
+    cuts = torch.tensor([[(0, 3), (3, 6), (6, 9), (9, 13), (13, 15), (15, 16)]]).expand(2, -1, -1)
+    active = torch.ones_like(cuts[..., 0], dtype=torch.bool)
+    active[0, 0] = False
+    compiled = torch.compile(reading_forms, fullgraph=True, backend='eager')
+    for surface in (raw, raw.flip(0)):
+        bounds, keys = compiled(surface, cuts, active)
+        for b, row in enumerate(surface.tolist()):
+            prior = {}
+            for w, (lo, hi) in enumerate(cuts[b].tolist()):
+                run = bytes(row[lo:hi])
+                spelling = run.strip() if active[b, w] else b''
+                expected = (lo + len(run) - len(run.lstrip()), lo + len(run.rstrip())) if spelling else (0, 0)
+                assert bounds[b, w].tolist() == list(expected)
+                assert int(keys[b, w]) == (prior.setdefault(spelling, w) if spelling else -1)

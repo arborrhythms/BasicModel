@@ -181,11 +181,8 @@ class WordForecast:
         if not torch.is_tensor(codes):
             codes = getattr(model.inputSpace, '_ar_grammar_object_atoms', None)
         self.codes = (keys if not torch.is_tensor(codes) or codes.shape != keys.shape else codes).detach()
-        B,W,D = self.codes.shape
-        count = max(1, int(self.identities.max())+1)
-        matches = (torch.arange(count, device=keys.device)[:,None] == self.identities.reshape(1,-1)) & self.live.reshape(1,-1)
-        self.bank = self.codes.reshape(-1,D)[matches.long().argmax(-1)][None].expand(B,-1,-1)
-        self.valid = matches.any(-1)[None].expand(B,-1)
+        self.bank = self.codes
+        self.valid = self.live & (self.identities == torch.arange(keys.shape[1], device=keys.device))
         stage_symbol_bank(model, owner)
         self.reader = WordArrivals(owner, self.bank, self.valid, gain=model.word_expectation_gain,
                                   epsilon=model.expectation_epsilon, saturation=model.expectation_saturation)

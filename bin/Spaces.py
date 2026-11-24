@@ -11008,7 +11008,7 @@ class PartSpace(Space):
                 event_positions(self, event.shape[:-1], device=event.device)).to(event)
         return event
 
-    def synthesize_word_parts(self, part_ids, part_mask, part_offsets=None):
+    def synthesize_word_parts(self, part_ids, part_mask, part_offsets=None, *, events=None):
         """Synthesize every constituent of one word inside its word tick.
 
         Called from ``BasicModel._per_word_body_step``.  The live codebook
@@ -11020,7 +11020,8 @@ class PartSpace(Space):
         """
         if part_ids is None or part_mask is None:
             return None
-        events = self._radix_part_events(part_ids, part_offsets)
+        if events is None:
+            events = self._radix_part_events(part_ids, part_offsets)
         mask = part_mask.to(device=events.device, dtype=torch.bool)
         if tuple(mask.shape) != tuple(events.shape[:-1]):
             raise RuntimeError(
@@ -11211,7 +11212,7 @@ class PartSpace(Space):
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(
-                pid_grid, part_mask, part_offsets)
+                pid_grid, part_mask, part_offsets, events=part_events)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)
         if getattr(self, "_mereology_raise", False):
@@ -11340,10 +11341,12 @@ class PartSpace(Space):
         threshold = max(1, int(getattr(self, "chunk_promotion_threshold", 2) or 2))
         units = []
         for b, row in enumerate(host_tokens):
-            raw = b"".join(
-                (text.encode("utf-8") if isinstance(text, str)
-                 else bytes(text))
-                for text in row if text is not None)
+            if len(row) == 1 and isinstance(row[0], (bytes, str)):
+                token = row[0]
+                raw = token if isinstance(token, bytes) else token.encode("utf-8", errors="surrogateescape")
+            else:
+                raw = b"".join(text.encode("utf-8", errors="surrogateescape") if isinstance(text, str)
+                               else bytes(text) for text in row if text is not None)
             spans = None
             if unit_spans_rows is not None and b < len(unit_spans_rows):
                 spans = [(int(s0), int(e0)) for (s0, e0) in unit_spans_rows[b]
@@ -11381,13 +11384,14 @@ class PartSpace(Space):
         null_pid = ps.get_id(b"\x00")
         if null_pid is None:
             null_pid = ps.insert(b"\x00")
-        # Finish vocabulary observations before materializing any word's
-        # parts: a later word can expose a nested whole in an earlier word.
-        if identity is not None and admit:
-            for b, (raw,spans) in enumerate(units):
-                for w, (start,end) in enumerate(spans[:word_capacity]):
+        # An explicit suffix lesson teaches the marker against this presentation.
+        # Ordinary openings read the part inventory available on entry.
+        teaching_marker = identity is not None and identity._marker_pattern is not None
+        if teaching_marker and admit:
+            for b, (raw, spans) in enumerate(units):
+                for w, (lo, hi) in enumerate(spans[:word_capacity]):
                     if changed is None or not changed[b][w]:
-                        identity.observe_nested(raw[start:end])
+                        identity.observe_nested(raw[lo:hi])
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
             word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
@@ -11417,7 +11421,7 @@ class PartSpace(Space):
                                 for part,lo,hi in identity.nested.get(unit,()))
                             # Nothing is admitted while online learning is
                             # frozen: an unstored form is read by its parts.
-                            pids = (list(identity.admit(unit)) if admit or unit in identity.words
+                            pids = (list(identity.parts(unit)) if unit in identity.words
                                     else [identity._atom(atom) for atom in identity.atoms_of(unit)])
                         atom_count = len(pids) - len(nested)
                     else:
@@ -11488,7 +11492,12 @@ class PartSpace(Space):
         word_truncated = torch.zeros_like(word_active)
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
-            word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets)
+            word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
+        if identity is not None and admit and not teaching_marker:
+            for b, (raw, spans) in enumerate(units):
+                for w, (lo, hi) in enumerate(spans[:word_capacity]):
+                    if changed is None or not changed[b][w]:
+                        identity.observe_nested(raw[lo:hi])
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)
         if getattr(self, "_mereology_raise", False):

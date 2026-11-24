@@ -174,7 +174,6 @@ def stage_input(model):
         return  # An absent text/scalar field has no bracket to examine.
     intervals=fi.get('word_intervals') or ()
     owner=model._concept_owner()
-    definitions=owner.definitions
     from WordSurfaces import is_lexical_form
     native_ids=fi.get('native_indices',fi.get('indices'))
     native_spans=fi.get('native_part_spans',fi.get('part_spans'))
@@ -196,9 +195,11 @@ def stage_input(model):
             return None
         return owner.interpret.lookup_word(parts,sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form))),
             form=form,word_reading=True,reading=owner.reading(b))
-    extents=[];known=[];identities=[];forms=[];concepts=[];vocabulary={}
+    native_spans_available = torch.is_tensor(fi.get('sentence_bytes')) and torch.is_tensor(fi.get('unit_spans'))
+    extents=[];known=[];identities=[];forms=[];concepts=[]
     for b in range(B):
         row=[];seen=[];ids=[];names=[];words=[]
+        vocabulary = {} if not native_spans_available else None
         for w in range(W):
             text=str(texts[b][w]) if b<len(texts) and w<len(texts[b]) else ''
             raw=text.encode('latin1','replace')
@@ -210,18 +211,29 @@ def stage_input(model):
             else:
                 lo=hi=0
             form=surface.decode('latin1')
-            row.append((lo,hi) if surface else (0,0))
+            if not native_spans_available:
+                row.append((lo,hi) if surface else (0,0))
             word=found(b,form,lo,hi) if surface else None
             seen.append(word is not None);words.append(-1 if word is None else int(word))
-            if form and form not in vocabulary:vocabulary[form]=len(vocabulary)
-            ids.append(vocabulary.get(form,-1));names.append(form)
-        extents.append(row);known.append(seen);identities.append(ids);forms.append(names);concepts.append(words)
-    spans=torch.tensor(extents,device=slab.device,dtype=torch.long)
+            if not native_spans_available:
+                if form and form not in vocabulary:
+                    vocabulary[form] = w
+                ids.append(vocabulary.get(form, -1))
+            names.append(form)
+        if not native_spans_available:
+            extents.append(row)
+            identities.append(ids)
+        known.append(seen);forms.append(names);concepts.append(words)
+    if native_spans_available:
+        from WordSurfaces import reading_forms
+        spans, ids = reading_forms(fi['sentence_bytes'], fi['unit_spans'], active)
+    else:
+        spans = torch.tensor(extents, device=slab.device, dtype=torch.long)
+        ids = torch.tensor(identities, device=slab.device, dtype=torch.long)
     live=active & (spans[...,1]>spans[...,0])
     spans=torch.where(live[...,None],spans,0)
     model._attention_spans=spans
     if model.attention_budget == 0:return
-    ids=torch.tensor(identities,device=slab.device,dtype=torch.long)
     known=torch.tensor(known,device=slab.device,dtype=torch.bool)&live
     chooser=model._stm_reducer()
     dim=int(chooser.d_model)
@@ -291,15 +303,8 @@ def stage_expectation(model, *, prefix=None):
     if not torch.is_tensor(codes):codes=getattr(isp,'_ar_grammar_object_atoms',None)
     if not torch.is_tensor(codes) or codes.shape != keys.shape:codes=keys
     codes=codes.detach()
-    B,W,D=codes.shape
-    # One candidate per identity, from the input's native candidate bank.
-    C=max(1,int(identities.max())+1)
-    flat_ids=identities.reshape(-1)
-    flat_codes=codes.reshape(-1,D)
-    matches=(torch.arange(C,device=codes.device)[:,None]==flat_ids[None])&live.reshape(1,-1)
-    first=matches.long().argmax(-1)
-    bank=flat_codes[first][None].expand(B,-1,-1).detach()
-    valid=matches.any(-1)[None].expand(B,-1)
+    bank = codes
+    valid = live & (identities == torch.arange(codes.shape[1], device=codes.device))
     accepted=model._attention_words.accepted & live
     lanes=read_poles(model, 'WordExpectation.word_distribution')
     if prefix is not None:
