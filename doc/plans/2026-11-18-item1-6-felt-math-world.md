@@ -3320,3 +3320,45 @@ apart from the new `probe` field no row of a category other than 4 and 26
 differs from the second freeze. Accepted as built, with the implementer's
 decisions of §15.11: category 4's inference split is 9 of yes and 11 of
 no, since only nine such rows of yes exist.
+
+### 16.7 Alec: non-overlapping boxes, and no dimension for the modality (2026-11-23)
+
+Alec, while the grid was being built: "so what are your thoughts about
+words with no location? can we move them out of the .where range of the
+intensity modality, or do we need a separate .where dimension that indexes
+modalities?" And to Claude's answer: "Ok, non-overlapping boxes, no modality
+dimension."
+
+*Decided.* The words of a sentence and the intensities of an image take
+boxes of the one space that share no place, each on its own stretch of the
+first axis (§16.3, point 4, as it is being built). The `.where` gets no
+axis that indexes the modality: the range a place lies in says its
+modality, as `doc/Spaces.md` has it, and as part rows, whole rows and
+conceptual slots are told from text today.
+
+*Claude's reasons, as put to him.* A dimension for the modality would cost
+four wires on every percept and concept of every model to say what the
+range says; and it would set a word at x = 3 and a pixel at x = 3 one step
+apart, differing on one axis alone, which is the confusion to avoid. The
+place of a word and the place of a pixel never need comparing: an
+occurrence keeps its place, a generalization holds none, and the two
+modalities meet at concepts (C.6, point 3). The subtitle taken literally, a
+row of text under the image sharing its columns, is not taken: shared
+columns would invite word order to be tied to left and right in the image.
+
+*What it leaves to round one.*
+
+1. A modality's place match stays inside its own range. Text's
+   reconstruction keeps the `text` range of the match
+   (`FieldReverse.reverse`); an image's keeps its box.
+2. A look's request for a place is centred and scaled for one modality
+   (`RequestRead.spatial_match` takes its centre and scale over the text
+   places today), so that the next word and the thing above are two
+   requests.
+3. A measure: the short rung of the place code repeats, so a place of text
+   and a place of an image far apart on the first axis may differ on the
+   long rung alone. The least distance between the wires of any place of
+   text and any place of the image is measured, at the model's capacities.
+   If it is small, the image's box is given another origin, which the
+   registry allows. A plane of the third axis is not spent on it: volumes
+   need that axis.
