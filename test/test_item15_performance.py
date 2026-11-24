@@ -308,3 +308,51 @@ def test_meaning_shares_only_validated_metadata_and_keeps_its_roles():
         expire_meaning_metadata()
         assert not frozen_metadata(meaning.bindings)
     assert not frozen_metadata(other.bindings)
+
+
+def test_occupied_row_names_follow_compaction_checkpoint_and_external_writes():
+    from copy import deepcopy
+    from Memory import LTM0
+    store = LTM0(12, capacity=4)
+    for _ in range(3):
+        store.append_idea(torch.ones(12))
+    names = [store.row_name(i) for i in range(3)]
+    saved = deepcopy(store.state_dict())
+    store.compact_rows([2, 0])
+    assert (len(store), store.row_name(1), store.index_of_row(names[2])) == (2, names[2], 1)
+    assert store.index_of_row(names[1]) is None
+    clone = deepcopy(store)
+    clone.row_names[0] = names[2]
+    assert clone.index_of_row(names[2]) == 0
+    assert store.index_of_row(names[2]) == 1
+    store.load_state_dict(saved)
+    assert [store.row_name(i) for i in range(len(store))] == names
+    store.count.fill_(1)
+    assert len(store) == 1 and store.index_of_row(names[2]) is None
+    store.count = store.count.new_tensor(3)
+    store.row_names = store.row_names.flip(0)
+    assert len(store) == 3 and store.index_of_row(names[2]) == 1
+
+
+@pytest.mark.parametrize('wireless', [False, True])
+def test_kept_field_aligns_last_duplicate_seat_and_its_gradient(wireless):
+    from SentenceField import select_fields
+    from Understanding import ConceptualField
+    sources, fields = [], []
+    for ids, width in [(torch.tensor([-1, 6, 6]), 2),
+                       (torch.tensor([[5, 9], [7, 6]]), 3)]:
+        evidence = torch.randn(len(ids), 2, width, 2, requires_grad=True)
+        locations = torch.randn(2, width, 2)
+        wires = None if wireless and width == 2 else locations
+        sources.append(evidence)
+        fields.append(ConceptualField(ids, evidence, locations, locations, None, wires))
+    kept = select_fields(fields, [0, 1])
+    assert kept.concept_ids.tolist() == [-1, 6, 9]
+    assert torch.equal(kept.evidence[1, 0, :2], sources[0][2, 0])
+    assert torch.equal(kept.evidence[2, 1], sources[1][0, 1])
+    assert not kept.evidence[2, 0].any() and not kept.evidence[0, 1].any()
+    assert not kept.evidence[:, 0, 2].any() and (kept.wires is None) == wireless
+    first, second = torch.autograd.grad(kept.evidence.sum(), sources)
+    assert first[:, 0, 0, 0].tolist() == [1., 0., 1.]
+    assert second[:, 1].eq(1).all()
+    assert not first[:, 1].any() and not second[:, 0].any()

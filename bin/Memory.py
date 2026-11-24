@@ -1927,7 +1927,35 @@ class MediumTermMemory(MemoryStore):
             dropped_event_after=sum(len(timeline[0]) for record in state['entries'] for timeline in record['timelines']) if state['version'] < 12 else 0)
 
 
-class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
+class _CountedRows(MemoryStore):
+    """Host topology writers already know the occupied extent they publish."""
+
+    def _init_count(self):
+        self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+        self._remember_count(0)
+
+    def _remember_count(self, value):
+        count = self.count
+        if not count.is_inference():
+            self._count_cache = (count, count._version, value)
+
+    def _write_count(self, value):
+        self.count.fill_(value)
+        self._remember_count(value)
+
+    def __len__(self):
+        count = self.count
+        if count.is_inference():
+            return int(count)
+        cached = self.__dict__.get('_count_cache')
+        if cached is not None and cached[0] is count and cached[1] == count._version:
+            return cached[2]
+        value = int(count)
+        self._remember_count(value)
+        return value
+
+
+class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
     """The common idea read; durability and working syntax have separate owners."""
     columns = ('slots', 'episodic_concepts', 'episodic_values', 'trust', 'referent', 'activity', 'row_names')
     caches = ('_observation_revision', '_coordinate_counts', '_coordinate_joint')
@@ -1956,7 +1984,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         self.register_buffer('referent', torch.stack((torch.zeros(self.capacity,dtype=torch.long),
             torch.full((self.capacity,),-1,dtype=torch.long)), -1))
         self.register_buffer('activity', torch.zeros(self.capacity))
-        self.register_buffer('count', torch.tensor(0,dtype=torch.long))
+        self._init_count()
         # A row is named by a count of the names issued; its time is the
         # model's present, stamped in its when band.
         self.register_buffer('row_names',torch.full((self.capacity,),-1,dtype=torch.long))
@@ -1973,8 +2001,39 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         self.parts._occurrence_store = weakref.ref(self)
         self.clear_caches()
 
-    def __len__(self):
-        return int(self.count)
+    def _occupied_names(self):
+        """Rebuild after checkpoint restore, compaction, or external writes."""
+        column = self.row_names
+        cached = self.__dict__.get('_name_cache')
+        n = len(self)
+        if (not column.is_inference() and cached is not None and cached[0] is column
+                and cached[1] == column._version and len(cached[2]) >= n):
+            return cached
+        names = column[:n].tolist() if n else []
+        index = {}
+        for seat, name in enumerate(names):
+            index.setdefault(name, seat)
+        cached = (column, None if column.is_inference() else column._version, names, index)
+        self._name_cache = cached
+        return cached
+
+    def _write_name(self, row, name):
+        column, _, names, index = self._occupied_names()
+        column[row] = name
+        if row == len(names) and not column.is_inference():
+            names.append(name)
+            index.setdefault(name, row)
+            self._name_cache = (column, column._version, names, index)
+
+    def row_name(self, row):
+        row = int(row)
+        if 0 <= row < len(self):
+            return self._occupied_names()[2][row]
+        return int(self.row_names[row])
+
+    def index_of_row(self, reference):
+        seat = self._occupied_names()[3].get(int(reference))
+        return seat if seat is not None and seat < len(self) else None
 
     def clear_caches(self):
         for name in self.caches:
@@ -2185,7 +2244,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
             self._write_point(row,meaning.roles[int(occupied[0])])
             self.trust[row]=value
             self.referent[row]=self.referent.new_tensor(reference)
-            self.count.fill_(row+1)
+            self._write_count(row + 1)
             self._append_cached(row, cache)
             if entry is not None:
                 for name,data in zip(('episodic_concepts','episodic_values'),entry):
@@ -2223,7 +2282,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
             if name == 'episodic_concepts': value.fill_(-1)
             if name == 'referent': value[:,1]=-1
             value[:len(keep)].copy_(retained)
-        self.count.fill_(len(keep))
+        self._write_count(len(keep))
         self.clear_caches()
         owner=self.owner()
         if owner is not None:
@@ -2307,19 +2366,12 @@ class LTM0(IdeaRows):
         if self.when_start is None:
             raise ValueError('LTM0 requires the native percept time band')
 
-    def row_name(self,row):
-        return int(self.row_names[int(row)])
-
-    def index_of_row(self,reference):
-        found=self.row_names[:len(self)].eq(int(reference)).nonzero().flatten()
-        return int(found[0]) if len(found) else None
-
     @torch.no_grad()
     def _write_point(self,row,point):
         from RowTime import name_row,present_stamp,write_time
         self.slots[row].copy_(point)
         write_time(self,row,present_stamp(self))
-        self.row_names[row]=name_row(self)
+        self._write_name(row, name_row(self))
 
     def raw_meaning_of(self,index):
         value=super().raw_meaning_of(index)
@@ -2360,7 +2412,7 @@ class LTM0(IdeaRows):
 
 
 
-class LTM1(MemoryStore, nn.Module):
+class LTM1(_CountedRows, nn.Module):
     """A tagged ordered pair, its two trust lanes, and its activity."""
     OCCURRENCE, SYMBOL, RELATION = OCCURRENCE, SYMBOL, RELATION
     columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'activity')
@@ -2379,7 +2431,7 @@ class LTM1(MemoryStore, nn.Module):
         self.register_buffer('ref_kinds', torch.zeros(self.capacity, 2, dtype=torch.int8))
         for name in ('truth_plus', 'truth_minus', 'activity'):
             self.register_buffer(name, torch.zeros(self.capacity))
-        self.register_buffer('count', torch.tensor(0, dtype=torch.long))
+        self._init_count()
         self.register_buffer('layout_version', torch.tensor(VERSION, dtype=torch.long))
         self.register_buffer('relation_order', torch.full((self.capacity,), -1, dtype=torch.long), persistent=False)
         for name in ('effective_plus', 'effective_minus'):
@@ -2411,9 +2463,6 @@ class LTM1(MemoryStore, nn.Module):
         ref = getattr(self, '_occurrence_store', None)
         store = None if ref is None else ref()
         return store is not None and bool(store.episodic_concepts[:len(store)].eq(row).any())
-
-    def __len__(self):
-        return int(self.count)
 
     @property
     def revision(self):
@@ -2567,7 +2616,7 @@ class LTM1(MemoryStore, nn.Module):
             self.refs[row] = self.refs.new_tensor((left[1], right[1]))
             self.ref_kinds[row] = self.ref_kinds.new_tensor((left[0], right[0]))
             self.relation_order[len(self)] = row
-            self.count += 1
+            self._write_count(len(self) + 1)
             self._order_revision = self._topology_revision
         elif symbol is not None and int(symbol) != row:
             raise ValueError('a tagged pair already has a different handle')
@@ -2599,7 +2648,7 @@ class LTM1(MemoryStore, nn.Module):
             self._symbol_epoch += 1
         for name in self.columns:
             getattr(self, name)[erase] = -1 if name == 'refs' else 0
-        self.count.fill_(len(indices))
+        self._write_count(len(indices))
         self._index()
         self._sort()
 
@@ -2847,19 +2896,12 @@ class STM0(IdeaRows):
         self.working={}
         self.generation=0
 
-    def row_name(self,row):
-        return int(self.row_names[int(row)])
-
-    def index_of_row(self,reference):
-        found=self.row_names[:len(self)].eq(int(reference)).nonzero().flatten()
-        return int(found[0]) if len(found) else None
-
     def _write_point(self,row,point):
         # Functional replacement retains the live graph of the pinned tree.
         with torch.enable_grad():
             self.slots=self.slots.index_copy(0,self.count.new_tensor([row]),point[None])
         name = self.__dict__.get('_next_row_name', int(self.names_issued))
-        self.row_names[row] = name
+        self._write_name(row, name)
         self.names_issued.fill_(max(int(self.names_issued), name + 1))
         if '_next_row_name' in self.__dict__:
             self._next_row_name = name + 1

@@ -274,24 +274,29 @@ def selected_field(first, second, wins):
 
 def select_fields(fields, winners):
     """Select streams by concept identity, including differently sized reviews."""
-    picked = [fields[int(index)] for index in winners]
-    ids = sorted({int(cid) for b, field in enumerate(picked) for cid in
-        (field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b])})
+    indices = winners.tolist() if torch.is_tensor(winners) else winners
+    picked = [fields[int(index)] for index in indices]
+    columns = [field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b]
+               for b, field in enumerate(picked)]
+    ids, positions = torch.cat(columns).unique(sorted=True, return_inverse=True)
+    aligned = positions.split([len(column) for column in columns])
     width = max(field.evidence.shape[2] for field in picked)
     evidence, where, when, wires = [], [], [], []
     placed = all(field.wires is not None for field in picked)
-    for b, field in enumerate(picked):
-        column = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b]
-        lookup = {int(cid): i for i, cid in enumerate(column)}
+    for b, (field, position) in enumerate(zip(picked, aligned, strict=True)):
+        # Repeated identities (including padding) resolve to their last seat.
+        size = len(position)
+        indices = position.new_full((len(ids),), size)
+        indices.scatter_reduce_(0, position, torch.arange(size, device=position.device),
+                                'amax', include_self=False)
         zero = field.evidence.new_zeros(1, field.evidence.shape[2], 2)
         values = torch.cat((field.evidence[:, b], zero), 0)
-        indices = column.new_tensor([lookup.get(cid, len(column)) for cid in ids])
         evidence.append(F.pad(values[indices], (0, 0, 0, width - values.shape[1])))
         where.append(F.pad(field.where[b], (0, 0, 0, width - field.where.shape[1])))
         when.append(F.pad(field.when[b], (0, 0, 0, width - field.when.shape[1])))
         if placed:
             wires.append(F.pad(field.wires[b], (0, 0, 0, width - field.wires.shape[1])))
-    return ConceptualField(fields[0].concept_ids.new_tensor(ids), torch.stack(evidence, 1),
+    return ConceptualField(ids, torch.stack(evidence, 1),
                            torch.stack(where), torch.stack(when), None,
                            torch.stack(wires) if placed else None)
 

@@ -17,6 +17,7 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -34,6 +35,8 @@ def main():
                         help='assess a fresh lesson reader after this budget of complete training updates')
     parser.add_argument('--corpus', choices=('lesson-13', 'math-chain'))
     parser.add_argument('--path-audit', action='store_true', help='record candidate-table changes during individual trial walks')
+    parser.add_argument('--dispatch-census', action='store_true',
+                        help='count native host-visible results, variable-size outputs and copies on another update')
     parser.add_argument('--allocations', action='store_true', help='profile allocation operators on a separate CPU step')
     parser.add_argument('--compiled-step', action='store_true',
                         help='enable the native compiled entry (step mode only)')
@@ -44,6 +47,8 @@ def main():
     args = parser.parse_args()
     if args.training_seconds is not None and (not args.lesson or args.training_seconds <= 0):
         parser.error('--training-seconds needs --lesson and a positive training time')
+    if args.dispatch_census and (args.lesson or args.corpus):
+        parser.error('--dispatch-census requires step mode')
     if args.lesson and args.compiled_step:
         parser.error('--lesson uses the native lesson runner; --compiled-step requires step mode')
     if args.compile_percept_fold and not args.compiled_step:
@@ -273,12 +278,28 @@ def main():
             from Spaces import Codebook
             host, at_look, calls = Counter(), Counter(), Counter()
             in_look = [False]
+            sentence_depth = 0
+            in_sentence, sentence_sites = Counter(), Counter()
+            execute_sentence = BasicModel._execute_input_sentence
+
+            def sentence(*a, **kw):
+                nonlocal sentence_depth
+                sentence_depth += 1
+                try:
+                    return execute_sentence(*a, **kw)
+                finally:
+                    sentence_depth -= 1
             sites, percept_addresses = Counter(), Counter()
             methods = {name: getattr(torch.Tensor, name) for name in
                        ('tolist', 'item', 'cpu', '__bool__', '__int__', '__float__')}
             def counted(name, function):
                 def invoke(*a, **kw):
                     host[name] += 1
+                    if sentence_depth:
+                        caller = sys._getframe(1)
+                        in_sentence[name] += 1
+                        site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name, str(caller.f_lineno), name)
+                        sentence_sites[site] += 1
                     if in_look[0]:
                         at_look[name] += 1
                         caller = sys._getframe(1)
@@ -317,18 +338,21 @@ def main():
             try:
                 for name, function in methods.items():
                     setattr(torch.Tensor, name, counted(name, function))
+                BasicModel._execute_input_sentence = sentence
                 Codebook.lookup_rows, SentenceLooks.Looks.run = rows_read, looking
                 step()
             finally:
                 for name, function in methods.items():
                     setattr(torch.Tensor, name, function)
+                BasicModel._execute_input_sentence = execute_sentence
                 Codebook.lookup_rows, SentenceLooks.Looks.run = lookup, looks
             if args.path_audit:
                 record['trial_growth'] = trial_audit
                 record['selected_paths'] = model._last_sentence_credit['winner'].tolist()
             record['percept_addresses'] = dict(total=percept_addresses.total(),
                 distinct=len(percept_addresses), repeated=percept_addresses.total() - len(percept_addresses))
-            record['host_census'] = dict(update=dict(host), looks=dict(at_look),
+            record['host_census'] = dict(update=dict(host), sentence=dict(in_sentence), looks=dict(at_look),
+                                         sentence_reads_by_caller={':'.join(k): v for k, v in sentence_sites.most_common()},
                                          look_reads_by_caller={':'.join(k): v for k, v in sites.most_common()},
                                          lookups_by_caller={':'.join(k): v for k, v in calls.items()})
             # Capture live gradients at every optimizer boundary in a separate
@@ -350,7 +374,6 @@ def main():
             if args.path_audit:
                 # A separate complete update measures the real path callbacks
                 # without the Python host-read census or cProfile installed.
-                from unittest.mock import patch
                 import WholePaths
                 device = next(model.parameters()).device
                 durations = []
@@ -373,6 +396,33 @@ def main():
                 with patch.object(SentenceLooks.Looks, 'run', timed_looks), patch.object(WholePaths, 'finish', timed_score):
                     step()
                 record['path_seconds'] = durations
+            if args.dispatch_census:
+                from torch.utils._python_dispatch import TorchDispatchMode
+                counters = {'update': Counter(), 'sentence': Counter()}
+
+                class DeviceReads(TorchDispatchMode):
+                    def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+                        kwargs = kwargs or {}
+                        name = func._schema.name
+                        event = None
+                        if torch.Tag.dynamic_output_shape in func.tags:
+                            event = 'variable_shape/' + name
+                        elif torch.Tag.data_dependent_output in func.tags:
+                            event = 'host_result/' + name
+                        elif name == 'aten::_to_copy' and kwargs.get('device') is not None:
+                            if args[0].device.type != 'cpu' and torch.device(kwargs['device']).type == 'cpu':
+                                event = 'device_to_host/' + name
+                        elif name == 'aten::copy_' and args[0].device.type == 'cpu' and args[1].device.type != 'cpu':
+                            event = 'device_to_host/' + name
+                        if event is not None:
+                            counters['update'][event] += 1
+                            if sentence_depth:
+                                counters['sentence'][event] += 1
+                        return func(*args, **kwargs)
+
+                with patch.object(BasicModel, '_execute_input_sentence', sentence), DeviceReads():
+                    step()
+                record['dispatch_census'] = counters
             if args.allocations:
                 with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
                                             profile_memory=True) as memory:
