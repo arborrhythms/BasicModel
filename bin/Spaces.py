@@ -11338,7 +11338,7 @@ class PartSpace(Space):
             # the alphabet is known, gather their counts in the same transfer.
             delivered_layout = layout[:, :byte_count]
             if simple_parts and identity.atoms:
-                prepared_parts = identity.located_parts(compact[:, :byte_count],
+                prepared_parts = identity.located_cover(compact[:, :byte_count],
                                                         delivered_layout[:, :word_capacity], -1)
             if prepared_parts is None:
                 unit_spans_rows = delivered_layout.detach().tolist()
@@ -11348,7 +11348,7 @@ class PartSpace(Space):
                 records = torch.cat((delivered_layout, all_counts[..., None]), -1).tolist()
                 unit_spans_rows = [[(lo, hi) for lo, hi, _ in row] for row in records]
                 prepared_counts = [[n for _, _, n in row[:word_capacity]] for row in records]
-        staged_rows, nested_extents, word_texts_rows = [], [], []
+        staged_rows, cover_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         part_capacity = 3
         # Rung-0 admission by recurrence (fold-ladder plan, contract 4,
@@ -11418,11 +11418,11 @@ class PartSpace(Space):
             for atom in missing_atoms:
                 identity._atom(atom)
             if missing_atoms or prepared_parts is None:
-                prepared_parts = identity.located_parts(compact[:, :byte_count],
+                prepared_parts = identity.located_cover(compact[:, :byte_count],
                                                         layout[:, :min(byte_count, word_capacity)], -1)
                 prepared_counts = None
             if prepared_parts is not None:
-                located_parts, lengths = prepared_parts
+                located_parts, lengths, located_extents = prepared_parts
                 counts = lengths.tolist() if prepared_counts is None else prepared_counts
                 missing = word_capacity - lengths.shape[1]
                 counts = [row + [0] * missing for row in counts]
@@ -11450,25 +11450,19 @@ class PartSpace(Space):
                     unit = raw[start:stop]
                     if identity is not None and admit and not teaching_marker and not hidden:
                         observed_forms.append(identity.word_rows.get(unit, unit))
-                    nested = ()
                     if identity is not None:
-                        if hidden:
-                            plan = omission['plans'][b][word_index]
-                            omitted = omission['draw'].forms[b, word_index]
-                            pids = [-1 if bool(omitted[i]) else identity._atom(atom)
-                                    for i, atom in enumerate(plan['atoms'])]
-                            nested = tuple((identity.word_rows[part],lo,hi) for part,lo,hi in plan['nested'])
-                            pids.extend(-1 if bool(omitted[len(plan['atoms'])+i]) else pid
-                                        for i, (pid, _, _) in enumerate(nested))
-                        else:
-                            nested = tuple((identity.word_rows[part],lo,hi)
-                                for part,lo,hi in identity.nested.get(unit,()))
-                            # Nothing is admitted while online learning is
-                            # frozen: an unstored form is read by its parts.
-                            pids = (list(identity.parts(unit)) if unit in identity.words
-                                    else [identity._atom(atom) for atom in identity.atoms_of(unit)])
-                        nested_extents.extend((b, word_index, n, start + lo, start + hi)
-                            for n, (_, lo, hi) in enumerate(nested, start=len(pids) - len(nested)))
+                        cover = (omission['plans'][b][word_index]['cover'] if hidden
+                                 else identity.ordered_cover(unit))
+                        pids = []
+                        for i, (part, lo, hi) in enumerate(cover):
+                            if hidden and bool(omission['draw'].forms[b, word_index, i]):
+                                pid = -1
+                            elif isinstance(part, bytes):
+                                pid = identity.word_rows[part]
+                            else:
+                                pid = identity._atom(part)
+                            pids.append(pid)
+                            cover_extents.append((b, word_index, i, start + lo, start + hi))
                     else:
                         pids = [(-1 if hidden_rows is not None and hidden_rows[b][i]
                                  else int(ps.get_id(bytes([raw[i]])))) for i in range(start, stop)]
@@ -11513,17 +11507,20 @@ class PartSpace(Space):
             suffix = layout[:, word_capacity:]
             sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
         word_active = slots[..., 1] > slots[..., 0]
-        part_offsets = torch.where(part_mask, slots[..., :1], -1)
-        if identity is None:
+        if located_parts is not None:
+            members = located_extents[:, :, :part_capacity]
+            members = F.pad(members, (0, 0, 0, part_capacity - members.shape[2],
+                                      0, word_capacity - members.shape[1]))
+        elif identity is None:
             starts = slots[..., :1] + positions
             members = torch.stack((starts, starts + 1), -1)
         else:
-            members = slots[:, :, None, :]
+            members = pid_grid.new_zeros(*pid_grid.shape, 2)
+            if cover_extents:
+                events = pid_grid.new_tensor(cover_extents)
+                members[events[:, 0], events[:, 1], events[:, 2]] = events[:, 3:]
         part_spans = torch.where(part_mask[..., None], members, 0)
-        if nested_extents:
-            # A taught nested whole retains its actual subinterval.
-            events = pid_grid.new_tensor(nested_extents)
-            part_spans[events[:, 0], events[:, 1], events[:, 2]] = events[:, 3:]
+        part_offsets = torch.where(part_mask, part_spans[..., 0], -1)
         word_truncated = torch.zeros_like(word_active)
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
@@ -11570,6 +11567,7 @@ class PartSpace(Space):
             from FieldReverse import byte_rows
             width = byte_count
             surface = compact[:, :width]
+            self._forward_input['element_input'] = True
             self._forward_input['sentence_bytes'] = (surface.masked_fill(omission['bytes'][:, :width], 0)
                                                      if hiding else surface)
             self._forward_input['unit_spans'] = slots
@@ -15333,7 +15331,9 @@ class ConceptualSpace(Space):
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
         when = torch.stack((positions, positions + 1), -1)
+        source = getattr(getattr(model, 'perceptualSpace', None), '_forward_input', None) or {}
         bank = basic.lookup(percepts, extents, rows,
+            element_input=source.get('element_input', False) and percepts[0] is source.get('native_indices'),
             dtype=self.similarity_codebook.W.dtype, when=when,
             delivered=(getattr(model.inputSpace, '_delivered_length', None)
                        if getattr(model, '_staged_concepts_in', None) is percepts[3] else None),

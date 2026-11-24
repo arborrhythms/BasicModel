@@ -110,11 +110,10 @@ def prepare(model, units):
         row = []
         for lo, hi in spans[:width]:
             word = raw[lo:hi]
-            atoms = (tuple(identity.words.get(word) or identity.atoms_of(word)) if identity is not None else ())
-            nested = () if identity is None else tuple(identity.nested.get(word, ()))
-            parts = ([(lo, hi)] * len(atoms) + [(lo+a, lo+z) for _, a, z in nested]
-                     if identity is not None else [(i, i+1) for i in range(lo, hi)])
-            row.append(dict(atoms=atoms, nested=nested, spans=parts))
+            cover = () if identity is None else identity.ordered_cover(word)
+            parts = ([(lo+a, lo+z) for _, a, z in cover] if identity is not None
+                     else [(i, i+1) for i in range(lo, hi)])
+            row.append(dict(cover=cover, spans=parts))
             capacity = max(capacity, len(parts))
         plans.append(row)
     device = model._staged_concepts_in.device

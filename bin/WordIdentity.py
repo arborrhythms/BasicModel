@@ -286,6 +286,53 @@ class WordIdentity(nn.Module):
         spellings, rows, _, ranks = bank
         return parts_for_units(surface, spans, spellings, rows, ranks, padding)
 
+    def located_cover(self, surface, spans, padding):
+        from BasicPercepts import disjoint_parts
+        bank = self.occurrence_bank(surface.device)
+        if bank is None:
+            return None
+        spellings, rows, _, ranks = bank
+        return disjoint_parts(surface, spans, spellings, rows, ranks, padding)
+
+    def ordered_cover(self, raw):
+        """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""
+        nested = self.nested.get(raw, ())
+        if (nested and nested[0][1] == 0 and nested[-1][2] == len(raw)
+                and all(left[2] == right[1] for left, right in zip(nested, nested[1:]))
+                and all(0 <= lo < hi <= len(raw) and hi - lo == len(part) and part != raw
+                        for part, lo, hi in nested)):
+            return [(part, start, end) for part, start, end in nested]
+        text = text_of(raw)
+        candidates = {atom[1] for atom in self.atoms_of(raw) if 1 < len(atom[1]) < len(text)}
+        result = []
+        at = start = 0
+        while at < len(text):
+            part = max((part for part in candidates if text.startswith(part, at)),
+                       key=len, default=text[at])
+            end = start + len(bytes_of(part))
+            result.append((('part', part), start, end))
+            at += len(part)
+            start = end
+        return result
+
+    def retain_spelling(self, raw):
+        """Keep ordered native references on a form and on its non-element parts."""
+        groups = self.store.part_groups
+        row = self.word_rows[raw]
+        if len(text_of(raw)) < 2:
+            return
+        children = []
+        for part, _, _ in self.ordered_cover(raw):
+            if isinstance(part, bytes):
+                child = self.word_rows[part]
+            else:
+                child = self.atoms[part]
+                if len(part[1]) > 1 and child not in groups:
+                    groups[child] = tuple(self.atoms[('part', char)] for char in part[1])
+            children.append(child)
+        groups[row] = tuple(children)
+        self.store._canonical_group_cache = None
+
     def _link(self, raw):
         """Link a new stored form to the stored forms it holds as a run (its
         parts among the forms) and to those that hold it (its holders), on
@@ -878,6 +925,7 @@ class WordIdentity(nn.Module):
                 index = torch.tensor([self.order[word] for word in carriers], device='cpu')
                 self._packed[index] = self._pack(torch.stack([self.code(word) for word in carriers]))
             self._keep(self._settle(carriers + [raw]), new=raw)
+            self.retain_spelling(raw)
         return self.parts(raw)
 
     def admit_part(self, run):
@@ -979,6 +1027,8 @@ class WordIdentity(nn.Module):
                 for part, _lo, _hi in parts:
                     self.admit(part)
             self.nested = nested
+            for word in nested:
+                self.retain_spelling(word)
             self.revision += 1
         return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
 
@@ -1077,6 +1127,9 @@ class WordIdentity(nn.Module):
         self.failures = []
         self.last_changed = self.last_touched = frozenset()
         self._reindex()
+        for word, row in self.word_rows.items():
+            if row not in self.store.part_groups:
+                self.retain_spelling(word)
 
     def audit(self):
         words = sorted(self.words)

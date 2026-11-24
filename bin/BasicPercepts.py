@@ -283,6 +283,63 @@ def parts_for_units(raw, spans, spellings, rows, added_rank, padding):
     return torch.where(present.gather(-1, order), rows[order], padding), present.sum(-1)
 
 
+def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
+    """Tile each ordered unit with its longest proper part at each surviving start."""
+    batch, width = raw.shape
+    units = spans.shape[1]
+    if not units or not width:
+        shape = (batch, units, width)
+        return rows.new_full(shape, padding), spans.new_zeros(batch, units), spans.new_zeros(*shape, 2)
+    pos = torch.arange(width, device=raw.device).expand(batch, -1).contiguous()
+    lo, hi = spans.unbind(-1)
+    seat = torch.searchsorted(torch.where(hi > lo, lo, width).contiguous(), pos, right=True) - 1
+    parent = seat.clamp_min(0)
+    left, right = lo.gather(1, parent), hi.gather(1, parent)
+    live = (seat >= 0) & (pos < right)
+    stride = torch.ones_like(pos)
+    address = torch.full_like(pos, padding)
+    base = 0
+    for group in spellings:
+        size = group.shape[1]
+        if size <= width:
+            windows = raw.unfold(1, size, 1)
+            count = windows.shape[1]
+            chunk = max(1, (1 << 22) // max(1, batch * count * size))
+            for offset in range(0, len(group), chunk):
+                keys = group[offset:offset + chunk]
+                hit = (windows[:, :, None] == keys).all(-1)
+                index = hit.to(torch.int32).argmax(-1) + base + offset
+                proper = (size < right[:, :count] - left[:, :count]) | (ranks[index] < 0)
+                keep = live[:, :count] & (pos[:, :count] + size <= right[:, :count]) & proper & hit.any(-1)
+                keep = F.pad(keep, (0, size - 1))
+                stride = torch.where(keep, size, stride)
+                address = torch.where(keep, F.pad(rows[index], (0, size - 1)), address)
+        base += len(group)
+
+    # Follow just the cuts reachable from each unit start. Redirect the last
+    # step to a sentinel so adjacent units cannot affect each other's cover.
+    sentinel = pos.new_full((batch, 1), width)
+    successor = pos + stride
+    jump = torch.cat((torch.where(successor < right, successor, width), sentinel), 1)
+    reached = torch.cat((live & (pos == left), sentinel < width), 1)
+    for _ in range(width.bit_length()):
+        reached = reached | torch.zeros_like(jump).scatter_add(1, jump, reached.long()).bool()
+        jump = jump.gather(1, jump)
+    starts = reached[:, :width]
+    ordinal = starts.long().cumsum(1)
+    counts = torch.zeros_like(lo).scatter_add(1, parent, starts.long())
+    first = (ordinal - starts.long()).gather(1, lo.clamp(0, width - 1))
+    # Gather compact, source-ordered seats without a data-dependent output size.
+    order = torch.where(starts, pos, width).sort(1).values
+    pick = first[..., None] + pos[:, None, :]
+    selected = order.gather(1, pick.clamp_max(width - 1).flatten(1)).reshape_as(pick).clamp_max(width - 1)
+    ids = address.gather(1, selected.flatten(1)).reshape_as(selected)
+    end = successor.gather(1, selected.flatten(1)).reshape_as(selected)
+    valid = pos[:, None, :] < counts[..., None]
+    extents = torch.stack((selected, end), -1)
+    return torch.where(valid, ids, padding), counts, torch.where(valid[..., None], extents, 0)
+
+
 def occurrence_parts(raw, spans, spellings, part_codes, catalog):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
@@ -1241,7 +1298,7 @@ class BasicPercepts(nn.Module):
         # those references, not its spelling or an alternative byte tiling.
         ancestry = getattr(self.native, 'part_groups', {})
         leaves = self._leaves()
-        if ancestry:
+        if ancestry and not options.get('element_input', False):
             ids, spans, primitive, raw, whole_spans = percepts
             expanded = []
             for row_ids, row_spans in zip(ids.tolist(), spans.tolist()):
@@ -1251,7 +1308,7 @@ class BasicPercepts(nn.Module):
                         continue
                     cursor = start
                     for leaf in leaves(part):
-                        stop = cursor + len(self.native.bytes_for(leaf))
+                        stop = cursor + len(self._part_text(leaf) or self.native.bytes_for(leaf))
                         events.append((leaf, cursor, stop)); cursor = stop
                     if cursor != end:
                         raise ValueError('native part ancestry disagrees with its extent')

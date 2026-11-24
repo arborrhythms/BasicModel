@@ -11769,7 +11769,12 @@ class RadixLayer(Layer):
         """
         if self._canonical_group_cache is None:
             leaves, prefixes = {}, {}
+            # Only recurrent radix formations rewrite membership literals.
+            # An identity row's spelling children translate it back to bytes.
+            fixed = getattr(getattr(self, 'identity', None), '_fixed_bytes', {})
             for pid, group in sorted(self.part_groups.items()):
+                if pid in fixed:
+                    continue
                 native = tuple(atom for part in group for atom in leaves.get(part, (part,)))
                 leaves[pid] = native
                 prefixes.setdefault(native[0], []).append((native, pid))

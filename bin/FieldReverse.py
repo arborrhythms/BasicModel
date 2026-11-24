@@ -110,6 +110,12 @@ def _spelling_definition(basic, row):
         children = () if identity is None else identity.nested.get(raw, ())
         # The predicted form identifies its constituents. Its own occurrence
         # cannot teach the inverse how to spell itself.
+        root = getattr(identity, 'word_rows', {}).get(raw)
+        if root in getattr(basic.native, 'part_groups', {}):
+            elements = [basic._part_text(leaf) for leaf in basic._leaves()(root)]
+            if any(element is None for element in elements):
+                raise ValueError('a spelling element has no character translation')
+            return b''.join(elements), None
         if not children:
             return raw, None
         return raw, tuple((part, lo) for part, lo, hi in children

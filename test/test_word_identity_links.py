@@ -134,3 +134,48 @@ def test_input_ladder_finds_learned_parts_even_when_the_whole_has_no_word_row(mo
                 assert addresses[batch, unit, :len(parts)].tolist() == parts
                 assert counts[batch, unit] == len(parts)
                 assert addresses[batch, unit, len(parts):].eq(-1).all()
+
+
+def test_disjoint_reading_preserves_repeats_and_shifted_byte_intervals():
+    import torch
+    from BasicPercepts import disjoint_parts
+
+    identity, *_ = coded((b'sho', b'pping', b'shopping', b'aba', 'é'.encode()))
+    text = 'shopping ababa éé'.encode()
+    raw = torch.tensor([list(text + b' '), list(b' ' + text)])
+    spans = torch.tensor([[[0, 8], [9, 14], [15, 19], [0, 0]],
+                          [[1, 9], [10, 15], [16, 20], [0, 0]]])
+    groups, rows, _, ranks = identity.occurrence_bank(raw.device)
+    compiled = torch.compile(disjoint_parts, fullgraph=True, backend='eager')
+    eager = identity.located_cover(raw, spans, -1)
+    for actual, reference in zip(compiled(raw, spans, groups, rows, ranks, -1), eager):
+        torch.testing.assert_close(actual, reference)
+    parts, counts, extents = eager
+    for b in range(len(raw)):
+        for w, expected in enumerate(((b'sho', b'pping'), (b'aba', b'b', b'a'), ('é'.encode(),) * 2)):
+            start, end = spans[b, w].tolist()
+            n = int(counts[b, w])
+            ranges = extents[b, w, :n].tolist()
+            assert [bytes(raw[b, lo:hi].tolist()) for lo, hi in ranges] == list(expected)
+            assert ranges[0][0] == start and ranges[-1][1] == end
+            assert all(left[1] == right[0] for left, right in zip(ranges, ranges[1:]))
+            assert [identity._fixed_bytes[row] for row in parts[b, w, :n].tolist()] == list(expected)
+        assert counts[b, 3] == 0 and parts[b, 3].eq(-1).all()
+
+
+def test_inverse_follows_ordered_native_children_after_restore():
+    from FieldReverse import spelling
+
+    words = (b'a', b'b', b'ab', b'abab', b'aabb')
+    identity, basic, _, rows = coded(words)
+    saved = identity.store.vocab_extras()
+    other, restored, *_ = coded(words)
+    other.store.load_vocab_extras(saved)
+    for current, reader in ((identity, basic), (other, restored)):
+        assert spelling(reader, rows[b'abab']) == b'abab'
+        assert spelling(reader, rows[b'aabb']) == b'aabb'
+        # A deliberately reversed native definition changes the inverse even
+        # though the named form and its orthographic lookup are unchanged.
+        root = current.word_rows[b'aabb']
+        current.store.part_groups[root] = tuple(reversed(current.store.part_groups[root]))
+        assert spelling(reader, rows[b'aabb']) != b'aabb'
