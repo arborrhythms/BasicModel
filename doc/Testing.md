@@ -848,8 +848,12 @@ these tests, run on its own source.
   two-sided gradient and cost routing, reference paths and state errors, basic
   percepts, the common decoder and the field gradient, timed memory, concept
   episodes and the one clock of sentences and thoughts.
-- **Training corpus data.** Four fast certificates read the frozen corpora and
-  never regenerate them: `test/test_math_corpus.py` (hashes, grade order,
+- **Training corpus data.** Five fast certificates read the frozen corpora and
+  never regenerate them: `test/test_felt_corpus.py` (hashes, every image a
+  valid set of level sets, `verify` and every recorded meaning on every row,
+  the declared vocabulary, held-out casts and reserved places, where a
+  document has no image, the contrast sets, the counting answers; it imports
+  no module of the model), `test/test_math_corpus.py` (hashes, grade order,
   every answer and intermediate answer, held-out and beyond pairs),
   `test/test_game_corpus.py` (hashes, `verify` on every row, splits, transfer
   words kept out of the games), `test/test_lesson_stages.py` (hashes, phases

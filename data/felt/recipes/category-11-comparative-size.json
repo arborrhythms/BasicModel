@@ -37,6 +37,13 @@
  },
  "held_out": "pairs",
  "inference": {
+  "alternate": true,
+  "converse_pairs": [
+   [
+    "bigger",
+    "smaller"
+   ]
+  ],
   "premises": [
    "s01",
    "s02"
@@ -77,7 +84,8 @@
      "@other": "small"
     }
    },
-   "text": "which is bigger, {a} or {b} ?"
+   "text": "which is bigger, {a} or {b} ?",
+   "wording": "bigger"
   }
  ],
  "schema": 1,
@@ -112,7 +120,8 @@
    ],
    "id": "s01",
    "predicate": "bigger",
-   "text": "{a} is bigger than {b}."
+   "text": "{a} is bigger than {b}.",
+   "wording": "bigger"
   },
   {
    "args": [
@@ -121,7 +130,8 @@
    ],
    "id": "s02",
    "predicate": "bigger",
-   "text": "{b} is smaller than {a}."
+   "text": "{b} is smaller than {a}.",
+   "wording": "smaller"
   }
  ]
 }

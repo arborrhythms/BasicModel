@@ -2866,3 +2866,181 @@ the build.*
 
 Both go back to the implementer; the corpus is frozen again after them,
 with the same seed.
+
+### 15.9 The corrections of 15.8, as built (Claude on Opus, 2026-11-23)
+
+Both corrections are built and the corpus is frozen again with the same
+command and seed. Verified by running: two freezes write the same 28 files
+byte for byte (about 14 seconds each); `test/test_felt_corpus.py` 12 passed,
+`test/test_game_corpus.py` 7 passed, `test/test_math_corpus.py` 5 passed.
+
+*What changed.* `bin/felt_world_corpus.py` (recipe-declared halves; the
+converse by wording; even yes and no in the inference split),
+`test/test_felt_corpus.py` (checks 7 and 8), the recipes of categories 6,
+11, 14 and 20, and their four row files and the manifest. No other recipe
+changed, and no row outside these four categories changed: each category
+already draws from a stream of its own (the seed times 100 plus the
+category). Against the first freeze the changed rows are: category 6, its
+20 inference rows; 11, 19 of its 20 inference rows; 14, its 20 inference
+rows and its 240 contrast rows (the contrast sets are drawn after the
+inference split from the same category's stream, so they are drawn again;
+they pass check 9 as before); 20, 179 of its 180 rows.
+
+*Counts.* Unchanged by split:
+
+| # | train | validation | test | generalization | witness | inference | contrast |
+|---|---|---|---|---|---|---|---|
+| 6 | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 11 | 100 | 20 | 20 | 20 | 20 | 20 | |
+| 14 | 100 | 20 | 20 | 20 | 20 | 20 | 240 |
+| 20 | 100 | 20 | 20 | 20 | 20 | | |
+
+In every split of 20 half the documents use a neutral group and half a
+worded one, and within each half `first` and `second` are equal (25 and 25
+in train, 5 and 5 in each other split).
+
+The inference split by kind and answer:
+
+| # | converse yes | converse no | converse, a digit | chain yes | chain no | chain, a digit |
+|---|---|---|---|---|---|---|
+| 6 | 5 | 2 | 3 | 3 | 5 | 2 |
+| 11 | | | 10 | | | 10 |
+| 14 | 5 | 4 | 1 | 4 | 6 | |
+
+So yes and no are 8 and 7 in 6, and 9 and 10 in 14. Category 11's converse
+is "{b} is smaller than {a}." asked "which is bigger, ... ?" only; its 10
+converse rows are 10 distinct documents, and there are 144 such documents to
+draw from (72 ordered pairs, each asked in two orders), so it is not short.
+
+*Decided by the implementer.*
+
+1. *Recipe 20* gains `s03` (`{a} moved toward {b}.` then `it moved toward
+   {c}.`, the step-1 move first) and `s04` (the same words, the step-2 move
+   first), each sentence the unspeeded `moved_toward`; the worded groups stay
+   `s01` and `s02`. The variant key names the group (`s03+q01`, `s04+q02`),
+   so the two neutral groups, which have the same words, are told apart by
+   it. A recipe key `halves` (`[["s01", "s02"], ["s03", "s04"]]`) gives each
+   half half the documents of a split and balances the answers within each
+   half; recipes without it draw exactly as before.
+2. *The neutral witness.* A sentence of a neutral group can be made false
+   without changing its words: "{a} moved toward {b}." is false when {a}'s
+   first move does not approach {b} (its event is left out or replaced by
+   one of no relation). Category 20's witness split therefore uses all four
+   groups: 10 of its 20 rows are neutral (false sentence the first in 8 of
+   them, the second in 2).
+3. *Wordings* are declared in the recipes as the key `wording` on the
+   frames that have one: `less` and `greater` (6), `bigger` and `smaller`
+   (11), `above`, `below`, `to the left of`, `to the right of` (14), on the
+   statement frames and on every question frame of those relations; the
+   pairs are the inference spec's `converse_pairs`. A converse row draws
+   its premise among the wordings whose other wording some question has (in
+   11, "smaller" only), and its question among the frames of the other
+   wording.
+4. *Converse and chain alternate* in 6, 11 and 14 (recipe key `alternate`),
+   so each is 10 of the 20 inference rows.
+5. *Even yes and no.* While yes and no are unequal in an inference split,
+   the next row accepted is a yes/no question with the answer that is
+   behind. Allowing a lead of one, as before, left category 6 at two yes
+   and one no on the first try.
+6. *Check 7* now compares facts: a choice question asks the order fact its
+   answer makes ("which is greater, six or one ?" asks that one is less than
+   six), a wh question the fact with its answer put in, a yes/no question
+   its own. Where a statement states the asked fact, the two wordings must
+   be the two of a declared pair; a converse row's question asks its
+   premise's fact or that fact reversed, in the other wording; a chain row's
+   question asks no premise's fact. Run on the first freeze's rows, this
+   check rejects 6 of them (4 in category 6 and 2 in 11, as "six is
+   greater than one." asked "which is greater, six or one ?"). Check 8
+   checks the balance within each half of category 20, and that the halves
+   are equal.
+
+The four documents, printed as in 15.5: a neutral document of category 20
+answered `first`, one answered `second`, and a converse row with a yes from
+6 and from 14.
+
+~~~
+felt-20-train-0019  variant s03+q02  inference None  answer 'first'
+   0 ''
+   1 ''
+   2 ''
+   3 ''
+   4 ''
+   5 ''
+   6 'one moved toward four.'
+   7 'it moved toward five.'
+   8 'which move was slower, the first or the second ?'  (asks)
+     0         1         2         3         4         5         6         7       
+     ........  ........  ........  ........  ........  ........  ........  ........
+     ........  ........  ........  ........  ........  ........  ........  ........
+     ........  ........  ........  ........  ........  ........  ........  ........
+     .......1  ........  ........  ........  ........  ........  ........  ........
+     ........  .......1  ........  ........  ........  ........  ........  ........
+     ..5.....  ..5.....  ..5....1  ..5....1  ..5..1..  ..51....  ..51....  ..51....
+     .......4  .......4  .......4  .......4  .......4  .......4  .......4  .......4
+     ........  ........  ........  ........  ........  ........  ........  ........
+     8       
+     ........
+     ........
+     ........
+     ........
+     ........
+     ..51....
+     .......4
+     ........
+     {"entry": 6, "frame": "s03", "predicate": "moved_toward", "args": [1, 4], "truth": true}
+     {"entry": 7, "frame": "s03", "predicate": "moved_toward", "args": [1, 5], "truth": true}
+     {"entry": 8, "frame": "q02", "predicate": "slower_move", "args": [1], "truth": true, "value": 0}
+~~~
+
+~~~
+felt-20-train-0005  variant s03+q01  inference None  answer 'second'
+   0 ''
+   1 ''
+   2 ''
+   3 ''
+   4 ''
+   5 ''
+   6 ''
+   7 ''
+   8 'six moved toward seven.'
+   9 'it moved toward one.'
+  10 'which move was faster, the first or the second ?'  (asks)
+     0         1         2         3         4         5         6         7       
+     ........  ........  ........  ........  ........  ........  ........  ........
+     ......6.  ........  ........  ........  ........  ........  ........  ........
+     ........  ......6.  ........  ........  ........  ........  ........  ........
+     .1......  .1......  .1....6.  .1....6.  .1....6.  .1..6...  .16.....  .16.....
+     ........  ........  ........  ........  ........  ........  ........  ........
+     .3....7.  .3....7.  .3....7.  .3....7.  .3....7.  .3....7.  .3....7.  .3....7.
+     ........  ........  ........  ........  ........  ........  ........  ........
+     ........  ........  ........  ........  ........  ........  ........  ........
+     8         9         10      
+     ........  ........  ........
+     ........  ........  ........
+     ........  ........  ........
+     .16.....  .16.....  .16.....
+     ........  ........  ........
+     .3....7.  .3....7.  .3....7.
+     ........  ........  ........
+     ........  ........  ........
+     {"entry": 8, "frame": "s03", "predicate": "moved_toward", "args": [6, 7], "truth": true}
+     {"entry": 9, "frame": "s03", "predicate": "moved_toward", "args": [6, 1], "truth": true}
+     {"entry": 10, "frame": "q01", "predicate": "faster_move", "args": [6], "truth": true, "value": 1}
+~~~
+
+~~~
+felt-06-inference-0000  variant s02+q02  inference converse  answer 'yes'
+   0 'five is greater than three.'  [no image]
+   1 'is three less than five ?'  (asks)  [no image]
+     {"entry": 0, "frame": "s02", "predicate": "level_before", "args": [3, 5], "truth": true}
+     {"entry": 1, "frame": "q02", "predicate": "level_before", "args": [3, 5], "truth": true, "value": true, "follows": true}
+~~~
+
+~~~
+felt-14-inference-0002  variant s02+q03  inference converse  answer 'yes'
+   0 'one is below four.'  [no image]
+   1 'is four above one ?'  (asks)  [no image]
+     {"entry": 0, "frame": "s02", "predicate": "row_before", "args": [4, 1], "truth": true}
+     {"entry": 1, "frame": "q03", "predicate": "row_before", "args": [4, 1], "truth": true, "value": true, "follows": true}
+~~~
+

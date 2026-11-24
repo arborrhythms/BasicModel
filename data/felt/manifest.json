@@ -107,7 +107,7 @@
    "name": "order-of-levels",
    "path": "category-06-order-of-levels.jsonl",
    "recipe": "recipes/category-06-order-of-levels.json",
-   "recipe_sha256": "1b38f9ec00a2d69bf57df12cd23323ccbabdcc4fbc162ed5d9d4fb6d7f512339",
+   "recipe_sha256": "75698cf60497a11bf7d6260fe1d880b8b1cc501c599b4e547e3135452859c27b",
    "rows": {
     "generalization": 20,
     "inference": 20,
@@ -116,7 +116,7 @@
     "validation": 20,
     "witness": 20
    },
-   "sha256": "d39c5de1aacef37949f25261366a9741226a98487b2e1c852275161d07ea2dc2",
+   "sha256": "90d5d75898bcc3b54d97cc503626d4de1376f78e8cbedbaf90f88112823f4d2e",
    "verify": {
     "accepted": 200,
     "rejected": 0
@@ -208,7 +208,7 @@
    "name": "comparative-size",
    "path": "category-11-comparative-size.jsonl",
    "recipe": "recipes/category-11-comparative-size.json",
-   "recipe_sha256": "cdee20cdea5f9d7727d25efce0a65a228bc0795f6eab192c566cc9aac3063b0c",
+   "recipe_sha256": "9cd6f3861ecfe00d1cea9f23025e191d0b4290b96ac6f7eb8409428dec4f25c9",
    "rows": {
     "generalization": 20,
     "inference": 20,
@@ -217,7 +217,7 @@
     "validation": 20,
     "witness": 20
    },
-   "sha256": "0b54a2161eebf5264ce506898ddb5fa8f846984dd90150e6880ef8bf1be87ce4",
+   "sha256": "f72cd59de8eda5e42bca8c02647bebf7757545607868045e843f6326ce8d7405",
    "verify": {
     "accepted": 200,
     "rejected": 0
@@ -268,7 +268,7 @@
    "name": "place-of-two",
    "path": "category-14-place-of-two.jsonl",
    "recipe": "recipes/category-14-place-of-two.json",
-   "recipe_sha256": "c1df87b266b57f0677d83b8ba51925cf64c1bb34da5a40018801957a86495f88",
+   "recipe_sha256": "beae388b19258030e9f24f0561e0a72d7be3b291952aa5ec9060125af6b5191c",
    "rows": {
     "contrast": 240,
     "generalization": 20,
@@ -278,7 +278,7 @@
     "validation": 20,
     "witness": 20
    },
-   "sha256": "ba935266ab97b35ea7e82d17ab679c883a69a9c43e9a66b33ab61f783dfb28b7",
+   "sha256": "9c157e0d3dbe1b2b8d7965c42c7499d557e846a3021ab9c88b220ef34c91ded1",
    "verify": {
     "accepted": 440,
     "rejected": 0
@@ -386,12 +386,12 @@
    }
   },
   {
-   "attempts": 128321,
+   "attempts": 102184,
    "category": 20,
    "name": "events-compared",
    "path": "category-20-events-compared.jsonl",
    "recipe": "recipes/category-20-events-compared.json",
-   "recipe_sha256": "2f83d5bb7f43aa75bfeea76da6a8100eb35fb5e54991b6b60c3004b63cf41798",
+   "recipe_sha256": "a5bbb15e6836bf39dd0392496b350323516c15e5bb714390ba1d71d87e29a522",
    "rows": {
     "generalization": 20,
     "test": 20,
@@ -399,7 +399,7 @@
     "validation": 20,
     "witness": 20
    },
-   "sha256": "255fc97e0307a1a3cc01522271914b5da0a1e505da07e0820845168b65219742",
+   "sha256": "5bba09fee79e8c57725d17e03d8e0db7d01b49e3ae80840331a79d6c5e9f743b",
    "verify": {
     "accepted": 180,
     "rejected": 0

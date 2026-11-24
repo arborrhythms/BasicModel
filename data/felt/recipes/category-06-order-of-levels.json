@@ -37,6 +37,13 @@
  },
  "held_out": "pairs",
  "inference": {
+  "alternate": true,
+  "converse_pairs": [
+   [
+    "less",
+    "greater"
+   ]
+  ],
   "numeric": true,
   "premises": [
    "s01",
@@ -69,7 +76,8 @@
    ],
    "id": "q01",
    "predicate": "greater_of",
-   "text": "which is greater, {a} or {b} ?"
+   "text": "which is greater, {a} or {b} ?",
+   "wording": "greater"
   },
   {
    "answer": {
@@ -81,7 +89,8 @@
    ],
    "id": "q02",
    "predicate": "level_before",
-   "text": "is {a} less than {b} ?"
+   "text": "is {a} less than {b} ?",
+   "wording": "less"
   }
  ],
  "schema": 1,
@@ -108,7 +117,8 @@
    ],
    "id": "s01",
    "predicate": "level_before",
-   "text": "{a} is less than {b}."
+   "text": "{a} is less than {b}.",
+   "wording": "less"
   },
   {
    "args": [
@@ -117,7 +127,8 @@
    ],
    "id": "s02",
    "predicate": "level_before",
-   "text": "{b} is greater than {a}."
+   "text": "{b} is greater than {a}.",
+   "wording": "greater"
   },
   {
    "args": [

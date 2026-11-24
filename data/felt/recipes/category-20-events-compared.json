@@ -35,6 +35,16 @@
    "adjective"
   ]
  },
+ "halves": [
+  [
+   "s01",
+   "s02"
+  ],
+  [
+   "s03",
+   "s04"
+  ]
+ ],
  "held_out": "pairs",
  "name": "events-compared",
  "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
@@ -183,6 +193,84 @@
      ],
      "predicate": "moved_toward_speed",
      "text": "it moved toward {c} slowly."
+    }
+   ]
+  },
+  {
+   "id": "s03",
+   "script": {
+    "events": [
+     {
+      "part": 0,
+      "rel": "toward",
+      "speed": 1,
+      "to": "b",
+      "who": "a"
+     },
+     {
+      "part": 1,
+      "rel": "toward",
+      "speed": 2,
+      "to": "c",
+      "who": "a"
+     }
+    ]
+   },
+   "sentences": [
+    {
+     "args": [
+      "a",
+      "b"
+     ],
+     "predicate": "moved_toward",
+     "text": "{a} moved toward {b}."
+    },
+    {
+     "args": [
+      "a",
+      "c"
+     ],
+     "predicate": "moved_toward",
+     "text": "it moved toward {c}."
+    }
+   ]
+  },
+  {
+   "id": "s04",
+   "script": {
+    "events": [
+     {
+      "part": 0,
+      "rel": "toward",
+      "speed": 2,
+      "to": "b",
+      "who": "a"
+     },
+     {
+      "part": 1,
+      "rel": "toward",
+      "speed": 1,
+      "to": "c",
+      "who": "a"
+     }
+    ]
+   },
+   "sentences": [
+    {
+     "args": [
+      "a",
+      "b"
+     ],
+     "predicate": "moved_toward",
+     "text": "{a} moved toward {b}."
+    },
+    {
+     "args": [
+      "a",
+      "c"
+     ],
+     "predicate": "moved_toward",
+     "text": "it moved toward {c}."
     }
    ]
   }

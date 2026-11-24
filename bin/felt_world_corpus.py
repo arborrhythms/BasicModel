@@ -953,6 +953,27 @@ def follows(statements, question, cast):
     return None
 
 
+def asked_fact(predicate, args, value):
+    """The order fact a statement states or a question asks, as (order, (x, y))."""
+    args = [value if a == '?' else a for a in args]
+    if predicate in ORDERS:
+        return predicate, tuple(args)
+    if predicate in CHOICE:
+        order, keep = CHOICE[predicate]
+        a, b = args
+        other = b if value == a else a
+        return order, ((other, value) if keep == 1 else (value, other))
+    return None
+
+
+def opposite(spec, wording):
+    """The other wording of a converse pair the recipe declares."""
+    for pair in spec['converse_pairs']:
+        if wording in pair:
+            return pair[1 - pair.index(wording)]
+    return None
+
+
 # -- verify --------------------------------------------------------------------
 
 def verify(rows, recipe, cast):
@@ -1673,14 +1694,30 @@ class Generator:
             groups = []
         made, counts, failures = [], {}, 0
         gcycle, qcycle = [], []
+        # A recipe may divide its groups into halves (category 20: the neutral
+        # tellings and the worded ones): each half gets half the documents of a
+        # split, and the answers are balanced within each half.
+        halves = [[g for g in groups if g['id'] in ids] for ids in recipe.get('halves', ())]
+        halves = [h for h in halves if h]
+        hcycles = [[] for _ in halves]
+        made_in = [0] * len(halves)
+        half = None
         while len(made) < want and failures < 3 * want + 30:
-            if groups and not gcycle:
+            if halves:
+                half = min(range(len(halves)), key=lambda h: (made_in[h], h))
+                if not hcycles[half]:
+                    hcycles[half] = list(halves[half])
+                    rng.shuffle(hcycles[half])
+            elif groups and not gcycle:
                 gcycle = list(groups)
                 rng.shuffle(gcycle)
             if questions and not qcycle:
                 qcycle = list(questions)
                 rng.shuffle(qcycle)
-            group = gcycle.pop() if groups else None
+            if halves:
+                group = hcycles[half].pop()
+            else:
+                group = gcycle.pop() if groups else None
             question = qcycle.pop() if questions else None
             target = None
             if question:
@@ -1692,7 +1729,8 @@ class Generator:
                 else:
                     values = None
                 if values:
-                    target = min(values, key=lambda v: (counts.get(str(v), 0), rng.random()))
+                    key = (lambda v: str(v)) if half is None else (lambda v: f'{half}:{v}')
+                    target = min(values, key=lambda v: (counts.get(key(v), 0), rng.random()))
             built = self.compose(split, group, question, target)
             if built is None:
                 failures += 1
@@ -1704,7 +1742,10 @@ class Generator:
                 failures += 1
                 continue
             if target is not None:
-                counts[str(target)] = counts.get(str(target), 0) + 1
+                tkey = str(target) if half is None else f'{half}:{target}'
+                counts[tkey] = counts.get(tkey, 0) + 1
+            if half is not None:
+                made_in[half] += 1
             made.append(row)
         return made
 
@@ -1823,7 +1864,8 @@ class Generator:
         kinds = spec['types']
         orders = sorted({self.frames[i]['predicate'] for i in spec['premises']})
         while len(made) < want and failures < 30 * want:
-            kind = rng.choice(kinds)
+            # converse and chain alternate, so that each is half the split
+            kind = kinds[len(made) % len(kinds)] if spec.get('alternate') else rng.choice(kinds)
             order = rng.choice(orders)
             premises = [self.frames[i] for i in spec['premises'] if self.frames[i]['predicate'] == order]
             questions = [self.frames[i] for i in spec['questions']
@@ -1833,6 +1875,19 @@ class Generator:
             if spec.get('numeric'):
                 names.sort()
             facts = [(names[0], names[1])] + ([(names[1], names[2])] if chain else [])
+            if kind == 'converse':
+                # the other way round: one premise in one wording of a pair, asked in the other
+                asked = {q.get('wording') for q in questions}
+                worded = [f for f in premises if f.get('wording') and opposite(spec, f['wording']) in asked]
+                if not worded:
+                    failures += 1
+                    continue
+                premises = [rng.choice(worded)]
+                other = opposite(spec, premises[0]['wording'])
+                questions = [q for q in questions if q.get('wording') == other]
+                if not questions:
+                    failures += 1
+                    continue
             said = []
             for fact in facts:
                 frame = rng.choice(premises)
@@ -1858,14 +1913,14 @@ class Generator:
                 continue
             if aspec['type'] == 'wh':
                 qslots[aspec['slot']] = value
-            full = dict(predicate=frame['predicate'],
-                        args=resolve(frame['args'], qslots) if aspec['type'] != 'value' else qrecord['args'])
-            if aspec['type'] == 'yes_no':
-                full = qrecord
-                if counts.get(str(value), 0) >= counts.get(str(not value), 0) + 1:
-                    failures += 1
-                    continue
-            if any(s['predicate'] == full['predicate'] and s['args'] == full['args'] for s in srecords):
+            # while yes and no are unequal, the next row is the one behind, so the split ends even
+            ahead = counts.get('True', 0) - counts.get('False', 0)
+            if ahead and (aspec['type'] != 'yes_no' or (value is True) == (ahead > 0)):
+                failures += 1
+                continue
+            fact = asked_fact(frame['predicate'], qrecord['args'], value)
+            if any(asked_fact(f['predicate'], r['args'], None) == fact and f.get('wording') == frame.get('wording')
+                   for (f, _), r in zip(said, srecords)):
                 failures += 1
                 continue
             if chain and set(ends) != set(pair):

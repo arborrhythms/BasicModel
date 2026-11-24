@@ -335,9 +335,21 @@ def test_no_image_exactly_where_nothing_is_seen_and_inference_follows_from_what_
             said = [m for m in row['meaning'] if 'value' not in m]
             assert len(asked) == 1 and said
             q = asked[0]
-            meant = [q['value'] if a == '?' else a for a in q['args']]
-            assert all((s['predicate'], s['args']) != (q['predicate'], meant) for s in said), row['key']
-            assert all((s['predicate'], s['args']) != (q['predicate'], q['args']) for s in said), row['key']
+            pairs = [set(p) for p in spec['inference'].get('converse_pairs', ())]
+            wanted = fact(q['predicate'], q['args'], q['value'])
+            q_wording = sentence(spec, q).get('wording')
+            for st in said:
+                if wanted is not None and fact(st['predicate'], st['args'], None) == wanted:
+                    # a fact a statement states is asked only in the other wording of its pair
+                    s_wording = sentence(spec, st).get('wording')
+                    assert {s_wording, q_wording} in pairs, (row['key'], s_wording, q_wording)
+            if row['inference'] == 'converse':
+                (st,) = said
+                stated = fact(st['predicate'], st['args'], None)
+                assert wanted in (stated, (stated[0], stated[1][::-1])), row['key']
+                assert {sentence(spec, st).get('wording'), q_wording} in pairs, row['key']
+            if row['inference'] in ('chain', 'time'):
+                assert all(fact(st['predicate'], st['args'], None) != wanted for st in said), row['key']
             if row['inference'] == 'open':
                 assert row['answer'] == '' and q['follows'] is None and q['value'] is None
             else:
@@ -349,6 +361,24 @@ def test_no_image_exactly_where_nothing_is_seen_and_inference_follows_from_what_
     assert set(kinds[19]) == {'time'} and set(kinds[25]) == {'kind'}
 
 
+# The order facts of section 14.5's inference: a choice question asks a fact
+# of its order ("which is greater, six or one ?" asks that one is less than six).
+ORDERS = ('row_before', 'column_before', 'level_before', 'bigger', 'precedes')
+CHOICE = {'greater_of': ('level_before', 'answer_second'), 'bigger_of': ('bigger', 'answer_first'),
+          'first_of': ('precedes', 'answer_first')}
+
+
+def fact(predicate, args, value):
+    args = [value if a == '?' else a for a in args]
+    if predicate in ORDERS:
+        return predicate, tuple(args)
+    if predicate in CHOICE:
+        order, place = CHOICE[predicate]
+        other = args[1] if value == args[0] else args[0]
+        return order, ((other, value) if place == 'answer_second' else (value, other))
+    return None
+
+
 # 8 -------------------------------------------------------------------------
 
 def test_yes_and_no_and_first_and_second_are_balanced_in_every_split():
@@ -356,13 +386,21 @@ def test_yes_and_no_and_first_and_second_are_balanced_in_every_split():
     for entry in entries():
         spec = recipe(entry)
         enumerated = [truth] + [q['answer']['words'] for q in spec.get('questions', ()) if 'words' in q['answer']]
+        halves = spec.get('halves') or [None]
         for split in entry['rows']:
-            answers = Counter(row['answer'] for row in rows(entry) if row['split'] == split)
-            for pair in enumerated:
-                total = sum(answers[w] for w in pair)
-                if total:
-                    for word in pair:
-                        assert 0.4 <= answers[word] / total <= 0.6, (entry['path'], split, dict(answers))
+            sizes = []
+            for half in halves:
+                chosen = [row for row in rows(entry) if row['split'] == split
+                          and (half is None or row['variant'].split('+')[0] in half)]
+                sizes.append(len(chosen))
+                answers = Counter(row['answer'] for row in chosen)
+                for pair in enumerated:
+                    total = sum(answers[w] for w in pair)
+                    if total:
+                        for word in pair:
+                            assert 0.4 <= answers[word] / total <= 0.6, (entry['path'], split, half, dict(answers))
+            # each half of a divided category has half the documents of every split
+            assert max(sizes) - min(sizes) <= 1, (entry['path'], split, sizes)
 
 
 # 9 -------------------------------------------------------------------------
