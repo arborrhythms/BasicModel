@@ -2013,3 +2013,45 @@ the slow tier is run once, at submission.
 succession across sentences, and the verb as it is built today (item 1.4
 observes the change afterwards); two events compared; what a sentence
 false of its image leaves against it (F8).
+
+### C.6 Alec's first answers (2026-11-23)
+
+Shown C.1 to C.5 and asked whether the defaults stand:
+
+> Ok. You are running in arborbook at ~/GitHub or WikiOracle?
+> Please build the 3D grid if not built.
+
+And, while the grid was being read for its text:
+
+> You will probably flush out some integration issues with multimodal, but
+> hopefully they are percepts that can integrate after a separate Pi and
+> not, so that concepts can tie them together (across modality).
+>
+> I am not certain if integrating the spatial position of words will
+> confuse the spatial position of intensity, but it might. It might make
+> sense to "subtitle" images by ensuring that the two domains do not
+> overlap (even though we are putting them both in a common 3D space).
+
+**What they decide.**
+
+1. *Question 1 is answered:* this item builds the space of three
+   dimensions, first. It is the round of §16.
+2. *Where the session runs:* on ArborBook, in the WikiOracle checkout
+   (`WikiOracle/basicmodel`, the worktree `.worktrees/item1-6`).
+   `~/GitHub` there holds no checkout.
+3. *The modalities meet at concepts.* Each modality's percepts pass a Pi
+   and a Not of their own, and the concepts tie them together across
+   modality. *Claude's reading:* the Pi and the Not are the basic level's,
+   one pair for a modality; nothing joins two modalities below the Sigma of
+   order zero. It agrees with 2026-11-13 ("modalities meet at concepts of
+   order zero", §2.3). It bears on round one's reader and on question 2,
+   and on nothing of the grid.
+4. *Subtitles.* Words and intensities are in one space of three
+   dimensions and take regions of it that do not overlap, as a subtitle
+   lies under its picture. For the grid: each range of places is a box in
+   the space and no two boxes share a place (§16). Where the box of an
+   image lies beside the line of its sentence is round one's to say.
+
+*Not decided by "Ok" as Claude reads it:* questions 2 to 8 keep their
+defaults as defaults. None is needed for the grid. Question 2 is needed
+before round one's text and is put to him again with it.
