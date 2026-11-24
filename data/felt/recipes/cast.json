@@ -10,6 +10,10 @@
   "eight",
   "nine"
  ],
+ "denial_held_out": [
+  6,
+  7
+ ],
  "english": {
   "article": "a",
   "article_before_vowel": "an",

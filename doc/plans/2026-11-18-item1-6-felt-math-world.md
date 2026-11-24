@@ -3152,3 +3152,171 @@ and not in the layers").
   in the source as it is, and how a question's no is read from it. It is
   reasoning across orders, which sigma-pi §19.148 puts after this item and
   item 1.5; the rows are reported and are not a gate of this item.
+
+### 15.11 The third revision, as built (Claude on Opus, 2026-11-23)
+
+The revision of §15.10 and the amended §14, built and frozen again with the
+same command and seed. Verified by running: two freezes write the same 28
+files byte for byte (about 18 seconds each); `test/test_felt_corpus.py` 14
+passed, `test/test_game_corpus.py` 7 passed, `test/test_math_corpus.py` 5
+passed.
+
+*What changed.* `bin/felt_world_corpus.py`, `test/test_felt_corpus.py`,
+`cast.json` (the key `denial_held_out`), every recipe of 3 to 25 (the
+`haystack` split), the recipes of 4 and 26, all 27 row files and the
+manifest. Every row gains `probe`, null unless stated. Against the second
+freeze, with `probe` set aside: categories 4 and 26 are drawn again in
+every split; every other category keeps every row it had and gains its 20
+`haystack` rows. No category but 4 had to change to keep the denial of six
+and seven out: only 4's frames deny a kind (`{a} is not {k}.` and a no to
+`is {a} {k} ?`), and 5, 21 and 25, which name kinds, only affirm them. The
+second freeze held 11 rows, all in 4, that the new check rejects.
+
+*The haystack split.* 20 rows in each of the 23 categories 3 to 25, 460 in
+all, every image holding 6 to 9 things; none in 1, 2, 26 and 27. Frames
+that bear no haystack: `what is here ?` (3) and `this is {a} or {b}.` (5),
+which want one thing in the image, so they are in no haystack row. In 14,
+7 of its 27 question frames are in no haystack row only because 20 rows
+cannot hold 27 frames.
+
+*Category 4's inference split*, 20 rows with no image:
+
+| `inference` | answer | the kinds said in the row | `probe` | rows |
+|---|---|---|---|---|
+| `exclusion` | no | yes | `unseen` (six or seven) | 3 |
+| `exclusion` | no | yes | null | 3 |
+| `exclusion` | no | no | `unseen` | 3 |
+| `exclusion` | no | no | null | 2 |
+| `kind` | yes | | null | 9 |
+
+*Category 26's generalization split:* 10 rows `commuted` and 10 `unseen`.
+
+*Decided by the implementer.*
+
+1. *Labels.* `exclusion` for 4's rows that answer no ("six is even." then
+   "is six odd ?"), `kind` for its rows that answer yes (a kind's list,
+   then "is four even ?"); `kind` is also 25's label, both being
+   inference through a kind.
+2. *9 yes and 11 no in 4's inference split* (45 in a hundred). Only 9
+   distinct yes documents exist (two lists, nine members), so 10 cannot
+   be made without repeating one. The 11 no rows are 6 with the kinds
+   sentence and 5 without, 3 of six or seven in each.
+3. *The first step of a no row* is `{a} is {k}.` or `{a} is {aK}.`: with
+   the first only, the rows of six and seven with no kinds sentence are
+   two documents ("six is even. is six odd ?", "seven is odd. is seven
+   even ?"), fewer than the three asked.
+4. *The new frames* `no {K} is {l}.` and `the {Ks} are not {l}.` (`s06`,
+   `s07`) have the predicate `kinds_exclusive`, true when the two kinds
+   share no member. Their index pushes the questions' frame indices from
+   6 and 7 to 8 and 9, so category 4's held-out pairs of frame and digit
+   for its questions changed with them.
+5. *What follows in 4's rows* is computed from the row's statements and
+   the cast: after a digit's kind, a no to the other kind (a digit is of
+   one kind, the kinds sharing no member), with or without the kinds
+   sentence said; after a kind's list, a yes for a member. Check 7 counts
+   a list as stating each member's kind (the wording `list` beside `is`).
+6. *The denial held out.* `cast.json` names the two digits. A row outside
+   `inference` may not hold a true `{a} is not {k}.` of them, nor a no to
+   `is {a} {k} ?`; witness rows, whose false statements are not said as
+   true, are not counted (4 has none).
+7. *Both tests of a sum.* A fact of a sum is any `sum` record (a plus
+   statement or question, or its difference); its addends decide the test.
+   The other order of each sum held one way is in train at least twice:
+   the recipe key `required` makes "seven plus two is nine.", "five plus
+   three is eight.", "two plus six is eight." and "four plus one is five."
+   twice each before train's other rows. A generalization row's question
+   asks the held sum and its statement holds no held fact at all.
+8. *The haystack.* Every free value is put in at first; when the
+   images cannot be drawn so, the attempts put in fewer, never fewer than
+   six things in all. So a row holds as many as a draw found and not
+   always every free value: the most that a frame bears is not proven.
+   The values added stand still. A frame wanting one thing (`only` in its
+   script) is left out of the split.
+
+The six documents, printed as in 15.5: two haystack rows (14 and 22), two
+no rows of category 4 on six or seven (with the kinds sentence and
+without), and one `commuted` and one `unseen` row of 26.
+
+~~~
+felt-14-haystack-0000  variant s09+q11  inference None  probe None  answer 'eight'
+   0 'nine is far from two.'
+   1 'what is two to the right of ?'  (asks)
+     0         1       
+     ........  ........
+     9.......  9.......
+     ........  ........
+     1..65...  1..65...
+     ........  ........
+     ........  ........
+     7...3...  7...3...
+     ...82..4  ...82..4
+     {"entry": 0, "frame": "s09", "predicate": "far", "args": [9, 2], "truth": true}
+     {"entry": 1, "frame": "q11", "predicate": "column_before", "args": ["?", 2], "truth": true, "value": 8}
+~~~
+
+~~~
+felt-22-haystack-0000  variant s03+q02  inference None  probe None  answer 'eight'
+   0 'the even that is next to five is eight.'
+   1 'which even is above two ?'  (asks)
+     0         1       
+     ......9.  ......9.
+     ........  ........
+     ...4....  ...4....
+     7.......  7.......
+     85...3..  85...3..
+     .......6  .......6
+     ........  ........
+     2......1  2......1
+     {"entry": 0, "frame": "s03", "predicate": "the_k_next_is", "args": ["even", 5, 8], "truth": true}
+     {"entry": 1, "frame": "q02", "predicate": "the_k_above", "args": ["?", "even", 2], "truth": true, "value": 8}
+~~~
+
+~~~
+felt-04-inference-0000  variant s03+s07+q01  inference exclusion  probe unseen  answer 'no'
+   0 'six is an even.'  [no image]
+   1 'the evens are not odd.'  [no image]
+   2 'is six odd ?'  (asks)  [no image]
+     {"entry": 0, "frame": "s03", "predicate": "member", "args": [6, "even"], "truth": true}
+     {"entry": 1, "frame": "s07", "predicate": "kinds_exclusive", "args": ["even", "odd"], "truth": true}
+     {"entry": 2, "frame": "q01", "predicate": "member", "args": [6, "odd"], "truth": false, "value": false, "follows": false}
+~~~
+
+~~~
+felt-04-inference-0006  variant s03+q01  inference exclusion  probe unseen  answer 'no'
+   0 'seven is an odd.'  [no image]
+   1 'is seven even ?'  (asks)  [no image]
+     {"entry": 0, "frame": "s03", "predicate": "member", "args": [7, "odd"], "truth": true}
+     {"entry": 1, "frame": "q01", "predicate": "member", "args": [7, "even"], "truth": false, "value": false, "follows": false}
+~~~
+
+~~~
+felt-26-generalization-0000  variant s03+q02  inference None  probe commuted  answer 'one'
+   0 'eight plus one is nine.'  [no image]
+   1 'what is five minus four ?'  (asks)  [no image]
+     {"entry": 0, "frame": "s03", "predicate": "sum", "args": [8, 1, 9], "truth": true}
+     {"entry": 1, "frame": "q02", "predicate": "sum", "args": ["?", 4, 5], "truth": true, "value": 1}
+~~~
+
+~~~
+felt-26-generalization-0001  variant s01+q01  inference None  probe unseen  answer 'seven'
+   0 'one plus one is two.'  [no image]
+   1 'what is three plus four ?'  (asks)  [no image]
+     {"entry": 0, "frame": "s01", "predicate": "succ", "args": [1, 2], "truth": true}
+     {"entry": 1, "frame": "q01", "predicate": "sum", "args": [3, 4, "?"], "truth": true, "value": 7}
+~~~
+
+
+### 15.12 Review of the third revision (Claude, 2026-11-23)
+
+Run again by Claude: the three test files, 26 passed; a second freeze, the
+same byte for byte; and, with code of its own over the 5,600 rows: outside
+the inference splits nothing denies six or seven the other kind, in a
+statement or in an answer; each of the four sums held out one way is in no
+row outside category 26's `generalization` and is stated the other way
+round in train two or three times; each of the four held out both ways,
+with its two differences, is in no row outside it; every "plus one" is in
+train; all 460 `haystack` rows have six to nine things in every image; and
+apart from the new `probe` field no row of a category other than 4 and 26
+differs from the second freeze. Accepted as built, with the implementer's
+decisions of §15.11: category 4's inference split is 9 of yes and 11 of
+no, since only nine such rows of yes exist.

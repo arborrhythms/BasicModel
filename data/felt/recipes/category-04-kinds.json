@@ -36,12 +36,43 @@
   ]
  },
  "held_out": "frame_digit",
+ "inference": {
+  "converse_pairs": [
+   [
+    "list",
+    "is"
+   ]
+  ],
+  "counts": {
+   "with": 6,
+   "without": 5,
+   "yes": 9
+  },
+  "first": [
+   "s01",
+   "s03"
+  ],
+  "kinds": [
+   "s06",
+   "s07"
+  ],
+  "lists": [
+   "s04",
+   "s05"
+  ],
+  "question": "q01",
+  "rule": "exclusion",
+  "unseen_each": 3
+ },
  "name": "kinds",
  "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
  "operators": [
   "part",
   "whole",
   "lower"
+ ],
+ "probes": [
+  "unseen"
  ],
  "questions": [
   {
@@ -70,7 +101,8 @@
      }
     }
    },
-   "text": "is {a} {k} ?"
+   "text": "is {a} {k} ?",
+   "wording": "is"
   },
   {
    "answer": {
@@ -95,6 +127,8 @@
  },
  "splits": {
   "generalization": 20,
+  "haystack": 20,
+  "inference": 20,
   "test": 20,
   "train": 100,
   "validation": 20
@@ -114,7 +148,8 @@
      }
     }
    },
-   "text": "{a} is {k}."
+   "text": "{a} is {k}.",
+   "wording": "is"
   },
   {
    "args": [
@@ -146,7 +181,8 @@
      }
     }
    },
-   "text": "{a} is {aK}."
+   "text": "{a} is {aK}.",
+   "wording": "is"
   },
   {
    "args": [
@@ -157,7 +193,8 @@
    },
    "id": "s04",
    "predicate": "kind_members",
-   "text": "the evens are two, four, six and eight."
+   "text": "the evens are two, four, six and eight.",
+   "wording": "list"
   },
   {
    "args": [
@@ -168,7 +205,26 @@
    },
    "id": "s05",
    "predicate": "kind_members",
-   "text": "the odds are one, three, five, seven and nine."
+   "text": "the odds are one, three, five, seven and nine.",
+   "wording": "list"
+  },
+  {
+   "args": [
+    "k",
+    "l"
+   ],
+   "id": "s06",
+   "predicate": "kinds_exclusive",
+   "text": "no {K} is {l}."
+  },
+  {
+   "args": [
+    "k",
+    "l"
+   ],
+   "id": "s07",
+   "predicate": "kinds_exclusive",
+   "text": "the {Ks} are not {l}."
   }
  ]
 }

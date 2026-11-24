@@ -286,10 +286,10 @@ def test_held_out_casts_stay_out_and_train_holds_every_digit_frame_and_count():
                 elif rule == 'frame_digit':
                     held |= any((order.index(record['frame']) + 1 + d) % 4 == 0 for d in named)
                 elif rule == 'sums':
-                    held |= frame['predicate'] == 'sum' and [record['slots']['a'], record['slots']['b']] in spec['sum_pairs']
+                    held |= sum_test(spec, record) is not None
             if rule == 'count_sets':
                 held = sum(things(row['entries'][0]['scene'])) % 4 == 0
-            if row['split'] in ('train', 'validation', 'test', 'witness'):
+            if row['split'] in ('train', 'validation', 'test', 'witness', 'haystack'):
                 assert not held, row['key']
             if row['split'] == 'generalization' and rule != 'reserved':
                 assert held, row['key']
@@ -339,7 +339,7 @@ def test_no_image_exactly_where_nothing_is_seen_and_inference_follows_from_what_
             wanted = fact(q['predicate'], q['args'], q['value'])
             q_wording = sentence(spec, q).get('wording')
             for st in said:
-                if wanted is not None and fact(st['predicate'], st['args'], None) == wanted:
+                if wanted is not None and wanted in stated_facts(st):
                     # a fact a statement states is asked only in the other wording of its pair
                     s_wording = sentence(spec, st).get('wording')
                     assert {s_wording, q_wording} in pairs, (row['key'], s_wording, q_wording)
@@ -356,7 +356,8 @@ def test_no_image_exactly_where_nothing_is_seen_and_inference_follows_from_what_
                 assert row['answer'] and q['follows'] is not None
     kinds = {e['category']: Counter(r['inference'] for r in rows(e) if r['split'] == 'inference')
              for e in entries() if 'inference' in e['rows']}
-    assert sorted(kinds) == [6, 11, 14, 19, 24, 25]
+    assert sorted(kinds) == [4, 6, 11, 14, 19, 24, 25]
+    assert set(kinds[4]) == {'exclusion', 'kind'}
     assert kinds[24] == Counter(rule=16, open=4)
     assert set(kinds[19]) == {'time'} and set(kinds[25]) == {'kind'}
 
@@ -370,13 +371,88 @@ CHOICE = {'greater_of': ('level_before', 'answer_second'), 'bigger_of': ('bigger
 
 def fact(predicate, args, value):
     args = [value if a == '?' else a for a in args]
-    if predicate in ORDERS:
+    if predicate in ORDERS or predicate == 'member':
         return predicate, tuple(args)
     if predicate in CHOICE:
         order, place = CHOICE[predicate]
         other = args[1] if value == args[0] else args[0]
         return order, ((other, value) if place == 'answer_second' else (value, other))
     return None
+
+
+def stated_facts(record):
+    """The facts a statement states: one, or for a kind's list one for each member."""
+    if record['predicate'] == 'kind_members':
+        kind = next(k for k in cast()['kinds'] if k['key'] == record['args'][0])
+        return {('member', (d, kind['key'])) for d in kind['members']}
+    found = fact(record['predicate'], record['args'], None)
+    return {found} if found else set()
+
+
+def sum_test(spec, record):
+    """Which held-out test of a sum a record of category 26 belongs to, or None."""
+    if record['predicate'] != 'sum':
+        return None
+    pair = [record['slots']['a'], record['slots']['b']]
+    if pair in spec['sum_pairs']:
+        return 'commuted'
+    if sorted(pair) in [sorted(p) for p in spec['sum_pairs_both']]:
+        return 'unseen'
+    return None
+
+
+def denied(record, row):
+    """The digit a record says is not of a kind: a true denial, or a no to its kind."""
+    if record['predicate'] == 'not_member' and record['truth'] is True:
+        return record['args'][0]
+    if record['predicate'] == 'member' and record['truth'] is False and row['split'] != 'witness':
+        return record['args'][0]
+    return None
+
+
+def test_the_denial_of_six_and_seven_and_both_tests_of_a_sum():
+    held = set(cast()['denial_held_out'])
+    assert held == {6, 7}
+    for entry in entries():
+        spec = recipe(entry)
+        for row in rows(entry):
+            assert row['probe'] is None or row['probe'] in spec.get('probes', ()), row['key']
+            if row['split'] != 'inference':
+                assert all(denied(m, row) not in held for m in row['meaning']), row['key']
+    entry = next(e for e in entries() if e['category'] == 4)
+    spec = recipe(entry)
+    rows4 = [r for r in rows(entry) if r['split'] == 'inference']
+    assert Counter(r['inference'] for r in rows4) == Counter(exclusion=11, kind=9)
+    told = lambda r: any(m['predicate'] == 'kinds_exclusive' for m in r['meaning'])
+    for r in rows4:
+        q = [m for m in r['meaning'] if 'value' in m][0]
+        unseen = r['inference'] == 'exclusion' and q['args'][0] in held
+        assert (r['probe'] == 'unseen') == unseen, r['key']
+        assert r['answer'] == cast()['truth_words'][r['inference'] == 'kind']
+    for say in (True, False):
+        nos = [r for r in rows4 if r['inference'] == 'exclusion' and told(r) == say]
+        assert 2 * sum(r['probe'] == 'unseen' for r in nos) >= len(nos)
+    # of 26: held one way and taught the other way twice; held both ways nowhere else
+    entry = next(e for e in entries() if e['category'] == 26)
+    spec = recipe(entry)
+    taught = Counter()
+    for row in rows(entry):
+        tests = [sum_test(spec, m) for m in row['meaning']]
+        if row['split'] != 'generalization':
+            assert not any(tests), row['key']
+        else:
+            q = [m for m in row['meaning'] if 'value' in m][0]
+            assert row['probe'] == sum_test(spec, q) and row['probe'] in ('commuted', 'unseen')
+            asked = {q['slots']['a'], q['slots']['b'], q['slots']['c']}
+            for m in row['meaning']:
+                if 'value' not in m and m['predicate'] == 'sum':
+                    assert {m['slots']['a'], m['slots']['b'], m['slots']['c']} != asked, row['key']
+        if row['split'] == 'train':
+            for m in row['meaning']:
+                if 'value' not in m and m['predicate'] == 'sum':
+                    taught[(m['slots']['a'], m['slots']['b'])] += 1
+    assert all(taught[(b, a)] >= 2 for a, b in spec['sum_pairs'])
+    assert Counter(r['probe'] for r in rows(entry) if r['split'] == 'generalization') == Counter(commuted=10, unseen=10)
 
 
 # 8 -------------------------------------------------------------------------
@@ -469,6 +545,19 @@ def test_counting_answers_are_the_first_counting_words():
         assert all(len(p) == 1 for p in things(row['entries'][0]['scene']).values())
 
 
+# 12 ------------------------------------------------------------------------
+
+def test_every_haystack_image_holds_six_things_or_more():
+    found = Counter()
+    for entry in entries():
+        for row in rows(entry):
+            if row['split'] == 'haystack':
+                found[entry['category']] += 1
+                for item in row['entries']:
+                    assert item['scene'] is not None and len(things(item['scene'])) >= 6, row['key']
+    assert set(found) == set(range(3, 26)), sorted(found)
+
+
 # 11 ------------------------------------------------------------------------
 
 def test_load_returns_documents_with_no_model_built():
@@ -494,4 +583,5 @@ def test_load_returns_documents_with_no_model_built():
             for doc, row in zip(docs, [r for r in rows(entry) if r['split'] == split]):
                 assert doc.sentences == tuple(e['text'] for e in row['entries'])
                 assert doc.question == row['question'] and doc.answer == row['answer']
+                assert doc.probe == row['probe']
                 assert len(doc.scenes) == len(doc.sentences)

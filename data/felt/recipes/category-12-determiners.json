@@ -162,6 +162,7 @@
   "l": "kind"
  },
  "splits": {
+  "haystack": 20,
   "test": 20,
   "train": 100,
   "validation": 20,

@@ -44,6 +44,10 @@
   "subtract",
   "part"
  ],
+ "probes": [
+  "commuted",
+  "unseen"
+ ],
  "questions": [
   {
    "answer": {
@@ -74,6 +78,80 @@
    "id": "q02",
    "predicate": "sum",
    "text": "what is {c} minus {b} ?"
+  }
+ ],
+ "required": [
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 7,
+    "b": 2,
+    "c": 9
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 7,
+    "b": 2,
+    "c": 9
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 5,
+    "b": 3,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 5,
+    "b": 3,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 2,
+    "b": 6,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 2,
+    "b": 6,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 4,
+    "b": 1,
+    "c": 5
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 4,
+    "b": 1,
+    "c": 5
+   },
+   "split": "train"
   }
  ],
  "schema": 1,
@@ -146,6 +224,24 @@
   [
    1,
    4
+  ]
+ ],
+ "sum_pairs_both": [
+  [
+   2,
+   3
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   5
   ]
  ],
  "world": "none"

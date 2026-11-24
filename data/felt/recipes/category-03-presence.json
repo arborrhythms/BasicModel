@@ -85,6 +85,7 @@
  },
  "splits": {
   "generalization": 20,
+  "haystack": 20,
   "test": 20,
   "train": 100,
   "validation": 20,

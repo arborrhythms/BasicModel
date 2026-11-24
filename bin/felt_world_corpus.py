@@ -26,7 +26,8 @@ SIDE = 8
 VALUES = tuple(range(1, 10))
 STEP = 25
 SPREAD = 3
-SPLITS = ('train', 'validation', 'test', 'generalization', 'witness', 'inference', 'contrast')
+SPLITS = ('train', 'validation', 'test', 'generalization', 'witness', 'inference', 'contrast', 'haystack')
+HAYSTACK = 6            # things at the least in every image of a haystack row
 UNITS = ((0, -1), (0, 1), (-1, 0), (1, 0))
 SLOT = re.compile(r'\{(\w+)\}')
 ATTEMPTS = 400          # worlds drawn for one document before its frames are given up
@@ -262,6 +263,11 @@ def p_kinds_both(w, t, a, k, b, l):
 
 def p_kind_members(w, t, k):
     return True
+
+
+def p_kinds_exclusive(w, t, k, l):
+    """No member of kind k is of kind l: the two kinds share no digit."""
+    return k != l and not (w.cast.members[k] & w.cast.members[l])
 
 
 def p_level_before(w, t, a, b):
@@ -786,7 +792,7 @@ def p_kind_of(w, t, a):
 
 PREDICATES = {name[2:]: fn for name, fn in list(globals().items()) if name.startswith('p_') and callable(fn)}
 PRUNE = None  # set below: predicates whose truth the slots alone decide while drawing them
-SAID = {'word', 'member', 'not_member', 'kinds_both', 'kind_members', 'succ', 'sum', 'kind_of'}
+SAID = {'word', 'member', 'not_member', 'kinds_both', 'kind_members', 'kinds_exclusive', 'succ', 'sum', 'kind_of'}
 
 
 PRUNE = SAID | {'level_before', 'not_level_before'}
@@ -880,8 +886,30 @@ def held_out(recipe, index, frame, slots, digits):
     if rule == 'frame_digit':
         return any((index + d) % 4 == 0 for d in digits)
     if rule == 'sums':
-        return frame['predicate'] == 'sum' and [slots['a'], slots['b']] in recipe['sum_pairs']
+        return sum_probe(recipe, frame['predicate'], slots) is not None
     return False
+
+
+def sum_probe(recipe, predicate, slots):
+    """Which test of a sum a fact belongs to: held out in the order written
+    (`commuted`, its other order taught), held out both ways (`unseen`), or None."""
+    if predicate != 'sum':
+        return None
+    pair = [slots['a'], slots['b']]
+    if pair in recipe['sum_pairs']:
+        return 'commuted'
+    if sorted(pair) in [sorted(p) for p in recipe['sum_pairs_both']]:
+        return 'unseen'
+    return None
+
+
+def denies(predicate, args, truth, cast):
+    """The digit a statement or answer says is not of a kind, or None."""
+    if predicate == 'not_member' and truth is True:
+        return args[0]
+    if predicate == 'member' and truth is False:
+        return args[0]
+    return None
 
 
 def frame_list(recipe):
@@ -909,8 +937,13 @@ def follows(statements, question, cast):
     pred, args = question['predicate'], [tuple(a) if isinstance(a, list) else a for a in question['args']]
     facts = {}
     rules, moved, every = [], set(), []
+    kinds_said, lists = [], set()
     for s in statements:
         p, a = s['predicate'], s['args']
+        if p == 'member':
+            kinds_said.append((a[0], a[1]))
+        elif p == 'kind_members':
+            lists.add(a[0])
         if p in ORDERS:
             facts.setdefault(p, set()).add(tuple(a))
         elif p in ('if_moves_moves', 'if_moves_still'):
@@ -944,6 +977,15 @@ def follows(statements, question, cast):
             return (a, b)[keep]
         if (b, a) in known:
             return (b, a)[keep]
+        return None
+    if pred == 'member':
+        x, k = args
+        if k in lists:
+            return x in cast.members[k]
+        for y, j in kinds_said:
+            # a digit is of one kind: the kinds share no member (the cast, and what train says of them)
+            if y == x and j != k and not (cast.members[j] & cast.members[k]):
+                return False
         return None
     if pred == 'moved':
         for p, a, b in rules:
@@ -1004,6 +1046,8 @@ def _verify_row(row, recipe, cast, frames):
     if row['category'] != recipe['category'] or row['name'] != recipe['name']:
         return False
     if row['operators'] != recipe['operators'] or row['split'] not in recipe['splits']:
+        return False
+    if row['probe'] is not None and row['probe'] not in recipe.get('probes', ()):
         return False
     entries = row['entries']
     covered = set()
@@ -1476,7 +1520,7 @@ class Generator:
                 return None
         return arranged, positions
 
-    def row(self, split, instances, arranged, positions, variant, inference=None, contrast=None):
+    def row(self, split, instances, arranged, positions, variant, inference=None, contrast=None, probe=None):
         entries = [dict(text='', scene=s) for s in arranged]
         meaning, question, answer = [], None, None
         texts = [(inst, part) for inst in instances for part in inst['parts']]
@@ -1511,7 +1555,7 @@ class Generator:
         return normal(dict(category=self.recipe['category'], name=self.recipe['name'], variant=variant,
                     split=split, operators=self.recipe['operators'], entries=entries,
                     meaning=meaning, question=question, answer=answer,
-                    inference=inference, set=contrast))
+                    inference=inference, set=contrast, probe=probe))
 
     def visible(self, inst, frame):
         names = text_slots(frame['text'], self.recipe) + [a for a in frame['args'] if isinstance(a, str)]
@@ -1519,13 +1563,18 @@ class Generator:
             names.append(frame['answer']['slot'])
         return {n: inst['slots'][n] for n in sorted(set(names))}
 
-    def compose(self, split, group, question, target):
-        """One document: a statement group and a question, true of drawn images."""
+    def compose(self, split, group, question, target, probe=None, given=None):
+        """One document: a statement group and a question, true of drawn images.
+
+        ``probe`` is the test of a sum a generalization row of 26 makes;
+        ``given`` fixes slots of a frame ({frame id: {slot: value}}).
+        """
         rng, recipe = self.rng, self.recipe
         witness = split == 'witness'
         general = split == 'generalization'
+        haystack = split == 'haystack'
         gscript = group.get('script', {}) if group else {}
-        for _ in range(ATTEMPTS):
+        for attempt in range(ATTEMPTS):
             self.attempts += 1
             instances, names = [], []
             preset = {}
@@ -1548,11 +1597,18 @@ class Generator:
                 d = rng.choice([d for d in VALUES if (self.index[carrier['id']] + d) % 4 == 0])
                 preset[carrier['id']] = {slot: d}
             elif general and recipe['held_out'] == 'sums':
-                carrier = rng.choice([f for f in (group, question) if f and self.sums(f)] or [None])
-                if carrier is None:
+                # the question asks the held-out sum; the statement is no fact of it
+                if not (question and self.sums(question)):
                     return None
-                a, b = rng.choice(recipe['sum_pairs'])
-                preset[carrier['id']] = {'a': a, 'b': b, 'c': a + b}
+                if probe == 'commuted':
+                    a, b = rng.choice(recipe['sum_pairs'])
+                else:
+                    a, b = rng.choice(recipe['sum_pairs_both'])
+                    if rng.random() < 0.5:
+                        a, b = b, a
+                preset[question['id']] = {'a': a, 'b': b, 'c': a + b}
+            for fid, slots in (given or {}).items():
+                preset.setdefault(fid, {}).update(slots)
             gslots = None
             if group:
                 fixed = dict(group.get('fixed', {}))
@@ -1597,7 +1653,7 @@ class Generator:
                 inst = self.instance(question, qslots, qscript, 'question', target)
                 instances.append(inst)
             clean = True
-            if general != self.holds_out(instances):
+            if not self.cast_ok(instances, split, probe, target):
                 continue
             # said meanings hold of the slots alone
             for inst in instances:
@@ -1614,7 +1670,7 @@ class Generator:
                 view = View(arranged, self.cast)
                 ok = all(self.check(p, view, t, i['slots']) for t, (i, p) in
                          enumerate((i, p) for i in instances for p in i['parts']))
-                if not ok or general != self.holds_out(instances):
+                if not ok or not self.cast_ok(instances, split, probe, target):
                     continue
                 return instances, arranged, list(range(len(arranged)))
             things = set()
@@ -1639,7 +1695,19 @@ class Generator:
                                 absent.add(a)
             things -= absent
             only = any(i['script'].get('only') for i in instances)
-            if not only:
+            if haystack:
+                # every value left free, as many as the truths and answers bear: all of
+                # them at first, fewer as the attempts go on, never under six things
+                if only:
+                    return None
+                spare = [d for d in VALUES if d not in things and d not in absent]
+                rng.shuffle(spare)
+                count = len(spare) - (attempt * (len(spare) + 1)) // ATTEMPTS
+                count = max(count, HAYSTACK - len(things))
+                if count > len(spare):
+                    return None
+                things |= set(spare[:count])
+            elif not only:
                 spare = [d for d in VALUES if d not in things and d not in absent]
                 rng.shuffle(spare)
                 things |= set(spare[:rng.choice((0, 0, 1, 2))])
@@ -1652,10 +1720,33 @@ class Generator:
             if placed is None:
                 continue
             arranged, positions = placed
-            if general != self.holds_out(instances):
+            if not self.cast_ok(instances, split, probe, target):
                 continue
             return instances, arranged, positions
         return None
+
+    def cast_ok(self, instances, split, probe, target):
+        """The held-out casts and the held denials, for a document of this split."""
+        if split != 'inference':
+            held = set(self.cast.data.get('denial_held_out', ()))
+            for inst in instances:
+                for part in inst['parts']:
+                    f = part['frame']
+                    truth = target if inst['role'] == 'question' else part['expect']
+                    if f.get('answer') and f['answer']['type'] != 'yes_no':
+                        continue
+                    if denies(f['predicate'], part['args'], truth, self.cast) in held:
+                        return False
+        if probe is not None:
+            for inst in instances:
+                slots = {k: v for k, v in inst['slots'].items() if not k.startswith('@')}
+                found = [sum_probe(self.recipe, p['frame']['predicate'], slots) for p in inst['parts']]
+                if inst['role'] == 'question' and found != [probe]:
+                    return False
+                if inst['role'] == 'statement' and any(found):
+                    return False
+            return True
+        return (split == 'generalization') == self.holds_out(instances)
 
     def holds_out(self, instances):
         """Whether any frame instance names a cast held out of this category."""
@@ -1681,10 +1772,19 @@ class Generator:
     def sums(self, frame):
         return any(p['predicate'] == 'sum' for p in frame.get('sentences', [frame]))
 
-    def ordinary(self, split, want):
+    def ordinary(self, split, want, probes=None):
         recipe, rng = self.recipe, self.rng
         groups = [g for g in recipe['statements'] if not g.get('inference_only')]
         questions = [q for q in recipe.get('questions', ()) if not q.get('inference_only')]
+        if split == 'haystack':
+            # a frame that wants nothing else in its image bears no haystack
+            alone = lambda f: f.get('script', {}).get('only') or any(
+                p.get('script', {}).get('only') for p in f.get('sentences', ()))
+            groups = [g for g in groups if not alone(g)]
+            questions = [q for q in questions if not alone(q)]
+        # documents a recipe requires of this split, made first (26: the other order of a held-out sum)
+        required = [dict(r) for r in recipe.get('required', ()) if r['split'] == split]
+        by_probe = {}
         if split == 'witness':
             groups = [g for g in groups if not g.get('no_witness') and any(
                 p['predicate'] not in SAID and p.get('text') for p in g.get('sentences', [g]))]
@@ -1718,6 +1818,13 @@ class Generator:
                 group = hcycles[half].pop()
             else:
                 group = gcycle.pop() if groups else None
+            given = None
+            if required:
+                group = self.frames[required[0]['frame']]
+                given = {group['id']: required[0]['slots']}
+            probe = None
+            if probes:
+                probe = min(probes, key=lambda p: (by_probe.get(p, 0), probes.index(p)))
             question = qcycle.pop() if questions else None
             target = None
             if question:
@@ -1731,13 +1838,13 @@ class Generator:
                 if values:
                     key = (lambda v: str(v)) if half is None else (lambda v: f'{half}:{v}')
                     target = min(values, key=lambda v: (counts.get(key(v), 0), rng.random()))
-            built = self.compose(split, group, question, target)
+            built = self.compose(split, group, question, target, probe, given)
             if built is None:
                 failures += 1
                 continue
             instances, arranged, positions = built
             variant = '+'.join(i['frame']['id'] for i in instances)
-            row = self.row(split, instances, arranged, positions, variant)
+            row = self.row(split, instances, arranged, positions, variant, probe=probe)
             if row is None:
                 failures += 1
                 continue
@@ -1746,6 +1853,10 @@ class Generator:
                 counts[tkey] = counts.get(tkey, 0) + 1
             if half is not None:
                 made_in[half] += 1
+            if required and given:
+                required.pop(0)
+            if probe:
+                by_probe[probe] = by_probe.get(probe, 0) + 1
             made.append(row)
         return made
 
@@ -1839,9 +1950,11 @@ class Generator:
             return self.infer_order(spec, want)
         if rule == 'if':
             return self.infer_rule(spec, want)
+        if rule == 'exclusion':
+            return self.infer_exclusion(spec, want)
         return self.infer_kind(spec, want)
 
-    def said_doc(self, premises, question, kind, follows_value):
+    def said_doc(self, premises, question, kind, follows_value, probe=None):
         """Premises and a question with no image."""
         instances = []
         for frame, slots in premises:
@@ -1856,7 +1969,7 @@ class Generator:
         instances.append(inst)
         count = sum(len(i['parts']) for i in instances)
         return self.row('inference', instances, [None] * count, list(range(count)),
-                        '+'.join(i['frame']['id'] for i in instances), inference=kind)
+                        '+'.join(i['frame']['id'] for i in instances), inference=kind, probe=probe)
 
     def infer_order(self, spec, want):
         rng = self.rng
@@ -1978,12 +2091,54 @@ class Generator:
             made.append(row)
         return made
 
+    def infer_exclusion(self, spec, want):
+        """Category 4: a digit's kind said, and asked of the other kind (no), with
+        or without the kinds said of each other; or a kind's list, and asked of a
+        member (yes). Of the no rows, ``unseen_each`` of each half are of the digits
+        whose denial is held out of every other split."""
+        rng, cast = self.rng, self.cast
+        held = list(cast.data['denial_held_out'])
+        plan = []
+        for say in (True, False):
+            n = spec['counts']['with' if say else 'without']
+            plan += [(False, say, True)] * spec['unseen_each'] + [(False, say, False)] * (n - spec['unseen_each'])
+        plan += [(True, None, None)] * spec['counts']['yes']
+        made = []
+        question = self.frames[spec['question']]
+        for answer, say, unseen in plan:
+            for _ in range(300):
+                if answer:
+                    listed = self.frames[rng.choice(spec['lists'])]
+                    k = listed['fixed']['k']
+                    a = rng.choice(sorted(cast.members[k]))
+                    said, asked, probe, label = [(listed, {'k': k})], {'a': a, 'k': k}, None, 'kind'
+                else:
+                    a = rng.choice(held) if unseen else rng.choice([d for d in VALUES if d not in held])
+                    k = cast.kind_of(a)
+                    other = next(j for j in cast.kind_keys if j != k)
+                    said = [(self.frames[rng.choice(spec['first'])], {'a': a, 'k': k})]
+                    if say:
+                        said.append((self.frames[rng.choice(spec['kinds'])], {'k': k, 'l': other}))
+                    asked, probe, label = {'a': a, 'k': other}, ('unseen' if unseen else None), 'exclusion'
+                srecords = [dict(predicate=f['predicate'], args=resolve(f['args'], sl)) for f, sl in said]
+                value = follows(srecords, dict(predicate=question['predicate'],
+                                               args=resolve(question['args'], asked)), cast)
+                if value is not answer:
+                    continue
+                row = self.said_doc(said, (question, asked), label, value, probe)
+                if row is not None:
+                    made.append(row)
+                    break
+        return made
+
     def split(self, split, want):
         recipe = self.recipe
         if split == 'contrast':
             return self.contrast(want)
         if split == 'inference':
             return self.inference(want)
+        if split == 'generalization' and recipe['held_out'] == 'sums':
+            return self.ordinary(split, want, probes=('commuted', 'unseen'))
         if split == 'generalization' and recipe['held_out'] == 'reserved':
             return self.reserved(split, want)
         if recipe.get('compose') == 'count':
@@ -2082,6 +2237,7 @@ class FeltDocument:
     variant: str
     inference: str | None
     contrast_set: str | None
+    probe: str | None
 
 
 def load(category, split, *, felt_dir=None):
@@ -2107,7 +2263,7 @@ def load(category, split, *, felt_dir=None):
             scenes=tuple(None if e['scene'] is None else tuple(tuple(p) for p in e['scene'])
                          for e in row['entries']),
             question=row['question'], answer=row['answer'], variant=row['variant'],
-            inference=row['inference'], contrast_set=row['set']))
+            inference=row['inference'], contrast_set=row['set'], probe=row['probe']))
     return tuple(out)
 
 

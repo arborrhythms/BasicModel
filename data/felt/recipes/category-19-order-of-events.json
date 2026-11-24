@@ -95,6 +95,7 @@
  },
  "splits": {
   "generalization": 20,
+  "haystack": 20,
   "inference": 20,
   "test": 20,
   "train": 100,

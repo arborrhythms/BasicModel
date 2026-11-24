@@ -594,10 +594,16 @@ row. The splits of a category:
 | `witness` | one statement false of its image, marked so |
 | `inference` | said with no image; the answer follows from what is said and is not among it |
 | `contrast` | for the place of two things: sets of twelve that exchange two things in one column and ask of both orders |
+| `haystack` | a construction of train in a crowded image, six things or more |
 
 One step of intensity and eight places are kept back for each value from
 every split but the naming category's `generalization`, which shows each
-value there and asks its name. Rebuild the files and their manifest with
+value there and asks its name. Of six and of seven, that it is not of the
+other kind is said nowhere but in an `inference` split, where it is asked
+after "six is even.": the answer has to come through the kinds, which are
+said of each other ("no even is odd."). Of the sums said in words, four
+are kept back in one order and taught in the other, and four are kept back
+in both with their differences; a row's `probe` says which it asks. Rebuild the files and their manifest with
 `.venv/bin/python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt`.
 The same module's `load(category, split)` returns the documents with their
 images. No loader of the model reads these files, and they are not in the
