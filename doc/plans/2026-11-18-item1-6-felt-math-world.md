@@ -6504,3 +6504,105 @@ for `MM_xor.xml` and `MM_image.xml` fails after any test that builds
 `MM_image.xml`, on the tree before this step too: it depends on the order
 of the tests.
 
+
+## 32. Step C: the image read with its sentence, put back and charged (Claude, 2026-11-24; the text for the implementer is 32.2)
+
+### 32.1 What it builds, and its certificates
+
+On a text model that declares the scene's box (step A), with the reader of
+step T.
+
+1. *The image's bank at the opening.* At a sentence's opening, where the
+   value beside the words is joined today (`SentenceField.open_field`,
+   first sentence of a presentation), a row that carries a scene has an
+   image's bank made of its pixels (`BasicPercepts.value_bank`) at the
+   addresses of the `scene` range; its values are perceived and its places
+   met, as the numeric stem does.
+2. *One Not.* The image's rows, read by numerical parthood
+   (`read_values`), and the sentence's rows, read by the first Pi over
+   forms, stand in one table of lanes: a form's row reads nothing at an
+   image's reading and a value's or a place's row of the image nothing at
+   a sentence's. The table goes through `order_zero_field` in one call.
+3. *Joined to the field.* The image's readings are columns of the
+   sentence's opened field after the sentence's, each with its `.where` in
+   the box and its wires. Which readings an image has (every place of the
+   box, or the places a pixel holds, and the bracket) is the implementer's
+   to choose and say. A row with no image (`null`) joins none; an empty
+   image joins readings that read nothing.
+4. *Put back.* At the opening's reconstruction the image is put back from
+   the field alone: at each place of the box, the greatest over the
+   value's rows of the row's value times the degree to which a concept of
+   the field reads for it at that place's reading; nothing where none
+   reads. The sentence is put back as it is today.
+5. *Charged.* The opening's errors gain a term for the image, the squared
+   difference place by place over the box between what was put back and
+   the scene (a place with no pixel is 0), weighted and booked as the
+   sentence's reconstruction is. A row with no image is charged nothing
+   for one; an empty image is charged for whatever is put back.
+6. *Not built:* a look that takes a felt thing; objects, names and
+   `createMetaConcepts`; parts wider than a place.
+
+In `test/test_item16_scene_field.py`, each printing what it measured:
+
+| | Certificate | Passes when |
+|---|---|---|
+| C1 | Text as it was | A row of text with `scene: null`, and the same text given as a string, have the same opened field, the same put-back sentence and the same opening errors, exactly. Both stopping gates and the seven echo tests pass |
+| C2 | One Not | At an opening with a scene, `order_zero_field` is called once and its rows hold forms' rows and values' rows |
+| C3 | In the field | After an image has recurred as often as nominates, its readings in the opened field read for its values' and its places' concepts, at addresses of the `scene` range; `null` adds no reading; `[]` adds none that reads |
+| C4 | Put back (F1, F2 of §7 as they bear on one image) | Images of category 1 alone, each presented until its values and places are known: every pixel comes back at its place with its value exactly, at each of the varied steps, and nothing comes back elsewhere in the box. A sentence with its image (category 2) puts both back |
+| C5 | Charged (F11, F12) | The opening's errors hold the image's term where a row has an image and none where it has not; the term is nothing when the image comes back exactly, and above nothing for an empty image when something is put back; a gradient of it reaches the Sigma of order zero |
+
+### 32.2 Text for the implementer
+
+~~~
+Item 1.6, step C: the image read with its sentence, put back and charged.
+Read §32.1 of doc/plans/2026-11-18-item1-6-felt-math-world.md (what you
+build), then §20 (20.1's table of what exists, 20.7), §21 (step A as
+built), §30 and §31 (step T as built), §7 for F1, F2, F11 and F12, §29.5,
+and H.5. Then the source: bin/SentenceField.py (open_field,
+reconstruction, charge, reconstruct), bin/ScalarPercepts.py (join, as the
+example of a second modality joined at the opening), bin/FamiliarTier.py
+(open_sentence), Spaces.py's cs_read_bank, cs_read_percept_field and
+order_zero_field, bin/FieldReverse.py, bin/NumericPercepts.py and
+BasicPercepts.value_bank, read_values, parthood; where the opening's
+errors are made and merged in bin/Models.py (search
+_sentence_open_fields and _opening_errors).
+
+Keep tmp/item1-6/field_progress.md current after each step.
+
+1. Points 1 to 3 of §32.1. The scenes of a batch are InputSpace._scenes.
+   Where the image's lanes join the sentence's before the Not is yours to
+   find; say where. Nothing of the sentence's reading may change when no
+   row of the batch has an image.
+2. Points 4 and 5. Say where the term is booked and by what weight.
+3. test/test_item16_scene_field.py: C1 to C5, on the text model that
+   test/test_item16_scene.py builds with the box (the echo test's model
+   with sceneShape), fed by felt_world_corpus.rows.
+4. Port a test only where a point of §32.1 makes its assertion false, and
+   list each with old and new. No other assertion is weakened, skipped or
+   marked; no seed is chosen. Neither stopping gate, nor anything a gate
+   uses, is touched.
+5. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_item17_echo.py,
+   test/test_reading_pretraining.py, test/test_item16_grid.py,
+   test/test_item16_scene.py, test/test_item16_values.py,
+   test/test_item16_scene_field.py, test/test_item18_scalar.py,
+   test/test_item18_recognition.py, test/test_percept_collection_binding.py,
+   and every test file that names open_field, ScalarPercepts.join,
+   _opening_errors or reconstruction_order_zero. No test that passes in
+   the sweep (its outcomes are named in your prompt) may fail, apart from
+   those known to fail by chance. Report the time of the seven echo tests
+   and of the reading lesson before and after.
+6. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+7. Return as tmp/item1-6/section33.md, headed "## 33. Step C: the
+   return": files changed and why; where the two modalities' lanes meet;
+   which readings an image has; each certificate with what it printed;
+   every test ported; the two times; what in §32.1 could not be built as
+   written and what you built. You do not stop on a question of design:
+   propose, build, mark it. Stop only if a gate cannot pass with its
+   assertion as it is, and then say exactly where it fails.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
