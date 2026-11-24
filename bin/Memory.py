@@ -1105,6 +1105,78 @@ class MediumTermMemory(MemoryStore):
         self.transient_ids = torch.arange(int(n_vectors), int(n_vectors)+self.capacity, dtype=torch.long, device='cpu')
         self.transient_used = torch.zeros(self.capacity, dtype=torch.bool, device='cpu')
 
+    def idea_store(self, address, durable):
+        """Resolve a typed idea to its current owner, including old durable events."""
+        staged = self.__dict__.get('_staged_ideas')
+        if (staged is not None and isinstance(address, tuple)
+                and address[:2] == ('ltm', staged.address_domain) and staged.location(address) is not None):
+            return staged
+        return durable
+
+    def staging_store(self, durable):
+        """Use the native idea layout for values needed across recent observations."""
+        staged = self.__dict__.get('_staged_ideas')
+        if staged is None:
+            staged = StagedIdeas(durable.nDim, durable.capacity, content_width=durable.content_width,
+                percept_width=durable.percept_width, relation_capacity=2,
+                episodic_concepts=durable.episodic_capacity).to(durable.slots)
+            self._staged_ideas = staged
+        elif ((staged.nDim, staged.percept_width, staged.episodic_capacity) !=
+              (durable.nDim, durable.percept_width, durable.episodic_capacity)):
+            raise ValueError('staged ideas disagree with the destination layout')
+        elif staged.slots.device != durable.slots.device or staged.slots.dtype != durable.slots.dtype:
+            staged.to(durable.slots)
+        import weakref
+        staged.address_domain = durable.address_domain
+        staged._destination = weakref.ref(durable)
+        staged._concept_owner = durable.__dict__.get('_concept_owner')
+        staged._model_present_code = getattr(durable, '_model_present_code', None)
+        staged._model_present = getattr(durable, '_model_present', None)
+        return staged
+
+    def _close_staged_ideas(self, durable):
+        staged = self.__dict__.get('_staged_ideas')
+        if staged is None or not len(staged):
+            return
+        rows = staged.row_names[:0]
+        if isinstance(durable, LTM0) and durable.address_domain == staged.address_domain:
+            # The existing activity threshold decides consolidation. A full
+            # destination leaves the values in MTM for the ordinary forget pass.
+            rows = (staged.activity[:len(staged)] >= staged.activity_config.promotion).nonzero().flatten()
+            rows = rows[:max(0, durable.capacity - len(durable))]
+            if rows.numel():
+                durable.retain_ideas(staged, rows, staged.row_names[rows], staged.referent[rows])
+        live = set(self.names) | set(self.pending)
+        for token in self.entries.values():
+            live.update(token.occurrences)
+            live.update(event.occurrence for timeline in token.timelines for event in timeline.events)
+        names = staged._occupied_names()[2][:len(staged)]
+        keep = [row for row, name in enumerate(names) if ('ltm', staged.address_domain, name) in live]
+        selected = set(rows.tolist())
+        keep = [row for row in keep if row not in selected]
+        if len(keep) != len(staged):
+            # The token still points to a promoted name. Compaction here
+            # moves storage and must not forget that member of its history.
+            owner = staged.__dict__.pop('_concept_owner', None)
+            try:
+                staged.compact_rows(keep)
+            finally:
+                staged._concept_owner = owner
+
+    @torch.no_grad()
+    def consolidate_idea(self, durable, source, name, pair, referent, episode, surprise):
+        """Copy a resolved STM0 idea. Its LTM address and time belong to this close."""
+        row = source.index_of_row(name)
+        if row is None:
+            raise ValueError('the selected STM idea expired before sentence close')
+        reference = durable._reference_value(referent)
+        return durable._append_point(source.slots[row], pair, reference, episode, surprise, None)
+
+    def consolidate_heads(self, stores, heads, durable):
+        """Retain already concluded native heads without an intermediate payload copy."""
+        from ReadingMemory import commit
+        return commit(stores, heads, durable)
+
     def read_occurrences(self, store, head):
         """Read live occurrences under one head and resolve their concept in the hierarchy."""
         owner = self._owner()
@@ -1729,6 +1801,8 @@ class MediumTermMemory(MemoryStore):
                 self.entries[key] = replace(entry, readings=readings,
                     count=len(readings) if entry.order is not None else entry.count)
 
+        self._close_staged_ideas(store)
+
     def state(self):
         """Checkpoint only committed values; export owns every tensor copy."""
         def snapshot(value):
@@ -1738,7 +1812,9 @@ class MediumTermMemory(MemoryStore):
                 snapshot(event.before), snapshot(event.basis), event.taught,
                 tuple(map(snapshot, event.modifiers)), event.modal_taught,
                 snapshot(event.case_value), snapshot(event.verb_meaning))
-        return dict(version=13, pending=copy.deepcopy(self.pending), pending_step=self.pending_step, candidate_counter=self.candidate_counter, field_width=self.field_width,
+        staged = self.__dict__.get('_staged_ideas')
+        staged_state = {} if staged is None else {'staged_ideas': staged.snapshot()}
+        return dict(version=14 if staged_state else 13, **staged_state, pending=copy.deepcopy(self.pending), pending_step=self.pending_step, candidate_counter=self.candidate_counter, field_width=self.field_width,
             transient_ids=snapshot(self.transient_ids), transient_used=snapshot(self.transient_used),
             closes=tuple(self.closes.items()),
             accesses=tuple((key, tuple(value.items())) for key, value in self.accesses.items()),
@@ -1771,14 +1847,15 @@ class MediumTermMemory(MemoryStore):
             from WordTies import WordTies
             self.word_ties = WordTies.restored(held)
         if state is None:
+            self.__dict__.pop('_staged_ideas', None)
             self.entries, self.names, self.pending = {}, {}, {}
             self.pending_step = 0
             self.closes, self.accesses = {}, {}
             self.transient_used.zero_()
             self.candidate_counter = 0
             return
-        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10, 11, 12, 13):
-            raise ValueError('MTM checkpoint requires transient pool version 8, 9, 10, 11 or 12')
+        if not isinstance(state, dict) or state.get('version') not in (8, 9, 10, 11, 12, 13, 14):
+            raise ValueError('unsupported MTM transient pool version')
         counter = state.get('candidate_counter', 0)
         if type(counter) is not int or counter < 0 or state.get('field_width', self.field_width) != self.field_width:
             raise ValueError('candidate checkpoint disagrees with construction')
@@ -1925,6 +2002,9 @@ class MediumTermMemory(MemoryStore):
                 or any(entry.transient is not None for entry in entries.values() if entry.symbol is not None)
                 or not torch.equal(used.cpu(), torch.tensor([int(identity) in claimed for identity in self.transient_ids], device='cpu'))):
             raise ValueError('identity checkpoint transient assignments are inconsistent')
+        staged = (StagedIdeas.restored(state.get('staged_ideas'), self.__dict__.get('_owner'), device)
+                  if state['version'] == 14 else None)
+        self._staged_ideas = staged
         self.transient_used.copy_(used.cpu())
         self.entries, self.names = entries, names
         self.pending = copy.deepcopy(state.get('pending', {}))
@@ -2235,22 +2315,26 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
                 raise ValueError('idea trust must be finite')
             trust = max(-1., min(1., float(trust)))
         pair=(max(float(trust),0.),max(-float(trust),0.)) if evidence is None else tuple(map(float,evidence))
-        if len(pair) != 2 or any(not math.isfinite(v) or not 0 <= v <= 1 for v in pair):
-            raise ValueError('idea trust must be finite and in [-1, 1]')
-        values=([pair[0]] if pair[0] else [])+([-pair[1]] if pair[1] else []) or [0.]
-        if len(self)+len(values)>self.capacity:
-            raise OverflowError('LTM0 construction capacity exhausted; forgetting is required')
         if referent is None:
             referent=meaning.role_refs[int(occupied[0])] or dict(meaning.bindings).get('_identity')
         reference=self._reference_value(referent)
         if entry is None and isinstance(self,LTM0) and meaning.extension:
             from EpisodicMemory import for_meaning
             entry=for_meaning(self,meaning)
+        return self._append_point(meaning.roles[int(occupied[0])], pair, reference, entry,
+                                  surprise, meaning)
+
+    def _append_point(self, point, pair, reference, entry, surprise, meaning):
+        if len(pair) != 2 or any(not math.isfinite(v) or not 0 <= v <= 1 for v in pair):
+            raise ValueError('idea trust must be finite and in [-1, 1]')
+        values=([pair[0]] if pair[0] else [])+([-pair[1]] if pair[1] else []) or [0.]
+        if len(self)+len(values)>self.capacity:
+            raise OverflowError('LTM0 construction capacity exhausted; forgetting is required')
         first=len(self)
         for value in values:
             row=len(self)
             cache = self._append_cache_state()
-            self._write_point(row,meaning.roles[int(occupied[0])])
+            self._write_point(row,point)
             self.trust[row]=value
             self.referent[row]=self.referent.new_tensor(reference)
             self._write_count(row + 1)
@@ -2260,7 +2344,8 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
                     getattr(self,name)[row].copy_(data.detach())
             from MemoryActivity import written
             written(self,row,surprise)
-            self._keep_working(row,meaning)
+            if meaning is not None:
+                self._keep_working(row,meaning)
         from MemoryActivity import written_complete
         written_complete(self, range(first,len(self)))
         return first
@@ -2395,7 +2480,7 @@ class LTM0(IdeaRows):
             getattr(self, column)[first:end].copy_(getattr(source, column).index_select(0, rows))
         self.referent[first:end].copy_(referents)
         self.row_names[first:end].copy_(names)
-        self.names_issued.copy_(names[-1])
+        self.names_issued.copy_(torch.maximum(self.names_issued, names.amax()))
         self._write_count(end)
 
     def raw_meaning_of(self,index):
@@ -2435,6 +2520,71 @@ class LTM0(IdeaRows):
         self.clear_caches()
 
 
+
+
+class StagedIdeas(LTM0):
+    """Native idea rows owned by MTM until their last referring token expires."""
+    def __init__(self, width, capacity, **layout):
+        # An isolated semantic store can have no perceptual clock coordinates.
+        IdeaRows.__init__(self, width, capacity, **layout)
+
+    def snapshot(self):
+        return dict(domain=self.address_domain, width=self.nDim, capacity=self.capacity,
+            content_width=self.content_width, percept_width=self.percept_width,
+            episodic_concepts=self.episodic_capacity, issued=int(self.names_issued),
+            columns={name: getattr(self, name)[:len(self)].detach().cpu().clone() for name in self.columns})
+
+    @classmethod
+    def restored(cls, saved, owner_ref, device):
+        if not isinstance(saved, dict) or not isinstance(saved.get('domain'), str):
+            raise ValueError('invalid staged idea checkpoint')
+        columns = saved.get('columns')
+        if not isinstance(columns, dict) or set(columns) != set(cls.columns):
+            raise ValueError('invalid staged idea checkpoint columns')
+        layout = ('width', 'capacity', 'content_width', 'percept_width', 'episodic_concepts', 'issued')
+        if any(type(saved.get(key)) is not int or saved[key] < 0 for key in layout):
+            raise ValueError('invalid staged idea checkpoint dimensions')
+        owner = None if owner_ref is None else owner_ref()
+        durable = None if owner is None else owner._closed_clause_store()
+        if durable is not None and (durable.nDim, durable.capacity, durable.content_width,
+                durable.percept_width, durable.episodic_capacity) != tuple(saved[k] for k in layout[:-1]):
+            raise ValueError('staged idea checkpoint differs from destination layout')
+        staged = cls(saved['width'], saved['capacity'], content_width=saved['content_width'],
+                     percept_width=saved['percept_width'], relation_capacity=2,
+                     episodic_concepts=saved['episodic_concepts']).to(device=device, dtype=columns['slots'].dtype)
+        staged.address_domain = saved['domain']
+        staged._concept_owner = owner_ref
+        n = len(columns['slots'])
+        if n > staged.capacity:
+            raise ValueError('staged idea checkpoint exceeds capacity')
+        packed = staged.state_dict()
+        for name, value in columns.items():
+            target = packed[name][:n]
+            if value.shape != target.shape or value.dtype != target.dtype:
+                raise ValueError(f'invalid staged idea column {name}')
+            target.copy_(value)
+        names = columns['row_names']
+        if n and (saved['issued'] < int(names.max()) or bool((names < 0).any()) or len(names.unique()) != n):
+            raise ValueError('invalid staged idea occurrence names')
+        packed['count'].fill_(n)
+        packed['names_issued'].fill_(saved['issued'])
+        staged.load_state_dict(packed)
+        return staged
+
+    @torch.no_grad()
+    def _write_point(self, row, point):
+        from RowTime import name_row, present_stamp, write_time
+        durable = self._destination()
+        self.slots[row].copy_(point)
+        write_time(self, row, present_stamp(durable))
+        if isinstance(durable, STM0):
+            # STM counts the next free name; LTM counts names already issued.
+            name = int(durable.names_issued)
+            durable.names_issued.add_(1)
+        else:
+            name = name_row(durable)
+        self._write_name(row, name)
+        self.names_issued.fill_(name)
 
 
 class LTM1(_CountedRows, nn.Module):

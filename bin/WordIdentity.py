@@ -166,7 +166,8 @@ class WordIdentity(nn.Module):
         self.added = {}
         # Each parts half's stored forms, for a reader that has only that.
         self.by_parts = {}
-        self.word_witnesses = {}
+        self.register_buffer('_witness_counts', torch.full((store._capacity,), -1,
+            dtype=torch.long, device=store._basis.W.device), persistent=False)
         self.nested = {}
         self._marker_pattern = None
         self.revision = 0
@@ -634,6 +635,8 @@ class WordIdentity(nn.Module):
                 row = self.store.insert(self.WORD_PREFIX + self.word_keys[word],
                                         init_vector=self._storage_code(self.form(word)))
                 self.word_rows[word] = row
+                if text_of(word).replace(' ', '').isalpha():
+                    self._witness_counts[row] = 0
                 self.store.inverse_table[row] = word
                 self._fixed_bytes[row] = word
                 # Keep byte rows distinct for one-letter words/descent.
@@ -912,6 +915,27 @@ class WordIdentity(nn.Module):
         finally:
             self._marker_pattern = None
 
+    @property
+    def word_witnesses(self):
+        """Export the historical spelling-keyed counts at the checkpoint boundary."""
+        counts = self._witness_counts.tolist()
+        return {word: counts[row] for word, row in self.word_rows.items() if counts[row] > 0}
+
+    def observe_rows(self, rows):
+        """One count per presentation, including repeated addresses in a batch."""
+        self._witness_counts.scatter_add_(0, rows, (self._witness_counts[rows] >= 0).long())
+
+    def observe_forms(self, forms):
+        """Count known native rows together and discover new forms in first-seen order."""
+        rows = []
+        for form in forms:
+            if isinstance(form, bytes):
+                if form not in self.word_rows:
+                    self.admit(form)
+                form = self.word_rows[form]
+            rows.append(form)
+        self.observe_rows(self._witness_counts.new_tensor(rows))
+
     def observe_nested(self, raw):
         """Witness a form; record the lesson's marker after a known stem.
 
@@ -920,9 +944,10 @@ class WordIdentity(nn.Module):
         """
         raw = bytes(raw)
         self.admit(raw)
-        if not text_of(raw).replace(' ', '').isalpha():
+        row = self.word_rows[raw]
+        if self._witness_counts[row] < 0:
             return ()
-        self.word_witnesses[raw] = self.word_witnesses.get(raw, 0) + 1
+        self._witness_counts[row] += 1
         marker = self._marker_pattern
         if marker is None:
             return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
@@ -930,10 +955,12 @@ class WordIdentity(nn.Module):
         # A new stem can license an earlier witnessed suffixed word. There
         # is no vocabulary-wide substring search or token-count threshold.
         for word in (raw, raw + marker):
-            if word not in self.word_witnesses or not word.endswith(marker):
+            row = self.word_rows.get(word)
+            if row is None or not word.endswith(marker) or self._witness_counts[row] <= 0:
                 continue
             stem = word[:-len(marker)]
-            if stem and stem in self.word_witnesses and word not in nested:
+            stem_row = self.word_rows.get(stem)
+            if stem_row is not None and word not in nested and self._witness_counts[stem_row] > 0:
                 nested[word] = ((stem, 0, len(stem)), (marker, len(stem), len(word)))
         if nested != self.nested:
             # Admit the named marker through the same native identity owner.
@@ -1014,7 +1041,11 @@ class WordIdentity(nn.Module):
             setattr(self, name, value[name])
         self.__dict__.pop('_by_byte', None)
         self._codes = {}
-        self.word_witnesses = value.get('word_witnesses', {})
+        counts = value.get('word_witnesses', {})
+        self._witness_counts.fill_(-1)
+        words = [word for word in self.word_rows if text_of(word).replace(' ', '').isalpha()]
+        rows = self._witness_counts.new_tensor([self.word_rows[word] for word in words])
+        self._witness_counts[rows] = self._witness_counts.new_tensor([counts.get(word, 0) for word in words])
         self.nested = value.get('nested', {})
         self._marker_pattern = None
         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}

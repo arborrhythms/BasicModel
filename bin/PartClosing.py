@@ -25,6 +25,7 @@ class PartClosing:
         self.content_key = None
         self.source_trust = 1.
         self.staged_points = {}
+        self.stm_idea = None
 
     def _working_reference(self, reference):
         """Import a referenced chain, without asserting it or allocating concepts."""
@@ -478,29 +479,39 @@ class PartClosing:
         if reference is not None and reference[0]==RELATION:
             self.relation_dependencies.add(reference[1])
             marks.pop('_identity',None)
-        content=term.point
-        if 'percept_value' in record or term.operation=='sign':
-            content=record.get('percept_value')
-            if content is None: content=torch.zeros_like(term.point)
-        value=replace(ConceptualMeaning.from_description(self.store._fit(content)),
-            bindings=marks,polarity=True if metadata is None else metadata.polarity)
-        extension=getattr(term,'extension',())
-        if extension:
-            value=replace(value,extension=extension)
         destination = self.store if self.working is None else self.working
         first = len(destination)
         entry = getattr(self, 'episode', None) if sentence else None
-        if self.working is not None and entry is None and value.extension:
-            from EpisodicMemory import for_meaning
-            entry = for_meaning(self.store, value)
-        names = {} if self.working is None else {'name': self.working.name_for(term,
-            sentence=sentence, count=max(1, sum(pole > 0 for pole in pair)))}
-        row=destination.append_meaning(value,evidence=pair,surprise=surprise,
-            entry=entry, **names)
-        if metadata is not None and self.working is None:
-            for index in range(first, len(destination)):
-                self.owner.mtm.hold_pending(self.store.occurrence_of(index),
-                    replace(metadata,bindings=marks))
+        stm_idea = self.stm_idea if sentence else None
+        if (stm_idea is not None and working is None
+                and not marks.get('_open_references')
+                and not (marks.keys() - {'_identity', '_evidence_pair', '_open_references'})
+                and (entry is not None or not term.extension)):
+            # A closed idea has no outstanding MTM teaching operands. The
+            # selected STM row already contains the result of the numerical fold.
+            row = self.owner.mtm.consolidate_idea(destination, *stm_idea, pair,
+                                                  marks.get('_identity'), entry, surprise)
+        else:
+            content=term.point
+            if 'percept_value' in record or term.operation=='sign':
+                content=record.get('percept_value')
+                if content is None: content=torch.zeros_like(term.point)
+            value=replace(ConceptualMeaning.from_description(self.store._fit(content)),
+                bindings=marks,polarity=True if metadata is None else metadata.polarity)
+            extension=getattr(term,'extension',())
+            if extension:
+                value=replace(value,extension=extension)
+            if self.working is not None and entry is None and value.extension:
+                from EpisodicMemory import for_meaning
+                entry = for_meaning(self.store, value)
+            names = {} if self.working is None else {'name': self.working.name_for(term,
+                sentence=sentence, count=max(1, sum(pole > 0 for pole in pair)))}
+            row=destination.append_meaning(value,evidence=pair,surprise=surprise,
+                entry=entry, **names)
+            if metadata is not None and self.working is None:
+                for index in range(first, len(destination)):
+                    self.owner.mtm.hold_pending(self.store.occurrence_of(index),
+                        replace(metadata,bindings=marks))
         result=OCCURRENCE,destination.row_name(row)
         if self.working is not None:
             self.staged_points[id(term)] = destination.slots[row]

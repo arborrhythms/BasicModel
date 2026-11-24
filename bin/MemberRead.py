@@ -67,6 +67,9 @@ def read(owner, address, concept=None):
         if point is not None:
             return point
     store = owner._closed_clause_store()
+    pool = getattr(owner, 'mtm', None)
+    if pool is not None:
+        store = pool.idea_store(address, store)
     location = None if store is None else store.location(address)
     if isinstance(location, int):
         value = store.point_of_row(address)

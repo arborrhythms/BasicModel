@@ -346,15 +346,17 @@ class SentenceStrata(nn.Module):
                 left, right = source.references(relation)
                 bank.add(left, right, symbol=relation, truth_plus=float(source.truth_plus[relation]),
                     truth_minus=float(source.truth_minus[relation]))
+        self.release_trials(stream)
+        return store.occurrence_of(row)
+
+    def release_trials(self, stream):
         for index in range(self.trials*stream, self.trials*(stream+1)):
             self._expire_trial(index)
-        return store.occurrence_of(row)
 
     def clear(self, stream=None):
         for b in range(self.streams) if stream is None else (stream,):
             self.recent_stores[b].expire()
-            for index in range(self.trials*b, self.trials*(b+1)):
-                self._expire_trial(index)
+            self.release_trials(b)
 
     def read(self, address):
         for store in (*self.recent_stores, *self.idea_stores):

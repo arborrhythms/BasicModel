@@ -360,7 +360,7 @@ def _read(model, bank, concepts):
     if credit is not None:
         credit.register(model.errors)
     durable = model.symbolSpace.ltm_store
-    committed = commit(stores, heads, durable)
+    committed = owner.mtm.consolidate_heads(stores, heads, durable)
     for b, head in enumerate(committed):
         if head is not None:
             owner.mtm.close(durable, stream=b)

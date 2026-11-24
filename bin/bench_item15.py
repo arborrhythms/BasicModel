@@ -273,6 +273,13 @@ def main():
             # Older readers stored this mask as a set of observed bytes.
             # Record its actual contents so allocation changes remain comparable.
             for name, module in model.named_modules():
+                if type(module).__name__ == 'WordIdentity' and not hasattr(module, '_witness_counts'):
+                    from WordIdentity import text_of
+                    counts = torch.full((module.store._capacity,), -1, dtype=torch.long, device='cpu')
+                    for form, row in module.word_rows.items():
+                        if text_of(form).replace(' ', '').isalpha():
+                            counts[row] = module.word_witnesses.get(form, 0)
+                    buffers[f'{name}._witness_counts'] = counts
                 if type(module).__name__ == 'WholeSpace' and not hasattr(module, '_standalone_bytes_seen'):
                     seen = torch.zeros(256, dtype=torch.bool, device='cpu')
                     seen[list(getattr(module, '_standalone_run_bytes', ()))] = True

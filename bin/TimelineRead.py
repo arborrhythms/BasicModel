@@ -100,8 +100,9 @@ def read(store, description, *, max_records, work, fallback):
                         incomplete.append('timeline_read_limit')
                         break
                     scanned += 1
-                    row = store.location(event.occurrence)
-                    cache[marker] = None if row is None else store.row(row)
+                    source = pool.idea_store(event.occurrence, store)
+                    row = source.location(event.occurrence)
+                    cache[marker] = None if row is None else source.row(row)
                 if branch == 0:
                     actual_events.add(marker)
                 row = cache[marker]

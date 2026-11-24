@@ -78,8 +78,8 @@ class Result:
         before, after = self.source, word_reading
         aliases = {}
         if before.reference_ids is not None and after.reference_ids is not None:
-            aliases = {int(old): int(new) for old, new, base in zip(before.concept_ids,
-                after.reference_ids, after.concept_ids) if int(new) != int(base)}
+            rows = torch.stack((before.concept_ids, after.reference_ids, after.concept_ids), -1)
+            aliases = {old: new for old, new, base in rows.tolist() if new != base}
         result = self.detached()
         if not aliases:
             return result

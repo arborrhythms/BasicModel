@@ -11398,6 +11398,7 @@ class PartSpace(Space):
                 for w, (lo, hi) in enumerate(spans[:word_capacity]):
                     if changed is None or not changed[b][w]:
                         identity.observe_nested(raw[lo:hi])
+        observed_forms = []
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
             word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
@@ -11412,6 +11413,8 @@ class PartSpace(Space):
                     stop = end
                     hidden = changed is not None and changed[b][word_index]
                     unit = raw[start:stop]
+                    if identity is not None and admit and not teaching_marker and not hidden:
+                        observed_forms.append(identity.word_rows.get(unit, unit))
                     nested = ()
                     if identity is not None:
                         if hidden:
@@ -11485,10 +11488,7 @@ class PartSpace(Space):
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
         if identity is not None and admit and not teaching_marker:
-            for b, (raw, spans) in enumerate(units):
-                for w, (lo, hi) in enumerate(spans[:word_capacity]):
-                    if changed is None or not changed[b][w]:
-                        identity.observe_nested(raw[lo:hi])
+            identity.observe_forms(observed_forms)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)
         if getattr(self, "_mereology_raise", False):
@@ -15855,6 +15855,7 @@ class ConceptualSpace(Space):
                 store = self._closed_clause_store()
                 reference = (('ltm', store.address_domain, concept_id[1])
                              if store is not None and concept_id[0] == OCCURRENCE else concept_id)
+                store = self.mtm.idea_store(reference, store)
                 index = None if store is None else store.location(reference)
                 return -1 if index is None else store.order_of_row(index, _seen)
             if concept_id[0] in ('sym', SYMBOL, RELATION):

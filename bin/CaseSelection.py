@@ -240,10 +240,11 @@ def stage_event_cases(bank, resolver, frames, *, limit):
                         or event.before is None):
                     continue
                 change = point(owner, event.verb)
-                row = store.location(event.occurrence)
+                source = owner.mtm.idea_store(event.occurrence, store)
+                row = source.location(event.occurrence)
                 if change is None or row is None:
                     continue
-                record = store.row(row)
+                record = source.row(row)
                 from ThoughtReferences import open_slots
                 if open_slots(record['meaning']):
                     continue

@@ -73,7 +73,14 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
     # The carried address identifies the referent; the leaf keeps its own
     # captured content. Site eligibility comes from its reading and position.
     refs = (program.reference_ids if program.reference_ids is not None else program.concept_ids) if numerics is None else numerics.native_ids
-    native_ids = set(int(value) for value in refs.detach().cpu().tolist()) - {-1, 0}
+    # A word keeps its lexical identity across this formula. Numerical
+    # reference decisions below still read their live, per-action operands.
+    if program.word_ids is None:
+        word_ids = None
+        opening_refs = refs.tolist()
+    else:
+        opening_refs, word_ids = torch.stack((refs, program.word_ids)).tolist()
+    native_ids = set(opening_refs) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
     store = store_ref() if callable(store_ref) else None
     if store is not None:
@@ -90,8 +97,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         # A word keeps its name when another occurrence supplies its object.
         # Pending and arriving references must use the same lexical key,
         # independently of the current word-to-object interpretation.
-        if program.word_ids is not None and int(program.word_ids[leaf]) > 0:
-            return int(program.word_ids[leaf])
+        if word_ids is not None and word_ids[leaf] > 0:
+            return word_ids[leaf]
         concept = int(program.concept_ids[leaf])
         return concept if concept > 0 else None
     def forward_fields(leaf):
@@ -333,7 +340,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             if leaf is not operands[0]:
                 leaf_request.update(leaf.pop('close_request', {}))
             parent.update(order=0, interpretation='sign')
-            percept = (leaf['value'] if program.word_ids is None or int(program.word_ids[leaf['leaves'][0]]) < 0
+            percept = (leaf['value'] if word_ids is None or word_ids[leaf['leaves'][0]] < 0
                        else None)
             content = torch.zeros_like(leaf['value']) if percept is None else percept
             parent['close_request'] = dict(mode='mint', sign_leaf=True, leaves=leaf['leaves'],
@@ -386,8 +393,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
 
     def subject_word_id(node):
         leaf = head(node)['leaves'][0]
-        if program.word_ids is not None:
-            return int(program.word_ids[leaf])
+        if word_ids is not None:
+            return word_ids[leaf]
         if registry is None:
             return -1
         obj = registry.space.concept_id_at_row(int(program.word_rows[leaf]))

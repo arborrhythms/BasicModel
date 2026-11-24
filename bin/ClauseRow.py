@@ -413,7 +413,7 @@ class ClauseRows:
 
     @torch.no_grad()
     def write_clause(self,clause,*,trust=None,stream=-1,evidence=None,
-                     written_rows=None,episode=None,surprise=-1.):
+                     written_rows=None,episode=None,surprise=-1.,stm_idea=None):
         """Keep the selected idea or declared semantic pair, never its syntax."""
         import math
         from PartClosing import PartClosing
@@ -433,11 +433,12 @@ class ClauseRows:
         if owner is None:
             raise ValueError('clause admission requires its native concept owner')
         closing = PartClosing(owner, self)
+        closing.stm_idea = stm_idea
         closing.episode = episode
         closing.source_trust = 1. if trust is None else min(1., abs(float(trust)))
         nodes = closing.prepare_clause(clause)
         closing.preflight()
-        needed, reserved = 0, {}
+        needed, staged_needed, reserved = 0, 0, {}
         def admitted_pair(value, sentence):
             pair = tuple(value.evidence if evidence is None or not sentence else evidence)
             from_trust = sentence and authority is not None
@@ -486,10 +487,18 @@ class ClauseRows:
                 if record.get('mention') and entry_kind != OCCURRENCE:
                     needed += 1
                 if closing.event_point(value, entry_kind) is not None:
-                    needed += idea_count(pair)
+                    staged_needed += idea_count(pair)
+        # A thought's private construction stays in that thought until it is
+        # retained. Only the owning sentence store can release results to MTM.
+        stage_events = staged_needed and self is owner._closed_clause_store()
+        if not stage_events:
+            needed += staged_needed
         if len(self) + needed > self.capacity:
             raise ClauseCapacityError(f'LTM0 construction capacity exhausted before close: '
                                       f'{len(self)} occupied + {needed} needed > {self.capacity}')
+        staged = owner.mtm.staging_store(self) if stage_events else self
+        if stage_events and len(staged) + staged_needed > staged.capacity:
+            raise ClauseCapacityError('MTM idea capacity exhausted before close')
         before_rows = len(self)
         rows, occurrences, mentions, event_occurrences = {}, {}, {}, {}
         def location(entry):
@@ -523,10 +532,12 @@ class ClauseRows:
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
                     extension=getattr(value.identity.get('result_composition'), 'extension', ()))
                 event_pair = pair if sentence else tuple(pole * closing.source_trust for pole in pair)
-                event_row = self.append_meaning(compacted,evidence=event_pair)
-                event_occurrences[id(value)] = self.occurrence_of(event_row)
-                closing.occurrence_groups[self.occurrence_of(event_row)] = tuple(
-                    self.occurrence_of(index) for index in range(event_row, len(self)))
+                from EpisodicMemory import for_meaning
+                event_episode = for_meaning(self, compacted) if compacted.extension else None
+                event_row = staged.append_meaning(compacted,evidence=event_pair,entry=event_episode)
+                event_occurrences[id(value)] = staged.occurrence_of(event_row)
+                closing.occurrence_groups[staged.occurrence_of(event_row)] = tuple(
+                    staged.occurrence_of(index) for index in range(event_row, len(staged)))
             if record.get('mention'):
                 mention = entry
                 if entry[0] != OCCURRENCE:

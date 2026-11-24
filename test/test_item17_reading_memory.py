@@ -314,3 +314,23 @@ def test_retained_pairs_follow_a_store_supplied_handle_allocator():
     assert saved == ((RELATION, 5), (RELATION, 5))
     assert target.parts.references(5) == ((RELATION, 12), (SYMBOL, 42))
     assert target.parts.references(12) == ((SYMBOL, 20), (SYMBOL, 21))
+
+
+def test_completed_idea_uses_the_winning_value_and_the_closing_clock():
+    from Memory import STM0, LTM0
+    working = STM0(12, capacity=1)
+    value = torch.arange(12.) / 12
+    source = working.append_idea(value)
+    expected, actual = (LTM0(12, capacity=2) for _ in range(2))
+    for store in (expected, actual):
+        store._model_present = lambda: 37
+    pair = (.75, .25)
+    reference = ('sym', 9)
+    expected.append_idea(value, evidence=pair, referent=reference, surprise=.4)
+    from Memory import MediumTermMemory
+    root = MediumTermMemory().consolidate_idea(actual, working, working.row_name(source),
+                                               pair, reference, None, .4)
+    assert root == 0 and len(expected) == len(actual) == 2
+    for column in expected.columns:
+        assert torch.equal(getattr(expected, column), getattr(actual, column)), column
+    assert torch.equal(working.slots[source], value)

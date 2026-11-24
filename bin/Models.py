@@ -179,7 +179,7 @@ def _open_reference_mask(meaning, registry, clause=None):
 
 
 def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1,
-                             written_rows=None, episode=None):
+                             written_rows=None, episode=None, stm_idea=None):
     """Write the completed field with caller-owned provenance."""
     from ThoughtReferences import bindings, with_slots
     # Native/child addresses are installed by write_clause. Before then the
@@ -190,7 +190,7 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
     clause = replace(clause, meaning=meaning)
     result = store.write_clause(clause, trust=trust, stream=stream,
         evidence=clause.evidence, surprise=-1. if expectation is None else expectation.surprise_for(clause.meaning),
-        written_rows=written_rows, episode=episode)
+        written_rows=written_rows, episode=episode, stm_idea=stm_idea)
     if written_rows is not None:
         written_rows[id(source_clause)] = result
         for name in ('symbol', 'symbols', 'activations', 'occurrence'):
@@ -20487,13 +20487,14 @@ class BasicModel(BaseModel):
                     point[b,store.when_start-4:store.when_start] = values[chunks.WHERE][b,top]
             gate = torch.arange(len(clauses),device=point.device) == b
             values = chunks.keep_close(values,gate,refs=references,value=point,when=stamps)
-            relations = written[b].get('relations', ())
-            if field is None and isinstance(location, tuple):
-                relations = (location[1],)
-            self.conceptualSpace.stm.strata.keep_close(b, point[b], stamps[b],
-                address=store.row_name(location) if isinstance(location, int) else None,
-                relations=relations,
-                source=None if store is None else store.parts)
+            strata = self.conceptualSpace.stm.strata
+            if location is None:
+                strata.keep_close(b, point[b], stamps[b], relations=written[b].get('relations', ()),
+                                  source=None if store is None else store.parts)
+            else:
+                # The stack chunk already addresses the retained head. A second
+                # recent idea would shadow that address and survive its owner.
+                strata.release_trials(b)
             if field is None:
                 continue
             depth = len(field)
@@ -20633,14 +20634,13 @@ class BasicModel(BaseModel):
                     continue
                 # No concluded clause. The remaining operands still form one
                 # temporal sequence in memory, without giving the answer a role.
-                from ReadingMemory import commit
                 ideas = partial.tree.ideas
                 concepts = partial.word_ids if partial.word_ids is not None else partial.concept_ids
                 ids = [None if cid <= 0 else cid for cid in concepts.tolist()]
                 ideas.to(device=partial.leaves.device, dtype=partial.leaves.dtype)
                 ideas.prepare(store, partial.tree, {})
                 partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when, self.languageSpace)
-                head, = commit([ideas], [partial.tree.trace.head], store)
+                head, = self._concept_owner().mtm.consolidate_heads([ideas], [partial.tree.trace.head], store)
                 from Memory import OCCURRENCE
                 from Occurrence import operand_name
                 row_addresses[b] = operand_name(head[1]) if head[0] == OCCURRENCE else head[1]
@@ -20670,6 +20670,13 @@ class BasicModel(BaseModel):
                         arrivals=[dict(item) for item in scored.get('arrivals', ())])
                     clause = resolver.prepare(clause, reference_plan)
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
+                from Memory import OCCURRENCE
+                kept = comprehensions[b]
+                stm_idea = None
+                if (kept is not None and kept.clause is clause and kept.root is not None
+                        and kept.root[0] == OCCURRENCE):
+                    # A resolved forward reference can replace the staged point.
+                    stm_idea = (kept.store, kept.root[1])
                 encoding = getattr(self, 'when_encoding', None)
                 if encoding is not None:
                     clause = replace(clause, when=encoding.encode(self._sentence_ticks[int(sid)]).to(clause.meaning.roles))
@@ -20677,7 +20684,7 @@ class BasicModel(BaseModel):
                 episode = self._sentence_episodes.get(int(sid))
                 row = _append_observed_meaning(store, clause,
                     trust=chosen[b]['incoming_trust'],
-                    expectation=comparison, stream=b, written_rows=written_clauses[b],
+                    expectation=comparison, stream=b, written_rows=written_clauses[b], stm_idea=stm_idea,
                     episode=None if episode is None else tuple(value[b] for value in episode))
                 from FamiliarTier import commit_read_words
                 commit_read_words(self._concept_owner(), entries[b], batch=b,

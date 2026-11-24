@@ -96,3 +96,16 @@ def test_batched_spelling_matches_scalar_inverse_with_both_code_widths():
         inputs = forms[:, :width]
         assert identity.read_forms(inputs) == [identity.read(form) for form in inputs]
         assert identity.read_forms(inputs[:0]) == []
+
+
+def test_ordinary_spelling_observations_preserve_the_order_and_counts_of_learning():
+    serial, *_ = coded(())
+    batched, *_ = coded(())
+    forms = (b'cabala', b'aba', b'cabala', b'!', b'calaba', b'aba', b' ', b'caf\xc3\xa9', b'\xff')
+    for raw in forms:
+        serial.observe_nested(raw)
+    batched.observe_forms(iter(forms))
+    for name in ('words', 'word_rows', 'word_witnesses', 'nested', 'holders', 'inside'):
+        assert getattr(serial, name) == getattr(batched, name), name
+    for raw in forms:
+        assert serial.form(raw).equal(batched.form(raw))
