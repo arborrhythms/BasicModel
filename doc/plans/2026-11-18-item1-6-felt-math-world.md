@@ -7283,3 +7283,56 @@ V12, the corpus's nine values each fall in rows of their own and a
 reserved step falls in a row its value's other steps made; V5 and the XOR
 gate as they are. And N7 of step D2 is run again and reported.
 
+
+### 36.3 Text for step T2's implementer
+
+~~~
+Item 1.6, step T2: intensity percepts by the text algorithm. Read §36 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md whole (36.2 is what you
+build), then §31 (step T as built), §25.8 and §25.10 (step B), §33 (step
+C) and §35 (step D2), and H.5. Then, before anything of intensity, read
+how a form's basic percept is made and read, since you are to apply it
+unchanged: doc/Mereology.md (the percept's code), doc/Spaces.md ("Level
+Sets"), and in bin/BasicPercepts.py reserve, member_keys, against_keys,
+subspace_bounds, code, against, held_at, read_bank; the first Pi in
+bin/OrderZero.py; how MTM nominates a form's row on recurrence.
+
+Keep tmp/item1-6/regions_progress.md current after each step.
+
+1. Points 1 to 3 of §36.2. Say what the row's key is, what its entries in
+   the Pi of the value space are, and where that Pi lives. The text
+   modality's Pi and its reading are not to change.
+2. Point 4, in NumericPercepts.reverse and in ImagePercepts.put_back.
+3. Point 5: say what you measured and whether `pooled` stays.
+4. The value beside the words (bin/ScalarPercepts.py) keeps its own
+   reading; give it what it needs to be as it was, and say what.
+5. test/test_item16_values.py: V3, V9, V11 rewritten, V12 added, as §36.2
+   says. Port a test only where a point of §36.2 makes its assertion
+   false (a test that asserted an exact value's row, or exact
+   reconstruction of values that share a bin), and list each with old and
+   new. No other assertion is weakened, skipped or marked; no seed is
+   chosen. Neither stopping gate, nor anything a gate uses, is touched.
+6. Run test/test_item16_naming.py's N7 again and report its numbers
+   beside §35's.
+7. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_concept_output.py,
+   test/test_item16_values.py, test/test_item16_scene.py,
+   test/test_item16_scene_field.py, test/test_item16_naming.py,
+   test/test_item16_grid.py, test/test_item17_echo.py,
+   test/test_item18_scalar.py, and the files of
+   tmp/item1-6/values_run4_files.txt. No test that passes in the sweep
+   may fail, apart from those known to fail by chance.
+8. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+9. Return as tmp/item1-6/section37.md, headed "## 37. Step T2: the
+   return": files changed and why; the row, its key and its entries; each
+   certificate with what it printed; the XOR certificate before and
+   after; N7 before and after; every test ported; what in §36.2 could not
+   be built as written and what you built. You do not stop on a question
+   of design: propose, build, mark it. Stop only if a gate, the XOR
+   certificate or "without the intersection" cannot pass with its
+   assertion as it is, and then say exactly where it fails.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
