@@ -13,6 +13,7 @@ import hashlib
 from collections import Counter
 from contextlib import contextmanager
 from functools import lru_cache
+from itertools import groupby
 
 import numpy as np
 import torch
@@ -581,6 +582,29 @@ class WordIdentity(nn.Module):
         self._fixed(self.atoms[atom], code, bytes_of(atom[1]))
         return self.atoms[atom]
 
+    @torch.no_grad()
+    def _admit_atoms(self, atoms):
+        """Refresh established part rows together, in between new radix admissions."""
+        basis = self.store._basis
+        for seated, group in groupby(atoms, key=self.atoms.__contains__):
+            if not seated:
+                for atom in group:
+                    self._atom(atom)
+                continue
+            members = tuple(group)
+            rows = [self.atoms[atom] for atom in members]
+            if len(members) == 1 or len(set(rows)) != len(rows):
+                for atom in members:
+                    self._atom(atom)
+                continue
+            codes = torch.stack([self.atom_code(atom) for atom in members]).to(basis.W)
+            codes = torch.nn.functional.pad(codes, (0, self.property_width))
+            addresses = torch.tensor(rows, device=basis.W.device, dtype=torch.long)
+            basis.fixed_row_mask.index_fill_(0, addresses, True)
+            basis.fixed_row_codes.index_copy_(0, addresses, codes)
+            basis.W.index_copy_(0, addresses, codes)
+            self._fixed_bytes.update((row, bytes_of(atom[1])) for row, atom in zip(rows, members))
+
     def form(self, raw, *, override=None):
         """The fold of a form's parts' codes in the fixed width.
 
@@ -1043,8 +1067,7 @@ class WordIdentity(nn.Module):
                         if own not in self.words[holder]] if len(text) > 1 else []
             for holder in carriers:
                 self.words[holder] = self.words[holder] + (own,)
-            for atom in self.words[raw]:
-                self._atom(atom)
+            self._admit_atoms(self.words[raw])
             self._place(raw)
             if carriers:
                 index = torch.tensor([self.order[word] for word in carriers], device='cpu')
