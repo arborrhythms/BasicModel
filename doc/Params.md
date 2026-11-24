@@ -908,16 +908,19 @@ accepts, and the code ignores, `sparseReplace` (with a `DeprecationWarning`),
 `dataType=numeric` with a grammar of field operators reads its input through
 `NumericPercepts`, the one reader for any number of dimensions; the input's
 shape gives the number. Each dimension is a place in the numeric input's own
-`.where` range. A reading whose felt value is above zero is a value percept at
-its place. Its code is its place in one sorted table of values, over 64 bins
-of the felt value: the parts half holds the bins at or below the value, the
-wholes half is all ones with the bins above it cut away, and the against lane
-holds what the wholes half cuts away, so a value lies between its parts and
-its wholes as a form does ([Mereology](Mereology.md)). There is one basic
-percept for each place and value met; each place has a table of its own, on
-coordinates of its own, and a collection of values is read by its bounds, 0
-or 1, not through the Sigma. Zero is no presence. Reverse
-returns each dimension's number from the level its concept holds. The output
+`.where` range. The input is intensities in 0..1, taken as they are; a number
+outside 0..1 is refused, and numbers that are not intensities are charted onto
+0..1 before they are read (`NumericPercepts.feeling`, the logarithmic chart).
+A reading above zero is an occurrence of its value's percept. Its code is its
+place in one sorted table of values, over 64 bins: the parts half holds the
+bins at or below the value, the wholes half is all ones with the bins above it
+cut away, and the against lane holds what the wholes half cuts away, so a
+value lies between its parts and its wholes as a form does
+([Mereology](Mereology.md)). There is one basic percept for each value met,
+whatever its place; a place is told by its wires, through a place's row that
+is nominated when occurrences recur at it. Zero is no presence. Reverse
+returns each place's value from the table of values where the field reads a
+concept for it, so an input is put back once its places are known. The output
 reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
 `attentionPromotion` govern recurrent intersections, and `trustViews` governs
 scalar definition evidence. No scalar scale, box-learning rate or per-value
@@ -940,8 +943,7 @@ is without one. `data/scene/BasicModel_scene.xml` is `data/BasicModel.xml`
 with the box declared.
 
 `MM_xor.xml`, `MM_xor_fixture.xml` and `XOR_exact.xml` have two numeric
-dimensions; `XOR_exact.xml` runs 64 epochs and sets its output `lrScale` to 10
-for the fixed logarithmic input scale. `MM_text.xml`, `MM_text_fixture.xml` and
+dimensions; `XOR_exact.xml` runs 64 epochs and sets its output `lrScale` to 10. `MM_text.xml`, `MM_text_fixture.xml` and
 `XOR_symbols.xml` keep symbolic shapes for verbal and mechanism fixtures.
 `data/MM_image.xml` is numeric, with field operators only, a 28 by 28 input on
 two place axes, and reads two-level images from

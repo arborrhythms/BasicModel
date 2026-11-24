@@ -5296,3 +5296,459 @@ your context runs short, stop at the end of a step with that file current.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 25. Round one, step B: the return (Claude on Opus, 2026-11-24)
+
+The work of §20.8, steps 0 to 12, on the numeric stem. No git was run;
+nothing is committed. Progress was kept in `tmp/item1-6/values_progress.md`.
+The files as they were before are kept in `/tmp/item1-6-2026-11-24/` (`bin/`
+and `test/`), since code was removed from them; no file was deleted.
+
+### 25.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/BasicPercepts.py` | Step 1: `value_coordinates`, the `places` buffer, the place in `reserve`'s key and every `place` argument (`value_code`, `_boundary_codes`, `bin_of`, `perceive_value`, `reserve`, `subspace_bounds`) go; the extra state no longer saves or reads `places`, and the load default for it goes. Step 3: `value_bank`, an image's bank as a `PerceptBank`. Step 4: `read_values`, the Pi over values (`held_at` on a line, by reading, the conjunction's Pi and `held` over the readings), and `place_bounds`, a row's where entries read by their bounds, 0 or 1 (25.6, 1). `reserve` takes a conjunction with no parts (one over places' rows). |
+| `bin/NumericPercepts.py` | Step 2: `intensities`, the reader's check of 0..1; `feeling` and `number` stay as functions for callers, applied by no reader here. Steps 3, 5, 6: `read` makes the image's bank, meets its places (`Places.meet`), reads the promoted rows by `read_values`, sends them once through `order_zero_field`; the lanes set by hand and the concept for each input place (`rows`, made in `__init__`) go; the conjunction is nominated from the places' concepts read together at the bracket. `reverse` gives each place its exact value from the table of values. |
+| `bin/ScalarPercepts.py` | Step 1 (and step 7): `code`, `bare` and `perceive` pass no place. Its reading and its join are kept (25.5). |
+| `test/numeric_xor.py` | Step 9: the certificate's conjunction is over two places' rows (25.4). |
+| `test/test_item18_places.py` | Step 9: `test_level_percepts_have_native_bounds_and_distinct_places` (25.4). |
+| `test/test_item18_perceptual_scalar.py` | Step 9: `test_scalar_object_collects_value_bounded_basic_percepts` (25.4). |
+| `test/test_item18_fields.py` | Step 9: `test_numeric_scale_order_and_level_code` (25.4). |
+| `test/test_item17_code.py` | Step 9: `test_49_collections_of_values_are_told_apart`, `test_49_the_numeric_certificate_keeps_its_bar` (25.4). |
+| `test/test_item16_values.py` (new) | Step 8: V1 to V7. |
+| `test/test_item18_paths.py`, `test/test_understanding_reconstruct.py`, `test/test_output_synthesis.py`, `test/test_mm_xor.py` (one test, not the gate) | Ports of the review's round: inputs above 1, and inputs presented until their places are known (25.10). |
+| `tmp/item1-6/values_measure.sh`, `values_fit.py`, `values_before/`, `values_after/`, `values_run_files.txt`, `values_run*.log`, `values_progress.md` | The measure of V5 and V7 before and after, the fit outside the test, the run's list and logs, the progress file. Not source. |
+
+`data/` is unchanged: no configuration, no key. `data/BasicModel.xml`
+gains nothing. Neither stopping gate's file is touched, nor `test/test_mm_xor.py`.
+
+### 25.2 What was built (steps 1 to 7)
+
+1. *One table of values.* A value's code is the bins at or below it, in
+   order, whatever its place; its row is keyed `((ref,), (ref,))` by the
+   value alone. The table of values (`value_codes`) is as it was.
+2. *Input in 0..1.* `NumericPercepts.intensities` returns its input as it
+   is and refuses below 0, above 1 or NaN with `a reader of intensities
+   takes numbers from 0 to 1; chart other numbers onto 0..1
+   (NumericPercepts.feeling) before they are read`. `feeling` is applied
+   by no reader of the numeric stem; its one caller in `bin/` is
+   `ScalarPercepts._felt` (step 7).
+3. *An image's bank.* `BasicPercepts.value_bank` builds a `PerceptBank`
+   (it holds it): one slot per place of the box; a place whose value is
+   above zero is an occurrence (a real span, its token the place's
+   reading), its `.what` the value's code on two lanes (nothing against),
+   its `.where` the place's twelve wires from the registry's grid
+   (`registry.band`), its `.when` the moment's wires; a place with nothing
+   has an empty span and no activity. The readings (`where`) are each
+   place, then the bracket over all. Its rows are named after `Places.meet`
+   (`dataclasses.replace`).
+4. *The Pi over values.* `BasicPercepts.read_values`: `held_at` on the
+   bank's table (part: the occurrence holds the row's value; whole: the
+   row's bound holds the occurrence), for = part x whole, against =
+   part x (1 - whole), times the occurrence's activity and the row's
+   entries on the wires; each reading the greatest over the occurrences it
+   holds; a conjunction the first Pi (`self.pi`) over its members'
+   readings; then `held`. "Against at a greater value" passed the gates and
+   V5, so the other reading was not built. *Agreement with `held_at` on a
+   line:* it is `held_at`; V3 asserts on every pair of the test that part
+   is `bin(occurrence) >= bin(row)` and whole is `bin(occurrence) <=
+   bin(row)`.
+5. *One Not.* The promoted rows (values, places, conjunction) go once
+   through `owner.order_zero_field`; the lanes set by hand and the separate
+   `basic.pi` over conjunction rows in `NumericPercepts.read` go.
+6. *A place by its wires.* `Places.meet(owner, bank)` on the image's bank
+   counts each place's reading under its wires and nominates a place's row
+   (`reserve_place`, with the what kept: least parts, greatest wholes of
+   the codes met) and its concept, as for a sentence. The conjunction is
+   nominated from the place concepts read for at the bracket
+   (`observe_intersection`, as before over the axis concepts). The concept
+   for each input place (`NumericPercepts.rows`, made in `__init__`) goes.
+   `reverse` reads each place's value from the table by the value's row the
+   field holds there (`field.percepts`), exactly; nothing where none.
+7. See 25.5.
+8. *The way back through the field (review, fix 1).* `reverse` gives a
+   place its value from the table only where the field, at that place's
+   reading, reads for (for lane above zero) a concept of order zero that
+   reads, by an entry that is not a Not (`order_zero_members`, negated
+   false), the value's row held there or a place's row whose cone holds
+   that place (its wires within the cone, tolerance 1e-6). The place's
+   row's kept what is not checked against the value. Nothing elsewhere.
+   **On the first presentations no concept reads a value's row or its
+   place's row** (a value's row brings none; a place's row is nominated
+   on the `conceptMintCount`-th reading), **and the way back gives 0 at
+   every place until a place is known**: a place gives its value back once
+   its place's row is nominated (and so its concept reads it), as a form is
+   a concept once it has recurred. V2 states it (25.10).
+
+### 25.3 The certificates (`test/test_item16_values.py`), as printed
+
+Run alone with `-s` (all 7 passed) and in the bounded run (25.7).
+
+- **V1.** `{'percepts': [[0, 0], [0, -1], [-1, 0]], 'rows_of_the_value': [0]}`
+  (0.5 at both places, at one, at the other: one row);
+  `{'code': [1.0, 1.0, 0.0, 1.0, 1.0, 0.0]}` (MM_xor is 3 bins a half);
+  `{'pairs': 1369, 'values': 37, 'bins': [1, 3, ..., 63]}` (partOf equals
+  bin(a) <= bin(b) on every ordered pair of k/37, 64 bins);
+  `{'keys': ['((-4,), (-4,))']}`. Asserted also: no `value_coordinates`,
+  no `places`, no parameter `place` on `value_code`, `perceive_value`,
+  `reserve`, `bin_of`, `_boundary_codes`.
+- **V2.** The three refusals, each with the message above; on MM_xor
+  `read` refuses 2.0; 37 images of two places (k/37 and its reverse) put
+  back exactly (`torch.equal`), first three `[[0.0270, 1.0], [0.0541,
+  0.9730], [0.0811, 0.9459]]` both ways; `chart_named` False for
+  `NumericPercepts.read`, `.reverse`, `BasicPercepts.read_values`,
+  `.value_bank`, `.perceive_value`.
+- **V3.** At width 3 (MM_xor), values 0.25, 0.5, 0.75, 1.0 (bins 0, 1, 2,
+  2): `0.5 at 0.5 (1,0); 0.5 at 0.75 (0,1); 0.5 at 1.0 (0,1); 0.5 at 0.25
+  (0,0); 0.5 at 0.0 (0,0); 0.25 at 0.5 (0,1); 0.75 at 1.0 (1,0)` (same
+  bin), and so on for all 20 pairs, each as expected; `numeric_read_uses:
+  ['read_values', 'value_bank']`, not `read_bank`.
+- **V4.** On MM_xor after `[[1],[1]]` three times in training:
+  `{'places': {0: 1, 1: 2}, 'value_row': 0, 'percepts': [[0, 0]]}`, each
+  place's kept what equal to the value row's code, each with a concept;
+  `place_rows_at_the_two_places: [[1.0, 0.0], [0.0, 1.0]]`. On MM_image
+  after one shapes test image three times: `{'lit': 63, 'places': 63,
+  'values': [0.0, 1.0]}`, the set of places' addresses (decoded from their
+  wires) equal to the lit pixels, each keeping the code of 1.0.
+- **V5.** `{'answers': [1.8189894035458565e-11, 1.0, 1.0,
+  1.8189894035458565e-11], 'weights': [1.313035249710083,
+  1.313035249710083, -2.626070499420166], 'against': [0.0, 0.0, 0.0],
+  'promoted_row': 2, 'mse': 1.6543612251060553e-22}`; `{'conjunction': 3,
+  'members': (1, 2), 'places': True}`. The stopping gate `test_convergence`
+  passed untouched (25.7).
+- **V6.** `{'calls': 1, 'rows': [{'values': 1, 'places': 2,
+  'conjunctions': 1}]}`: one `model.forward` of the XOR batch, one call.
+- **V7.** In the file: MM_image reads a shapes image and puts it back
+  exactly (atol 0); `forward_seconds 0.0053, reverse_seconds 0.0002`. The
+  tests of the image configurations are in 25.6's table and passed in the
+  run. **V8** is the run (25.7): the item 2.5 gate, the seven echo tests,
+  `test_reading_pretraining.py`, `test_item16_grid.py`,
+  `test_item16_scene.py`, all passed.
+
+### 25.4 V5 and V7, before and after
+
+`tmp/item1-6/values_measure.sh`, each node in its own process
+(`/usr/bin/time -l`), `values_before/` on the frozen copy, `values_after/`
+on this tree. Wall seconds, greatest resident memory:
+
+| Test | Before | After |
+|---|---|---|
+| `test_item18_places::test_66` (V5, numeric_xor) | passed, 10.24 s, 959 MB | passed, 10.28 s, 960 MB |
+| `test_item18_places::test_65_67` (MM_image) | passed, 10.97 s, 1370 MB | passed, 10.69 s, 1329 MB |
+| `test_item16_grid::test_g1[MM_image.xml]` | passed, 10.28 s, 981 MB | passed, 10.20 s, 980 MB |
+| `test_item16_scene::test_s1[MM_image.xml]` | passed, 18.46 s, 955 MB | passed, 18.31 s, 951 MB |
+| `test_mnist.py` | 1 passed, 2 skipped (no MNIST), 9.47 s, 587 MB | the same, 9.39 s, 587 MB |
+
+`test_65_67`'s own print: before `forward_seconds 0.0687, reverse_seconds
+0.0095, forward_peak_bytes 1002422272`; after `0.0130, 0.00025,
+988168192`. V5's certificate printed the same answers, weights, against
+and mse before and after, to the last digit. `mnist.xml`'s real-data tests
+skip on this machine before and after (no `data/mnist_train.csv`).
+
+### 25.5 The value beside the words (step 7): decided
+
+**Kept its own reading and its join** until round two replaces the tie
+that reads them. It takes step 1 (`code`, `bare`, `perceive` pass no
+place; its percept is a row of the one table). It already applies the
+logarithmic chart (`_felt` calls `feeling`) before it reads, so its
+numbers are what they were. *Why:* §20.2's named exception says so, and
+moving it through the one reader now would change the scalar tests'
+fields and the tie round two replaces; the smallest change is the one
+that leaves it be.
+
+### 25.6 Tests ported (step 9), old assertion and new
+
+| Test | Old | New |
+|---|---|---|
+| `test/numeric_xor.py` `certificate` (and so `test_item18_places::test_66`, `test_item17_code::test_49_the_numeric_certificate_keeps_its_bar`, V5) | readout rows `[*model.numeric_percepts.rows, conj]` | the conjunction's two members are places' rows (`in basic.place_rows`); readout rows `[concept of each member, conj]`; the signs asserted as before |
+| `test_item18_places::test_level_percepts_have_native_bounds_and_distinct_places` | two distinct percepts for 1 at two places; `basic.places[p] == base + axis`; code `value_code(felt, w, place)`; codes differ | one percept for 1 at both places; its code `value_code(1, w)` in each half; its felt value 1 (now linear) |
+| `test_item18_perceptual_scalar::test_scalar_object_collects_value_bounded_basic_percepts` | code equals `value_code(value, w, basic.places[p])` | code equals `value_code(value, w)` |
+| `test_item18_fields::test_numeric_scale_order_and_level_code` | `perceive_value(v, place=0)`; `value_code(v, 4, 0)` | `perceive_value(v)`; `value_code(v, 4)` |
+| `test_item17_code::test_49_collections_of_values_are_told_apart` | `place = 7` passed to `perceive_value`, `value_code`, `bin_of` | no place |
+| `test_item17_code::test_49_the_numeric_certificate_keeps_its_bar` | features of `model.numeric_percepts.rows` differ | features of the two places' rows' concepts (the conjunction's members) differ |
+
+Nothing else was weakened, skipped or marked; no seed; no gate touched.
+`test_item17_symbols::test_54a` (NumericPercepts.read names no code
+attribute) passes as it is.
+
+**Configurations (step 2).** None changed. The numeric data sets: `xor`
+(`MM_xor`, `MM_xor_fixture`, `XOR_exact`, the default of `model.xml`):
+0 and 1. `images`/`shapes` (`MM_image`): 0 and 1 (binary, float32).
+`mnist` (`mnist.xml`, `loadMNist`): pixels over 255 then standardized by
+the training mean and std, about -0.42 to 2.8; refused by the reader
+before (negative numbers, by `feeling`) and after; its data is absent here.
+The image corpus `mnist` (threshold 128) is 0 and 1 and no configuration
+uses it. No declared value of a configuration turns on the felt chart.
+
+### 25.7 The run of step 10
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=... .venv/bin/python
+test/test_report.py` with both stopping gates and the 25 files of
+`tmp/item1-6/values_run_files.txt` (the echo, the reading lesson, grid,
+scene, values, every changed test file, and every test file naming
+NumericPercepts, ScalarPercepts, perceive_value, value_code, numeric_xor or
+MM_image).
+
+**`Result: test_failure, exit 1; 284/284 cases completed.`**
+`output/tests/20261124-052225-ce3b4d/result.json`; 1824 s; greatest
+aggregate memory 9.56 GB over its workers. 248 passed, 31 skipped, 5
+failed. **Both stopping gates passed.** Of the five failures, four are
+known: `test_item17_symbols::test_54bd` and
+`test_percept_collection_binding::...[2.0-True]` fail in the sweep;
+`test_explicit_dimensions::...test_piecewise_overall_at_least_50_pct` and
+`test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`
+are on the prompt's list of chance. The fifth,
+`test_item17_symbols::test_cert_c_an_operator_class_reads_its_arguments_through_symbols`,
+passes in the sweep: **it fails by chance on the frozen copy too** —
+run alone four times on each tree: frozen copy failed 2 of 4, this tree
+failed 2 of 4 (`AssertionError: [12x]` on a symbol's members, a text
+lesson that never builds the numeric stem). Not repaired. Every other
+selected test has the sweep's outcome (the new files' tests are absent
+from the sweep and passed).
+
+### 25.8 What in §20 was wrong or could not be built as written, and what was built
+
+1. *"with the row's entries on the wires (place_factor) as for a form"*
+   (step 4) does not tell XOR's two places apart. `place_factor` at a
+   neighbouring place reads 0.9968 on MM_xor (0.9955 on MM_image): the
+   ladder's wires move little in one step (G5's 0.0126). Built with it, the
+   certificate's fit gave mse 1.67e-10 and answers
+   `[-7.4e-08, 1.0000181, 0.9999816, 4.5e-08]`, missing the bar of 1e-6
+   on the answers by 1.8e-5 (`tmp/item1-6/values_fit.py`). **Built:**
+   `BasicPercepts.place_bounds`, a row's where entries read by their
+   bounds, 0 or 1, as `read_points` reads a value's: one where the
+   occurrence's wires lie within the entries on every wire (each lane at
+   least its entry, tolerance 1e-6), nothing elsewhere; one everywhere for
+   a row with no where entries (a value's row); its when entries read by
+   `field_factor` as before. A place whose cone is one place holds that
+   place alone. Then the certificate is as before to the last digit. It is
+   used by the Pi over values only; text's `read_bank` keeps
+   `place_factor`. It passes no gradient to the where entries. *Marked.*
+2. *A conjunction over places' rows is read at a reading, not at an
+   occurrence.* `read_bank` takes a conjunction's Pi at each attended
+   percept; two places' rows are never both held at one pixel, so on the
+   image's bank the Pi is taken over the members' readings, where the
+   bracket holds both (as the numeric stem did before). *Marked.*
+3. *A conjunction with no parts.* `reserve` refused a row with no parts;
+   a conjunction over places' rows has none (places have no parts), so
+   `reserve` takes one when it has members. *Marked.*
+4. *The bracket in the bank.* A `PerceptBank` gives each occurrence one
+   reading (`token`); the bracket, which holds every place, is read by
+   `read_values` as the greatest over the occurrences its span holds, not
+   by a token. *Marked.*
+5. *No look.* The image's bank is read whole by `read_values`;
+   `attended` (and `attendedPercepts`, 256, below MM_image's 784 places) is
+   not applied to it: the numeric stem's read is not a look.
+6. *Timing of the conjunction.* The places' rows are nominated on the
+   second forward of the XOR batch (two streams hold each place), and the
+   conjunction is promoted after the read in which its count is reached,
+   so it is read from the next forward: in `numeric_xor.fit` it appears
+   during the first evaluations of LBFGS (still in training mode), where
+   before it was read on the third forward. The certificate holds.
+7. *A saved state.* The extra state no longer has `places` and its
+   loading no longer reads it; nothing is kept for the older form. A state
+   of an older numeric model, whose rows were one per place and level,
+   would load with those rows collapsed into one per value (the index
+   shrinks, as it already does where text rows share a key). A check that
+   refused such a state was built and removed: it would refuse text states
+   whose rows share a key, which exist. *Marked.*
+8. *The tolerance of `place_bounds`* is 1e-6, as `read_points` has. A
+   place's row's entries are copies of the grid's float32 wires at the
+   places met, so its own place is held exactly; another place is told
+   apart if one of its twelve wires differs from the entry by more than
+   1e-6. Neighbouring places differ by about 3e-3 a wire (MM_xor's and
+   MM_image's ladders), so the wires need float32 or better; in bfloat16
+   (about 4e-3 near 1) neighbours could be read as one place, and a place
+   whose wires were rounded apart from its entries could miss itself.
+9. *`when_encoding` (review, fix 2).* `install_where_registry` sets
+   `model.when_encoding` on every model, and the numeric stem needs the
+   registry, so `NumericPercepts.read` reads it directly and
+   `value_bank` takes it as required (no branch for none).
+10. *V7 and V8 in the file.* The tests of the image configurations and V8's
+   tests are certified by the run (25.7), not re-run from inside
+   `test_item16_values.py`; V7's measure of the image's read and way back
+   is in the file.
+
+### 25.9 Found on the way
+
+- `test_item17_symbols::test_cert_c_...` is flaky on the unchanged source
+  (25.7).
+- `mnist.xml` cannot be read by the numeric stem before or after: its
+  loader (`data.loadMNist`) divides the pixels by 255 and then
+  standardizes them by the training mean and std, giving numbers outside
+  0..1 (about -0.42 to 2.8), which the reader refuses.
+
+### 25.10 The review's two fixes, and where the first one stops
+
+**Fix 2** is made (25.8, 9). **Fix 1** is made as 25.2, 8 says, and V2
+now asserts: on a fresh MM_image, the first presentation of an image of
+the 37 values of the grid gives back 0 at every place
+(`first_presentation_greatest 0.0`); after it has recurred
+`conceptMintCount` times (763 places' rows) every place is given back
+exactly; and with the field's evidence set to zero, nothing at every place
+(`silent_greatest 0.0`). V7 now presents the image as often as nominates
+a form before it puts it back. The XOR certificate and both gates pass
+with the way back through the field: the certificate's places' rows exist
+by the time it reconstructs, its answers, weights and mse are those of
+25.3.
+
+Two ports for 0..1 alone (step 2, not fix 1), each an input above 1:
+`test_item18_paths::test_numeric_understanding_owns_evidence_across_next_forward`
+(the second forward `values * 2.` -> `values * .5`) and
+`test_understanding_reconstruct::test_second_forward_does_not_mutate_the_first_understanding`
+(`inputs + 0.5` -> `inputs * 0.5`, which was 1.5).
+
+**Run** (both gates and the files the review named, with every test file
+that calls `reverseReconstruct` or `numeric_percepts.reverse` on a numeric
+model: `tmp/item1-6/values_run2_files.txt`):
+`Result: test_failure, exit 1; 169/169 cases completed.`,
+`output/tests/20261124-062149-a53e9d/result.json`. 161 passed, 6 failed,
+1 xfailed, 1 skipped. **Both stopping gates passed.** Known:
+`test_explicit_dimensions::...test_piecewise_overall_at_least_50_pct`
+(chance), `test_item17_symbols::test_54bd` (fails in the sweep). **Four
+pass in the sweep and fail here:**
+
+| Test | Where it fails | Cause |
+|---|---|---|
+| `test_item18_places::test_65_67_image_uses_the_same_reader_and_recovers_every_pixel` | `assert_close(rebuilt, sample)`: 63 of 784 places are 0 | one forward and one `understand` of an image: no concept reads it yet, so the way back gives nothing (fix 1) |
+| `test_item18_paths::test_numeric_understanding_owns_evidence_across_next_forward` | `assert_close(restored, values)`: 4 of 8 places are 0 | the first `understand` is the first presentation (fix 1) |
+| `test_output_synthesis::test_numeric_field_inverse_scores_identity_and_a_changed_target` | `float(cost) == 0.` is 0.25 | the first `understand`, put back as nothing, against its input (fix 1) |
+| `test_mm_xor::TestMMXorConvergence::test_forward_keeps_continuous_symbols` | `symbols.std() > 1e-6` is 0.0 | a fresh model's first forward reads no concept at all (no concept for each input place, no place's row yet): step 6, not fix 1. **Missed by the first return:** its run named only the gate of `test_mm_xor.py`, not the file |
+
+**The way out that was tried and not kept.** A value's row bringing a
+concept of order zero when it is first perceived (as a nominated row does)
+makes the first presentations read and put back, and the three of fix 1
+pass, V1 to V7 too (code kept as
+`/tmp/item1-6-2026-11-24/NumericPercepts.with_value_concepts.py`). But
+`test_concept_output::test_native_cli_curriculum_learns_output_and_keeps_located_inverse[0..2]`
+then fails at `assert 1e-6 < without_intersection` (3.09e-14): the
+value's concept reads at the bracket "some place holds 1", an OR, and
+XOR = 2 OR - x0 - x1 is linear in it and the two places', so XOR is
+learned without the conjunction. With it the certificate still passed,
+but the places' readout weights fell to 1.19e-8 (the conjunction's
+-1.313): the readout used the value's concept and the conjunction. A
+model whose order zero is small (MM_xor has 8 seats) also runs out of
+seats on graded images (one concept per value). So it was removed.
+
+**Decided (the coordinator): option 4.** No concept for a value's row.
+The concept for each input place was removed by decision (§20.2, point 6),
+so "an image is put back, or read as symbols, at its first presentation"
+is one of the things this step makes false, and step 9 covers it: such a
+test asserts what is true now. An image is put back once its places are
+known, as a form is a concept once it has recurred. Option 1 (a value's
+row brings its own concept) is round two's subject, objects made as words
+are; what was found about it above (an OR, and XOR learned without the
+conjunction) goes to Alec with round two. Option 2 would treat an image's
+places unlike a sentence's; option 3 would make the way back empty of
+meaning again.
+
+**The six tests ported in this round.** Every assertion and tolerance is
+as it was; each presentation count is read from the model
+(`concept_mint_count`), never a literal.
+
+| Test | Old | New |
+|---|---|---|
+| `test_item18_places::test_65_67_image_uses_the_same_reader_and_recovers_every_pixel` | one `forward` of the image, then `understand` and put back | the image is first presented `concept_mint_count` times (before the `read_field` counter is installed, so `len(calls) == 2` is as it was), then as before |
+| `test_item18_paths::test_numeric_understanding_owns_evidence_across_next_forward` | `understand(values)`; `forward(values * 2.)`; put back the first | `values` presented `concept_mint_count` times first; the second forward `values * .5` (2.0 lies outside 0..1) |
+| `test_output_synthesis::test_numeric_field_inverse_scores_identity_and_a_changed_target` | `understand(x)` of a fresh model, then the costs | `x` presented `concept_mint_count` times first, inside the test |
+| `test_mm_xor::TestMMXorConvergence::test_forward_keeps_continuous_symbols` | one `forward` of a fresh model, symbols' std above 1e-6 | the batch presented `concept_mint_count` times first, inside the test's own body; nothing the gate uses (`_fresh_model`, `_fit_xor`, `test_convergence`) is touched |
+| `test_understanding_reconstruct::test_second_forward_does_not_mutate_the_first_understanding` | second `understand(inputs + 0.5)` (1.5 outside 0..1) | `understand(inputs * 0.5)` |
+| `test_item16_values` V2, V7 (new in this step) | V2: put back on the first presentation; V7: one forward | V2 asserts 0 on the first presentation, exact after recurrence, 0 with the evidence zeroed; V7 presents first |
+
+No assertion was added to an old test; the first-presentation behaviour
+is stated in V2 alone.
+
+**The run after the ports.** Both stopping gates; `test_mm_xor.py` whole
+and the files the review named; and every file of `test/` that builds a
+numeric model (names MM_xor, MM_xor_fixture, XOR_exact, MM_image,
+numeric_xor, reverseReconstruct or numeric_percepts) not run in the two
+runs before: 42 more files (`tmp/item1-6/values_run4_files.txt`).
+**`Result: test_failure, exit 1; 481/481 cases completed.`**,
+`output/tests/20261124-064521-840734/result.json`. 434 passed, 44 skipped,
+3 failed. **Both stopping gates passed.** The three:
+`test_item17_symbols::test_54bd` (fails in the sweep);
+`test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`
+(on the list of chance); `test_item17_symbols::test_cert_c_...` (fails by
+chance on the frozen copy too, 2 of 4, 25.7). Every other test has the
+sweep's outcome.
+
+### 25.11 Review of step B (Claude, 2026-11-24)
+
+**Accepted, after two rounds of correction.** Claude read the whole change
+and ran, with the bounded runner (run `20261124-065405-b90ced`),
+`test_mm_xor.py` whole with its stopping gate, the other stopping gate,
+`test_item16_values.py`, `test_item16_scene.py`, `test_item16_grid.py`,
+`test_item18_places.py`, `test_item18_paths.py`, `test_output_synthesis.py`,
+`test_understanding_reconstruct.py`, `test_concept_output.py`,
+`test_item17_code.py`, `test_item18_fields.py`,
+`test_item18_perceptual_scalar.py`, `test_item18_scalar.py` and
+`test_item17_echo.py`: **131 of 131 passed**, both gates among them. In the
+gate's file the one change is inside the body of
+`test_forward_keeps_continuous_symbols`; the gate, `_fresh_model` and
+`_fit_xor` are as they were.
+
+*What Claude sent back.*
+
+1. *The way back did not go through the field.* As first returned,
+   `NumericPercepts.reverse` gave each place its value from what the field
+   had stored at input, whatever the field's evidence, so "put back
+   exactly" would have held of a field that read nothing. It now gives a
+   value only where a concept reads for the value's row or a place's row
+   that holds the place, and V2 shows a field with no evidence giving
+   nothing.
+2. *A defensive read* of the model's clock encoding, now read directly.
+
+*What the correction uncovered, and what was decided.* With the way back
+through the field, a fresh numeric model puts nothing back, and reads no
+concept, for its first presentations: the concept for each input place
+went by design (20.2, point 6), a value's row brings no concept, and a
+place's row is nominated on the count that nominates a form. Four tests
+that asserted otherwise now present their input that many times first,
+with every assertion and tolerance as it was (25.10). Claude chose this
+over a concept for a value's row, over nominating an image's places on
+their first reading, and over a way back that needs no concept.
+
+*For Alec, with round two.* The implementer tried a concept for a value's
+row and withdrew it (25.10). With it, "1 somewhere in the image" is read
+at the bracket, which is an OR of the two places, and XOR = 2 OR - x0 - x1
+is then learned with no conjunction:
+`test_concept_output::test_native_cli_curriculum_learns_output_and_keeps_located_inverse`
+asserts an error above 1e-6 "without the intersection" and got 3e-14.
+Round two gives a value a concept of its own, so that certificate's
+premise ends there, and whether XOR is still to need its conjunction is
+his to say.
+
+*On the departures of 25.8.*
+
+1. *The place of a value is read by bounds, 0 or 1* (`place_bounds`), not
+   by the soft match text uses, which reads .997 at a neighbouring place.
+   Accepted: it is the reading by bounds that a value has (rule 55),
+   carried to the wires, and it is of the value space's Pi alone. It gives
+   no gradient to a place's entries, and it needs the wires at single
+   precision or better: at bfloat16 two neighbouring places may be one.
+   That is to be measured before a model of intensities is run at that
+   precision, which he named (22.1, question 3).
+2. *The Pi over values is `held_at` on a line,* under a name of its own
+   (`read_values`). He asked for "a different PI operation on that space";
+   what is different is the reading of the place and that a form's row is
+   never offered a pixel, and what is shared is the test of part and whole,
+   which `doc/Mereology.md` calls "the exact same mechanism" for a scalar.
+   Put to him.
+3. *An image's bank is read whole,* with no cap of attended percepts.
+   Accepted for the numeric stem, whose read is not a look. A look that
+   takes a felt thing is round three's.
+4. *An older numeric state loads with its rows merged.* None is committed;
+   a numeric model trained before this step is trained again.
+5. *The value beside the words keeps its reading, its join and the
+   logarithmic chart* (his "implementer's decision"). It is the one second
+   path left, until round two.
+
+*Found on the way, not this item's:* `mnist.xml`'s loader standardises its
+pixels to about -0.42 to 2.8, which no reader of intensities takes, before
+or after; `test_item17_symbols::test_cert_c_...` fails by chance on the
+unchanged source, 2 of 4.
+
+*Standing documents written by Claude with this step:* `doc/Spaces.md`
+("Level Sets", rewritten for the number modality), `doc/Architecture.md`,
+`doc/Params.md`, `doc/Philosophy.md`, `doc/DevelopmentHistory.md`.

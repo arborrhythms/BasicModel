@@ -457,10 +457,9 @@ plain case, present or absent. A number is treated the same way.
 - **Order survives without magnitude.** A lower value's parts half lies
   inside a higher one's, so `Ops.partOf` on two of them is less-than. No
   percept carries an amount, and any two levels can still be compared. The
-  bins are fixed, 64 for each place, so a value's code does not change when
-  another value arrives; each place has a table of its own, on coordinates
-  of its own, and a collection of values is read by its bounds, not through
-  the Sigma.
+  bins are fixed, 64 of them in order for every place, so a value's code
+  does not change when another value arrives or where it lies; there is one
+  table of values.
 - **A concept generalizes levels.** A concept over several levels takes
   their common part and their covering whole: an interval on one
   dimension, a hyperrectangle on several.
@@ -470,31 +469,58 @@ plain case, present or absent. A number is treated the same way.
 - **What is left out.** "Im reserving the feeling of that continuity for
   direct perception, but that is not something that we can model."
 
-**The number modality.** A row of numbers of any shape is read this way:
-a level percept at each place. The XOR proofs are two places on one axis,
-and a 28 by 28 image (`data/MM_image.xml`) is 784 places on two axes, "the
-only different being the percept dims". One reader,
-`NumericPercepts`, serves any number of places.
+**The number modality.** A row of numbers of any shape is an image of
+intensities: XOR is an image of two places on one axis, and a 28 by 28 image
+(`data/MM_image.xml`) is 784 places on two axes, "the only different being
+the percept dims". One reader, `NumericPercepts`, serves any number of
+places.
 
-- **The feeling.** A number $n$ from zero to infinity is felt as
-  $f(n) = g/(1+g)$ with $g = \ln(1+n)$: zero at 0, one only at infinity,
-  and logarithmic between, so one is felt as .409 and ten as .706. The map
-  is fixed and has no state.
-- **A level at a place.** A reading felt above zero is a level percept at
-  its place: one basic percept for each pair of place and level met. The
-  same level at two places is two percepts, so XOR's two inputs stay
-  distinct. Zero is no presence. No coordinate of the percept cube is
-  set aside for one place, so the cube's width does not grow with the
-  number of places.
-- **A collection per place.** Each place has a table of values of its
-  own, on coordinates of its own. A collection of the level percepts met
-  at a place is read by its bounds, 0 or 1, and not through the Sigma
-  (`BasicPercepts.read_collection`); its for lane is the
-  reading's membership in that collection, not the felt value.
-- **Back from the field.** `NumericPercepts.reverse` returns each place's
-  number from the level its concept holds.
-- **The scalar beside the words** is the case with no place, and is
-  perceived, collected and read by the same functions.
+- **Intensities are in 0..1.** "The percept of a pixel is just a value,
+  0..1 like other percepts." The reader takes each number as it is and
+  refuses one below 0, above 1 or not a number. Numbers that are not in
+  0..1 are charted onto it before they are read: `NumericPercepts.feeling`
+  is the logarithmic chart $f(n) = g/(1+g)$ with $g = \ln(1+n)$, zero at 0
+  and one only at infinity ("the log chart was to avoid clipping, and
+  sensation seems to be log. But we can treat that as a preprocessing
+  step"). No reader of the numeric stem applies it.
+- **A value is one percept wherever it lies.** A reading above zero is an
+  occurrence of its value's row of the table of values, keyed by the value
+  alone. The same value at two places is one percept met twice. Zero is no
+  presence.
+- **An image has a bank of occurrences,** as a sentence has
+  (`BasicPercepts.value_bank`): each place with a value above zero is an
+  occurrence, its `.what` the value's code on two lanes, its `.where` the
+  twelve wires of its place, its `.when` the moment's. The readings are
+  each place, then the bracket over the whole image.
+- **The Pi over values** (`BasicPercepts.read_values`). The values are a
+  sorted line on which part and whole are one cut, so a value's row reads
+  an occurrence by its two bounds: for where the occurrence is of the same
+  bin, against where it is a greater value, and nothing where it is a
+  lesser value or where nothing is. On a line this is what `held_at`
+  computes for a form.
+- **A place is told by its wires.** A place's row of the first Pi is
+  nominated for an image as for a sentence, when occurrences recur at it
+  (`Places.meet`), and keeps the what met there. It is read at an
+  occurrence by the bounds of its entries on the where wires, 0 or 1
+  (`BasicPercepts.place_bounds`): the soft match a look uses for text reads
+  .997 at a neighbouring place and does not tell XOR's two inputs apart.
+  XOR's conjunction is over two places' rows. The bounds need the wires at
+  single precision or better.
+- **One Not.** The rows of an image's bank, its values, its places and its
+  conjunctions, go once through the Not and the Sigma of order zero
+  (`order_zero_field`).
+- **What a fresh model reads.** A value's row brings no concept and a
+  place's row is nominated on recurrence, so an image's first presentations
+  read no concept, and the way back gives nothing for them.
+- **Back from the field.** `NumericPercepts.reverse` gives a place its
+  exact value from the table of values where the field, at that place's
+  reading, reads for a concept that reads the value's row or a place's row
+  that holds the place, and nothing elsewhere.
+- **The scalar beside the words** is a row of the same table of values. It
+  is charted by `feeling` before it is read, and it keeps a reading of its
+  own, by its two bounds and not through the Sigma
+  (`BasicPercepts.read_collection`), and its own join to the sentence's
+  field.
 
 For images, intensity as a code and never an amplitude is in
 [FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided).
@@ -544,8 +570,9 @@ for dim 3."
   empty list) are kept apart. Nothing reads a scene yet: it is kept
   beside the row's text (`InputSpace._scenes`).
 
-- **A percept is a level at a place.** A pixel is a level percept at a
-  place on two axes, as a letter is a byte percept at a place on one.
+- **A percept is a level; its occurrence has the place.** A pixel is an
+  occurrence of its value's percept at a place on two axes, as a letter is
+  an occurrence of a byte's percept at a place on one.
   Parts and wholes, and so basic percepts, are knit within one modality,
   so basic-level perceptual objects are modal.
 - **Modalities meet at order-zero concepts.** An order-zero concept
@@ -1205,8 +1232,8 @@ Result: `[nActive, nWhat + nWhere + nWhen]` tensor.
 codebook entry, then spans $\to$ characters via the stored offset table.
 
 **Numeric mode.** On a numeric file whose grammar declares field operators
-only (`data/MM_xor.xml`, `data/MM_image.xml`), `NumericPercepts` reads each
-number as a level percept at its place ([Level Sets](#percept-level-sets)),
+only (`data/MM_xor.xml`, `data/MM_image.xml`), `NumericPercepts` reads its
+input as an image of intensities in 0..1 ([Level Sets](#percept-level-sets)),
 and no layer is learned at the input. Otherwise tensor data passes through unchanged;
 `LiftingLayer` projects native input dim (e.g. 784 for MNIST) to `nDim`.
 Non-embedding inputs are scaled to `[-1, 1]` via the global data min/max.
@@ -1753,5 +1780,5 @@ terminal rows, preserves both activation poles and supplies output coordinates.
 The same decoder then realizes the answer; a numeric output reads the field
 through `OutputSpace.read_field` where the file has a field readout, and
 otherwise uses its forward head. A numeric input's reverse returns each
-place's number from its level (`NumericPercepts.reverse`). Thought updates
+place's value from the table of values (`NumericPercepts.reverse`). Thought updates
 knowing at existing field brackets, without extra thought-occurrence columns.
