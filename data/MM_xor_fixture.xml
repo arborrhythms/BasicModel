@@ -7,6 +7,8 @@
       <dataType>numeric</dataType>
       <dataset>xor</dataset>
     </data>
+    <!-- Every percept of intensities is atomic over digits. -->
+    <intensityWhereWidth>1</intensityWhereWidth>
     <conceptLayers>1</conceptLayers>
     <training>
       <numEpochs>400</numEpochs>

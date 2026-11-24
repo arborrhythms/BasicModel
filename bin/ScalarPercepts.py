@@ -37,7 +37,8 @@ def perceive(owner, value):
     felt = _felt(owner, value)
     if not float(felt) > 0:
         return None
-    return owner.basic_percepts.perceive_value(felt.to(owner.basic_percepts.value_codes))
+    # The value beside the words is promoted at first sight.
+    return owner.basic_percepts.promote(owner.basic_percepts.perceive_value(felt.to(owner.basic_percepts.value_codes)))
 
 
 def concepts(owner):

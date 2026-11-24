@@ -917,10 +917,15 @@ bins at or below the value, the wholes half is all ones with the bins above it
 cut away, and the against lane holds what the wholes half cuts away, so a
 value lies between its parts and its wholes as a form does
 ([Mereology](Mereology.md)). There is one basic percept for each value met,
-whatever its place; a place is told by its wires, through a place's row that
-is nominated when occurrences recur at it. Zero is no presence. Reverse
-returns each place's value from the table of values where the field reads a
-concept for it, so an input is put back once its places are known. The output
+whatever its place, nominated when the value recurs; a row is read by
+numerical parthood, less-than-or-equal on every coordinate, so a row of a
+lesser or equal value reads for and nothing reads against. A place is told by
+its wires, through a place's row that is nominated when occurrences recur at
+it. Zero is no presence. Reverse returns at each place the greatest value a
+concept of the field reads for there, so an input is put back once its values
+and places are known. `architecture.intensityWhereWidth` is the greatest
+`.where` width of a percept of intensities (0, the default, no limit); the
+XOR configurations set it to 1, so that a value is read at single places. The output
 reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
 `attentionPromotion` govern recurrent intersections, and `trustViews` governs
 scalar definition evidence. No scalar scale, box-learning rate or per-value

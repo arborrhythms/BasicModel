@@ -3176,7 +3176,7 @@ place among 64 bins: the bins at or below it tell for it and the bins above
 it tell against it, by the mechanism of the parts and the wholes, where
 growing the parts and contracting the wholes are one operation
 ([Sigma and Pi Layers](#sigma-and-pi-layers)). The image has a bank of
-occurrences, read by the Pi over values (`BasicPercepts.read_values`); a
+occurrences, read by the Pi over values, numerical parthood (`BasicPercepts.read_values`); a
 place's row, nominated on recurrence, tells a place by its wires; and the
 rows go once through the Not and the Sigma of order zero
 ([Spaces](Spaces.md#percept-level-sets)). `NumericPercepts` is the one reader for

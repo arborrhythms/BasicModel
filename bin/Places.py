@@ -71,19 +71,29 @@ def meet(owner, bank):
 def admit(owner, plus, minus, what):
     """A place's row of the first Pi, promoted, and its concept of order zero
     reading it; ``None`` where there is no room."""
-    from Spaces import _concept_alloc_of
     basic = owner.basic_percepts
     try:
         owner._preflight_concept_row(0, context='place admission')
         row = basic.reserve_place(plus, minus, what)
     except (RuntimeError, OverflowError):
         return None
-    basic.promote(row)
+    return bring(owner, row, 'place')
+
+
+def bring(owner, row, kind):
+    """A nominated row promoted, and its concept of order zero, of the symbol
+    type ``kind``, reading it; ``None`` where order zero has no room."""
+    from Spaces import _concept_alloc_of
+    try:
+        owner._preflight_concept_row(0, context=f'{kind} admission')
+    except RuntimeError:
+        return None
+    owner.basic_percepts.promote(row)
     alloc = _concept_alloc_of(owner)
     if any(percept == row for _, percept, _ in alloc.order_zero_members):
         return row
     concept = owner.new_concept(order=0)
-    alloc.symbol_types.setdefault(concept, set()).add('place')
+    alloc.symbol_types.setdefault(concept, set()).add(kind)
     inventory = owner._csw_concept_row(0, concept)
     if inventory is None:
         return row

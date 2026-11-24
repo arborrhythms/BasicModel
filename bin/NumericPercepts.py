@@ -36,19 +36,25 @@ class NumericPercepts:
     """The numeric stem: its input is an image, one intensity at each place
     of its box, read as an image's bank by the Pi over values."""
     def __init__(self, model, dimensions):
+        from util import TheXMLConfig
         self.model, self.dimensions = model, int(dimensions)
+        # The greatest .where width, in places, of a percept of intensities
+        # (``architecture.intensityWhereWidth``); zero sets no limit.
+        self.where_width = int(TheXMLConfig.get('architecture.intensityWhereWidth'))
 
     def read(self, inputs):
         """Each place and the bracket over the input are readings. The input
         is an image's bank: each place whose intensity is above zero is an
-        occurrence of its value's row of the table of values. Its places are
-        met, and a place's row is nominated on the count that nominates a
-        form; the promoted rows are read by the Pi over values, and the
+        occurrence of its value's row of the table of values. A value's row
+        and its places are met, and each is nominated on the count that
+        nominates a form and brings its concept then; the promoted rows are
+        read by the Pi over values, no value's row over more places than
+        the greatest .where width of a percept of intensities, and the
         order-zero Sigma reads them through the one Not. The definitions
         above order zero are closed."""
         from FieldProjection import inventory, close
         from FamiliarTier import observe_intersection, promote_candidates
-        from Places import meet
+        from Places import meet, bring
         owner = self.model._concept_owner()
         raw = inputs.reshape(len(inputs), -1)
         values = intensities(raw if raw.is_floating_point() else raw.float())
@@ -63,13 +69,16 @@ class NumericPercepts:
             if value > 0:
                 percept = basic.perceive_value(value)
                 percepts = torch.where(values == value, percept, percepts)
+                for b in (values == value).any(1).nonzero().flatten().tolist():
+                    if owner.nominates(('value', percept), owner.reading(b)):
+                        bring(owner, percept, 'value')
         bank = basic.value_bank(values, places, registry=self.model.where_registry,
                                 when_encoding=self.model.when_encoding,
                                 time=self.model.present())
         meet(owner, bank)
         nominated = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
         bank = replace(bank, rows=tuple(nominated), codes=basic.bank_codes(nominated).to(values.device))
-        presence = basic.read_values(bank)
+        presence = basic.read_values(bank, values, where_width=self.where_width)
         if self.model.training:
             # The places' concepts read together at the bracket recur, and
             # their conjunction is nominated.
@@ -89,39 +98,29 @@ class NumericPercepts:
         return ConceptualField(ids, evidence, bank.where, when, percepts)
 
     def reverse(self, field):
-        """The way back: each place's exact value, read from the table of
-        values by the value's row the field holds there, where the field at
-        that place's reading reads for (its for lane above zero) a concept
-        of order zero that reads the value's row, or a place's row whose
-        cone holds that place, by an entry that is not a Not; nothing
-        elsewhere."""
+        """The way back from what is read for: the values' rows placed by
+        their overlap. At each place, the greatest value among the values'
+        rows that a concept of order zero of the field reads, by an entry
+        that is not a Not, where the field at that place's reading reads
+        that concept for (its for lane above zero); nothing where none is.
+        A lesser value's row reads for at a greater value too, so the
+        greatest is the value itself where its own row is read."""
         from Spaces import _concept_alloc_of
         owner = self.model._concept_owner()
-        if field.percepts is None:
-            raise ValueError('numeric reconstruction requires its field\'s value percepts')
         basic = owner.basic_percepts
-        B, A = field.percepts.shape
-        # The places each place's row holds: the places whose wires lie
-        # within its cone, as the Pi over values reads them.
-        wires = self.model.where_registry.band(field.where[0, :A, 0]).detach().cpu()
-        holds = {row: ((wires >= plus - 1e-6) & (1 - wires >= minus - 1e-6)).all(-1)
-                 for row, (plus, minus, _what) in basic.place_rows.items()}
+        A = self.dimensions
+        read = field.evidence[..., :A, 0].detach() > 0                       # [C, B, A]
         position = {int(cid): index for index, cid in enumerate(field.concept_ids.tolist())}
         readers = {}
         for concept, percept, negated in _concept_alloc_of(owner).order_zero_members:
             cid = owner.concept_id_at_row(concept)
-            if not negated and cid is not None and int(cid) in position:
+            if not negated and cid is not None and int(cid) in position and basic.is_value(percept):
                 readers.setdefault(percept, []).append(position[int(cid)])
-        at = [[row for row, held in holds.items() if bool(held[a])] for a in range(A)]
-        read = field.evidence[..., :A, 0].detach() > 0                       # [C, B, A]
-        values = torch.zeros(field.percepts.shape, device=field.evidence.device, dtype=basic.value_codes.dtype)
-        for b, a in (field.percepts >= 0).nonzero().tolist():
-            row = int(field.percepts[b, a])
-            concepts = list(readers.get(row, ()))
-            concepts += [c for place in at[a] for c in readers.get(place, ())]
-            if concepts and bool(read[concepts, b, a].any()):
-                values[b, a] = basic.felt([row])[0].to(values)
-        return values.to(field.evidence).reshape(B, *self.model.inputSpace.inputShape)
+        values = torch.zeros(read.shape[1:], device=read.device, dtype=basic.value_codes.dtype)
+        for row, concepts in readers.items():
+            here = read[concepts].any(0)
+            values = torch.where(here, torch.maximum(values, basic.felt([row])[0].to(values)), values)
+        return values.to(field.evidence).reshape(len(values), *self.model.inputSpace.inputShape)
 
     def forward(self, inputs):
         from Spaces import SubSpace
@@ -140,5 +139,24 @@ class NumericPercepts:
         carrier._concept_ids, carrier._concept_activations = field.concept_ids, field.evidence
         self.model._combine_last_cs_sub = carrier
         self.model._numeric_field = field
-        output = self.model.outputSpace.read_field(field, owner)
+        output = self.model.outputSpace.read_field(self.pooled(field), owner)
         return inputs, point, output, 0
+
+    def pooled(self, field):
+        """The field as the readout reads it, each concept as the greatest
+        over its readings. Where the greatest ``.where`` width of a percept
+        of intensities is narrower than the input, a concept that reads a
+        value's row is read at the bracket alone, where it is not read: the
+        greatest over the places would read it over all of them at once."""
+        from Spaces import _concept_alloc_of
+        A = self.dimensions
+        if not self.where_width or A <= self.where_width:
+            return field
+        owner = self.model._concept_owner()
+        basic = owner.basic_percepts
+        values = {owner.concept_id_at_row(concept) for concept, percept, negated
+                  in _concept_alloc_of(owner).order_zero_members if not negated and basic.is_value(percept)}
+        value = torch.tensor([int(cid) in values for cid in field.concept_ids.tolist()], device=field.evidence.device)
+        bracket = torch.arange(field.evidence.shape[2], device=value.device) >= A
+        keep = ~value[:, None] | bracket[None]
+        return replace(field, evidence=field.evidence * keep[:, None, :, None])

@@ -6294,3 +6294,213 @@ Keep tmp/item1-6/towers_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 31. Step T: the return (Claude on Opus, 2026-11-24)
+
+The work of §30.2 on the numeric stem. No git was run; nothing is committed.
+Progress was kept in `tmp/item1-6/towers_progress.md`. Every file changed was
+copied first to `/tmp/item1-6-2026-11-24/towers_before/` (`bin/`, `data/`,
+`test/`); the one function removed (`BasicPercepts.place_bounds`) is kept
+there, in `towers_before/bin/BasicPercepts.py`. V5 as printed before any edit
+is in `towers_before/v5_before.log`.
+
+### 31.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/BasicPercepts.py` | Point 1: `parthood(bank, values)` (new) replaces `place_bounds`: one less-than-or-equal, element by element, on the `.what` (the row's code against the occurrence's, and the row's value against the occurrence's intensity, 31.4, 1) and on the `.where` (the row's entries against the occurrence's wires on both lanes), times the `.when` read by `field_factor` as before. `read_values(bank, values, *, where_width)` reads by it: for = parthood x activity, against = 0; it names no `held_at`. Point 3: where `where_width` is above zero, a value's row (`is_value`) reads nothing at a reading wider than that many places. Point 2: `perceive_value` reserves a value's row and no longer promotes it. |
+| `bin/NumericPercepts.py` | Point 2: in `read`, each value's row is counted under `('value', row)` by `owner.nominates` once per stream that holds it, and on nomination `Places.bring` promotes it and brings its concept. Point 3: `__init__` reads `architecture.intensityWhereWidth` (no default in code) and `read` passes it to `read_values`. Point 4: `reverse` rewritten (31.4, 3). The readout: `pooled(field)` (new), used by `forward` before `read_field` (31.5). |
+| `bin/Places.py` | `admit`'s second half becomes `bring(owner, row, kind)`: promote a nominated row and bring its concept of order zero (symbol type `kind`), `None` where order zero has no room. Places call it with `'place'`, values with `'value'`. |
+| `bin/ScalarPercepts.py` | `perceive` promotes the value it perceives itself, so the value beside the words is promoted at first sight as before (25.5: its reading is kept until round two). |
+| `data/model.xml`, `data/model.xsd` | The key `architecture.intensityWhereWidth`, beside `whereAxes`; default `0` (no limit); `xs:nonNegativeInteger`. |
+| `data/MM_xor.xml`, `data/MM_xor_fixture.xml`, `data/XOR_exact.xml` | `intensityWhereWidth` 1. |
+| `test/test_item16_values.py` | V3 replaced; V9, V10, V11 added; V4 ported (31.3). |
+
+`data/BasicModel.xml` gains nothing. Neither stopping gate's file is touched.
+`model.xml`'s own default data set is `xor` (numeric), but its key is left at
+0: `model.xml` is every configuration's default, and 1 there would make
+`MM_image` (which declares no key of its own) atomic over digits too, against
+"a default that sets no limit". The three XOR configurations named set 1.
+`MM_global`, `MM_reading`, `MM_qa`, `MM_20M_xor` name the xor data set but
+are `dataType embedding` (text); they build no numeric stem and are not set.
+
+### 31.2 The certificates, as printed
+
+All ten of `test/test_item16_values.py` pass, alone and in the run (31.6).
+
+- **V3 (replaced), numerical parthood.** On MM_xor (width 3), values 0.25,
+  0.3, 0.5, 0.75, 1.0, five images: `bins_of_25_and_30: [0, 0]`; every pair
+  `(1.0, 0.0)` where the occurrence is at or above the row's value and `(0.0,
+  0.0)` elsewhere and where nothing is, e.g. `'0.3 at 0.25': (0.0, 0.0)`,
+  `'0.25 at 0.3': (1.0, 0.0)`, `'0.5 at 0.75': (1.0, 0.0)`, `'0.75 at 0.5':
+  (0.0, 0.0)`, `'1.0 at 1.0': (1.0, 0.0)`; the against lane is zero
+  everywhere; `read_values` and `parthood` name no `held_at`;
+  `numeric_read_uses: ['read_values', 'value_bank']`.
+- **V9, recurrence.** MM_xor, `[[.5],[0.]]` in training, one stream:
+  `mint_count 3`, `seen: [{time 1, promoted False, concept None}, {time 2,
+  promoted False, concept None}, {time 3, promoted True, concept 0}]`.
+- **V10, atomic over digits.** `intensityWhereWidth: {model.xml: 0, MM_xor: 1,
+  MM_xor_fixture: 1, XOR_exact: 1}`; on MM_xor after the XOR batch has
+  recurred: `value_row_at_places [[0,0],[0,1],[1,0],[1,1]]`,
+  `value_row_at_bracket` all 0; the value's concept `at_places
+  [[0,0],[0,.7616],[.7616,0],[.7616,.7616]]`, `at_bracket [0,0,0,0]`,
+  `as_the_readout_reads_it [0,0,0,0]`; `spans: {0: value 1, 1: place 1, 2:
+  place 1, 3: conjunction 2}` (every row is a value's, a place's holding one
+  place of the box, or the conjunction).
+- **V11, reconstituted from what is read for.** MM_image (width 3, so the
+  grid's 37 values fall in `bins_of_the_grid [0, 1, 2]`), the image of every
+  k/37, after it has recurred, put back with `percepts=None`: `given [0.7568,
+  0.7838, 0.8108, ...]`, `back` the same, `exact True` (`torch.equal`); with
+  the field's evidence at zero, `silent_greatest 0.0`; `reverse_names_percepts
+  False`.
+- **V5, XOR as it is.** See 31.4. `{'conjunction': 3, 'members': (1, 2),
+  'places': True}`. The stopping gate `test_convergence` and
+  `test_concept_output.py` whole (its "without the intersection" three times:
+  `without_intersection 0.25`) passed in the run.
+- V1, V2, V4, V6, V7 as before; V7 `forward_seconds 0.0097, reverse_seconds
+  0.0003` (no cache was needed: `reverse` is one tensor operation per value's
+  row with a concept); V6 `{'values': 1, 'places': 2, 'conjunctions': 1}`.
+
+### 31.3 Tests ported
+
+| Test | Old | New |
+|---|---|---|
+| `test_item16_values::test_v4_a_place_by_its_wires` | `basic.place_bounds(bank.table, [p0, p1])[:, 0] == [[1,0],[0,1]]` | `basic.parthood(bank with rows (p0, p1), values)[:, 0] == [[1,0],[0,1]]`: `place_bounds` is now part of `parthood` (point 1); the assertion is as it was |
+| `test_item16_values::test_v3_the_pi_over_values` | for at its own bin, against at a greater value; `held_at` part and whole on every pair | replaced by §30.1's V3 (31.2) |
+
+No other test was ported, weakened, skipped or marked; no seed; no count
+literal (V9, V10 read `concept_mint_count`). The gates and what they use are
+untouched.
+
+### 31.4 XOR, before and after; what could not be built as written
+
+**The certificate** (`numeric_xor.certificate`, MM_xor), before (this tree
+before any edit) and after:
+
+| | Before | After |
+|---|---|---|
+| answers | `[1.8189894035458565e-11, 1.0, 1.0, 1.8189894035458565e-11]` | the same |
+| weights (places, places, conjunction) | `[1.313035249710083, 1.313035249710083, -2.626070499420166]` | the same |
+| against | `[0.0, 0.0, 0.0]` | the same |
+| mse | `1.6543612251060553e-22` | the same |
+| promoted_row (the conjunction's concept) | 2 | 3 (the value's concept now takes row 0) |
+
+1. *The `.what` by its code alone does not give "a row of a lesser or equal
+   value reads for".* A value's code is its bin; on MM_xor and MM_image a
+   half is 3 bins wide, so 0.3's row read for at 0.25 (both bin 0), and the
+   way back put 12/37 at every place holding a lesser value of its bin
+   (V2 failed: `back 0.3243` where `0.0270` was given). **Built:** on the
+   `.what` the row's value (from the table of values; 0 for a row that is no
+   value's) is one more coordinate of the less-than-or-equal, against the
+   occurrence's intensity, which `read_values` now takes beside the bank.
+   The code is still compared too. *Marked.*
+2. *Point 3 alone does not keep "1 somewhere" out.* With the value's row and
+   concept read at single places only, "without the intersection" still
+   failed (3.09e-14) and the certificate's places' weights fell to 1.19e-8:
+   see 31.5. **Built:** `NumericPercepts.pooled`. *Marked.*
+3. *`reverse`*: at each place, the greatest value among the values' rows
+   that a concept of order zero of the field reads (by an entry not a Not)
+   where that concept's for lane is above zero at the place's reading. A
+   place's row is no longer consulted (it keeps no exact value). On the
+   first presentations nothing comes back, as before (V2), now because no
+   value's row has its concept yet.
+4. *A value's row that cannot have a concept* (order zero full) is left
+   unpromoted and unread (`bring` returns `None`), as a place's row is never
+   reserved then.
+5. `ScalarPercepts` keeps promotion at first sight (31.1): moving the value
+   beside the words to recurrence is round two's.
+
+### 31.5 What pools a concept's evidence over readings
+
+`OutputSpace.read_field` (`bin/Spaces.py`, about line 20930) begins
+`evidence = field.evidence.amax(2)`: every concept's readout is the greatest
+over all the field's readings. On the numeric field that is the value's
+concept read over every place at once, an OR of the places: exactly the
+aggregation point 3 forbids, done after the field. That is why the version in
+`NumericPercepts.with_value_concepts.py` broke "without the intersection",
+and why it broke again here with point 3 in place (3.09e-14). Nothing else
+between the field and the readout pools over readings: `FieldProjection.key`
+keeps a centroid per reading, and `close` reads per reading.
+
+Two ways were tried. *Reading the readout at the bracket only* (the field cut
+to its last reading) made "without the intersection" 0.25 but changed the
+certificate's form: at the bracket the one Not already silences the places
+where the conjunction holds, so XOR was fit by the places alone with the
+conjunction's weight 3.6e-7 (positive), and the certificate's sign assertion
+failed. Withdrawn. *Kept:* `NumericPercepts.pooled(field)`, used by
+`forward` before `read_field`: where `intensityWhereWidth` is set and
+narrower than the input, the evidence of each concept that reads a value's
+row (by an entry not a Not) is kept at the bracket alone, where it is not
+read, so the greatest over readings is nothing; every other concept is pooled
+as before, and with no limit the field is passed as it is. `read_field`
+itself is unchanged (text models read it too). *Limit, marked:* a concept
+above order zero made over a value's concept would still be pooled over the
+places; none is made on the XOR configurations (only the places' concepts
+are observed together).
+
+### 31.6 The run
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools
+.venv/bin/python test/test_report.py` with the other stopping gate and the
+57 files of `tmp/item1-6/towers_run_files.txt` (§30.2 step 7's list and
+`values_run4_files.txt`; `test_mm_xor.py` whole with its gate):
+
+**`Result: test_failure, exit 1; 520/520 cases completed.`**
+`output/tests/20261124-080706-85b80a/result.json`; 704 s. 472 passed, 44
+skipped, 4 failed. **Both stopping gates passed**, and
+`test_concept_output.py` whole. The four:
+
+- `test_item17_symbols::test_54bd_...` fails in the sweep.
+- `test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`
+  is on the list of chance.
+- `test_item16_grid::test_g1_built_widths_are_as_before[MM_xor.xml]` and
+  `[MM_image.xml]` pass in the sweep and alone here, and fail by test order:
+  in the run they followed `test_item16_values.py` in one worker, and after
+  any test that builds MM_image through `recon_bench` (V7 as it was, or V11)
+  the registry's text range is 784 where the fixture has 4096. **The same
+  two fail in the same order on a copy of the tree with the files as they
+  were before this step** (`pytest test_item16_values.py::test_v7_...
+  test_item16_grid.py::test_g1_built_widths_are_as_before`: 2 failed, 1
+  passed on both trees). Not this step's; not repaired.
+
+Every other test of the run has the sweep's outcome; the new tests are absent
+from the sweep and passed.
+
+### 31.7 For the reviewer
+
+- The key's name: `architecture.intensityWhereWidth` (0: no limit).
+- `place_bounds` goes: it is the `.where` half of `parthood`, whose zero
+  entries hold everywhere under less-than-or-equal, so its "empty reads one"
+  case needs no branch.
+- 31.4, 1 and 31.5 are the two departures from §30.1 as written; both are
+  needed for V11 and for "without the intersection" respectively.
+
+### 31.9 Review of step T (Claude, 2026-11-24)
+
+**Accepted.** Claude read the change and ran `test_mm_xor.py` whole, the
+other stopping gate, `test_item16_values.py`, `test_concept_output.py`,
+`test_item18_places.py`, `test_item16_scene.py` and `test_item18_scalar.py`
+(run `20261124-082150-8f8fbe`): 53 of 53 passed.
+
+*On its two departures.*
+
+1. *The value itself is compared beside its code.* A code tells values
+   apart only to its bin, three bins wide on the XOR and image
+   configurations, so by the code alone 0.3 was a part of 0.25. Accepted:
+   less-than-or-equal on the values is the operation he named, and the
+   code is its coarser image.
+2. *The readout pools a concept over its readings*
+   (`OutputSpace.read_field`, `field.evidence.amax(2)`), which read a
+   value's concept over both places at once, an OR, whatever the width of
+   a percept. Under the limit the numeric stem gives the readout a value's
+   concept at no place (`NumericPercepts.pooled`). Accepted as the proof he
+   asked for, and marked: it is a rule of the numeric stem beside the
+   readout and not in it, and a concept above order zero over a value's
+   would still be pooled. The readout's pooling is the thing to look at if
+   the limit is to mean more than this proof.
+
+*Found on the way:* `test_item16_grid::test_g1_built_widths_are_as_before`
+for `MM_xor.xml` and `MM_image.xml` fails after any test that builds
+`MM_image.xml`, on the tree before this step too: it depends on the order
+of the tests.
+

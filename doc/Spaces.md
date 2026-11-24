@@ -492,30 +492,40 @@ places.
   occurrence, its `.what` the value's code on two lanes, its `.where` the
   twelve wires of its place, its `.when` the moment's. The readings are
   each place, then the bracket over the whole image.
-- **The Pi over values** (`BasicPercepts.read_values`). The values are a
-  sorted line on which part and whole are one cut, so a value's row reads
-  an occurrence by its two bounds: for where the occurrence is of the same
-  bin, against where it is a greater value, and nothing where it is a
-  lesser value or where nothing is. On a line this is what `held_at`
-  computes for a form.
+- **The Pi over values is numerical parthood** (`BasicPercepts.parthood`,
+  `read_values`): less-than-or-equal, element by element. A row reads for
+  at an occurrence where what the row keeps is less than or equal to what
+  the occurrence holds on every coordinate: on the `.what`, the row's value
+  against the occurrence's, so a row of a lesser or equal value is a part;
+  on the `.where`, the row's entries against the occurrence's wires.
+  Nothing tells against. It is an operation of its own and uses nothing of
+  the first Pi over forms.
+- **A value's row is nominated on recurrence** and brings its concept
+  then, as a form's does.
 - **A place is told by its wires.** A place's row of the first Pi is
   nominated for an image as for a sentence, when occurrences recur at it
-  (`Places.meet`), and keeps the what met there. It is read at an
-  occurrence by the bounds of its entries on the where wires, 0 or 1
-  (`BasicPercepts.place_bounds`): the soft match a look uses for text reads
-  .997 at a neighbouring place and does not tell XOR's two inputs apart.
-  XOR's conjunction is over two places' rows. The bounds need the wires at
-  single precision or better.
+  (`Places.meet`), and keeps the what met there; it is a part of an
+  occurrence at its own place alone. XOR's conjunction is over two places'
+  rows. The comparison needs the wires at single precision or better.
+- **Percepts atomic over digits.** `architecture.intensityWhereWidth` is
+  the greatest `.where` width of a percept of intensities; 0, its default,
+  sets no limit. The XOR configurations set it to one: a value's row and
+  its concept are read at single places and never over the whole input, so
+  that nothing but the conjunction joins the two inputs. The output's
+  readout takes each concept as the greatest over its readings, which
+  would read a value over every place at once; under the limit the numeric
+  stem gives the readout a value's concept at no place
+  (`NumericPercepts.pooled`).
 - **One Not.** The rows of an image's bank, its values, its places and its
   conjunctions, go once through the Not and the Sigma of order zero
   (`order_zero_field`).
-- **What a fresh model reads.** A value's row brings no concept and a
-  place's row is nominated on recurrence, so an image's first presentations
-  read no concept, and the way back gives nothing for them.
-- **Back from the field.** `NumericPercepts.reverse` gives a place its
-  exact value from the table of values where the field, at that place's
-  reading, reads for a concept that reads the value's row or a place's row
-  that holds the place, and nothing elsewhere.
+- **What a fresh model reads.** A value's row and a place's row are
+  nominated on recurrence, so an image's first presentations read no
+  concept, and the way back gives nothing for them.
+- **Back from the field.** `NumericPercepts.reverse` places the parts that
+  are read for: at each place, the greatest value among the rows that a
+  concept of the field reads for there, which is the place's own value
+  once it is known. It reads nothing kept from the input.
 - **The scalar beside the words** is a row of the same table of values. It
   is charted by `feeling` before it is read, and it keeps a reading of its
   own, by its two bounds and not through the Sigma

@@ -1,7 +1,7 @@
-"""Item 1.6, round one, step B: values in an image's bank.
+"""Values in an image's bank.
 
-The certificates V1 to V7 of §20.8 of
-doc/plans/2026-11-18-item1-6-felt-math-world.md, each printing what it
+The certificates V1 to V7 of §20.8 and V3 (replaced) and V9 to V11 of §30.1
+of doc/plans/2026-11-18-item1-6-felt-math-world.md, each printing what it
 measured. A value is one row of one table of values, whatever its place; a
 reader of intensities takes its input in 0..1 as it is; the numeric stem's
 input is an image's bank, read by the Pi over values; a place is told by its
@@ -155,42 +155,42 @@ def _bank(model, values):
 
 
 def test_v3_the_pi_over_values():
-    """On an image's bank, a value's row reads for at an occurrence of its
-    own bin, against at a greater value, and nothing at a lesser value or
-    where nothing is: :func:`held_at` on a line. It is a function of the
-    value space, apart from the first Pi over forms."""
-    from BasicPercepts import BasicPercepts, held_at
+    """On an image's bank, a value's row reads for at an occurrence of an
+    equal or greater value and nothing at a lesser one or where nothing is,
+    a lesser value in the same bin among them; its against lane is nothing
+    everywhere: numerical parthood. It is a function of the value space and
+    names nothing of the first Pi over forms."""
+    from BasicPercepts import BasicPercepts
     model = _xor()
     basic = model._concept_owner().basic_percepts
-    values = torch.tensor([[.5, .75], [.25, 0.], [.5, .5], [1., .25]])
+    values = torch.tensor([[.5, .75], [.25, 0.], [.5, .5], [1., .25], [.3, .25]])
     bank, rows = _bank(model, values)
-    lanes = basic.read_values(bank)                                   # [R, B, readings, 2]
-    bins = BasicPercepts.value_bin(values, basic.identity_width)
-    part, whole, _ = held_at(bank, bank.table)
+    lanes = basic.read_values(bank, values, where_width=model.numeric_percepts.where_width)
+    B, A = values.shape
     read = {}
     for value, row in rows.items():
         r = bank.rows.index(row)
-        own = int(BasicPercepts.value_bin(torch.tensor(value), basic.identity_width))
-        for b in range(values.shape[0]):
-            for a in range(values.shape[1]):
+        for b in range(B):
+            for a in range(A):
                 there = float(values[b, a])
-                expected = ((1., 0.) if there > 0 and int(bins[b, a]) == own else
-                            (0., 1.) if there > 0 and int(bins[b, a]) > own else (0., 0.))
+                expected = (1., 0.) if there > 0 and there >= value else (0., 0.)
                 got = tuple(lanes[r, b, a].tolist())
                 read[(value, there)] = got
                 assert got == expected, (value, there, got)
-                # held_at on a line: part is the occurrence holding the
-                # value, whole the value's bound holding the occurrence.
-                if there > 0:
-                    assert float(part[r, b, a]) == float(int(bins[b, a]) >= own)
-                    assert float(whole[r, b, a]) == float(int(bins[b, a]) <= own)
-    print(dict(width=basic.identity_width, read={f'{v} at {t}': x for (v, t), x in sorted(read.items())}))
-    # The numeric stem reads its bank by the Pi over values, never by the
-    # first Pi over forms.
+    bins = BasicPercepts.value_bin(torch.tensor([.25, .3]), basic.identity_width).tolist()
+    print(dict(width=basic.identity_width, bins_of_25_and_30=bins,
+               read={f'{v} at {t}': x for (v, t), x in sorted(read.items())}))
+    low, high = float(torch.tensor(.25)), float(torch.tensor(.3))
+    assert bins[0] == bins[1] and read[(high, low)] == (0., 0.) and read[(low, high)] == (1., 0.)
+    assert not bool(lanes[..., 1].any())
+    # The Pi over values names nothing of the first Pi over forms, and the
+    # numeric stem reads its bank by it.
+    for function in ('read_values', 'parthood'):
+        assert 'held_at' not in _names_in(_source('BasicPercepts.py'), function), function
     used = _names_in(_source('NumericPercepts.py'), 'read')
     assert 'read_values' in used and 'read_bank' not in used
-    assert BasicPercepts.read_values is not BasicPercepts.read_bank
-    print(dict(numeric_read_uses=sorted(used & {'read_values', 'read_bank', 'value_bank'})))
+    print(dict(numeric_read_uses=sorted(used & {'read_values', 'read_bank', 'value_bank'}),
+               read_values_names_held_at=False))
 
 
 def _recur(model, values):
@@ -206,6 +206,7 @@ def test_v4_a_place_by_its_wires():
     """After an image has recurred as often as nominates a form, each place
     that held a value has a place's row that keeps that value's .what; the
     same value at two places is one value's row and two places' rows."""
+    from dataclasses import replace
     from recon_bench import _build_model
     model = _xor()
     owner, basic = _recur(model, torch.tensor([[[1.], [1.]]]))
@@ -227,7 +228,8 @@ def test_v4_a_place_by_its_wires():
         assert owner.concept_of_basic_percept(row) is not None
     # Each place's row holds its own place and not the other.
     bank, _ = _bank(model, torch.tensor([[1., 1.]]))
-    held = basic.place_bounds(bank.table, [places[0], places[1]])[:, 0]
+    bank = replace(bank, rows=(places[0], places[1]), codes=basic.bank_codes([places[0], places[1]]))
+    held = basic.parthood(bank, torch.tensor([[1., 1.]]))[:, 0]
     print(dict(place_rows_at_the_two_places=held.tolist()))
     assert held.tolist() == [[1., 0.], [0., 1.]]
     # An image: each lit place has a place's row keeping its value's .what.
@@ -314,3 +316,111 @@ def test_v7_the_image_read_and_put_back():
                forward_peak_bytes=forward_peak, reverse_peak_bytes=peak_bytes(),
                lit=int((sample > 0).sum())))
     torch.testing.assert_close(rebuilt, sample, rtol=0, atol=0)
+
+
+def test_v9_a_value_is_nominated_on_recurrence():
+    """A value met once has no concept and its row is not promoted; met as
+    often as nominates a form, its row is promoted and has its concept."""
+    model = _xor()
+    owner = model._concept_owner()
+    basic = owner.basic_percepts
+    model.train()
+    image = torch.tensor([[[.5], [0.]]])
+    seen = []
+    for time in range(owner.concept_mint_count):
+        model.forward(image)
+        row = basic.perceive_value(torch.tensor(.5))
+        seen.append(dict(time=time + 1, promoted=bool(basic.promoted[row]),
+                         concept=owner.concept_of_basic_percept(row)))
+    print(dict(mint_count=owner.concept_mint_count, seen=seen))
+    assert not seen[0]['promoted'] and seen[0]['concept'] is None
+    assert all(not s['promoted'] and s['concept'] is None for s in seen[:-1])
+    assert seen[-1]['promoted'] and seen[-1]['concept'] is not None
+
+
+def test_v10_atomic_over_digits():
+    """On an XOR configuration no reading wider than one place reads a
+    value's row or its concept, the readout does not pool a value's concept
+    over the places, and no row but the conjunction spans two places."""
+    import xml.etree.ElementTree as ElementTree
+    root = os.path.dirname(_BIN)
+    widths = {name: ElementTree.parse(os.path.join(root, 'data', name)).getroot().find(
+                  'architecture/intensityWhereWidth').text
+              for name in ('model.xml', 'MM_xor.xml', 'MM_xor_fixture.xml', 'XOR_exact.xml')}
+    print(dict(intensityWhereWidth=widths))
+    assert widths == {'model.xml': '0', 'MM_xor.xml': '1', 'MM_xor_fixture.xml': '1', 'XOR_exact.xml': '1'}
+    model = _xor()
+    assert model.numeric_percepts.where_width == 1
+    owner = model._concept_owner()
+    basic = owner.basic_percepts
+    values = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
+    _recur(model, values.unsqueeze(-1))
+    # One presentation more nominates the conjunction (as in V6).
+    model.forward(values.unsqueeze(-1))
+    model.eval()
+    field = model.numeric_percepts.read(values.unsqueeze(-1))
+    B, A = values.shape
+    wide = (field.where[..., 1] - field.where[..., 0]) > 1                     # [B, K]
+    assert bool(wide[:, A].all()) and not bool(wide[:, :A].any())
+    # The value's row, read by the Pi over values.
+    value = basic.perceive_value(torch.tensor(1.))
+    rows = [r for r in range(len(basic.index)) if bool(basic.promoted[r])]
+    assert value in rows
+    bank, _ = _bank(model, values)
+    from dataclasses import replace
+    bank = replace(bank, rows=tuple(rows), codes=basic.bank_codes(rows))
+    lanes = basic.read_values(bank, values, where_width=1)
+    at_places = lanes[rows.index(value), :, :A, 0]
+    print(dict(value_row_at_places=at_places.tolist(), value_row_at_bracket=lanes[rows.index(value), :, A].tolist()))
+    assert torch.equal(at_places, values)
+    assert not bool(lanes[rows.index(value)][wide].any())
+    # Its concept, in the field and as the readout reads it.
+    concept = owner.concept_id_at_row(owner.concept_of_basic_percept(value))
+    c = field.concept_ids.tolist().index(int(concept))
+    evidence = field.evidence[c, ..., 0].detach()
+    pooled = model.numeric_percepts.pooled(field).evidence[c].detach().amax(1)[..., 0]
+    print(dict(value_concept_at_places=evidence[:, :A].tolist(), at_bracket=evidence[:, A].tolist(),
+               as_the_readout_reads_it=pooled.tolist()))
+    assert torch.equal(evidence[:, :A] > 0, values > 0)
+    assert not bool(evidence[wide].any()) and not bool(pooled.any())
+    # Every row is a value's, a place's or a conjunction; a place's row
+    # holds one place of the box, and only the conjunction spans two.
+    wires = model.where_registry.band(field.where[0, :A, 0]).detach().cpu()
+    spans = {}
+    for row in range(len(basic.index)):
+        if row in basic.place_rows:
+            plus, minus, _what = basic.place_rows[row]
+            spans[row] = ('place', int(((wires >= plus - 1e-6) & (1 - wires >= minus - 1e-6)).all(-1).sum()))
+        elif row in basic.conjunctions:
+            spans[row] = ('conjunction', len(basic.conjunctions[row]))
+        else:
+            assert basic.is_value(row), row
+            spans[row] = ('value', 1)
+    print(dict(spans=spans))
+    assert all(n == 1 for kind, n in spans.values() if kind != 'conjunction')
+    assert [n for kind, n in spans.values() if kind == 'conjunction'] == [2]
+
+
+def test_v11_reconstituted_from_what_is_read_for():
+    """After its values and places are known an image comes back exactly,
+    at graded values, from the values' rows its concepts read for, placed
+    by their overlap; with the field's evidence at nothing, nothing comes
+    back; the way back reads no value percepts kept beside the field."""
+    from dataclasses import replace
+    from recon_bench import _build_model
+    image, *_ = _build_model('data/MM_image.xml')
+    given = torch.tensor(([0.] + _GRID) * 22)[:784].reshape(1, 28, 28)
+    _recur(image, given)
+    field = image.numeric_percepts.read(given)
+    back = image.numeric_percepts.reverse(replace(field, percepts=None))
+    basic = image._concept_owner().basic_percepts
+    bins = sorted(set(basic.value_bin(torch.tensor(_GRID), basic.identity_width).tolist()))
+    print(dict(width=basic.identity_width, bins_of_the_grid=bins, given=given[0, 1, :6].tolist(),
+               back=back[0, 1, :6].tolist(), exact=bool(torch.equal(back.to(given), given))))
+    assert torch.equal(back.to(given), given)
+    silent = image.numeric_percepts.reverse(replace(field, evidence=torch.zeros_like(field.evidence), percepts=None))
+    print(dict(silent_greatest=float(silent.abs().max())))
+    assert not bool(silent.any())
+    names = _names_in(_source('NumericPercepts.py'), 'reverse')
+    print(dict(reverse_names_percepts='percepts' in names))
+    assert 'percepts' not in names
