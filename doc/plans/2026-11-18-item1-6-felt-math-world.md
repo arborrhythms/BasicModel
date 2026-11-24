@@ -6169,3 +6169,128 @@ tells two places apart; that is measured there.
 | C1 | The scene's bank in its sentence's field, one Not (28.2) |
 | C2 | The image put back by the most likely composition and charged (29.3, 2) |
 | D2, F, G, H | as 28.2 |
+
+### 29.5 His corrections to 29.1 to 29.3 (Alec, 2026-11-24)
+
+> 1. literally I am talking about the less-than operation, which is
+> numerical parthood, and applied elementwise in this case. Please dont
+> call it containment.
+> 2. Said more correctly, [1,0] is never a part; all percepts are atomic
+> over digits. this is what we need in order to present the XOR problem
+> properly, without cheating by aggregation.
+> 3. "A part reads for wherever the occurrence holds it" , please use your
+> analogical reasoning to relate this to our character percepts: A is a
+> part of AB. if we store the parts in order, and we have the powerset of
+> parts, we can reconstitute without error by placing the parts according
+> to their overlap. If taht gets slow, build a cache.
+>
+> Please continue to build all of 1.6
+
+**They stand over 29.1 to 29.3 where they differ.**
+
+1. *The word.* The operation is less-than-or-equal, numerical parthood,
+   applied element by element. "Containment" is not used of it.
+2. *XOR.* The setting of 29.2 is that every percept is atomic over digits:
+   no part spans two places, so [1,0] is never a part and nothing
+   aggregates the two inputs but the conjunction.
+3. *The way back.* As A is a part of AB: the parts are kept in their order,
+   and with the powerset of the parts a thing is reconstituted without
+   error by placing its parts according to their overlap. 29.3's "greatest
+   part read for at each place" is that placing on one place, where the
+   parts that overlap are ordered by less-than and the greatest is the
+   thing itself, which is among its own parts. A cache is built if it is
+   slow.
+
+## 30. Step T: numerical parthood on the numeric stem (Claude, 2026-11-24; the text for the implementer is 30.2)
+
+### 30.1 What it builds, and its certificates
+
+1. *The Pi over values is numerical parthood, element by element.* A row
+   reads for at an occurrence where what the row keeps is less than or
+   equal to what the occurrence holds, on every coordinate: on the
+   `.what`, the row's value's code against the occurrence's (so a row of a
+   lesser or equal value reads for); on the `.where`, the row's entries
+   against the occurrence's wires (as `place_bounds` does today). Nothing
+   tells against. It is one operation of `BasicPercepts` for the value
+   space and calls nothing of the first Pi over forms (`held_at`). What a
+   conjunction's holders add (`held`) stays.
+2. *A value's row is nominated on recurrence and brings its concept,* as a
+   form's does, and is not promoted at first sight.
+3. *Percepts atomic over digits.* A key in `data/model.xml` gives the
+   greatest `.where` width of a percept of intensities, with a default
+   that sets no limit; the XOR configurations set it to one. At one, a
+   value's row and its concept are read at single places and never over a
+   reading that spans two, and no part spans two places.
+4. *The way back from positive evidence.* `NumericPercepts.reverse` places
+   the parts read for according to their overlap: at each place, the
+   greatest value among the rows that a concept of the field reads for
+   there. It does not read `field.percepts`.
+
+In `test/test_item16_values.py`, replacing V3 and adding:
+
+| | Certificate | Passes when |
+|---|---|---|
+| V3 | Numerical parthood | A value's row reads for at an occurrence of an equal or greater value and nothing at a lesser one or where nothing is; its against lane is nothing everywhere. `read_values` names no `held_at` |
+| V9 | Recurrence | A value met once has no concept; met as often as nominates a form, it has one |
+| V10 | Atomic over digits | On an XOR configuration no reading wider than one place reads a value's row or its concept, and no row but the conjunction spans two places |
+| V11 | Reconstituted from what is read for | After its values and places are known an image comes back exactly, at graded values; with the field's evidence at nothing, nothing comes back; `reverse` names no `field.percepts` |
+| V5 | XOR, as it is | `test/numeric_xor.py`'s certificate, the stopping gate `test_mm_xor.py::TestMMXorConvergence::test_convergence`, and `test_concept_output.py` whole, its "without the intersection" among them, pass with their assertions as they are |
+
+### 30.2 Text for the implementer
+
+~~~
+Item 1.6, step T: numerical parthood on the numeric stem. Read §30.1 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md (what you build), then
+§29 whole with 29.5, §25.8, §25.10 and §25.11 (what step B built and why),
+and H.5. Then the source: bin/BasicPercepts.py (read_values, place_bounds,
+value_bank, perceive_value, promote, held), bin/NumericPercepts.py,
+bin/Places.py, and how a form's row is nominated on recurrence and brings
+its concept (owner.nominates, bring_concept; bin/FamiliarTier.py).
+
+Keep tmp/item1-6/towers_progress.md current after each step.
+
+1. Point 1 of §30.1: read_values by numerical parthood on the what and on
+   the where, one operation, no held_at. Say whether place_bounds is then
+   part of it or goes.
+2. Point 2: a value's row is nominated on the count that nominates a form
+   and brings its concept then.
+3. Point 3: the key, named by you beside whereAxes in data/model.xml and
+   data/model.xsd, default no limit; set to one in the XOR configurations
+   (MM_xor.xml, MM_xor_fixture.xml, XOR_exact.xml, and model.xml's own
+   default data set if it is XOR, saying which you set). No default in
+   code; data/BasicModel.xml gains nothing.
+4. Point 4: reverse, without field.percepts. If it is slow on MM_image,
+   build the cache and say what it holds.
+5. test/test_item16_values.py: V3 replaced, V9 to V11 added, V5 as it is.
+6. Port a test only where one of the four points makes its assertion
+   false, and list each with old and new. A test that needed its input
+   presented until its places were known may need it presented until its
+   values are known too; read the count from the model. No other
+   assertion is weakened, skipped or marked; no seed is chosen. Neither
+   stopping gate, nor anything a gate uses, is touched.
+7. Run with the bounded runner (.venv/bin/python test/test_report.py),
+   RUN_TRAINED and RUN_SLOW unset: test/test_mm_xor.py, the other
+   stopping gate, test/test_item16_values.py, test/test_item16_scene.py,
+   test/test_item16_grid.py, test/test_concept_output.py,
+   test/test_item18_places.py, test/test_item18_paths.py,
+   test/test_output_synthesis.py, test/test_understanding_reconstruct.py,
+   test/test_item17_code.py, test/test_item18_fields.py,
+   test/test_item18_perceptual_scalar.py, test/test_item18_scalar.py,
+   test/test_item17_echo.py, and the files of
+   tmp/item1-6/values_run4_files.txt. No test that passes in the sweep
+   (its outcomes are named in your prompt) may fail, apart from those
+   known to fail by chance.
+8. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+9. Return as tmp/item1-6/section31.md, headed "## 31. Step T: the return":
+   files changed and why; each certificate with what it printed; the key's
+   name; every test ported, old and new; the XOR certificate's answers,
+   weights and error before and after; what in §30.1 could not be built
+   as written and what you built. You do not stop on a question of design:
+   propose, build, mark it. Stop only if a gate, the XOR certificate or
+   "without the intersection" cannot pass with its assertion as it is, and
+   then say exactly where it fails and what you tried.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
