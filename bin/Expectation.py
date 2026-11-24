@@ -545,7 +545,7 @@ class PerceptHistory(NamedTuple):
 class PerceptExpectation(nn.Module):
     """Causal native-form expectation with arrival state and sentence training.
 
-    Context and moments update at each arrival. Predictor parameters join the
+    Context updates at each arrival. Predictor parameters join the
     sentence optimizer and receive the accumulated local arrival error once.
     """
     def __init__(self, width, *, streams, capacity, moment_width=None, rate=.05,
@@ -605,10 +605,17 @@ class PerceptExpectation(nn.Module):
             history.known[admitted] = True
         return value, local
 
-    def arrive(self, forecast, observed, active, *, native=None, training=False):
+    def arrive(self, forecast, observed, active, *, native=None, training=False, sentence=False):
         expected, admitted = forecast
         if observed.shape != expected.shape or active.shape != observed.shape[:1]:
             raise ValueError('percept arrival requires a batched native form and domain')
+        if sentence:
+            # The neural predictor reads per-stream causal context. Legacy
+            # field-wide moments remain loadable for standalone callers.
+            value, local = self.preview(self.history(len(active)), forecast, observed, active)
+            self.updates.add_(active.any().to(self.updates))
+            self.last_arrival = dict(local_loss=local)
+            return value
         frozen = expected.detach().clone()
         value = recombine_percept(observed, frozen)
         before = self.updates.clone()

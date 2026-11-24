@@ -652,6 +652,7 @@ def test_mixed_native_winners_replay_only_their_own_observations_and_gradients()
     assert owner.updates.item() == 0
     NativeReading.select(model, paths, torch.arange(2))
     NativeReading.commit(paths, torch.arange(2), [0, 1])
+    assert owner.moments.count.item() == 0
     selected_contexts = [path.history.recent[row] for row, path in enumerate(paths)]
     torch.testing.assert_close(owner.context_recent, torch.stack(selected_contexts))
     control = PerceptExpectation(2, streams=2, capacity=6)

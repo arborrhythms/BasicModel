@@ -425,9 +425,8 @@ class NativeReading:
         retained = {paths[index] for index in winner_indices}
         if len(retained) == 1:
             only, = retained
-            for observed, forecast, active, training in only.arrivals.values():
-                owner.arrive(forecast, observed[:, :owner.width], active,
-                             native=observed, training=training)
+            for observed, forecast, active in only.arrivals.values():
+                owner.arrive(forecast, observed, active, sentence=True)
             return
         groups = {path: torch.zeros_like(winners, dtype=torch.bool) for path in retained}
         for index, path in enumerate(paths):
@@ -438,20 +437,19 @@ class NativeReading:
         for key in sorted(set().union(*(path.arrivals for path in groups))):
             active = torch.zeros_like(winners, dtype=torch.bool)
             expected = torch.zeros_like(owner.last_expected[:len(active)])
-            native = owner.moments.mean.new_zeros(len(active), owner.moments.mean.numel())
+            observed = torch.zeros_like(expected)
             for path, won in groups.items():
                 if key not in path.arrivals:
                     continue
-                observation, forecast, seen, training = path.arrivals[key]
+                observation, forecast, seen = path.arrivals[key]
                 rows = won & seen
                 active = active | rows
                 expected = torch.where(rows[:, None], forecast[0].detach(), expected)
-                native = torch.where(rows[:, None], observation, native)
+                observed = torch.where(rows[:, None], observation, observed)
                 # Each path can have different provisional native keys.
                 admitted = forecast[1]
                 owner.known[admitted] = owner.known[admitted] | rows.any()
-            owner.arrive((expected, winners[:0]), native[:, :owner.width], active,
-                         native=native, training=training)
+            owner.arrive((expected, winners[:0]), observed, active, sentence=True)
 
 
 def observe_percept(model, forecast, payload, sub, index, active, *, path=None, turn=None):
@@ -460,15 +458,12 @@ def observe_percept(model, forecast, payload, sub, index, active, *, path=None, 
     width = expectation.width
     native = sub[1][:,int(index)]
     observed = native[...,:width]
-    discourse = getattr(model.symbolSpace,'expectation',None)
-    training = bool(getattr(model,'_sentence_training',False) and torch.is_grad_enabled()
-        and not getattr(discourse,'_external_observations_suspended',False))
     if path is None:
-        arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
+        arrival = expectation.arrive(forecast, observed, active, sentence=True)
         local = expectation.last_arrival['local_loss']
     else:
         arrival, local = expectation.preview(path.history, forecast, observed, active)
-        path.arrivals[turn, index] = (native.detach(), (forecast[0].detach(), forecast[1]), active, training)
+        path.arrivals[turn, index] = (observed.detach(), (forecast[0].detach(), forecast[1]), active)
     # Different pages can reach one source word on different looks. A
     # later arrival updates only the streams that actually observed it.
     prior = model._percept_expected[:, index]
