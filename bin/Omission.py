@@ -131,13 +131,13 @@ def prepare(model, units):
         words |= draw.words
         protected[sid] = draw.protected
     raw_target = model._staged_concepts_in.detach().clone()
-    spans = [[word['spans'] + [(0, 0)] * (capacity - len(word['spans'])) for word in row]
-             + [[(0, 0)] * capacity] * (width - len(row)) for row in plans]
-    span_table = torch.tensor(spans, device=device, dtype=torch.long).reshape(*forms.shape, 2)
-    hidden = covered_bytes(span_table, forms, raw_target.shape[-1])
     model._omission_prepared = dict(raw=raw_target, units=units, plans=plans,
-        draw=Draw(words, forms, protected), bytes=hidden,
-        sentences=sentences.detach().clone())
+        draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
+    if bool(forms.any()):
+        spans = [[word['spans'] + [(0, 0)] * (capacity - len(word['spans'])) for word in row]
+                 + [[(0, 0)] * capacity] * (width - len(row)) for row in plans]
+        span_table = torch.tensor(spans, device=device, dtype=torch.long).reshape(*forms.shape, 2)
+        model._omission_prepared['bytes'] = covered_bytes(span_table, forms, raw_target.shape[-1])
     return model._omission_prepared
 
 
@@ -203,21 +203,30 @@ def stage(model):
         slots = isp._packed_sentence_slot_mask.shape[1]
         prepared['draw'] = Draw(torch.zeros_like(active), forms, dict.fromkeys(range(slots), protected))
         prepared['sentences'] = isp._packed_sentence_ids.detach().clone()
-    native = {key: value.detach().clone() if torch.is_tensor(value) else value
-              for key, value in ps._forward_input.items()}
-    word_values = isp._ar_embedded_N.detach().clone()
-    spans = torch.zeros(*valid.shape, 2, dtype=torch.long, device=valid.device)
-    fi_spans = ps._forward_input['part_spans'].reshape(*valid.shape, 2)
-    spans.copy_(fi_spans)
+    source = ps._forward_input
+    # The element stem emits fresh byte, address and extent tensors for each
+    # presentation. Later attention may replace entries in the opening dict.
+    # Hold the original tensor handles for the two target readers.
+    elements = source.get('element_input', False)
+    native = {}
+    for key in ('sentence_bytes', 'unit_spans', 'native_indices', 'native_part_spans'):
+        if key in source:
+            value = source[key].detach()
+            native[key] = value if elements else value.clone()
+    spans = source['part_spans'].reshape(*valid.shape, 2).detach()
+    if not elements:
+        spans = spans.clone()
+    hiding = 'bytes' in prepared
+    word_values = isp._ar_embedded_N.detach()
+    if hiding:
+        word_values = word_values.clone()  # the target is about to restore hidden content
     prepared.update(native=native, word_values=word_values, valid=valid.detach().clone(),
                     ids=isp._ar_word_part_ids.detach().clone(), spans=spans)
-    hiding = can_hide and bool(forms.any())
     if hiding or 'unit_spans' not in native:
         prepared['word_bytes'] = tuple(tuple(raw[lo:hi] for lo, hi in units)
                                        for raw, units in prepared['units'])
     model._omission_targets = prepared
     if not hiding:
-        prepared.pop('bytes', None)
         prepared.pop('units')
         prepared.pop('plans', None)
         return

@@ -11365,7 +11365,7 @@ class PartSpace(Space):
             units.append((raw,spans))
         prepare = getattr(self, '_omission_prepare', None)
         omission = None if prepare is None else prepare(units)
-        hiding = omission is not None and bool(omission['draw'].forms.any())
+        hiding = omission is not None and 'bytes' in omission
         changed = omission['draw'].forms.any(-1).detach().cpu().tolist() if hiding else None
         hidden_rows = omission['bytes'].detach().cpu().tolist() if hiding else None
         visible_rows = []

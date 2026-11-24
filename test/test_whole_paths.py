@@ -396,6 +396,18 @@ def test_omission_target_one_matches_removing_omission_from_the_native_path(tmp_
         with monkeypatch.context() as patch:
             if removed:
                 patch.setattr(Omission, 'stage', lambda owner: setattr(owner, '_omission_targets', None))
+            else:
+                stage = Omission.stage
+                def check_opening(owner):
+                    stage(owner)
+                    source = owner.perceptualSpace._forward_input
+                    targets = owner._omission_targets
+                    if source.get('element_input'):
+                        for key in ('native_indices', 'native_part_spans', 'sentence_bytes', 'unit_spans'):
+                            assert torch._C._is_alias_of(targets['native'][key], source[key])
+                    assert torch._C._is_alias_of(targets['word_values'], owner.inputSpace._ar_embedded_N)
+                    assert not targets['word_values'].requires_grad
+                patch.setattr(Omission, 'stage', check_opening)
             model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=1,
                 batch_override=(model.inputSpace.prepInput(['alpha gamma']), torch.empty(1, 0)))
         states.append(({name: value.detach().clone() for name, value in model.state_dict().items()

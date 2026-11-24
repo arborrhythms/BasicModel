@@ -20246,7 +20246,7 @@ class BasicModel(BaseModel):
         word_rows = self._word_symbol_rows()
         words = self._tensor_pushed_ideas
         targets = getattr(self, '_omission_targets', None)
-        if targets is not None and bool(targets['draw'].forms.any()):
+        if targets is not None and 'bytes' in targets:
             original = targets['word_values'].to(words)
             original = F.pad(original, (0, max(0, words.shape[-1]-original.shape[-1])))[..., :words.shape[-1]]
             words = torch.where(targets['draw'].forms.any(-1)[..., None], original, words)

@@ -339,6 +339,9 @@ def main():
             in_look = [False]
             sentence_depth = 0
             in_sentence, sentence_sites = Counter(), Counter()
+            from torch.utils._device import DeviceContext
+            default_device_dispatch = DeviceContext.__torch_function__.__code__
+            redispatched = Counter()
             execute_sentence = BasicModel._execute_input_sentence
 
             def sentence(*a, **kw):
@@ -359,6 +362,8 @@ def main():
                     if sentence_depth:
                         caller = sys._getframe(1)
                         in_sentence[name] += 1
+                        if caller.f_code is default_device_dispatch:
+                            redispatched[name] += 1
                         site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name, str(caller.f_lineno), name)
                         sentence_sites[site] += 1
                         if args.dispatch_census and caller.f_code.co_filename.startswith(source_directory):
@@ -435,6 +440,8 @@ def main():
             record['percept_addresses'] = dict(total=percept_addresses.total(),
                 distinct=len(percept_addresses), repeated=percept_addresses.total() - len(percept_addresses))
             record['host_census'] = dict(update=dict(host), sentence=dict(in_sentence), looks=dict(at_look),
+                                         sentence_requests=dict(in_sentence - redispatched),
+                                         sentence_default_device_redispatch=dict(redispatched),
                                          sentence_reads_by_caller={':'.join(k): v for k, v in sentence_sites.most_common()},
                                          look_reads_by_caller={':'.join(k): v for k, v in sites.most_common()},
                                          lookups_by_caller={':'.join(k): v for k, v in calls.items()})
