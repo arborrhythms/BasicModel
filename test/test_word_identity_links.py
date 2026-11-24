@@ -68,3 +68,19 @@ def test_device_part_join_preserves_tie_gradients_for_repeated_spelling():
     torch.testing.assert_close(parts[0], reference)
     torch.testing.assert_close(torch.autograd.grad(parts.sum(), codes)[0],
                                torch.autograd.grad(reference.sum(), codes)[0])
+
+
+def test_packed_parts_keep_high_bits_and_pad_partial_limbs():
+    import torch
+    from types import SimpleNamespace
+    from WordIdentity import WordIdentity
+    layout = SimpleNamespace(total=129, limbs=3)
+    values = torch.zeros(3, layout.total)
+    values[0, [0, 63, 64, 127, 128]] = 1.
+    values[1].fill_(1.)
+    values[2, ::2] = .5
+    expected = torch.tensor([[-(1 << 63) + 1, -(1 << 63) + 1, 1], [-1, -1, 1], [0, 0, 0]])
+    packed = WordIdentity._pack(layout, values)
+    assert torch.equal(packed, expected)
+    assert torch.equal(WordIdentity._unpack(layout, packed), values.eq(1).long())
+    assert WordIdentity._pack(layout, values[:0]).shape == (0, 3)

@@ -456,14 +456,14 @@ class WordIdentity(nn.Module):
         """Codes of zeros and ones, ``[n, width + property_width]``, as rows
         of 64-bit words, ``[n, limbs]``: coordinate ``i`` is bit ``i % 64``
         of word ``i // 64``."""
-        bits = codes.detach().cpu().reshape(-1, self.total).eq(1).numpy()
-        packed = np.packbits(bits, axis=-1, bitorder='little')
-        packed = np.pad(packed, ((0, 0), (0, 8 * self.limbs - packed.shape[-1])))
-        return torch.from_numpy(np.ascontiguousarray(packed).view('<i8').copy())
+        bits = codes.detach().reshape(-1, self.total).eq(1)
+        bits = torch.nn.functional.pad(bits, (0, 64 * self.limbs - self.total))
+        shifts = torch.arange(64, dtype=torch.long, device=codes.device)
+        return (bits.reshape(len(bits), self.limbs, 64).long() << shifts).sum(-1)
 
     def _unpack(self, packed):
         """Rows of 64-bit words as codes of zeros and ones (``long``)."""
-        bits = (packed[..., None] >> torch.arange(64, dtype=torch.long, device='cpu')) & 1
+        bits = (packed[..., None] >> torch.arange(64, dtype=torch.long, device=packed.device)) & 1
         return bits.flatten(-2)[..., :self.total]
 
     def _place(self, raw):
