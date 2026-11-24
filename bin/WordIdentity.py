@@ -286,13 +286,13 @@ class WordIdentity(nn.Module):
         spellings, rows, _, ranks = bank
         return parts_for_units(surface, spans, spellings, rows, ranks, padding)
 
-    def located_cover(self, surface, spans, padding):
-        from BasicPercepts import disjoint_parts
+    def sentence_cover(self, surface, spans, padding):
+        from BasicPercepts import disjoint_occurrences
         bank = self.occurrence_bank(surface.device)
         if bank is None:
             return None
         spellings, rows, _, ranks = bank
-        return disjoint_parts(surface, spans, spellings, rows, ranks, padding)
+        return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding)
 
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""

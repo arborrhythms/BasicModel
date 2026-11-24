@@ -11271,27 +11271,12 @@ class PartSpace(Space):
         return self._embed_radix(upstream_vspace)
 
     def _embed_ladder_word_major(self, upstream_vspace):
-        """Eager stem of the fold ladder for the serial word-major contract.
+        """Present each staged unit as an ordered partition of the observed bytes.
 
-        Same outputs as :meth:`_embed_radix_word_major` (``[B, W, P]`` atom
-        ids / mask / offsets, the no-grad per-unit aggregate, the
-        ``_forward_input`` record) with two differences (meronomy fold-ladder
-        plan, contracts 1-2 and 6):
-
-          * the UNITS of the outer loop are the staged wholes of the analysis
-            tiling (``_staged_unit_spans``, handed over transiently by the
-            model from ``WholeSpace.stage_analysis_spans``; whitespace words
-            when no tiling is staged), so a numeral cut into digit wholes is
-            two units and a punctuation run is its own unit;
-          * the ATOMS are bytes: every unit's constituents are its byte rows
-            (the store's one-byte alphabet), in surface order with their
-            exact spans -- the ordered constituent witness.  No longest
-            match, no promotion: rung 0 joins the atoms inside
-            ``PartSpace.forward``.
-
-        Every atom of a unit is presented; the compiled loop's fixed
-        residual capacity keeps its fail-loud contract for a unit it cannot
-        lay out (no silent truncation).
+        A reading uses learned proper parts, falling back to elements. Each
+        occurrence carries its own byte extent, including repeated parts.
+        The outer unit retains the interval supplied by the analysis tiling.
+        The part grid grows to fit the batch before fixed-capacity staging.
         """
         what_buf = upstream_vspace.materialize(mode="what")
         if what_buf is None:
@@ -11338,7 +11323,7 @@ class PartSpace(Space):
             # the alphabet is known, gather their counts in the same transfer.
             delivered_layout = layout[:, :byte_count]
             if simple_parts and identity.atoms:
-                prepared_parts = identity.located_cover(compact[:, :byte_count],
+                prepared_parts = identity.sentence_cover(compact[:, :byte_count],
                                                         delivered_layout[:, :word_capacity], -1)
             if prepared_parts is None:
                 unit_spans_rows = delivered_layout.detach().tolist()
@@ -11418,17 +11403,19 @@ class PartSpace(Space):
             for atom in missing_atoms:
                 identity._atom(atom)
             if missing_atoms or prepared_parts is None:
-                prepared_parts = identity.located_cover(compact[:, :byte_count],
+                prepared_parts = identity.sentence_cover(compact[:, :byte_count],
                                                         layout[:, :min(byte_count, word_capacity)], -1)
                 prepared_counts = None
             if prepared_parts is not None:
-                located_parts, lengths, located_extents = prepared_parts
+                flat_parts, lengths, flat_extents = prepared_parts
                 counts = lengths.tolist() if prepared_counts is None else prepared_counts
                 missing = word_capacity - lengths.shape[1]
                 counts = [row + [0] * missing for row in counts]
                 lengths = F.pad(lengths, (0, missing))
-                located_parts = F.pad(located_parts, (0, 0, 0, missing), value=-1)
                 part_capacity = max(3, max((max(row) for row in counts), default=0))
+                from BasicPercepts import pack_disjoint_units
+                located_parts, located_extents = pack_disjoint_units(
+                    flat_parts, lengths, flat_extents, -1, part_capacity)
         observed_forms = []
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
@@ -11491,9 +11478,7 @@ class PartSpace(Space):
                                      for row in staged_rows], dtype=torch.long, device=dev)
             lengths = torch.tensor(counts, dtype=torch.long, device=dev)
         else:
-            members = located_parts[:, :, :part_capacity]
-            pid_grid = members.masked_fill(members < 0, null_pid)
-            pid_grid = F.pad(pid_grid, (0, part_capacity - pid_grid.shape[-1]), value=null_pid)
+            pid_grid = located_parts.masked_fill(located_parts < 0, null_pid)
         positions = torch.arange(part_capacity, device=dev)
         part_mask = positions < lengths[..., None]
         if layout is None:
@@ -11508,9 +11493,7 @@ class PartSpace(Space):
             sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
         word_active = slots[..., 1] > slots[..., 0]
         if located_parts is not None:
-            members = located_extents[:, :, :part_capacity]
-            members = F.pad(members, (0, 0, 0, part_capacity - members.shape[2],
-                                      0, word_capacity - members.shape[1]))
+            members = located_extents
         elif identity is None:
             starts = slots[..., :1] + positions
             members = torch.stack((starts, starts + 1), -1)

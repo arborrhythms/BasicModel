@@ -283,13 +283,12 @@ def parts_for_units(raw, spans, spellings, rows, added_rank, padding):
     return torch.where(present.gather(-1, order), rows[order], padding), present.sum(-1)
 
 
-def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
+def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding):
     """Tile each ordered unit with its longest proper part at each surviving start."""
     batch, width = raw.shape
     units = spans.shape[1]
     if not units or not width:
-        shape = (batch, units, width)
-        return rows.new_full(shape, padding), spans.new_zeros(batch, units), spans.new_zeros(*shape, 2)
+        return rows.new_full((batch, width), padding), spans.new_zeros(batch, units), spans.new_zeros(batch, width, 2)
     pos = torch.arange(width, device=raw.device).expand(batch, -1).contiguous()
     lo, hi = spans.unbind(-1)
     seat = torch.searchsorted(torch.where(hi > lo, lo, width).contiguous(), pos, right=True) - 1
@@ -326,18 +325,34 @@ def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
         reached = reached | torch.zeros_like(jump).scatter_add(1, jump, reached.long()).bool()
         jump = jump.gather(1, jump)
     starts = reached[:, :width]
-    ordinal = starts.long().cumsum(1)
     counts = torch.zeros_like(lo).scatter_add(1, parent, starts.long())
-    first = (ordinal - starts.long()).gather(1, lo.clamp(0, width - 1))
-    # Gather compact, source-ordered seats without a data-dependent output size.
+    # Across disjoint units a sentence can have at most one part per byte.
     order = torch.where(starts, pos, width).sort(1).values
-    pick = first[..., None] + pos[:, None, :]
-    selected = order.gather(1, pick.clamp_max(width - 1).flatten(1)).reshape_as(pick).clamp_max(width - 1)
-    ids = address.gather(1, selected.flatten(1)).reshape_as(selected)
-    end = successor.gather(1, selected.flatten(1)).reshape_as(selected)
-    valid = pos[:, None, :] < counts[..., None]
-    extents = torch.stack((selected, end), -1)
-    return torch.where(valid, ids, padding), counts, torch.where(valid[..., None], extents, 0)
+    valid = order < width
+    take = order.clamp_max(width - 1)
+    extents = torch.stack((order, successor.gather(1, take)), -1)
+    return torch.where(valid, address.gather(1, take), padding), counts, torch.where(valid[..., None], extents, 0)
+
+
+def pack_disjoint_units(ids, counts, extents, padding, capacity):
+    """Gather the sentence's occurrences into the word loop's part seats."""
+    if not ids.shape[1]:
+        shape = (*counts.shape, capacity)
+        return ids.new_full(shape, padding), extents.new_zeros(*shape, 2)
+    seats = torch.arange(capacity, device=ids.device)
+    first = counts.cumsum(1) - counts
+    take = (first[..., None] + seats).clamp_max(ids.shape[1] - 1).flatten(1)
+    valid = seats < counts[..., None]
+    rows = ids.gather(1, take).reshape_as(valid)
+    spans = extents.gather(1, take[..., None].expand(-1, -1, 2)).reshape(*valid.shape, 2)
+    return torch.where(valid, rows, padding), torch.where(valid[..., None], spans, 0)
+
+
+def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
+    """Fixed-width view of a disjoint cover for callers without a tighter bound."""
+    ids, counts, extents = disjoint_occurrences(raw, spans, spellings, rows, ranks, padding)
+    parts, locations = pack_disjoint_units(ids, counts, extents, padding, raw.shape[1])
+    return parts, counts, locations
 
 
 def occurrence_parts(raw, spans, spellings, part_codes, catalog):

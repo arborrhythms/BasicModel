@@ -147,7 +147,11 @@ def test_disjoint_reading_preserves_repeats_and_shifted_byte_intervals():
                           [[1, 9], [10, 15], [16, 20], [0, 0]]])
     groups, rows, _, ranks = identity.occurrence_bank(raw.device)
     compiled = torch.compile(disjoint_parts, fullgraph=True, backend='eager')
-    eager = identity.located_cover(raw, spans, -1)
+    from BasicPercepts import pack_disjoint_units
+    flat, counts, locations = identity.sentence_cover(raw, spans, -1)
+    assert flat.shape == raw.shape and locations.shape == (*raw.shape, 2)
+    packed, extents = pack_disjoint_units(flat, counts, locations, -1, raw.shape[1])
+    eager = packed, counts, extents
     for actual, reference in zip(compiled(raw, spans, groups, rows, ranks, -1), eager):
         torch.testing.assert_close(actual, reference)
     parts, counts, extents = eager
