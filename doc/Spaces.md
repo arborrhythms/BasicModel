@@ -516,6 +516,17 @@ places.
   lesser is put back, and a sentence's image is charged the difference
   (`reconstruction_order_zero.things`). A smaller thing found within a
   larger gives nothing back.
+- **An image comes out as words do.** `reconstructModalities` gives, beside
+  the sentence and the value beside the words, the image of each row over
+  the scene's box, read from the field of the sentence the image was read
+  with (`ImagePercepts.given`); nothing for a row that had no image.
+- **Relations of place.** An axis of place is a sorted line, and the
+  relation of two things on it is less-than between their places.
+  `ImagePercepts.relations` reads, for every ordered pair of an image's
+  things and on each axis, whether the first lies wholly before the
+  second and whether the two touch, each for and against. In the corpus
+  the lesser y is the upper and the lesser x the left. Nothing of the
+  model reads these relations.
 - **A place is told by its wires.** A place's row of the first Pi is
   nominated for an image as for a sentence, when occurrences recur at it
   (`Places.meet`), and keeps the what met there; it is a part of an

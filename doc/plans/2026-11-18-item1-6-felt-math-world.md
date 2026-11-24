@@ -8627,3 +8627,242 @@ Keep tmp/item1-6/out_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 43. Steps F and G: the return (Claude on Opus, 2026-11-24) (Claude on Opus, 2026-11-24)
+
+The work of §42.3, following §42.1 and §42.2. No git was run, and nothing is
+committed. Progress was kept in `tmp/item1-6/out_progress.md`. Every file
+changed was first copied to `/tmp/item1-6-2026-11-24/out_before/bin/`
+(`ImagePercepts.py`, `Models.py`). Nothing was removed.
+
+### 43.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/ImagePercepts.py` | **F.** `given(model, field)`: the image given out, by row, put back from the field alone by `put_back`, or `None` for a row with no reading in the box. **G.** `relations(bank)`: the relations of place among the things of an image's bank (43.3). |
+| `bin/Models.py` | **F.** `_capture_understanding` carries `image_field`, the first sentence's opened field with its evidence cloned, where the batch reads an image (`ImagePercepts.imaged(self, 0)`, the test `charge` makes). `reconstructModalities` returns `image=` beside `input=` and `scalar=`: `()` where the understanding carries no image's field, else `given(self, image_field)`. |
+| `test/test_item16_out.py` (new) | F1 to F4. |
+| `test/test_item16_relations.py` (new) | G1 to G3. |
+
+`data/` and `doc/` are untouched, and no key was added. Neither gate's file,
+nor anything a gate uses, was touched. No existing test was changed (43.5).
+The text modality's output is unchanged: `input=` is computed as before, and
+F2 prints it with the image and without.
+
+### 43.2 Where the image is read from at the output (step 1)
+
+- **The field.** The image is read only at the first sentence's opening
+  (`ImagePercepts.imaged`: `sid == 0`), into the field that opening makes
+  (`SentenceField.open_field`, `_sentence_open_fields[0]`, after the value
+  beside the words and the intuition are joined). That is the field the
+  opening's charge puts the image back from. The understanding carries it as
+  `reconstruction_carriers['image_field']`, its evidence cloned, as the scalar's
+  field is carried.
+- **The way back.** `reconstructModalities` calls `ImagePercepts.given`, which
+  calls `put_back`: the one way back of step C and step E, the pixels' rows
+  and the things' rows, the lesser where both give back. Nothing kept from the
+  input is read: `put_back` reads the field's evidence, its concept ids and its
+  `.where`, and the table's centroids and things.
+- **A row with no image** is told from the field: it has no reading in the box
+  (a `null` row's columns are empty brackets, 33.3), and gives `None`. An empty
+  image has the bracket over the box, so it gives an image with nothing in it.
+  A batch in which no row has an image carries no image's field, and gives
+  `image=()`, as `scalar=()`.
+- **Its shape.** A tuple by row; each a tensor `[places of the box]`
+  (512 on the test model), detached, in address order, or `None`.
+
+### 43.3 The relations (step 2)
+
+`ImagePercepts.relations(bank)`, beside `put_back`, on a bank made by
+`image_bank` and `with_things` (or by the numeric stem's `read`).
+
+- **The things.** Each thing of several places (`bank.things`, step E) and
+  each pixel, a thing of one place: every pixel's occurrence, including the
+  pixels of a thing. In each stream the pixels come first in occurrence order,
+  then the things.
+- **Before on an axis.** For the ordered pair (first, second) and an axis of
+  the box: the first's greatest coordinate there less than the second's least.
+  This is less-than between places, numerical parthood on the line of the axis.
+- **Touching across an axis.** A place of the first and a place of the second
+  one apart on that axis and at one on the others, and no place in common.
+- **Returns** `(occurrence, lanes)`: `occurrence` `[B, T]`, each thing's
+  occurrence in the bank (`-1` where none); `lanes` `[B, T, T, 2, axes, 2]`:
+  first thing, second thing, the relation (0 before, 1 touching), the axis in
+  the box's order (x, y, z), and for and against. A pair where either is none,
+  or a thing with itself, is nothing on both lanes. The lanes are 0 or 1: the
+  places are whole numbers.
+- **Which end of y is above (point 2).** The lesser. `felt_world_corpus.p_row_before(a, b)`,
+  the meaning of "{a} is above {b}" (recipe 14, s01) and of "{b} is below {a}"
+  (s02), is the greatest y of a less than the least y of b, with a column in
+  common. Likewise the lesser x is to the left (`p_column_before`, s03 and s04).
+  In the image's terms, "a above b" is a before b on y and neither before the
+  other on x; "a left of b" is a before b on x and neither before the other on
+  y. On top of (`p_on_top`, s05, and "under", s06) is the first with any touching;
+  next to (`p_next_to`, s07) is touching across x.
+- Nothing reads the relations in the model (point 3).
+
+### 43.4 The certificates, as printed
+
+From the development runs (`pytest -s`) on the code as it stands. The bounded
+run's outcomes are in 43.6. The model is the scene model of step C (the echo
+test's text model with `sceneShape` `8 8 8`, widths 64 and 64), eager
+reading; an image is presented until it is known with
+`test_item16_scene_field.known`. The output is read by `model.understand` and
+`reconstructModalities`, in eval mode, with no gradient.
+
+- **F1, an image out.** A thing of three places and a lone pixel:
+  `F1 [[1, 1, 0, 51], [2, 1, 0, 128], [3, 1, 0, 51], [5, 5, 0, 200]]: out [(9, 0.2), (10, 0.502), (11, 0.2), (45, 0.7843)]; centroids [(9, 0.2), (10, 0.502), (11, 0.2), (45, 0.7843)]; felt [(9, 0.2), (10, 0.502), (11, 0.2), (45, 0.7843)]; thing's concepts [100], from them alone [(9, 0.2), (10, 0.502), (11, 0.2)]`.
+  Each pair is (place of the box, intensity). The output equals the centroids
+  at all 512 places (`torch.equal`). From the thing's concept alone (the
+  carrier's evidence kept for it only) the thing's three places come out at
+  their centroids and the lone pixel does not.
+- **F2, both out.** Category 2's first row:
+  `F2 {'text': 'this is eight.', 'scene': [[3, 2, 0, 200]]}: words out 'this is eight.', without the image 'this is eight.'; image out [(19, 0.7843)], felt [(19, 0.7843)]; without the image, image out ()`.
+- **F3, none.** `F3 a row with scene null: image out (); an empty image: (512,) places, 0 lit; a batch of [[5, 5, 0, 200]] and a row with no image: [[(45, 0.7843)], None]`.
+  The pair is the image's field given to two rows, the second's readings in
+  the box made the empty brackets a `null` row has (43.7, 3).
+- **F4, from the field.** `F4 [[1, 1, 0, 51], [2, 1, 0, 128], [3, 1, 0, 51], [5, 5, 0, 200]]: out [(9, 0.2), (10, 0.502), (11, 0.2), (45, 0.7843)]; with the field's evidence at nothing 0 of 512 places lit`.
+  The understanding is the same, its `image_field` with its evidence zeroed.
+
+G1 to G3 build each image's bank as the image's reader does (`value_bank` as
+`image_bank` makes it, `with_things` at `architecture.intensityWhereWidth`),
+on the scene model's box, in a table of basic percepts of its own as E8 does.
+Relations are printed as (for, against) on x, y, z.
+
+- **G1, order on an axis.** `G1 [(1, 1, 0), (2, 1, 0)] and [(4, 3, 2)]: before on x, y, z (for, against) [[1.0, 0.0], [1.0, 0.0], [1.0, 0.0]], the other way round [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]; [(1, 1, 0), (2, 1, 0), (3, 1, 0)] and [(2, 4, 0)], overlapping on x: [[0.0, 1.0], [1.0, 0.0], [0.0, 1.0]], the other way round [[0.0, 1.0], [0.0, 1.0], [0.0, 1.0]]`.
+  Neither is before the other on x where their extents overlap, nor on z
+  where they share it.
+- **G2, touching.** Image `[[1, 1, 0, 51], [2, 1, 0, 128], [2, 2, 0, 51], [2, 2, 1, 51], [4, 1, 0, 200], [5, 2, 0, 200]]`
+  (one thing of four places and two lone pixels), touching across x, y, z,
+  each way round alike:
+
+  | Pair | Touching (x, y, z) |
+  |---|---|
+  | side on x, `(1,1,0)` and `(2,1,0)` | `[1,0] [0,1] [0,1]` |
+  | side on y, `(2,1,0)` and `(2,2,0)` | `[0,1] [1,0] [0,1]` |
+  | side on z, `(2,2,0)` and `(2,2,1)` | `[0,1] [0,1] [1,0]` |
+  | a place apart, `(2,1,0)` and `(4,1,0)` | `[0,1] [0,1] [0,1]` |
+  | at a corner, `(4,1,0)` and `(5,2,0)` | `[0,1] [0,1] [0,1]` |
+  | the thing and its pixel `(1,1,0)` | `[0,1] [0,1] [0,1]` |
+
+  Places that touch by a side are one thing of the bank, so the things that
+  share a side are its pixels, things of one place (43.7, 5).
+- **G3, the corpus.** `G3 the frozen corpus: 909 images, 909 relations checked (by predicate, true and false: {'on_top': [80, 10], 'row_before': [395, 292], 'column_before': [73, 13], 'next_to': [41, 5]}); 406 of them with the two in one thing of the bank, read by its pixels; disagreeing 0 []`.
+  - **Which rows.** Every line of every `data/felt/category-NN-*.jsonl`, every
+    split; every meaning whose predicate is `row_before` (above, below),
+    `column_before` (to the left of, to the right of), `on_top` (on top of,
+    under) or `next_to`, whose entry has an image. They are in categories 14,
+    17 and 25; the inference split's rows have no image. 909 meanings, each
+    on an image of its own (909 distinct row and entry): 589 recorded true,
+    320 false.
+  - **The two things** are the meaning's slots `a` and `b` (every frame of
+    these predicates has the arguments `a, b`; a wh question's slot holds its
+    answer, so the recorded truth is of the slots).
+  - **How a meaning's thing is mapped to the image's things, by their
+    values.** A thing of the corpus is the places of one value
+    (`frame_of`, `value_of(steps)`). Each thing of the bank (each pixel, and
+    each thing of several places) is given the set of values of its pixels,
+    `value_of(round(intensity × 255))`; a meaning's thing `v` is every thing
+    of the bank whose set is `{v}`. A thing of the bank that holds two values
+    (two things of the corpus touching, which the reader joins into one run)
+    is mapped to neither; its pixels are.
+  - **The relation read**, from the lanes over every pair of a's things and
+    b's things: before on an axis is before for every pair; sharing a line
+    of the other axis is, for some pair, neither before the other on it;
+    touching is touching for some pair. Above (`row_before`): before on y and
+    sharing x. Left of (`column_before`): before on x and sharing y. On top
+    of: above, and touching across any axis. Next to: touching across x.
+  - All 909 agree with the recorded truth.
+
+### 43.5 Tests ported
+
+None. No assertion of an existing test was made false by a point of §42, on
+the run of 43.6. No assertion was weakened, skipped or marked, and no seed was
+chosen. The text modality's output is unchanged (F2; `test_item17_echo.py`
+and `test_item18_scalar.py` pass).
+
+### 43.6 The run
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py`
+with the 11 selectors of `tmp/item1-6/out_run_files.txt` (§42.3 step 5's
+list; `test_item18_scalar.py` is the one existing test file that names
+`reconstructModalities`), logged in `tmp/item1-6/out_run1.log`.
+
+**`Result: passed, exit 0; 72/72 cases completed.`**
+`output/tests/20261124-154642-148ace/result.json`, 443 s: 70 passed, 2
+skipped.
+
+- **Both stopping gates passed**, and `test_mm_xor.py` whole, the seven echo
+  tests, E1 to E8, V1 to V7 and V9 to V12, S1 to S4, C1 to C5, F1 to F4,
+  G1 to G3, and `test_item18_scalar.py` whole.
+- The two skipped are `test_item18_recognition.py`'s two `test_90_*`, skipped
+  in the sweep.
+- Workers peaked at 4.01, 4.44 and 1.54 GiB, under the 8 GiB cap.
+
+### 43.7 What in §42 could not be built as written, and what was built
+
+1. *"The field the understanding ends with"* (§42.1). The image is read only
+   at the first sentence's opening, into that opening's field, so the image is
+   read from the first sentence's opened field (`_sentence_open_fields[0]`),
+   carried as `image_field`. The scalar's carrier takes the last sentence's
+   field; with one sentence the two are one. With several sentences the last
+   field holds no reading of the image, and reading from it would give an
+   empty image. *Marked.*
+2. *Whether the understanding carries an image's field* is decided by the
+   test the opening's charge makes (`ImagePercepts.imaged`: some row of the
+   batch has a `scene`). This is no intensity from the input; the image itself
+   comes from the field alone. *Marked.*
+3. *A row with no image in a batch with an image* gives `None`, told from the
+   field (no reading in the box). The test model reads one stream, so F3
+   checks this on the image's field given to two rows, as C5 does (33.7, 4).
+   A batch in which no row has an image gives `image=()`, as `scalar=()`.
+   *Marked.*
+4. *What comes out* is `put_back`, detached: it reads whether a concept reads
+   for (33.7, 1), so an image comes out at its centroids exactly once its
+   concepts read. F4's "nothing comes out" is an image of zeros: with the
+   evidence at nothing no concept reads for.
+5. *Touching by a side* (§42.2, point 1). Two places of the bank that touch
+   by a side are one run, one thing (step E), so two things of several places
+   never touch; only pixels, things of one place, touch, or a lone pixel and
+   a thing where `intensityWhereWidth` keeps a run from being a thing.
+   **Built:** the things are every pixel and every thing of several places,
+   and touching is read across each axis (x, y, z) separately rather than as
+   one relation; touching on any axis is their greatest. A pair with a place in
+   common (a thing and its own pixel) does not touch. *Marked.*
+6. *The lanes are crisp*, 0 or 1: places are whole numbers, read exactly. No
+   reading by bounds through the wires is built; nothing reads the relations
+   yet (point 3). *Marked.*
+7. *Above, the corpus's.* The corpus's "above" is not before on y alone: it
+   asks a column in common (`p_row_before`), and left of a row in common
+   (`p_column_before`). These are composed in G3 from the relations (before on
+   one axis, and neither before the other on the other axis), not built as
+   relations of their own. On top of and next to likewise. *Marked.*
+8. *G3 counts each meaning once*; each of the 909 meanings is on an image of
+   its own.
+9. *Nothing named in code by a word.* The relations are named by axis and
+   order (before, touching, the axis index); the words for them are in the
+   test's docstrings only, as the corpus's frames have them.
+
+### 43.9 Review of steps F and G (Claude, 2026-11-24)
+
+**Accepted.** Claude ran both stopping gates, `test_item16_out.py`,
+`test_item16_relations.py`, `test_item16_things.py`,
+`test_item16_scene_field.py` and `test_item18_scalar.py`: 28 of 28
+passed.
+
+- *The image comes out of the field of the sentence it was read with,*
+  the first of a presentation. With several sentences it is not the last
+  field, since nothing carries an image across sentences yet; that is the
+  succession the corpus's later categories ask for and is not built.
+- *The relations agree with the corpus in all 909 recorded meanings*
+  (categories 14, 17 and 25). The corpus's "above" is before on y and in
+  the same column, and "left of" before on x and in the same row; the
+  model's relations are the two orders and touching, of which the
+  corpus's words are made.
+- *Two things that touch are one thing of the bank,* so touching is read
+  between pixels. "Next to" of two named things is then within one thing;
+  whether two things that touch stay two is a question for the round that
+  names them.
+- *Nothing reads the relations.* The words, a look that takes two things
+  and category 14's questions wait for item 1.4.
+

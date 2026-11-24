@@ -8529,6 +8529,12 @@ class BasicModel(BaseModel):
             carriers['scalar_field'] = replace(field,evidence=field.evidence.clone())
             carriers['scalar_percepts'] = tuple(getattr(self, '_scalar_present', {}).get(batch, {}).get('percept')
                 for batch in range(field.evidence.shape[1]))
+        from ImagePercepts import imaged
+        if imaged(self, 0):
+            # The field the image was read into, the first sentence's.
+            from dataclasses import replace
+            field = scalar_fields[0]
+            carriers['image_field'] = replace(field, evidence=field.evidence.clone())
         return Understanding(
             perceptual_context=perceptual,
             conceptual_state=conceptual,
@@ -8573,12 +8579,17 @@ class BasicModel(BaseModel):
         return understanding
 
     def reconstructModalities(self, understanding):
-        """Return the common input inverse and its optional scalar modality."""
+        """Return the common input inverse, its optional scalar modality, and
+        the image read from the field the image was read into
+        (:func:`ImagePercepts.given`)."""
         from ScalarPercepts import decode
+        from ImagePercepts import given
         field = understanding.reconstruction_carriers.get('scalar_field')
+        image = understanding.reconstruction_carriers.get('image_field')
         return dict(input=self.reverseReconstruct(understanding)[0],
                     scalar=() if field is None else decode(self._concept_owner(), field,
-                        understanding.reconstruction_carriers.get('scalar_percepts', ())))
+                        understanding.reconstruction_carriers.get('scalar_percepts', ())),
+                    image=() if image is None else given(self, image))
 
     @_sentence_query_mask
     def reverseReconstruct(self, understanding, *, target=None, train=False, registry=None):

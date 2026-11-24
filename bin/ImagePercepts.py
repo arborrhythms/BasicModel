@@ -227,6 +227,73 @@ def put_back(model, field):
     return torch.where(by_pixels & by_things, torch.minimum(pixels, thing), torch.where(by_things, thing, pixels))
 
 
+def given(model, field):
+    """The image given out, by row: the intensities over the box ``[places
+    of the box]`` put back from ``field`` alone (:func:`put_back`), or
+    ``None`` for a row with no reading in the box, which had no image."""
+    lo, hi = model.where_registry.slices['scene']
+    where = field.where
+    has = ((where[..., 0] >= lo) & (where[..., 1] <= hi) & (where[..., 1] > where[..., 0])).any(-1)
+    back = put_back(model, field).detach()
+    return tuple(image if bool(held) else None for image, held in zip(back, has.tolist()))
+
+
+def relations(bank):
+    """The relations of place among the things of an image's bank: each
+    thing of several places (:meth:`BasicPercepts.BasicPercepts.with_things`)
+    and each pixel, a thing of one place. For every ordered pair of two
+    things and each axis of the box: whether the first lies wholly before the
+    second on that axis, its greatest coordinate there less than the other's
+    least; and whether they touch by a side across that axis, a place of
+    each one apart on that axis and at one on the others, with no place in
+    common. Each on two lanes, for and against.
+
+    Returns each thing's occurrence ``[B, T]`` (``-1`` where none), and the
+    lanes ``[B, T, T, 2, axes, 2]``: the first thing, the second, the
+    relation (before, touching), the axis in the box's order, for and
+    against; nothing where either is none or the two are one."""
+    registry = bank.registry
+    B = bank.token.shape[0]
+    device = bank.span.device
+    real = bank.span[..., 1] > bank.span[..., 0]
+    found = []
+    for b in range(B):
+        composite = dict(bank.things[b]) if bank.things else {}
+        pixels = [o for o in real[b].nonzero().flatten().tolist() if o not in composite]
+        at = dict(zip(pixels, registry.place(bank.span[b, pixels, 0].cpu()).tolist())) if pixels else {}
+        found.append([(o, [at[o]]) for o in pixels]
+                     + [(o, [at[p] for _, p in members]) for o, members in composite.items()])
+    T = max(map(len, found), default=0)
+    D = len(registry.axes)
+    occurrence = torch.full((B, T), -1, dtype=torch.long, device=device)
+    lanes = torch.zeros(B, T, T, 2, D, 2, device=device)
+    for b, things in enumerate(found):
+        if not things:
+            continue
+        n = len(things)
+        occurrence[b, :n] = torch.tensor([o for o, _ in things], device=device)
+        places = sorted({tuple(p) for _, held in things for p in held})
+        index = {p: i for i, p in enumerate(places)}
+        P = torch.tensor(places, device=device)                                       # [N, D]
+        holds = torch.zeros(n, len(places), device=device)                            # [n, N]
+        for t, (_, held) in enumerate(things):
+            holds[t, [index[tuple(p)] for p in held]] = 1
+        big = torch.iinfo(torch.long).max
+        low = torch.where(holds.bool()[..., None], P[None], big).amin(1)              # [n, D]
+        high = torch.where(holds.bool()[..., None], P[None], -big).amax(1)
+        before = high[:, None] < low[None]                                            # [n, n, D]
+        apart = (P[:, None] - P[None]).abs()                                          # [N, N, D]
+        one = torch.eye(D, dtype=torch.bool, device=device)
+        side = ((apart[:, :, None] == one.long()).all(-1)).float()                    # [N, N, D]
+        touching = torch.einsum('tn,nmd,um->tud', holds, side, holds) > 0
+        shared = (holds @ holds.T) > 0
+        touching = touching & ~shared[..., None]
+        relation = torch.stack((before, touching), 2).float()                         # [n, n, 2, D]
+        pair = ~torch.eye(n, dtype=torch.bool, device=device)
+        lanes[b, :n, :n] = torch.stack((relation, 1 - relation), -1) * pair[..., None, None, None]
+    return occurrence, lanes
+
+
 def felt(model, device, dtype):
     """Each row's image over the box, ``[B, places of the box]``: a pixel's
     value at its place, nothing where none is; and whether the row has an
