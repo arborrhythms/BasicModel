@@ -21033,6 +21033,18 @@ class BasicModel(BaseModel):
                              exclusions=(None if components is None else ids.new_tensor(
                                  components.reference_close.exclusion_pairs()).reshape(-1, 3)))
 
+    @property
+    def _last_sentence_field(self):
+        from functools import partial
+        report = getattr(self, '_sentence_field_report', None)
+        if isinstance(report, partial):
+            self._sentence_field_report = report = report()
+        return report
+
+    @_last_sentence_field.setter
+    def _last_sentence_field(self, value):
+        self._sentence_field_report = value
+
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word,
                                 *, incoming_trust):
@@ -21315,7 +21327,7 @@ class BasicModel(BaseModel):
                     if field is not None:
                         field.remember(index, payload[7].reshape(B), current_lang, closing=closing)
                     current_stm = symbol_field.arrive(current_stm, payload[7].reshape(B),
-                        lanes=None if field is None else field.placements()['lanes'].clamp(0,1))
+                        lanes=None if field is None else field.slot_lanes().clamp(0,1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
                 path_forecast = word_forecast.begin_path(reading_walk)
@@ -21588,9 +21600,11 @@ class BasicModel(BaseModel):
                             meter.require(kind, units)
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
-                reports = [field.report() for field in field_trials]
-                self._last_sentence_field = dict(trials=reports,
-                    wins=wins.detach(),selected=selected.detach(),iterations=iterations.detach())
+                from functools import partial
+                from SentenceAttention import report_trials
+                self._last_sentence_field = partial(report_trials,
+                    [field.report_snapshot() for field in field_trials],
+                    wins.detach(), selected.detach(), iterations.detach())
             if look_trials[0] is not None:
                 self._sentence_look_fields = dict(getattr(self,'_sentence_look_fields',{}))
                 self._sentence_look_fields[sid] = tuple(look_trials[index].fields for index in winner_indices)

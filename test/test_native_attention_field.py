@@ -29,10 +29,20 @@ def test_native_reads_one_supported_word_and_charges_only_kept_trial(tmp_path, m
         # MTM nominates a form on recurrence (sigma-pi §21, rule 20).
         from nomination_fixtures import nominated_forms
         nominated_forms(model, ['alpha alpha', 'beta beta'])
+        import RowTime
+        interval_reads = []
+        original_intervals = RowTime.subintervals
+        def measured_intervals(*args):
+            interval_reads.append(1)
+            return original_intervals(*args)
+        monkeypatch.setattr(RowTime, 'subintervals', measured_intervals)
         inputs = model.inputSpace.prepInput(['alpha alpha', 'beta beta'])
         model.runBatch(train=True, optimizer=model.getOptimizer(lr=.003), batchSize=2,
                        batch_override=(inputs, torch.empty(2, 0)))
+        assert not interval_reads
         report = model._last_sentence_field
+        assert len(interval_reads) == len(report['trials'])
+        assert model._last_sentence_field is report
         assert len(report['trials']) == 2
         for trial in report['trials']:
             assert (trial['when'][:, 0, 1] <= trial['when'][:, 1, 0]).all()

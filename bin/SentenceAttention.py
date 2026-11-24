@@ -1,4 +1,6 @@
 """Sentence-local record of the words grammar has interpreted."""
+from functools import cached_property, partial
+
 import torch
 from AttentionObjective import tolerate_heterogeneity
 
@@ -11,11 +13,8 @@ class SentenceField:
         live = self.scope.index_select(1, self.positions)
         B, W = live.shape
         from PrependedSymbols import word_view
-        from RowTime import subintervals
-        bands = word_view(model.inputSpace, 'symbol_when')
-        onset = model.when_encoding.decode_index(bands.index_select(1, self.positions))
-        rank = live.long().cumsum(-1) - 1
-        self.when = subintervals(onset, rank, live.sum(-1).clamp_min(1)[:, None])
+        bands = word_view(model.inputSpace, 'symbol_when').index_select(1, self.positions)
+        self._time_intervals = partial(word_intervals, model.when_encoding, bands.detach(), live)
         like = model.inputSpace._ar_embedded_N
         self.where = like.new_zeros(B, W, 2)
         self.support = like.new_zeros(B, W, 1, 2)
@@ -26,6 +25,10 @@ class SentenceField:
         self.support_window = like.new_zeros(B, model.conceptualSpace.stm.capacity, W)
         self.reads = []
         self.parts = self.wholes = None
+
+    @cached_property
+    def when(self):
+        return self._time_intervals()
 
     def arrive(self, index, payload, native, rows):
         """Retain only the interpreted occurrence's own evidence and address."""
@@ -120,21 +123,10 @@ class SentenceField:
         The source mask indexes the immutable candidate support bank. Binary
         composition joins witnesses; a later read never re-places them.
         """
-        live = self.support_window.bool()
-        occupied = live.any(-1)
-        result = {}
-        for name, bands in (('where', self.where), ('when', self.when)):
-            if live.shape[-1] == 0:
-                # A presentation with no word (a scalar alone) still closes.
-                # No slot holds a word's witness, so nothing is placed.
-                result[name] = bands.new_zeros(*occupied.shape, 2)
-                continue
-            mask = live.to(bands.device)
-            low = torch.where(mask, bands[:, None, :, 0], torch.inf).amin(-1)
-            high = torch.where(mask, bands[:, None, :, 1], -torch.inf).amax(-1)
-            result[name] = torch.where(occupied[..., None].to(bands.device), torch.stack((low, high), -1), 0.)
-        result['lanes'] = torch.einsum('bkw,bwf->bkf', self.support_window, self.support.sum(-2))
-        return result
+        return slot_placements(self.where, self.when, self.support_window, self.support)
+
+    def slot_lanes(self):
+        return slot_lanes(self.support_window, self.support)
 
     def source_positions(self, row, *, valid=None):
         """Source columns of the accepted arrivals in this stream's read order."""
@@ -170,13 +162,54 @@ class SentenceField:
                 compact[b, :len(order)] = recovered[b, order]
         return compact, self.iterations
 
+    def report_snapshot(self):
+        """Hold the trial's detached witnesses for inspection after close."""
+        evidence = dict(iterations=self.iterations.detach(), admission=self.admission.detach(),
+            eligible=self.valid.detach(), where=self.where.detach(), support=self.support.detach(),
+            positions=self.positions.detach(), identities=self.identities.detach(),
+            reads=[{key: value.detach() for key, value in entry.items()} for entry in self.reads],
+            slot_support=self.support_window.detach())
+        return partial(trial_report, evidence, self._time_intervals)
+
     def report(self):
-        return dict(iterations=self.iterations.detach(),admission=self.admission.detach(),
-            eligible=self.valid.detach(),where=self.where.detach(),when=self.when.detach(),
-            support=self.support.detach(),positions=self.positions.detach(),identities=self.identities.detach(),
-            reads=[{key:value.detach() for key,value in entry.items()} for entry in self.reads],
-            slot_support=self.support_window.detach(),
-            slot_stamps={key:value.detach() for key,value in self.placements().items()})
+        return self.report_snapshot()()
+
+
+def word_intervals(encoder, bands, live):
+    from RowTime import subintervals
+    onset = encoder.decode_index(bands)
+    return subintervals(onset, live.long().cumsum(-1) - 1, live.sum(-1).clamp_min(1)[:, None])
+
+
+def slot_lanes(window, support):
+    return torch.einsum('bkw,bwf->bkf', window, support.sum(-2))
+
+
+def slot_placements(where, when, window, support):
+    live = window.bool()
+    occupied = live.any(-1)
+    result = {}
+    for name, bands in (('where', where), ('when', when)):
+        if not live.shape[-1]:
+            result[name] = bands.new_zeros(*occupied.shape, 2)
+            continue
+        mask = live.to(bands.device)
+        low = torch.where(mask, bands[:, None, :, 0], torch.inf).amin(-1)
+        high = torch.where(mask, bands[:, None, :, 1], -torch.inf).amax(-1)
+        result[name] = torch.where(occupied[..., None].to(bands.device), torch.stack((low, high), -1), 0.)
+    result['lanes'] = slot_lanes(window, support)
+    return result
+
+
+def trial_report(evidence, time_intervals):
+    when = time_intervals()
+    stamps = slot_placements(evidence['where'], when, evidence['slot_support'], evidence['support'])
+    return dict(evidence, when=when, slot_stamps=stamps)
+
+
+def report_trials(snapshots, wins, selected, iterations):
+    return dict(trials=[snapshot() for snapshot in snapshots], wins=wins,
+                selected=selected, iterations=iterations)
 
 
 def masked_payload(payload, rows, *, closing=False):

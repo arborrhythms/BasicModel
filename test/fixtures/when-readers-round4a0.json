@@ -470,18 +470,6 @@
       "reads": "absolute"
     },
     {
-      "file": "bin/SentenceAttention.py",
-      "function": "SentenceField.report",
-      "attributes": [
-        "when"
-      ],
-      "role": "attention field read",
-      "previous_absolute_time": false,
-      "now": "Writes, transports, decodes, reports or identifies a model-time band; no learned scorer receives its absolute phase.",
-      "line": 157,
-      "reads": "absolute"
-    },
-    {
       "file": "bin/SentenceField.py",
       "function": "descended",
       "attributes": [
