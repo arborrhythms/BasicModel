@@ -348,16 +348,18 @@ class WordIdentity(nn.Module):
             self._observed_repairs = previous
 
     def _repair_coordinates(self, atom):
-        if getattr(self, '_observed_repairs', None) is not None and atom in self.atoms:
+        if getattr(self, '_observed_repairs', None) is not None:
+            if atom not in self.atoms:
+                return torch.zeros(self.total, device='cpu')
             return torch.cat((self.atom_code(atom), self.catalog_code(atom) if self.property_width
                               else self.atom_code(atom)[:0]))
         return None
 
-    def _record_coordinates(self, atom, before, witnesses):
+    def _record_coordinates(self, atom, before, witnesses, *, containment):
         if before is not None:
             repairs, source = self._observed_repairs
             gained = (self._repair_coordinates(atom) > before)
-            repairs.append((atom, gained, (source, *witnesses)))
+            repairs.append((atom, gained, (source, *witnesses), containment))
 
     def block_part_visibility(self, prior_count, observed, streams, device, *, sentence_starts=None, repairs=(), prior_forms=None):
         """Which independent pages witnessed each new part before block consolidation."""
@@ -383,38 +385,38 @@ class WordIdentity(nn.Module):
             born.append((self.atoms[('part', run)], starts))
         # A form can become a nearest holder even if its run was already
         # an admitted part. Newly linked word rows have their own opening.
-        if prior_forms is not None:
-            for raw in self._ordered[prior_forms:]:
-                name = text_of(raw)
-                witnesses = ([observed[name]] if name in observed else
-                             [seen for word, seen in observed.items() if name in word])
-                starts = [min((seen[b] for seen in witnesses if b in seen), default=unavailable)
-                          for b in range(streams)]
-                born.append((self.word_rows[raw], starts))
-                runs.append(raw)
+        forms = (self._ordered[prior_forms:] if prior_forms is not None else
+                 [bytes_of(name) for name in observed if bytes_of(name) in self.word_rows])
+        for raw in forms:
+            name = text_of(raw)
+            witnesses = ([observed[name]] if name in observed else
+                         [seen for word, seen in observed.items() if name in word])
+            starts = [min((seen[b] for seen in witnesses if b in seen), default=unavailable)
+                      for b in range(streams)]
+            born.append((self.word_rows[raw], starts))
+            runs.append(raw)
         born.sort()
-        from BlockPercepts import BlockParts
+        from bisect import bisect_right
+        from BlockPercepts import BlockParts, repaired_parts
         starts = sentence_starts if sentence_starts is not None else [[0]] * streams
         count = max(1, max(map(len, starts)))
-        # Repair coordinates of an established atom have their own witnesses.
-        # A page sees the coordinate when it has encountered all of them.
-        edits = {}
-        for atom, gained, witnesses in repairs:
-            row = self.atoms[atom]
-            if row not in edits:
-                edits[row] = torch.zeros(streams, self.total, dtype=torch.long, device='cpu')
-                runs.append(bytes_of(atom[1]))
-            active = [max((observed[text_of(w)].get(b, unavailable)
-                           for w in witnesses if text_of(w) in observed), default=0)
-                      for b in range(streams)]
-            edits[row] = torch.where(gained[None], torch.tensor(active, device='cpu')[:, None], edits[row])
-        repair_rows = sorted(edits)
-        return BlockParts(torch.tensor([part for part, _ in born], dtype=torch.long, device=device),
-                          torch.tensor([at for _, at in born], dtype=torch.long, device=device).T,
-                          torch.tensor([list(row) + [unavailable] * (count - len(row)) for row in starts],
-                                       dtype=torch.long, device=device), tuple(runs),
-                          torch.tensor(repair_rows, dtype=torch.long, device=device) if edits else None,
-                          torch.stack([edits[row] for row in repair_rows], 1).to(device) if edits else None)
+        def opening(stream, offset):
+            if offset == unavailable:
+                return unavailable
+            limits = starts[stream]
+            return limits[max(0, bisect_right(limits, offset) - 1)] if limits else 0
+
+        rows = torch.tensor([part for part, _ in born], dtype=torch.long, device=device)
+        times = torch.tensor([[opening(b, at) for b, at in enumerate(offsets)] for _, offsets in born],
+                             dtype=torch.long, device=device).reshape(-1, streams).T
+        starts = torch.tensor([list(r) + [unavailable] * (count - len(r)) for r in starts],
+                              dtype=torch.long, device=device)
+        runs.extend(bytes_of(atom[1]) for atom, *_ in repairs)
+        block = BlockParts(rows, times, starts, tuple(dict.fromkeys(runs)))
+        if repairs:
+            from dataclasses import replace
+            return replace(block, repairs=repaired_parts(self, block, born, observed, repairs))
+        return block
 
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""
@@ -787,7 +789,7 @@ class WordIdentity(nn.Module):
                                    seen(right, override=(atom, bits))):
                     before = self._repair_coordinates(atom)
                     self._atom(atom, bits)
-                    self._record_coordinates(atom, before, (left, right))
+                    self._record_coordinates(atom, before, (left, right), containment=False)
                     changed.append(atom)
                     self.revision += 1
                     return self._holders(changed)
@@ -967,7 +969,7 @@ class WordIdentity(nn.Module):
             self._atom(atom)
             for word in touched:
                 self.words[word] = self.words[word] + (atom,)
-        self._record_coordinates(atom, before, (inner, *outers))
+        self._record_coordinates(atom, before, (inner, *outers), containment=True)
         index = torch.tensor([order(word) for word in touched], device='cpu')
         old = self._packed[index]
         new = old | self._pack(value)[0]

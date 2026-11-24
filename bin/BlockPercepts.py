@@ -11,8 +11,7 @@ class BlockParts:
     starts: torch.Tensor          # sorted sentence starts per stream, padded at the right
     runs: tuple                   # admitted names used by the existing holder links
 
-    repair_rows: torch.Tensor | None = None
-    coordinate_starts: torch.Tensor | None = None  # [stream, repaired part, coordinate]
+    repairs: 'RowRevisions | None' = None
 
     def openings(self, rows):
         if not len(self.rows):
@@ -20,18 +19,14 @@ class BlockParts:
         at = torch.searchsorted(self.rows, rows.contiguous()).clamp_max(len(self.rows) - 1)
         return torch.where(self.rows[at] == rows, self.available[:, at], 0)
 
-    def coordinate_openings(self, rows, start, width):
-        if self.repair_rows is None:
-            return None
-        at = torch.searchsorted(self.repair_rows, rows.contiguous()).clamp_max(len(self.repair_rows) - 1)
-        starts = self.coordinate_starts[:, at, start:start + width]
-        return torch.where((self.repair_rows[at] == rows)[None, :, None], starts, 0)
-
-    def values(self, rows, codes, start):
-        openings = self.coordinate_openings(rows, start, codes.shape[-1])
-        if openings is None:
+    def values(self, rows, codes, start, offsets=None):
+        if self.repairs is None:
             return codes
-        return torch.where(self.starts[..., None, None] >= openings[:, None], codes, 0.)
+        changes = self.repairs
+        at = torch.searchsorted(changes.indices, rows.contiguous()).clamp_max(len(changes.indices) - 1)
+        delta = changes.codes if offsets is None else changes.at(offsets)
+        selected = delta[at, ..., start:start + codes.shape[-1]].permute(1, 2, 0, 3)
+        return codes + torch.where((changes.indices[at] == rows)[:, None], selected, 0.).to(codes)
 
 
 @dataclass(frozen=True)
@@ -182,3 +177,101 @@ def revisions(basic, rows, block):
     if not indices:
         return None
     return RowRevisions(tuple(rows[i] for i in indices), block.rows.new_tensor(indices), block.starts, torch.stack(codes))
+
+
+@torch.no_grad()
+def repaired_parts(identity, block, born, observed, repairs):
+    """Re-evaluate containment repairs on each page's actual admission prefix.
+
+    A later admission can select a different coordinate even when it repairs
+    exactly the same part. The signed difference from the consolidated atom
+    is needed on both the occurrence and the promoted Pi sides.
+    """
+    from WordIdentity import bytes_of, text_of, distinguishing_coordinates
+    from bisect import bisect_right
+    device = block.rows.device
+    atoms = tuple(identity.atoms)
+    words = identity._ordered
+    seat = {a: i for i, a in enumerate(atoms)}
+    changed = sorted({a for a, *_ in repairs}, key=identity.atoms.__getitem__)
+    indices = block.rows.new_tensor([identity.atoms[a] for a in changed])
+    atom_ids = block.rows.new_tensor([identity.atoms[a] for a in atoms])
+    word_ids = block.rows.new_tensor([identity.word_rows[w] for w in words])
+    end = torch.iinfo(torch.long).max
+    offsets = [sorted({seen[b] for seen in observed.values() if b in seen}) for b in range(len(block.starts))]
+    rank = {row: [bisect_right(steps, at) if at != end else end
+                  for steps, at in zip(offsets, starts)] for row, starts in born}
+    prior = (0,) * len(offsets)
+
+    def ranks(addresses):
+        return block.rows.new_tensor([rank.get(row, prior) for row in addresses]).T[:, None]
+
+    word_rank = ranks(identity.word_rows[w] for w in words)
+    atom_rank = ranks(identity.atoms[a] for a in atoms)
+    word_visible = block.starts[..., None] >= block.openings(word_ids)[:, None]
+    atom_visible = block.starts[..., None] >= block.openings(atom_ids)[:, None]
+    basis = torch.stack([identity.atom_code(a) for a in atoms])
+    if identity.property_width:
+        basis = torch.cat((basis, torch.stack([identity.catalog_code(a) for a in atoms])), -1)
+    basis = basis.to(device).bool()
+    initial = basis.clone()
+    use = identity.usage.to(device).clone()
+    bit_changes = []
+    for atom, gained, witnesses, containment in repairs:
+        gained = gained.to(device)
+        initial[seat[atom]] &= ~gained
+        if containment:
+            use -= gained.long()
+        else:
+            limits = [max((observed[text_of(w)].get(b, end) for w in witnesses if text_of(w) in observed),
+                          default=0) for b in range(len(offsets))]
+            step = [bisect_right(seq, at) if at != end else end for seq, at in zip(offsets, limits)]
+            bit_changes.append((seat[atom], gained, block.rows.new_tensor(step)))
+    state = initial.expand(*block.starts.shape, *initial.shape).clone()
+    edges = [(w, seat[a]) for w, word in enumerate(words) for a in identity.words[word]]
+    word_at, atom_at = block.rows.new_tensor(edges).T
+    lengths = block.rows.new_tensor(list(map(len, words)))
+    targets = {}
+    for atom, _, _, containment in repairs:
+        if containment and atom not in targets:
+            inner = bytes_of(atom[1])
+            holders = identity.holders[inner]
+            holds = block.rows.new_tensor([w in holders for w in words], dtype=torch.bool)
+            extras = [(identity.order[h], [seat[a] for a in identity.words[h]
+                       if a not in identity.words[inner] and atom[1] not in a[1]]) for h in sorted(holders)]
+            targets[atom] = identity.order[inner], holds, identity._kept(inner).to(device), extras
+
+    for step in range(1, max(map(len, offsets), default=0) + 1):
+        live = word_visible & (word_rank <= step)
+        present = atom_visible & (atom_rank <= step)
+        for member, gained, first in bit_changes:
+            reached = (first[:, None] <= step) & present[..., member]
+            state[..., member, :] |= reached[..., None] & gained
+        for atom, (i, holders, retained, extras) in targets.items():
+            current = state & present[..., None]
+            shape = (*live.shape, identity.total)
+            codes = torch.zeros(shape, dtype=torch.int32, device=device)
+            chunk = max(1, (1 << 22) // (block.starts.numel() * identity.total))
+            for group, parts in zip(word_at.split(chunk), atom_at.split(chunk)):
+                index = group[:, None].expand(*block.starts.shape, len(group), identity.total)
+                codes.scatter_reduce_(-2, index, current[..., parts, :].int(), 'amax')
+            codes = codes.bool()
+            own = codes[..., i:i+1, :]
+            accidents = (~(own & ~codes).any(-1) & live & live[..., i, None] & ~holders)
+            accidents[..., i] = False
+            added = (live[..., None] & holders[:, None] & ~codes).sum(-2)
+            nearest = torch.where(live & holders, lengths, end).amin(-1)
+            opposed = torch.zeros_like(own[..., 0, :])
+            for h, other in extras:
+                if other:
+                    extra = current[..., other, :identity.width].any(-2)
+                    opposed[..., :identity.width] |= (live[..., h] & (lengths[h] == nearest))[..., None] & extra
+            given, outstanding = distinguishing_coordinates(~(own | codes), retained.expand_as(opposed),
+                                                             opposed, added, use, accidents)
+            # The shared rule leaves the part untouched if any outer is inseparable.
+            given = given & ~outstanding.any(-1, keepdim=True)
+            state[..., seat[atom], :] |= given
+            use = use + given.long()
+    places = [seat[a] for a in changed]
+    delta = (state[..., places, :].float() - basis[places].float()).permute(2, 0, 1, 3)
+    return RowRevisions(tuple(identity.atoms[a] for a in changed), indices, block.starts, delta)

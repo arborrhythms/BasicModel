@@ -11385,7 +11385,6 @@ class PartSpace(Space):
         prior_forms = len(identity.words) if identity is not None else 0
         sentence_rows = getattr(self, '_staged_sentence_rows', None)
         track_parts = batch > 1 or (sentence_rows is not None and any(len(row) > 1 for row in sentence_rows))
-        from bisect import bisect_right
         sentence_starts = None if sentence_rows is None else [
             InputSpace.packed_sentence_starts(row) for row in sentence_rows]
         new_forms = {}
@@ -11393,10 +11392,8 @@ class PartSpace(Space):
         def observe_new_form(unit, stream, offset):
             if track_parts:
                 from WordIdentity import text_of
-                starts = None if sentence_starts is None else sentence_starts[stream]
-                opening = 0 if starts is None else starts[bisect_right(starts, offset) - 1]
                 readers = new_forms.setdefault(text_of(unit), {})
-                readers[stream] = min(readers.get(stream, opening), opening)
+                readers[stream] = min(readers.get(stream, offset), offset)
 
         teaching_marker = identity is not None and identity._marker_pattern is not None
         if teaching_marker and admit:

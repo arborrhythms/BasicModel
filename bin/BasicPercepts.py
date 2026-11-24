@@ -424,7 +424,7 @@ def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
 
 
 def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False,
-                     available_from=None, coordinate_starts=None):
+                     available_from=None, block=None, addresses=None):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
     if not spellings:
@@ -439,9 +439,8 @@ def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elem
     joined = []
     for mask, places in zip(found.split(step, dim=1), spans.split(step, dim=1)):
         available = coordinates
-        if coordinate_starts is not None:
-            visible = places[..., 0, None, None] >= coordinate_starts[:, None]
-            available = torch.where(visible, coordinates, 0.)
+        if block is not None:
+            available = block.values(addresses, coordinates, 0, places[..., 0])
         joined.append(available.masked_fill(~mask[..., None], -torch.inf).amax(-2))
     joined = torch.cat(joined, dim=1)
     parts, tight = joined.split((part_codes.shape[-1], catalog.shape[-1]), dim=-1)
@@ -1272,8 +1271,7 @@ class BasicPercepts(nn.Module):
             parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog,
                                             escaped_elements=identity.escaped_elements(device),
                                             available_from=None if block_parts is None else block_parts.openings(rows),
-                                            coordinate_starts=None if block_parts is None else
-                                            block_parts.coordinate_openings(rows, 0, self.width))
+                                            block=block_parts, addresses=rows)
             codes[..., :self.identity_width] = parts
             held = torch.minimum(held, tight)
         elif identity is not None and O:

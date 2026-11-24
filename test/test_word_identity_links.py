@@ -439,7 +439,7 @@ def test_repaired_atom_coordinates_stay_with_their_witnesses_until_consolidation
         basis = basic.native._basis.lookup_rows(ids)[..., :identity.width]
         return torch.cat(occurrence_parts(surface, spans, spellings, basis, catalog,
                              available_from=None if block is None else block.openings(ids),
-                             coordinate_starts=None if block is None else block.coordinate_openings(ids, 0, basic.width)), -1)
+                             block=block, addresses=ids), -1)
 
     original = read()
     prior = len(identity.added)
@@ -493,3 +493,26 @@ def test_tensor_repair_selects_private_coordinates_and_reports_exhausted_holders
     given, remaining = distinguishing_coordinates(lacking, kept, opposed, torch.zeros_like(usage), usage, pending)
     assert given.tolist() == [[True, False, True], [False, True, True]]
     assert remaining.tolist() == [[False, False, False], [False, False, True]]
+
+
+def test_simultaneous_collision_repairs_match_separate_pages_even_outside_the_consolidated_code():
+    import torch
+    from BlockPercepts import revisions
+
+    prior = [b'aab', b'baa', b'bab']
+    pages = [(b'baba',), (b'baab',)]
+    isolated = []
+    for page in pages:
+        identity, basic, _, rows = coded(prior)
+        identity.observe_forms(page)
+        isolated.append(basic.bank_codes([rows[b'bab']])[0])
+    identity, basic, _, rows = coded(prior)
+    prior_parts, prior_forms = len(identity.added), len(identity.words)
+    edits = []
+    identity.observe_forms([w for page in pages for w in page], repairs=edits)
+    seen = {'baba': {0: 0}, 'baab': {1: 0}}
+    block = identity.block_part_visibility(prior_parts, seen, 2, basic.value_codes.device,
+                                           repairs=edits, prior_forms=prior_forms)
+    versions = revisions(basic, [rows[b'bab']], block).at(torch.zeros(2, 1, dtype=torch.long))[0, :, 0]
+    torch.testing.assert_close(versions, torch.stack(isolated), atol=0, rtol=0)
+    assert (isolated[1][0] > basic.bank_codes([rows[b'bab']])[0, 0]).any()
