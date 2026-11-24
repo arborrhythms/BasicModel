@@ -11308,6 +11308,16 @@ class PartSpace(Space):
         host_tokens = getattr(upstream_vspace, "_host_tokens", None)
         if host_tokens is None:
             host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
+        raw_rows = []
+        for row in host_tokens:
+            if len(row) == 1 and isinstance(row[0], (bytes, str)):
+                token = row[0]
+                raw = token if isinstance(token, bytes) else token.encode("utf-8", errors="surrogateescape")
+            else:
+                raw = b"".join(text.encode("utf-8", errors="surrogateescape") if isinstance(text, str)
+                               else bytes(text) for text in row if text is not None)
+            raw_rows.append(raw)
+        byte_count = max(map(len, raw_rows), default=0)
         # No unit is cut here: every atom of a unit is presented (the
         # ``[B, W, P]`` width is batch-dynamic in the eager stem, exactly as
         # the radix stem's was), and the compiled loop's fixed-capacity
@@ -11325,7 +11335,9 @@ class PartSpace(Space):
             # WordIdentity currently accepts variable-length Python byte strings.
             # Materialize the batch once at that consumer. Positional consumers
             # below use the original device layout.
-            unit_spans_rows = layout.detach().tolist()
+            # Each real unit covers at least one delivered byte. Padding
+            # after this bound cannot hold another interval of the surface.
+            unit_spans_rows = layout[:, :byte_count].detach().tolist()
         staged_rows, nested_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         identity = getattr(ps, 'identity', None)
@@ -11340,13 +11352,7 @@ class PartSpace(Space):
         hits = self.__dict__.setdefault("_unit_hits", {})
         threshold = max(1, int(getattr(self, "chunk_promotion_threshold", 2) or 2))
         units = []
-        for b, row in enumerate(host_tokens):
-            if len(row) == 1 and isinstance(row[0], (bytes, str)):
-                token = row[0]
-                raw = token if isinstance(token, bytes) else token.encode("utf-8", errors="surrogateescape")
-            else:
-                raw = b"".join(text.encode("utf-8", errors="surrogateescape") if isinstance(text, str)
-                               else bytes(text) for text in row if text is not None)
+        for b, raw in enumerate(raw_rows):
             spans = None
             if unit_spans_rows is not None and b < len(unit_spans_rows):
                 spans = [(int(s0), int(e0)) for (s0, e0) in unit_spans_rows[b]
@@ -11521,7 +11527,7 @@ class PartSpace(Space):
         }
         if layout is not None:
             from FieldReverse import byte_rows
-            width = max(map(len, visible_rows), default=0)
+            width = byte_count
             surface = compact[:, :width]
             self._forward_input['sentence_bytes'] = (surface.masked_fill(omission['bytes'][:, :width], 0)
                                                      if hiding else surface)
