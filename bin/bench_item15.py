@@ -114,22 +114,23 @@ def main():
     train_budget_active = False
     training_time = 0.
 
+    def sync(device):
+        if device.type == 'mps':
+            torch.mps.synchronize()
+        elif device.type == 'cuda':
+            torch.cuda.synchronize(device)
+
     def measured(model, *a, **kw):
         nonlocal training_time
         device = next(model.parameters()).device
         record['device'] = str(device)
-        def sync():
-            if device.type == 'mps':
-                torch.mps.synchronize()
-            elif device.type == 'cuda':
-                torch.cuda.synchronize(device)
         from torch._dynamo.utils import counters
         before = dict(counters['stats'])
         updates = getattr(model, '_training_step_count', 0)
-        sync()
+        sync(device)
         start = time.perf_counter()
         result = original(model, *a, **kw)
-        sync()
+        sync(device)
         row = dict(seconds=time.perf_counter() - start,
                    updates=getattr(model, '_training_step_count', 0) - updates,
                    graphs=counters['stats'].get('unique_graphs', 0) - before.get('unique_graphs', 0),
@@ -346,6 +347,32 @@ def main():
             record['gradient_audit'] = dict(steps=len(gradients),
                 live_tensors=[sum(g is not None for g in snapshot.values()) for snapshot in gradients])
             torch.save(gradients, args.output / 'gradients.pt')
+            if args.path_audit:
+                # A separate complete update measures the real path callbacks
+                # without the Python host-read census or cProfile installed.
+                from unittest.mock import patch
+                import WholePaths
+                device = next(model.parameters()).device
+                durations = []
+
+                def timed(function, phase, branch, *a, **kw):
+                    sync(device)
+                    start = time.perf_counter()
+                    result = function(*a, **kw)
+                    sync(device)
+                    durations.append(dict(phase=phase, branch=branch, seconds=time.perf_counter() - start))
+                    return result
+
+                finish = WholePaths.finish
+                def timed_looks(walk, *a, **kw):
+                    return timed(looks, 'looks', 'explore' if walk.prior is not None else 'exploit', walk, *a, **kw)
+
+                def timed_score(*a, **kw):
+                    return timed(finish, 'score', 'explore' if kw.get('base') is not None else 'exploit', *a, **kw)
+
+                with patch.object(SentenceLooks.Looks, 'run', timed_looks), patch.object(WholePaths, 'finish', timed_score):
+                    step()
+                record['path_seconds'] = durations
             if args.allocations:
                 with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
                                             profile_memory=True) as memory:
