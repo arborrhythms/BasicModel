@@ -291,6 +291,81 @@ doubling is of indices, not of a dense matrix.
    cut off at zero (what rose, and separately what fell) is zero when
    nothing changed. Claude proposes the second, for values of degree.
 
+### 5.8 Alec: the last activation's basic percepts as a second field (2026-11-23; his direction, Claude agrees)
+
+Alec: "I think this TD proposal (1.45) is important for animal cognition in
+particular; sequence learning will get baked in without trouble or
+artificial mechanism." And of §5.7's first point (the change of what):
+
+> We can also just present "basic percepts from the last activation", so a
+> lag-1 over basic percepts (do we need it at symbols?). Then we wouldn't
+> have to compute a difference, and if we do it at/after the not layer,
+> concepts can weight the delayed version appropriately. But I guess the
+> problem with that is that we want (for animal cognition) the full
+> pi-not-sigma to operate on the current and delayed perceptual fields so
+> that it can focus on one or the other or both of them. Agree?
+
+Of §5.7's second point (not said is not lost): "OK". Of its third (the form
+of the difference): "I think this changes based on 1."
+
+**Claude agrees: the delayed field goes in at the bottom, before the Pi,
+and the whole Pi-Not-Sigma reads both fields.** This takes the place of
+§5.2's rows over two `.when` and of §5.7's computed difference; nothing is
+subtracted by us and no new operation is made.
+
+*Why before the Pi and not at or after the Not.*
+
+- Put in after the Not, the delayed values reach only the Sigma. The Sigma
+  can then weigh "now" against "before" as values, and no row can join a
+  thing now with another thing before. A sequence ("A, then B") and a
+  movement (lost here, gained there) are such joins.
+- Put in before the Pi, every part of the structure has both fields: the Pi
+  joins across them, the Not denies either, the Sigma weighs both. What the
+  other placement offers is still there, as the Sigma's part.
+- Attention then has the two fields to choose between, which is "focus on
+  one or the other or both".
+
+*What the layers can then form, with nothing told to them.*
+
+- "A before, and B now": a sequence of two. This is the sequence learning
+  that comes with it, and it needs no grammar, so an animal model has it.
+- "There now, and not there before": gained. The reverse: lost. Both: kept.
+- For a value of degree, the Sigma's signed sum of now and the denied
+  before: how much it rose or fell. So §5.7's third point (which form of
+  difference) is no longer ours to choose: the product serves kinds and the
+  signed sum serves degree, and each is learned where it is of use.
+- §5.7's first point is met place by place: the two fields share `.where`,
+  so a row joins what is at one place now with what was there before.
+
+*"do we need it at symbols?"* Not for change, and not for a sequence of
+two; the basic percepts are enough, and that is the animal case. A lag at
+the symbols as well would give each order its own step of memory, so that a
+sequence of three is told from another that shares its middle (A B C from
+D B E) without going to LTM. Claude proposes the basic percepts alone
+first, and the symbols only if a measure asks for them; the LTM1 chain
+(sigma-pi §19.146) already links longer runs.
+
+*What it ties together.*
+
+- *Episodic memory as percepts* (§4, 1; §6). The delayed field is the
+  newest such memory, kept present. A recalled memory is presented in the
+  same field, so a change or a sequence can be learned from two recalled
+  moments, which is "after the fact" (§7).
+- *The last look.* In item 1.7 the request is given the place of the last
+  look by a side input (`Memory.ModelState`, `RequestRead.state_weight`).
+  If one activation is one look, the last look's percepts with their
+  `.where` are in the delayed field, where the request can read them as it
+  reads anything else. Whether the side input can then go is to be measured,
+  not assumed.
+
+*Two cautions, both to measure before anything is built on it.*
+
+1. No Not entry has yet been formed in a corpus run: Codex's counts in
+   sigma-pi §23.7 are zero at every order. "Now and not before" rests on
+   the one part of the structure that has not been seen to learn.
+2. The bank doubles. The Pi's rows are sparse and nominated, so the cost is
+   in the looks and the salience, which is item 1.5's matter.
+
 ## 6. Episodic memory as percepts (Claude's proposal for Alec's decision)
 
 - *The entry.* A fixed number of the open field's basic percepts, each as
@@ -354,22 +429,25 @@ Each on the felt world of item 1.6, with a second scene for one object:
 
 ## 9. Open, for Alec
 
-1. *How the change reaches the hierarchy:* as a computed input beside each
-   concept's activity (§5.7, Alec's, and Claude's recommendation), or as a
-   row of the first Pi over two `.when` (§5.2). If §5.7, its three points
-   are the questions.
-2. *Earlier and later, not the tick (only if §5.2 stands).* A row's `.when` entries hold a code
-   of a time. An event must be the same event whenever it happens, so its
-   two members need "before" and "after" in relation to each other, as a
-   word's letters hold places in relation to the word. How the first Pi
-   makes a word independent of where it stands is the pattern to follow;
-   Claude has not traced it for `.when` and proposes nothing yet.
-3. *How many percepts an entry holds*, and whether an identity's state is
-   stored with each of its occurrences or only the sentence's strongest
-   (§7, last point).
+1. *What one activation is.* "basic percepts from the last activation" is
+   read here as the last time the percepts ran: a look when reading, a
+   scene in the felt world. If it is the last sentence instead, the delayed
+   field of a text is the previous sentence's letters, and the sequence
+   learned is of sentences, not of words.
+2. *How the delayed field is told from the present one.* Either it is its
+   own block of the Pi's inputs (a delay on the wires, nothing computed),
+   or it lies in the same field one step back on `.when`, with `.when`
+   read in relation to the present. The second makes time a further axis of
+   the one perceptual space and lets attention choose a time as it chooses
+   a place; it needs `.when` to be relative, which it is not today (§3).
+   Claude leans to the second and has not traced what it changes.
+3. *How many percepts an episodic entry holds* (§6).
 4. *"The four forms".* Claude reads them as an operator's use on a point
-   (compose, generate) and its use on the field (the two field forms of
-   2026-11-12). If Alec means another four, §4 point 2 and §5.5 are to be
-   reworded.
+   (compose, generate) and its two uses on the field (2026-11-12). If Alec
+   means another four, §4 point 2 and §5.5 are to be reworded.
 5. *Whether `VerbLearning` stays as it is until then.* Claude proposes yes:
    it is the only teacher the verb's point has.
+
+Settled since first written: how the change reaches the hierarchy (§5.8,
+in place of §5.2 and §5.7); not said is not lost (§5.7, 2: "OK"); the form
+of the difference (learned, §5.8).
