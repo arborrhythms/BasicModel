@@ -525,3 +525,17 @@ def test_all_attested_parts_are_found_on_their_own_contiguous_bytes(monkeypatch)
                     for row, mask in zip(values.tolist(), valid.tolist(), strict=True)
                     for i in range(len(row)-len(run)+1)))
             assert present.tolist() == expected
+            selected, spelled, kept, cover = field.sentence_forms(store, values, valid, with_cover=True)
+            expected_cover = torch.zeros_like(cover)
+            for seat, row_id in enumerate(selected.tolist()):
+                run = table[row_id]
+                for b, (row, mask) in enumerate(zip(values.tolist(), valid.tolist(), strict=True)):
+                    for start in range(len(row) - len(run) + 1):
+                        stop = start + len(run)
+                        if bytes(row[start:stop]) == run and all(mask[start:stop]):
+                            expected_cover[b, start:stop, seat] += 1
+            assert torch.equal(cover, expected_cover)
+            codes = torch.rand(len(selected), 3) * kept[:, None]
+            observed = torch.nn.functional.one_hot(values, 256).float() * valid[..., None]
+            dense = field.content(observed, torch.zeros(256, 3), spelled, codes)
+            torch.testing.assert_close(cover.float() @ codes, dense, rtol=0, atol=0)

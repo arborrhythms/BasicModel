@@ -11326,7 +11326,7 @@ class PartSpace(Space):
             # Materialize the batch once at that consumer. Positional consumers
             # below use the original device layout.
             unit_spans_rows = layout.detach().tolist()
-        staged_rows, sentence_truncated_rows, word_texts_rows = [], [], []
+        staged_rows, nested_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         identity = getattr(ps, 'identity', None)
         part_capacity = 3
@@ -11423,7 +11423,8 @@ class PartSpace(Space):
                             # frozen: an unstored form is read by its parts.
                             pids = (list(identity.parts(unit)) if unit in identity.words
                                     else [identity._atom(atom) for atom in identity.atoms_of(unit)])
-                        atom_count = len(pids) - len(nested)
+                        nested_extents.extend((b, word_index, n, start + lo, start + hi)
+                            for n, (_, lo, hi) in enumerate(nested, start=len(pids) - len(nested)))
                     else:
                         pids = [(-1 if hidden_rows is not None and hidden_rows[b][i]
                                  else int(ps.get_id(bytes([raw[i]])))) for i in range(start, stop)]
@@ -11439,56 +11440,40 @@ class PartSpace(Space):
                                 ).clamp(0.0, 1.0).amax(dim=0).detach()
                             ps._promote_or_queue(unit, init_vector=init)
                             hits.pop(unit, None)
-                    staged_words.append({
-                        "pids": pids, "start": int(start), "end": int(end),
-                        "word_index": int(word_index),
-                        "part_spans": ([(start, stop)] * atom_count + [(start+lo,start+hi) for _pid,lo,hi in nested] if identity is not None
-                                       else [(i, i + 1) for i in range(start, stop)]),
-                        "active": True,
-                    })
+                    staged_words.append(pids)
                 else:
-                    staged_words.append({
-                        "pids": [], "start": -1, "end": -1, "word_index": -1,
-                        "part_spans": [], "active": False,
-                    })
+                    staged_words.append([])
             staged_rows.append(staged_words)
-            sentence_truncated_rows.append(len(spans) > word_capacity)
 
-        pid_rows, mask_rows, offset_rows, group_rows = [], [], [], []
-        tile_span_rows, part_span_rows, word_active_rows = [], [], []
-        for staged_words in staged_rows:
-            row_pids, row_mask, row_offsets, row_groups = [], [], [], []
-            row_tile_spans, row_part_spans, row_active = [], [], []
-            for rec in staged_words:
-                pids = rec["pids"]
-                active_n = len(pids)
-                pad_n = part_capacity - active_n
-                row_pids.append(pids + [int(null_pid)] * pad_n)
-                row_mask.append([True] * active_n + [False] * pad_n)
-                row_offsets.append([rec["start"]] * active_n + [-1] * pad_n)
-                row_groups.append([rec["word_index"]] * active_n + [-1] * pad_n)
-                row_tile_spans.append(
-                    [(rec["start"], rec["end"])] * active_n + [(-1, -1)] * pad_n)
-                row_part_spans.append(rec["part_spans"] + [(0, 0)] * pad_n)
-                row_active.append(bool(rec["active"]))
-            pid_rows.append(row_pids); mask_rows.append(row_mask)
-            offset_rows.append(row_offsets); group_rows.append(row_groups)
-            tile_span_rows.append(row_tile_spans); part_span_rows.append(row_part_spans)
-            word_active_rows.append(row_active)
-
-        pid_grid = torch.tensor(pid_rows, dtype=torch.long, device=dev)
-        part_mask = torch.tensor(mask_rows, dtype=torch.bool, device=dev)
+        # Only native addresses and their occupancy cross into the fold. The
+        # sentence layout supplies the offsets and extents of every member.
+        counts = [[len(pids) for pids in row] for row in staged_rows]
+        pid_grid = torch.tensor([[pids + [null_pid] * (part_capacity - len(pids)) for pids in row]
+                                 for row in staged_rows], dtype=torch.long, device=dev)
+        positions = torch.arange(part_capacity, device=dev)
+        part_mask = positions < torch.tensor(counts, dtype=torch.long, device=dev)[..., None]
         if layout is None:
-            part_offsets = torch.tensor(offset_rows, dtype=torch.long, device=dev)
-            word_active = torch.tensor(word_active_rows, dtype=torch.bool, device=dev)
-            sentence_truncated = torch.tensor(sentence_truncated_rows, dtype=torch.bool, device=dev)
+            slots = pid_grid.new_tensor([spans[:word_capacity] + [(0, 0)] * max(0, word_capacity - len(spans))
+                                         for _, spans in units])
+            sentence_truncated = torch.tensor([len(spans) > word_capacity for _, spans in units],
+                                              dtype=torch.bool, device=dev)
         else:
             slots = layout[:, :word_capacity]
             slots = torch.nn.functional.pad(slots, (0, 0, 0, word_capacity - slots.shape[1]))
-            word_active = slots[..., 1] > slots[..., 0]
-            part_offsets = torch.where(part_mask, slots[..., :1], -1)
             suffix = layout[:, word_capacity:]
             sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
+        word_active = slots[..., 1] > slots[..., 0]
+        part_offsets = torch.where(part_mask, slots[..., :1], -1)
+        if identity is None:
+            starts = slots[..., :1] + positions
+            members = torch.stack((starts, starts + 1), -1)
+        else:
+            members = slots[:, :, None, :]
+        part_spans = torch.where(part_mask[..., None], members, 0)
+        if nested_extents:
+            # A taught nested whole retains its actual subinterval.
+            events = pid_grid.new_tensor(nested_extents)
+            part_spans[events[:, 0], events[:, 1], events[:, 2]] = events[:, 3:]
         word_truncated = torch.zeros_like(word_active)
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
@@ -11503,15 +11488,16 @@ class PartSpace(Space):
         if getattr(self, "_mereology_raise", False):
             self.subspace.where.setW(part_offsets[:, :, 0])
         flat_pids = pid_grid.reshape(batch, -1)
-        flat_groups = torch.tensor(
-            group_rows, dtype=torch.long, device=dev).reshape(batch, -1)
+        word_indices = torch.arange(word_capacity, device=dev)[None, :, None]
+        flat_groups = torch.where(part_mask, word_indices, -1).reshape(batch, -1)
         flat_offsets = part_offsets.reshape(batch, -1)
-        flat_part_spans = torch.tensor(
-            part_span_rows, dtype=torch.long, device=dev).reshape(batch, -1, 2)
+        flat_part_spans = part_spans.reshape(batch, -1, 2)
         flat_seed = part_events.reshape(
             batch, word_capacity * part_capacity, part_events.shape[-1])
-        flat_tile_spans = [[span for word in row for span in word]
-                           for row in tile_span_rows]
+        # The rendering and legacy aggregation APIs consume Python intervals.
+        flat_tile_spans = [[spans[w] if member < count else (-1, -1)
+                            for w, count in enumerate(lengths) for member in range(part_capacity)]
+                           for (_, spans), lengths in zip(units, counts, strict=True)]
         self._embedded_input = word_event
         self._last_tokens = host_tokens
         self._serial_word_major = True

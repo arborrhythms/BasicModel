@@ -20833,14 +20833,14 @@ class BasicModel(BaseModel):
             return None
         batch, count = sources.shape
         owner = self._concept_owner()
-        surfaces = [[owner.word_surface_for_row(int(word)) for word in row] for row in words]
+        surfaces = [[owner.word_surface_for_row(word) for word in row] for row in words.tolist()]
         orders = sorted({owner._concept_source_order(identity)
                          for row in surfaces for surface in row if surface is not None
                          for identity in owner.word_concepts(surface)
                          if owner._concept_source_order(identity) >= 0})
         if not orders:
             return None
-        basis = owner.similarity_codebook.getW()
+        source_ids = sources.tolist()
         identities = torch.full((batch, count, len(orders)), -1,
                                 device=like.device, dtype=torch.long)
         values = like.new_zeros(batch, count, len(orders), like.shape[-1])
@@ -20851,12 +20851,12 @@ class BasicModel(BaseModel):
                     continue
                 for index, order in enumerate(orders):
                     identity = owner.resolve_word_concept(
-                        surface, order=order, previous=int(sources[b, w]))
+                        surface, order=order, previous=source_ids[b][w])
                     row = None if identity is None else owner._concept_row_of(identity)
                     if row is not None:
                         identities[b, w, index] = identity
                         values[b, w, index] = owner.similarity_codebook.lookup_rows(
-                            torch.tensor(row, device=basis.device), stream=b).to(like)
+                            row, stream=b).to(like)
         return ReferenceTypes(sources, sources.new_tensor(orders), identities, values)
 
     def _sentence_reference_bank(self, active, like):
@@ -20876,12 +20876,16 @@ class BasicModel(BaseModel):
         predicted = torch.zeros(B, device=like.device, dtype=torch.bool)
         components = getattr(self._concept_owner(), 'components', None)
         queries = []
+        active_streams = active.tolist() if disc is not None else [False] * B
         for b in range(B):
             query = like.new_zeros(D)
-            prediction = None
-            frames = (() if disc is None or not bool(active[b]) else
+            frames = (() if not active_streams[b] else
                       tuple(disc.situation_references(b))[-window:])
-            if components is not None and frames:
+            if not frames:
+                queries.append(query)
+                continue
+            entries = []
+            if components is not None:
                 for i, (identity, frame) in enumerate(components.candidate_frames(frames)[-window:]):
                     point = frame.point
                     if point is not None:
@@ -20890,8 +20894,10 @@ class BasicModel(BaseModel):
                         values[b, i] = point.detach().to(like)
                         retained = getattr(self.symbolSpace, 'ltm_store', None)
                         location = None if retained is None else retained.location(identity)
-                        orders[b, i] = (int(retained.row(location)['order']) if location is not None
-                                        else self._concept_owner()._concept_source_order(identity))
+                        order = (int(retained.row(location)['order']) if location is not None
+                                 else self._concept_owner()._concept_source_order(identity))
+                        orders[b, i] = order
+                        entries.append((identity, values[b, i].clone(), False, order))
             for i, frame in enumerate(frames, start=window):
                 # This bank supplies numerical NP operands. A relational
                 # row has no fusible point; its typed description remains
@@ -20899,11 +20905,14 @@ class BasicModel(BaseModel):
                 if frame.row_id == -1:
                     continue
                 from Occurrence import operand_name
-                ids[b, i] = operand_name(frame.row_id) if frame.occurrence[0] == 'ltm' else frame.row_id
+                identity = operand_name(frame.row_id) if frame.occurrence[0] == 'ltm' else frame.row_id
+                ids[b, i] = identity
                 valid[b, i] = True
-                values[b, i] = (frame.roles[0] if frame.point is None else frame.point).detach().to(like)
+                value = (frame.roles[0] if frame.point is None else frame.point).detach().to(like)
+                values[b, i] = value
                 relations[b, i] = frame.point is None
                 orders[b, i] = frame.order
+                entries.append((identity, values[b, i].clone(), frame.point is None, frame.order))
             # A cued frame's referent columns are candidates too. An open
             # column uses (row, role); a filled column uses its actual native
             # referent. Both share the existing bounded recency bank.
@@ -20911,8 +20920,6 @@ class BasicModel(BaseModel):
             if store is not None:
                 from Occurrence import slot_key
                 from ThoughtReferences import open_slots
-                entries = [(int(ids[b, i]), values[b, i].clone(), bool(relations[b, i]), int(orders[b, i]))
-                           for i in range(C) if bool(valid[b, i])]
                 owner = self._concept_owner()
                 lexical = word_view(self.inputSpace, 'concept_ids')
                 cues = set() if lexical is None else set(lexical[b].tolist())
@@ -21067,8 +21074,15 @@ class BasicModel(BaseModel):
                 opened = self._sentence_open_fields[sid]
                 self._sentence_order_zero_reverse = reconstruction(self, opened)
                 self._opening_errors = Error(row_mask=present)
+                # These text brackets came from reading_forms on the delivered
+                # surface. A joined modality has its own coordinate range.
+                native = self.perceptualSpace._forward_input
+                surface = native.get('sentence_bytes')
+                bank = getattr(self, '_sentence_bank', None)
+                text_width = (surface.shape[1] if surface is not None and native.get('unit_spans') is not None
+                              and bank is not None and opened.where is bank.where else None)
                 self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
-                    self._sentence_order_zero_reverse, opened, present, hidden=False)
+                    self._sentence_order_zero_reverse, opened, present, hidden=False, text_width=text_width)
             from SentenceLooks import WordForecast, Looks
             word_forecast = WordForecast(self)
             forecast_paths = []

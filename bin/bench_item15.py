@@ -336,7 +336,8 @@ def main():
                 caller = sys._getframe(1)
                 site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name)
                 calls[site] += 1
-                if site in (('BasicPercepts.py', '_boundary_codes'), ('BasicPercepts.py', '_stored_boundary_codes')):
+                if site[0] == 'BasicPercepts.py' and site[1] in (
+                        '_boundary_codes', '_stored_boundary_codes', '_occurrence_what'):
                     # The separate census is untimed. Bypass its host counter
                     # for this instrumentation-only read of the requested IDs.
                     ids = methods['tolist'](indices.detach().reshape(-1))

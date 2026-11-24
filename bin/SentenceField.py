@@ -348,7 +348,7 @@ def word_percepts(reverse, field, width):
     return F.pad(result, (0, width - result.shape[-1])) if result.shape[-1] < width else result[..., :width]
 
 
-def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=True):
+def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=True, text_width=None):
     """A reconstruction's error (:meth:`Layers.Error.pyramid`, the spatial
     pyramid match) on the content of the bytes put back against that of the
     input's bytes in its readings, the hidden ones left out where
@@ -363,6 +363,9 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     from Omission import target as omission_target
     targets = omission_target(model)
     raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0].long()
+    full_width = raw.shape[1]
+    if text_width is not None:
+        raw = raw[:, :text_width]
     positions = torch.arange(raw.shape[1], device=raw.device)
     scope = ((positions[None, None] >= field.where[..., :1]) &
              (positions[None, None] < field.where[..., 1:])).any(1)
@@ -383,11 +386,19 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     if silent is not None:
         # Silence puts back NULL at every place.
         amounts = torch.where(silent.to(amounts.device)[:, None, None], 0., amounts)
-    rows_of, spellings, found = sentence_forms(radix, raw.clamp(0, 255), asked)
+    rows_of, spellings, found, cover = sentence_forms(radix, raw.clamp(0, 255), asked, with_cover=True)
     form_codes = torch.where(found[:, None], radix._basis.lookup_rows(rows_of).to(amounts), 0.)
-    read = F.one_hot(raw.clamp(0, 255), 256).to(amounts) * asked[..., None].to(amounts)
+    with torch.no_grad():
+        target = wanted * asked[..., None]
+        if rows_of.numel():
+            target = target + cover.to(form_codes) @ form_codes
+    # Keep the spatial pyramid's original levels and the target's public shape.
+    if raw.shape[1] < full_width:
+        padding = (0, 0, 0, full_width - raw.shape[1])
+        target = F.pad(target, padding)
+        wanted = F.pad(wanted, padding)
     errors.pyramid(name + '.pyramid', content(amounts, codes, spellings, form_codes),
-                   content(read, codes, spellings, form_codes).detach(), mask=active,
+                   target, mask=active,
                    weight=model.loss.reconstruction_scale, category='reconstruction')
     return wanted
 

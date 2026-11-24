@@ -48,13 +48,18 @@ def meet(owner, bank):
     iw = bank.identity_width
     cones = basic.place_cones
     made = []
-    for b, k in has.nonzero().tolist():
-        code = c[b, k].detach().float().cpu()
+    # Place nomination consumes host keys in presentation order. Transfer the
+    # observed rows together, retaining only a single row for each new cone.
+    observed = has.nonzero()
+    b_at, k_at = observed.unbind(1)
+    payload = torch.cat((c, what), -1)[b_at, k_at].detach().float().cpu()
+    width = c.shape[-1]
+    for (b, _), values in zip(observed.tolist(), payload, strict=True):
+        code, seen = values[:width], values[width:]
         key = tuple(round(v, 6) for v in code.tolist())
-        seen = what[b, k].detach().float().cpu()
         held = cones.get(key)
         if held is None:
-            cones[key] = (code, 1 - code, seen)
+            cones[key] = (code.clone(), 1 - code, seen.clone())
         else:
             plus, minus, kept = held
             kept = torch.cat((torch.minimum(kept[:iw], seen[:iw]), torch.maximum(kept[iw:], seen[iw:])))

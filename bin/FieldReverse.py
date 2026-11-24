@@ -157,10 +157,9 @@ def store_forms(radix, device=None):
     return forms
 
 
-def form_presence(raw, valid, spellings, groups):
-    """Find every attested run in the visible bytes with fixed-shape device reads."""
+def _window_hits(raw, valid, spellings, groups):
+    """Yield each length's candidate rows and exact matches at their starts."""
     B, width = raw.shape
-    present = raw.new_zeros(len(spellings), dtype=torch.int32)
     h = raw.new_zeros(B, width, dtype=torch.long)
     ok = torch.ones_like(valid)
     done = 0
@@ -176,6 +175,13 @@ def form_presence(raw, valid, spellings, groups):
         rows = indices[at]
         same = (raw.unfold(1, size, 1) == spellings[rows, :size]).all(-1)
         match = ok & (keys[at] == h) & same
+        yield size, rows, match
+
+
+def form_presence(raw, valid, spellings, groups):
+    """Find every attested run in the visible bytes with fixed-shape device reads."""
+    present = raw.new_zeros(len(spellings), dtype=torch.int32)
+    for _, rows, match in _window_hits(raw, valid, spellings, groups):
         present = present.scatter_reduce(0, rows.flatten(), match.flatten().int(), reduce='amax')
     return present.bool()
 
@@ -198,8 +204,8 @@ def forms_in(radix, raw, valid):
     return rows.to(device)[kept], spelled[:, :width]
 
 
-def sentence_forms(radix, raw, valid):
-    """Gather the loss's observed form rows into a shape-bounded device bank."""
+def sentence_forms(radix, raw, valid, *, with_cover=False):
+    """Observed forms, optionally with their multiplicity at every target byte."""
     rows, spellings, groups = store_forms(radix, raw.device)
     # At each length and hash tie a visible window names at most one row.
     # This bounds the gather even when the inventory contains many more rows
@@ -207,14 +213,59 @@ def sentence_forms(radix, raw, valid):
     capacity = min(len(rows), sum(min(len(keys), raw.shape[0] * (raw.shape[1] - size + 1))
                                   for size, keys, _ in groups if size <= raw.shape[1]))
     if not capacity:
-        return rows[:0], spellings[:0, :0], rows[:0].bool()
-    found = form_presence(raw, valid, spellings, groups)
+        bank = rows[:0], spellings[:0, :0], rows[:0].bool()
+        return (*bank, raw.new_empty(len(raw), raw.shape[1], 0)) if with_cover else bank
+    hits = _window_hits(raw, valid, spellings, groups)
+    if with_cover:
+        hits = tuple(hits)
+    found = raw.new_zeros(len(rows), dtype=torch.int32)
+    for _, candidates, match in hits:
+        found.scatter_reduce_(0, candidates.flatten(), match.flatten().int(), reduce='amax')
+    found = found.bool()
     # Preserve inventory order for the summation and put unused seats last.
     order = torch.arange(len(rows), device=raw.device)
     selected = torch.topk(torch.where(found, order, order + len(rows)),
                           capacity, largest=False, sorted=True).indices
-    length = min(raw.shape[1], spellings.shape[1])
-    return rows[selected], spellings[selected, :length], found[selected]
+    length = max(size for size, _, _ in groups if size <= raw.shape[1])
+    bank = rows[selected], spellings[selected, :length], found[selected]
+    if not with_cover:
+        return bank
+    # A matching window adds one to each cell of its extent. Accumulate
+    # starts and ends, so overlapping matches of the same form count twice.
+    seats = torch.zeros_like(order).scatter_(0, selected, order[:capacity])
+    stride = raw.shape[1] + 1
+    edges = raw.new_zeros(len(raw), capacity * stride, dtype=torch.int32)
+    for size, candidates, match in hits:
+        offset = torch.arange(candidates.shape[1], device=raw.device)
+        start = seats[candidates] * stride + offset
+        edges.scatter_add_(1, start, match.int())
+        edges.scatter_add_(1, start + size, -match.int())
+    cover = edges.reshape(len(raw), capacity, stride).long().cumsum(-1)[..., :-1].transpose(1, 2)
+    return *bank, cover
+
+
+def _form_cover(padded, spellings, positions):
+    """Gather one block of forms, then fold consecutive bytes in source order."""
+    count, size = spellings.shape
+    batch, _, width = padded.shape
+    present = (spellings >= 0).T[..., None]
+    # One indexed read for the shorter runs that fit the workspace.
+    # For a single very long run use the same product one offset at a time.
+    if batch * count * size * width <= 1 << 22:
+        taken = padded.index_select(1, spellings.clamp_min(0).T.reshape(-1))
+        taken = torch.where(present, taken.reshape(batch, size, count, width), 1.)
+        presence = taken[:, 0, :, :positions]
+        for offset in range(1, size):
+            presence = presence * taken[:, offset, :, offset:offset + positions]
+    else:
+        presence = padded.new_ones(batch, count, positions)
+        for offset in range(size):
+            values = padded[:, :, offset:offset + positions].index_select(1, spellings[:, offset].clamp_min(0))
+            presence = presence * torch.where(present[offset], values, 1.)
+    cover = presence.clone()
+    for offset in range(1, min(size, positions)):
+        cover[..., offset:] += presence[..., :positions - offset] * (spellings[:, offset, None] >= 0)
+    return cover
 
 
 def content(amounts, byte_codes, spellings, form_codes):
@@ -231,18 +282,22 @@ def content(amounts, byte_codes, spellings, form_codes):
     if not Fn:
         return out
     B, P, _ = amounts.shape
-    # Places last, so that each form's byte at each offset is one row.
+    # Places last so an offset reads its own contiguous slice. Keep the
+    # vocabulary summation in its original order, even across work blocks.
     padded = F.pad(amounts, (0, 0, 0, L)).transpose(1, 2).contiguous()     # [B, 256, P + L]
-    spelled = (spellings >= 0).T[:, :, None]                                # [L, F, 1]
-    taken = padded.index_select(1, spellings.clamp_min(0).T.reshape(-1)).reshape(B, L, Fn, P + L)
-    taken = torch.where(spelled, taken, 1.)
-    presence = taken[:, 0, :, :P]
-    for i in range(1, L):
-        presence = presence * taken[:, i, :, i:i + P]                     # [B, F, P]
-    # A form present at a start is present at each place of its extent.
-    cover = presence.clone()
-    for i in range(1, min(L, P)):
-        cover[..., i:] += presence[..., :P - i] * spelled[i]
+    step = max(1, (1 << 22) // max(1, B * L * (P + L)))
+    if step >= Fn:
+        cover = _form_cover(padded, spellings, P)
+    else:
+        from torch.utils.checkpoint import checkpoint
+        blocks = []
+        for forms in spellings.split(step):
+            if padded.requires_grad and torch.is_grad_enabled():
+                blocks.append(checkpoint(_form_cover, padded, forms, P,
+                                         use_reentrant=False, preserve_rng_state=False))
+            else:
+                blocks.append(_form_cover(padded, forms, P))
+        cover = torch.cat(blocks, 1)
     return out + cover.transpose(1, 2) @ form_codes
 
 
