@@ -1,5 +1,69 @@
 # Item 1.5 integration handoff
 
+## Integration status at the spelling audit checkpoint
+
+Item 1.5 is open on local `main`. The starting commit was `ad8fafea927839c0d7f92d0aee35c913d02b2612`, with reviewed handoff `d38029113103ce5e9cf1223eaa55c9181010d649` in its ancestry. The current training commit is `091e5493101496ccef1f96ce7dad9304bf3850d1`. The original preparation branch was ported onto the new layout. All integration and pushes belong to Alec.
+
+| Matched four-page reading, seed 1505 | 1.7 base | Current |
+| --- | ---: | ---: |
+| CPU steady sentences/s | 6.99 | 10.62 |
+| Metal steady sentences/s | 0.786 | 1.69 |
+| CPU first three updates, seconds | 0.938, 0.634, 0.576 | 0.789, 0.400, 0.395 |
+| Metal first three updates, seconds | 3.352, 4.464, 4.932 | 2.217, 2.516, 2.792 |
+| CPU wall time to restored 122/122 in both modes | 97.89 s | 41.88 s |
+| Explicit CPU tensor reads inside a sentence | 23,609 | 4,767 |
+| Repeated native percept addresses | 3,696 | 402 |
+| Native scalar extractions / device-to-host copies during Metal execution | 21,426 / 3,108 | 3,057 / 1,848 |
+
+Times include backward and the optimizer. The steady rates use the nine updates after three warm-ups, with float32, one CPU thread, four pages and the same fixation policy. CPU sustained 1.52 times the base rate, Metal 2.15 times. The ordinary timings used eager execution. With a fresh CPU Inductor cache the separately partitioned training entry took 3.51 s on its first update and sustained 9.73 sentences/s. Its 1.7 control took 3.75 s and sustained 6.80 sentences/s. The compiler captured one partition on the cold update in both runs. See `compiled-base` and `primed-spelling-compiled`.
+
+In the current instrumented 3.02-second Metal sentence call, 2,911 scalar extractions on Metal took 0.456 s, 1,848 Metal-to-host copies took 0.274 s, and 411 Metal equality checks took 0.080 s. The remaining 146 scalar extractions ran on CPU. The measured host calls occupied 27% of instrumented wall time including any previously queued GPU work they waited for. Kernel dispatch, small operations and Python still occupy the rest of the update. The host census, profiler, path audit and uninstrumented steady throughput are separate measurements. Comparing the prior spelling audit to the current one on Metal gave maximum parameter, optimizer and gradient differences of 2.98e-8, 7.45e-9 and 2.91e-11. Repeating the current code gave the same three maxima. Buffers and RNG matched.
+
+Use `bin/bench_item15.py` with `PYTHONHASHSEED=0`, `MODEL_COMPILE=none`, `BASICMODEL_DEVICE=cpu` or `mps` and a fresh output directory. Use `--steps 12 --dispatch-census` for comparable receipts, `--lesson` for time to the reading gate and `--strict-sentence eager|inductor` for the actual capture probe. The current receipts are `output/item1-5/primed-spelling-{cpu-isolated,metal-isolated,reader,strict-cpu,strict-metal}`. The corresponding base receipts are `e2e2-paired-base`, `e2e2-paired-metal-base` and `solo-base-lesson` under the same directory. The configuration SHA-256 starts with `523ba88e7104` and the lesson with `402d10eea7c1`. Each receipt records full hashes, device, thread count and seed.
+
+The ordinary four-page update still fails strict capture on CPU and Metal. The first failure is the learned bracket in `Spaces.PartSpace._embed_ladder_word_major`. A device tensor describes the cuts. Python consumes their endpoints to slice variable-length byte strings for `WordIdentity` admission, nested parts and collision repair. Other remaining host consumers include the grammatical close using `ReadingIndex` and `ClauseJournal`, MTM event history, and the lookup for one durable root per stream and tick. The [device sentence design](2026-11-24-item1-5-device-sentence.md) describes the approved direct STM head, its LTM copy, and the roles of the positive and negative lanes in Pi.
+
+The four-page CPU replay through the last three performance changes matched all 596 tensors, including 86 parameters, 293 buffers, 190 optimizer tensors, the RNG state and 26 live gradients. At `538ec9555c`, 62 look, compose and performance tests passed. At `b254d26e52`, 58 propagation, intuition, growth and performance tests passed, including gradient checks on cycles and explicit external graphs. On CPU and Metal, strict Inductor compiled the native propagation and stage pullback on acyclic and cyclic examples with and without part evidence. On the current commit the combined identity, reconstruction, look, spread, candidate-growth, compile, memory and checkpoint suite passed 139 with 9 skips. This includes the batched-versus-scalar spelling inverse test. The historical groups overlap with this run. The item 1.8 omitted-word failure remains recorded in `suggestions.txt`.
+
+On `b254d26e52`, seed 1505 and the same lesson, the four-page, one-exploration control reached restored 122/122 sampled and evaluated in 36 updates and 41.28 s. Four pages with three explorations reached 122/122 in both modes in 18 updates and 33.58 s. Eight distinct pages with one exploration per page reached 121/122 sampled and 122/122 evaluated in 27 updates and 47.71 s. Both larger schedules evaluate sixteen paths per update. At the current commit the separate twelve-update steady CPU runs sustained 6.28 sentences/s for four pages with three explorations and 12.95 sentences/s for eight pages with one exploration. The three alternative walks together took 277 ms in looks and 67 ms in scoring on the separately audited step. In a separate update at batch four, one exploration spent 80 ms in looks and 24 ms in scoring on CPU, and 405 ms and 244 ms respectively on Metal. The greedy walk took 57 ms and 24 ms on CPU, and 428 ms and 240 ms on Metal. `--path-audit` times the actual callbacks with synchronization at their boundaries.
+
+Two fresh readers at the current training commit scored 122/122 sampled and 122/122 evaluated after restore. One used the preselected timing seed and the other was an independent unseeded gate start. All five learning gates passed, including numeric XOR convergence and class, raised-class denotation, and verbal XOR 4/4 into grammar and 4/4 through the inverse after 400 epochs. The five gates had also passed at `538ec9555c`. On `a8bdee4595`, the same unseeded gate had scored 3/4 at both boundaries. Its missed pair entered grammar in reverse order. Seed 606702945 gave 4/4 on both release and the candidate in a paired diagnostic. The tests keep the required assertions.
+
+The causal word forecast is path-local. The physical native percept cache still reuses the greedy native prior on a later path with a different history. An audited three-exploration update had source order 2, 4, 0 on its third greedy page and 4, 0, 2 on its first exploration. The greedy walk advanced native state seven times, the following three walks zero times. All four rows selected greedy in that update. Before claiming isolation, compare a mixed set of winners to isolated histories including native gradients and persistent state. The open choice is the weighting of simultaneous winning observations in the single saved native mean and variance. Replaying ascending source columns within each look preserves the 1.7 update order. Pooling all winners from one look changes that weighting. Exact-prefix sharing can follow causal parity.
+
+Claude's closest overlap is in `BasicPercepts`, `PerceptProperties`, `Places` and `Spaces` for number, place coordinates and observed part bounds, plus `CandidateGrowth`, `ConceptSpread`, `ReferenceClose`, and the retained event operands in `Memory` for grounding. The rounded-location `BasicPercepts.place_cones` dictionary and the checkpointed native predictor moments are additional model-side state. The native local predictor reads per-stream context and admitted rows. Its shared moment buffers update and serialize, but the ordinary forecast has no direct read of them. `ModelState.when_time` is still a scalar in the implementation. The trace below preserves the intermediate measurements and earlier scoped failures.
+
+## Earlier measurements on the learned morphology and host transfers
+
+Item 1.5 remains open. The verified base is `ad8fafea927839c0d7f92d0aee35c913d02b2612` and the measured local training commit is `a8bdee4595079b385b38a2c974abecb5bc5dbccf`. The base contains the reviewed 1.7 handoff `d38029113103ce5e9cf1223eaa55c9181010d649`.
+
+| Four paced pages, seed 1505 | 1.7 | Local training |
+| --- | ---: | ---: |
+| CPU sentences/s | 6.99 | 9.92 |
+| MPS sentences/s | 0.786 | 1.63 |
+| CPU first three updates, seconds | 0.938, 0.634, 0.576 | 0.919, 0.479, 0.434 |
+| MPS first three updates, seconds | 3.352, 4.464, 4.932 | 2.252, 2.678, 2.937 |
+| Wall time to restored 122/122 sampled and 122/122 evaluation | 97.89 s | 41.54 s |
+| CPU in-sentence explicit reads | 23,609 | 4,845 |
+| MPS in-sentence native scalar extractions / explicit device-to-host copies | 21,426 / 3,108 | 3,117 / 1,864 |
+| Repeated native percept addresses per instrumented step | 3,696 | 402 |
+
+These are eager training steps with backward and optimizer included. Throughput uses the last nine of twelve updates. All runs use float32 and one CPU thread, with synchronization on MPS. The CPU throughput run overlapped scoped tests. The preceding two checkpoints measured 10.26 and 10.48 CPU sentences/s on the same workload. The current count of 402 repeated addresses includes direct reads by the native morphological occurrence fold, which the earlier counter missed. The ordinary sentence still fails strict capture at the learned span comparison in `PartSpace._embed_ladder_word_major`. The matcher still needs a Python byte string for durable `WordIdentity` admission. The matched receipts are `delivered-layout-cpu`, `delivered-layout-metal` and `delivered-layout-reader` under `output/item1-5`. `reading-properties-strict-metal` contains the failing whole-sentence Inductor probe on the preceding spelling revision.
+
+With one fixed fresh seed, four pages and three explorations reached 122/122 in both held-out modes in **18 updates and 36.25 s**. Eight independent pages and one exploration reached 121/122 sampled and 122/122 evaluation in **27 updates and 53.40 s**. Both schedules evaluate sixteen paths per update. The four-page, one-exploration control reached 122/122 in both modes in **36 updates and 44.89 s**. This measures one seed. The separate steady-state comparison is below.
+
+Commit `76faa8a211` shares a prediction among disjoint streams arriving in the same look. Commit `7a52180dfe` replaces the deterministic target's one-hot form fold with exact overlapping window counts, limits that work to the delivered text where its brackets establish the bound, and preserves the full-width spatial loss. Two consecutive CPU optimization replays matched all 596 tensors, including 26 live gradients. The ladder/UTF-8/spelling/separator/performance group passed 78 with 5 skips, the reconstruction/place/scalar group passed 23, and the bank/identity group passed 86. These scoped counts are separate from the learning gates.
+
+The native property fold in `8b34dc162a` matched scalar reference intersections on all 468 test extents on Metal in both eager and strict Inductor. The combined admission, attention and performance group passed 61 tests. Commit `af371b1669` preserves the earlier page's forecast and gradient when a second page reaches its word on a later look. The predictor/looks tests passed 26. The delivered-span transfer bound passed 45 ladder and spelling tests with 5 skips. Each of these three changes matched all 596 state and gradient tensors in its fixed real update replay.
+
+On the three-exploration audit (seed 1505), page 3's greedy native arrivals were source columns 2, 4, 0. Its first alternative read 4, 0, 2. Greedy advanced the shared predictor seven times across the four pages. The three other walks each advanced it zero times and reused the greedy native readings. All four selected rows in this update were greedy. Seeds 1506 through 1509 also selected greedy on all pages of the inspected update. This is direct evidence of shared native history during scoring. It does not establish the effect on a mixed winner. The policy choice for retained native moments remains open: replay the winners' source columns in the existing order within each look, or update the one shared mean and variance from the winners pooled at that look. On the instrumented CPU step one exploration took 80 ms in looks and 24 ms in scoring. The corresponding Metal times in a separate run were 419 and 230 ms.
+
+At `16e3c40fde` five fresh gates passed together: the restored reader scored 122/122 in both modes, numeric XOR class and convergence passed, raised-class denotation passed and verbal XOR scored 4/4 at both boundaries. The optional fragment suite had four passes and one failed leaf-count assertion. With seed 71203915, the previous and revised implementations produced identical leaves, actions, fragment runs and failure. The assertions remain intact.
+
+A fresh paired verbal XOR run with seed 606702945 passed all four ordered pairs into grammar and back through its inverse on both 1.7 and the candidate. The seed was drawn before either run. This diagnostic was taken after the reconstruction and reference edits and before the lexical extent edit. The earlier unseeded 3/4 result remains recorded below.
+
+`Places.meet` maintains `BasicPercepts.place_cones`, a Python dictionary keyed by rounded location wires. The entries retain two location lanes and the common content of occurrences seen there for nomination. The code now transfers all observed rows together. Changing the owner of these cones would affect place learning shared with 1.6. The native percept predictor's running statistics are also still shared between candidate walks. The word-level forecast and the native arrival are distinct interfaces.
+
 ## Learned spellings and causal word forecasts
 
 Item 1.5 is open. The base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains the reviewed `d38029113103ce5e9cf1223eaa55c9181010d649`. The measured local training code is `42c46002f5f42891d8e6e7dc9a322689202b84ec` on `main`. Commit `96f97d7b64` gives each exploration its own causal word forecasts. The later commit reads the morphological occurrence from its native part addresses and whole bounds. The positive and negative property lanes still enter the existing Pi. The ordinary training entry still uses host code.
@@ -13,7 +77,7 @@ Item 1.5 is open. The base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which 
 | Fresh lesson through restored 122/122 in both modes, seed 1505 | 97.89 s | 45.17 s |
 | Explicit CPU tensor reads inside the sentence | 23,609 | 5,230 |
 | Native scalar extractions / device-to-host copies inside the MPS sentence | 21,426 / 3,108 | 3,438 / 1,988 |
-| Repeated native percept addresses on the profiled CPU update | 3,696 | 355 |
+| Repeated native percept addresses on the profiled CPU update, legacy counter | 3,696 | 355 (partial) |
 
 The throughput runs used one CPU thread, float32 and twelve updates including backward and optimizer, with the first three excluded from steady state. The MPS runner synchronizes the device. The timings above use eager training. The new occurrence fold alone passed strict Metal Inductor forward and backward against eager. The complete sentence still fails strict capture in the lexical stem, where variable-length learned intervals are converted to Python for `WordIdentity` and its consumers. Native percept forecasting also shares arrival state between candidate walks, separately from the word forecast corrected in `96f97d7b64`.
 
