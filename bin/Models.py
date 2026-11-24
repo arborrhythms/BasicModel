@@ -11298,13 +11298,21 @@ class BasicModel(BaseModel):
          referent_ids, object_orders) = torch.unbind_copy(metadata.to(active.device))
         atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0), streams=True)
         atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
-        atoms = owner.interpret.lexical_atoms(rows, atoms, word_ids=word_ids)
+        word_atoms = owner.similarity_codebook.lookup_rows(word_rows.clamp_min(0), streams=True)
+        # The observed word and its seat have already been resolved together.
+        # Only a higher-order referent borrows that word's perceptual lanes.
+        derived = getattr(owner.similarity_codebook, 'mereology', None)
+        if derived is not None:
+            width = derived.percept_event_width
+            named = owner._concept_allocator.layer(0).concept_rows(word_ids)
+            use_word = (rows >= owner._order_caps()[0]) & (word_ids > 0) & (named == word_rows) & (named >= 0)
+            form = torch.where(use_word[..., None], word_atoms[..., :width], atoms[..., :width])
+            atoms = torch.cat((form, atoms[..., width:]), -1)
         # Interpretation can return a transient or a shared object. The kept
         # mention needs the identified word that supplied this particular leaf.
         isp._ar_word_concept_ids = word_ids
         isp._ar_word_concept_rows = word_rows
         isp._ar_word_concept_orders = word_orders
-        word_atoms = owner.similarity_codebook.lookup_rows(word_rows.clamp_min(0), streams=True)
         isp._ar_word_concept_atoms = torch.where(word_rows[..., None] >= 0, word_atoms, 0.)
         isp._ar_word_lexical_forms = lexical_forms
         isp._ar_basic_percept_ids = basic_ids
