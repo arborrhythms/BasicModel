@@ -112,6 +112,18 @@ def reading_forms(surface, spans, active):
     return bounds, torch.where(present, torch.cat(keys, 1), -1)
 
 
+def grammar_leaves(surface, spans, active):
+    """Mask all-whitespace Latin-1 units in the native byte presentation."""
+    # Serial word surfaces use lossless Latin-1. Python str.isspace()
+    # includes the four information separators, NEL and NBSP on this chart.
+    space = (((surface >= 9) & (surface <= 13)) | ((surface >= 28) & (surface <= 32))
+             | (surface == 133) | (surface == 160))
+    prefix = torch.nn.functional.pad(space.long().cumsum(-1), (1, 0))
+    lo, hi = spans.unbind(-1)
+    spaces = prefix.gather(1, hi) - prefix.gather(1, lo)
+    return active & ~((hi > lo) & (spaces == hi - lo))
+
+
 def primitive_support(data, valid):
     """Compatibility for explicit banks; only scatter indices become int64."""
     return torch.zeros(*data.shape[:2], 256, dtype=torch.int32, device=data.device).scatter_add(

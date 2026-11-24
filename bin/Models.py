@@ -11187,6 +11187,13 @@ class BasicModel(BaseModel):
         if not torch.is_tensor(active):
             return
         percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
+        surface, units = percepts.get('sentence_bytes'), percepts.get('unit_spans')
+        if torch.is_tensor(surface) and torch.is_tensor(units) and units.shape[:2] == active.shape:
+            from WordSurfaces import grammar_leaves
+            leaves = grammar_leaves(surface, units, active)
+            attention = getattr(self, '_attention_words', None)
+            isp._ar_grammar_leaf_mask = leaves if attention is None else leaves & attention.accepted
+            return
         texts = percepts.get('word_texts')
         spans = percepts.get('part_spans')
         raw = getattr(self, '_staged_concepts_in', None)
@@ -21254,7 +21261,7 @@ class BasicModel(BaseModel):
                         lanes=None if field is None else field.placements()['lanes'].clamp(0,1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
-                path_forecast = word_forecast.begin_path()
+                path_forecast = word_forecast.begin_path(reading_walk)
                 forecast_paths.append(path_forecast)
                 def arrival(index, rows):
                     nonlocal sub, sym

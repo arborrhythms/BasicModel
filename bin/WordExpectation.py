@@ -70,8 +70,8 @@ class WordArrivals:
         arrived = active if arrived is None else active & arrived
         gain, epsilon, saturation = self.gain, self.epsilon, self.saturation
         source, total, count, recent = self.source, self.total, self.count, self.recent
-        context = torch.cat((total/count.clamp_min(1), recent), -1)
         if forecast:
+            context = torch.cat((total/count.clamp_min(1), recent), -1)
             self._logits = owner.word_predictor(*owner._prediction_inputs((bank, context, source)))
         logits = self._logits
         expected = logits.sigmoid() * valid[..., None]

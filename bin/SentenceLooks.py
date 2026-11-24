@@ -186,9 +186,11 @@ class WordForecast:
         stage_symbol_bank(model, owner)
         self.reader = WordArrivals(owner, self.bank, self.valid, gain=model.word_expectation_gain,
                                   epsilon=model.expectation_epsilon, saturation=model.expectation_saturation)
-    def begin_path(self):
+    def begin_path(self, walk=None):
         from copy import copy
         path = copy(self)
+        path.walk = walk
+        path.predicted_look = None
         if self.reader is not None:
             # WordArrivals replaces its context tensors on observation.
             path.reader = copy(self.reader)
@@ -237,8 +239,14 @@ class WordForecast:
         fresh = rows & ~self.arrived[:,index] & self.live[:,index]
         # Score from this path's prefix. A repeated occurrence still enters
         # its observed context, but only its first forecast occupies the ledger.
+        # The interpreter dispatches disjoint sets of streams by source
+        # column within one look. Each stream has only one arrival at this
+        # look. All columns can read the same batch of pre-arrival logits.
+        turn = None if self.walk is None else self.walk.taken
         current = self.reader.step(self.codes[:, index], self.identities[:, index],
-                                   active=rows & self.live[:, index], lanes=lanes)
+                                   active=rows & self.live[:, index], lanes=lanes,
+                                   forecast=turn is None or turn != self.predicted_look)
+        self.predicted_look = turn
         mask = (torch.arange(self.live.shape[1],device=rows.device)==index)[None] & fresh[:,None]
         values=[]
         for item in fields(ExpectedWords):

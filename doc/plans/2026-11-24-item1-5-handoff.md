@@ -1,6 +1,31 @@
 # Item 1.5 integration handoff
 
-## Current local checkpoint
+## Learned spellings and causal word forecasts
+
+Item 1.5 is open. The base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains the reviewed `d38029113103ce5e9cf1223eaa55c9181010d649`. The measured local training code is `42c46002f5f42891d8e6e7dc9a322689202b84ec` on `main`. Commit `96f97d7b64` gives each exploration its own causal word forecasts. The later commit reads the morphological occurrence from its native part addresses and whole bounds. The positive and negative property lanes still enter the existing Pi. The ordinary training entry still uses host code.
+
+| Four-page paced reading, batch 4 | Published 1.7 | Measured code |
+| --- | ---: | ---: |
+| CPU, sentences/s | 6.99 | 9.83 |
+| MPS, sentences/s | 0.786 | 1.56 |
+| CPU first three updates, seconds | 0.938, 0.634, 0.576 | 0.807, 0.425, 0.443 |
+| MPS first three updates, seconds | 3.352, 4.464, 4.932 | 2.873, 2.846, 3.114 |
+| Fresh lesson through restored 122/122 in both modes, seed 1505 | 97.89 s | 45.17 s |
+| Explicit CPU tensor reads inside the sentence | 23,609 | 5,230 |
+| Native scalar extractions / device-to-host copies inside the MPS sentence | 21,426 / 3,108 | 3,438 / 1,988 |
+| Repeated native percept addresses on the profiled CPU update | 3,696 | 355 |
+
+The throughput runs used one CPU thread, float32 and twelve updates including backward and optimizer, with the first three excluded from steady state. The MPS runner synchronizes the device. The timings above use eager training. The new occurrence fold alone passed strict Metal Inductor forward and backward against eager. The complete sentence still fails strict capture in the lexical stem, where variable-length learned intervals are converted to Python for `WordIdentity` and its consumers. Native percept forecasting also shares arrival state between candidate walks, separately from the word forecast corrected in `96f97d7b64`.
+
+With sixteen candidate readings per update, four pages and three exploratory paths delivered 5.96 sentences/s. Eight independent pages with one exploratory path delivered 11.97. The three exploratory walks took 0.287 s to compose and 0.069 s to score on the instrumented four-page update. The Pi and Sigma promotion tables stayed unchanged throughout all four trials. This measures throughput and provisional growth. It does not establish an accuracy advantage for either batch arrangement.
+
+The fresh unseeded gates on `96f97d7b64` passed the restored reader (122/122 sampled and evaluation), numeric XOR class and convergence, and raised-class tests. Verbal XOR scored **3/4 into grammar and 3/4 through its inverse** after 400 epochs. The learned reader supplied “there loving” for “loving there” before the grammar stage. This is a failed gate. On a separate fresh paired seed (387885085), both release and causal code scored 121/122 sampled and 122/122 evaluation, taking 49.99 and 29.79 seconds respectively. Some of those timings overlapped independent tests. The omitted-word issue remains tracked under item 1.8.
+
+For 1.6 integration, review the shared percept staging and grounding interfaces in `BasicPercepts.py`, `WordIdentity.py`, `Spaces.py` and `Interpret.py`. The candidate word forecast touches `SentenceLooks.py` and `Models._run_sentence_word_bricks`. The outstanding grammatical close and native event history overlap `ClauseJournal.py`, `Comprehension.py`, `Meaning.py` and the grounding writers.
+
+CPU replay of the morphological fold against its immediate predecessor matched all 86 parameters, 293 buffers, 190 optimizer tensors, RNG and all 26 live gradients. The morphology, Pi, gather and looks group passed 34 tests, and the two regressions for ordered extents and tied part gradients passed separately. The causal-word group passed 91 tests, including its compiler test with a writable cache. These groups overlap.
+
+## Earlier checkpoint before the learned-span changes
 
 Item 1.5 is open. The training code on local `main` is `e2e2cd472374881b4d225ba7cd13e9a442963422`. Its base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains the reviewed 1.7 handoff `d38029113103ce5e9cf1223eaa55c9181010d649`. Integration with 1.6 and push remain with Alec.
 

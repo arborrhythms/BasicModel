@@ -307,3 +307,27 @@ def test_explorations_score_their_own_prefix_and_keep_winning_gradients(monkeypa
             assert left is None
         else:
             torch.testing.assert_close(left, right)
+
+    # At each look the two pages reach different source slots. Splitting
+    # callback delivery by slot still needs only one batch of predictions.
+    walk = SimpleNamespace(taken=0)
+    grouped = opening.begin_path(walk)
+    serial = opening.begin_path()
+    calls = []
+    handle = owner.word_predictor.register_forward_hook(lambda *_: calls.append(1))
+    try:
+        for turn in range(2):
+            walk.taken = turn
+            for row in range(2):
+                grouped.arrive((row + turn) % 2, torch.arange(2) == row, lanes)
+    finally:
+        handle.remove()
+    assert len(calls) == 2
+    for turn in range(2):
+        for row in range(2):
+            serial.arrive((row + turn) % 2, torch.arange(2) == row, lanes)
+    torch.testing.assert_close(grouped.expected.activation, serial.expected.activation)
+    g = torch.autograd.grad(grouped.expected.loss.sum(), parameters, allow_unused=True)
+    s = torch.autograd.grad(serial.expected.loss.sum(), parameters, allow_unused=True)
+    for left, right in zip(g, s, strict=True):
+        torch.testing.assert_close(left, right)

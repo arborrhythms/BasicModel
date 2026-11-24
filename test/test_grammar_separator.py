@@ -178,3 +178,16 @@ def test_missing_word_text_row_uses_observed_bytes():
     BasicModel._stage_mixing_grammar_leaf_mask(model)
     assert model.inputSpace._ar_grammar_leaf_mask.tolist()==[[True,False,True]]
     assert model.inputSpace._word_active_mask.all()
+
+
+def test_native_grammar_leaves_match_the_presented_bytes_for_every_latin1_character():
+    from WordSurfaces import grammar_leaves
+    surface = torch.arange(256)[None]
+    start = torch.arange(256)
+    spans = torch.stack((start, start + 1), dim=-1)
+    spans = torch.cat((spans, torch.tensor([[28, 33], [0, 0], [9, 20]])))[None]
+    active = torch.ones_like(spans[..., 0], dtype=torch.bool)
+    expected = torch.tensor([[not bytes(range(lo, hi)).decode('latin1').isspace()
+                              for lo, hi in spans[0].tolist()]])
+    actual = torch.compile(grammar_leaves, backend='eager', fullgraph=True)(surface, spans, active)
+    torch.testing.assert_close(actual, expected)
