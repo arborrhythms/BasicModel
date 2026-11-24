@@ -2850,7 +2850,8 @@ class LTM1(_CountedRows, nn.Module):
         left, right = self.reference(part, ref_kinds[0]), self.reference(whole, ref_kinds[1])
         if (SYMBOL, NULL_CONCEPT) in (left, right):
             raise ValueError('a null-concept cannot be a relation endpoint')
-        if any(not math.isfinite(float(x)) or not 0 <= x <= 1 for x in (truth_plus, truth_minus)):
+        truth_plus, truth_minus = float(truth_plus), float(truth_minus)
+        if any(not math.isfinite(x) or not 0 <= x <= 1 for x in (truth_plus, truth_minus)):
             raise ValueError('relation trust has two independent lanes in [0, 1]')
         if not math.isfinite(float(surprise)) or not (surprise == -1. or 0 <= surprise <= 1.):
             raise ValueError('relation surprise must be unknown or in [0, 1]')
@@ -2881,11 +2882,13 @@ class LTM1(_CountedRows, nn.Module):
             self._order_revision = self._topology_revision
         elif symbol is not None and int(symbol) != row:
             raise ValueError('a tagged pair already has a different handle')
-        positive, negative = max(float(self.truth_plus[row]), float(truth_plus)), max(float(self.truth_minus[row]), float(truth_minus))
         if right[0] == SYMBOL and (left[0] == SYMBOL or right[1] in getattr(self, '_class_rows', ())):
-            if new or positive != float(self.truth_plus[row]) or negative != float(self.truth_minus[row]):
+            # The topology cache compares the original scalar observation
+            # before rounding it into the trust columns.
+            if new or truth_plus > float(self.truth_plus[row]) or truth_minus > float(self.truth_minus[row]):
                 self._symbol_epoch += 1
-        self.truth_plus[row], self.truth_minus[row] = positive, negative
+        self.truth_plus[row].clamp_min_(truth_plus)
+        self.truth_minus[row].clamp_min_(truth_minus)
         from MemoryActivity import written, accessed
         if new:
             written(self, row, surprise)

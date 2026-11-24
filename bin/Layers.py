@@ -6536,9 +6536,11 @@ class ConceptualAttentionLayer(SparseLayer):
     def raise_entry(self, position, weight):
         """Raise the weight of the entry at ``position`` to at least
         ``weight``, keeping the option it reads."""
-        value = float(self.values[int(position)])
-        size = max(abs(value), float(weight))
-        self.values[int(position)] = -size if value < 0 else size
+        value = self.values[int(position)]
+        floor = torch.as_tensor(weight, device=value.device, dtype=value.dtype)
+        magnitude = value.abs()
+        raised = torch.where(floor > magnitude, floor, magnitude)
+        value.copy_(torch.where(value < 0, -raised, raised))
 
     def thing_rows(self, thing):
         """The store rows of the concepts a symbol holds; a member with no
