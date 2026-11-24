@@ -7585,3 +7585,124 @@ as well. `ScalarPercepts.py` is unchanged.
   counted by step D2's own counter, on positive evidence. §38 takes that
   counter out.
 
+
+## 38. Step D3: the name by MTM's ordinary promotion (Alec, 2026-11-24; the text for the implementer is 38.2)
+
+Shown N7 (no number word united with its value; the frequent words
+united instead):
+
+> My guess is that you are using positive evidence to create the
+> association, and neglecting the negative evidence. "is" and "10" would
+> wire together because they fire together, but they dont becuase "is" is
+> often present without "10" being found in either a physical or mental
+> context (the latter is necessary because the word can occur without the
+> object being present). We might also need more co-occurrence trials,
+> after we have ensured that they can repeat the words (and thus presumably
+> know the words).
+
+> word-object association is just another case of MLM promotion; it should
+> not differ in basic form, and I think MLM is already using PI and SIGMA
+> to make these associations implicitly? So Im not sure we need an explicit
+> formula for their creation.
+
+> your comment about sigma being necessary for meta concepts might dictate
+> that PI can promote single elements (thus making the concept available
+> for the sigma). If that is necessary, please make that happen (in a
+> general way, not just for things known to be words).
+
+("MLM" is read as MTM.)
+
+### 38.1 What they decide
+
+1. *No rule of its own for a name.* Step D2's counter of pairs across
+   modality (`FamiliarTier.observe_units`, with `modalities`, `apart` and
+   the branch on modality in `observe_field`) is the explicit formula, and
+   it counted on evidence for alone. It goes. A word with its object is a
+   candidate of MTM's ordinary promotion, which keeps a lane for and a
+   lane against for every candidate and promotes none that is read both
+   (`observe_candidate`, `promote_candidates`).
+2. *A Pi may promote one element.* A concept that MTM promotes may be
+   promoted alone by the Pi of the next order, a row of one member, which
+   is its symbol and makes it available to a Sigma. It is general: of any
+   concept, of any modality. `ImagePercepts.noun` goes.
+3. *Words first, then trials.* The words are known, which the echo shows,
+   before the trials of word and object together; and the number of trials
+   is measured, not assumed.
+4. *Measured before anything more is built.* What the ordinary promotion
+   makes of a word and its object is measured first, and nothing is added
+   to make the unit come out.
+
+This stands over 34.1, point 3, and 35.9's "designed after".
+
+### 38.2 Text for the implementer
+
+~~~
+Item 1.6, step D3: the name by MTM's ordinary promotion. Read §38 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md whole, then §34 and §35
+(step D2 as built and its review), §37 (step T2), §19.5, §22.1 (question
+1) and H.5; doc/Orders.md ("What makes what", "Where a noun begins") and
+doc/Architecture.md ("What co-occurs is a necessary part of the whole it
+forms; what substitutes is a sufficient part of the kind it forms"). Then
+bin/FamiliarTier.py whole, and how MTM's pool keeps a candidate's
+readings (bin/Memory.py or where owner.mtm is defined).
+
+Keep tmp/item1-6/promotion_progress.md current after each step.
+
+1. Point 1 of §38.1: take step D2's own counter and its branch on
+   modality out. A concept of an image and a concept of a word in one
+   opened field are offered to MTM as any two concepts are.
+2. Point 2: the general rule, in MTM's promotion. Say where; say which
+   makers of a word's symbol it now duplicates and whether they can go
+   (do not remove one a gate or a passing test needs; list it instead).
+3. data/scene/BasicModel_scene.xml sets attentionPromotion true, so that
+   MTM promotes from the opened field there. No other configuration
+   changes.
+4. Measure, before building anything more. On the text model with the
+   scene's box, key false: teach words alone until the model says each
+   back; teach values alone until their regions and places are known;
+   then trials of a word with its object, in two sets: (a) made in the
+   test: `three` with one value every time, `is` with every image; (b)
+   category 2 of the corpus. After each ten trials, up to a number you
+   choose and state, record: the candidates MTM holds that have a member
+   of each modality, each one's readings for and against, what was
+   promoted (a Pi's row or a Sigma, at what order, over which members),
+   and whether the number word and its value stand under one concept.
+   Write the table into the return.
+5. FamiliarTier.units and across, Interpret.named and
+   Assessment.units_across_modality read what the ordinary promotion
+   made: a concept of order one or above with members of two ranges of
+   the registry. No tag marks it.
+6. test/test_item16_naming.py: N1, N2 and N7 as they are. N3, N5 and N6
+   are asserted of what the ordinary promotion makes in set (a). N4
+   becomes: `is` with every image and `three` with its own value;
+   `three` is united with its value and `is` with none. If the ordinary
+   promotion does not make the unit, or unites `is`, do NOT add a rule to
+   make it come out: leave N3 to N6 failing in the test, and say in the
+   return exactly what it makes instead and which condition of
+   observe_candidate or promote_candidates decides it, with what you
+   would propose. That report is then the result of this step.
+7. No other assertion is weakened, skipped or marked; no seed is chosen.
+   Neither stopping gate, nor anything a gate uses, is touched. A text
+   model with createMetaConcepts true and attentionPromotion as it is
+   must behave exactly as before: say how point 2 is kept from changing
+   it, or what it changes.
+8. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_item17_echo.py,
+   test/test_item17_symbols.py, test/test_item16_scene.py,
+   test/test_item16_scene_field.py, test/test_item16_values.py,
+   test/test_item16_naming.py, test/test_concept_output.py, and every
+   test file that names observe_field, promote_candidates,
+   nominate_symbol or maybe_raise_order. No test that passes in the sweep
+   may fail, apart from those known to fail by chance (and N3 to N6 under
+   step 6).
+9. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+10. Return as tmp/item1-6/section39.md, headed "## 39. Step D3: the
+    return": files changed and why; step 4's table; what the ordinary
+    promotion makes of a word and its object and why; each certificate;
+    what a text model with the key true now does differently, if
+    anything; what you would propose.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
