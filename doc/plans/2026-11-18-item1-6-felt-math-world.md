@@ -5752,3 +5752,71 @@ unchanged source, 2 of 4.
 *Standing documents written by Claude with this step:* `doc/Spaces.md`
 ("Level Sets", rewritten for the number modality), `doc/Architecture.md`,
 `doc/Params.md`, `doc/Philosophy.md`, `doc/DevelopmentHistory.md`.
+
+## 26. The corpus's fourth revision: counting asked in words (Claude, 2026-11-24; the text for the implementer is 26.2)
+
+*Rests on 22.4, question 11: "we need a version that asks a question about
+the image in the text modality."*
+
+### 26.1 What changes in §14
+
+Category 27 has two forms.
+
+| Form | Entry | Answer |
+|---|---|---|
+| The count, as it is | an image of one to nine things, with no text; no question is written | the counting words, one for each thing, in order: `one two three` |
+| The number, asked | the same kind of image with the text `how many are here ?` | the one counting word of the number of things: `three` |
+
+- The first form's rows stay as they are frozen, key for key and byte for
+  byte, if the way the rows are drawn allows it; if it does not, the
+  return says which rows moved and why.
+- The second form has as many rows again in each split as the first (100,
+  20, 20 and 20), drawn afresh, under the same rule of what is held out
+  (each set of values whose sum is a multiple of 4 is kept for the
+  generalization split).
+- `how` and `many` join the vocabulary if they are not in it; `are` and
+  `here` are. The words live in the recipes, as every word does.
+- Check 10 of §14 becomes: in category 27 the answer of a row with no text
+  is the first n counting words for the n things of its image, and the
+  answer of a row that asks `how many are here ?` is the nth counting word
+  alone.
+- The second form's answer is one word, so §14's "an answer is one word,
+  except in category 27" now excepts the first form only.
+
+### 26.2 Text for the implementer
+
+~~~
+Item 1.6, the corpus's fourth revision: counting asked in words. Read
+§26.1 of doc/plans/2026-11-18-item1-6-felt-math-world.md, then §14 of the
+same document (the frames' table, the checks, §14.8) and §15.11 and
+§15.12 for how the last revision was made and reviewed.
+
+1. data/felt/recipes/category-27-counting.json gains the second form of
+   §26.1 and, in data/felt/recipes/cast.json, the words it needs. No word
+   is written in bin/felt_world_corpus.py.
+2. bin/felt_world_corpus.py: the predicate, `verify` and whatever composes
+   category 27 take the second form. Check 10 as §26.1 words it.
+3. Freeze again with the documented command (seed 20261118). Say in the
+   return whether the first form's 160 rows are the same bytes as before,
+   and whether any other category's file changed at all (none should);
+   compare the sha256 of every file with the manifest as it was.
+4. test/test_felt_corpus.py: the counting certificate holds both forms.
+   test/test_item16_scene.py reads every document: if it asserts a count
+   of documents, rows, images or pixels that this revision changes, give
+   it the new count and list it. No other assertion changes.
+5. Run with plain pytest, not the bounded runner (another change may be
+   under way in doc/): BASICMODEL_DEVICE=cpu PYTHONPATH=bin:test
+   .venv/bin/python -m pytest test/test_felt_corpus.py
+   test/test_item16_scene.py test/test_game_corpus.py -q -p
+   no:cacheprovider.
+6. No standing doc and nothing under doc/: Claude writes them at review.
+   Nothing removed is deleted but moved to a dated folder under /tmp.
+7. Return as a file, tmp/item1-6/section27.md, headed "## 27. The corpus's
+   fourth revision: the return": files changed and why; the counts of
+   category 27 by split and form; three documents of the new form, whole;
+   the hashes before and after; what in §26.1 could not be built as
+   written and what you built.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
