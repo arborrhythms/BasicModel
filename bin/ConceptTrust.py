@@ -212,10 +212,20 @@ def observe(owner, identity, content=None, *, region=None):
         trust.refresh(identity)
         return
     region = trust.tracked if region is None else region
-    trust.remember(identity, content, region=region)
     row = owner._concept_row_of(identity)
-    value = carrier(owner, content, region=region)
-    candidate = trust.content[row]
+    bank = owner.similarity_codebook
+    # On the derived chart project() writes a cache of placement times radius.
+    # This observation replaces the radius below before anything can read it,
+    # unless the caller handed us a view of that very cache. Parameter-backed
+    # charts use the old projection as their next direction and need both.
+    if trust.tracked and not isinstance(bank.W, nn.Parameter) and not torch._C._is_alias_of(content, bank.W):
+        value = carrier(owner, content, region=region)
+        candidate = torch.where(trust.known[row], trust.content[row], value)
+        trust.known[row] = True
+    else:
+        trust.remember(identity, content, region=region)
+        value = carrier(owner, content, region=region)
+        candidate = trust.content[row]
     occupied = candidate.ne(0).any()
     trust.content[row].copy_(torch.where(occupied, candidate, value))
     if not region:
