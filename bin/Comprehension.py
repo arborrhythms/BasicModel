@@ -6,11 +6,14 @@ operands alongside that walk; it neither chooses grammar nor grows a tree.
 from dataclasses import dataclass, replace, fields, is_dataclass
 
 import torch
+from Meaning import frozen_metadata
 
 
 def detached(value, memo=None):
     """Detach a closing's existing records while preserving shared constituents."""
     memo = {} if memo is None else memo
+    if type(value) is tuple and frozen_metadata(value):
+        return value
     if id(value) in memo:
         return memo[id(value)]
     if torch.is_tensor(value):
@@ -32,6 +35,8 @@ def from_stack(value, points, memo=None):
     """Keep native idea values and closing metadata, not numerical inner nodes."""
     from ClauseRow import Composition
     memo = {} if memo is None else memo
+    if type(value) is tuple and frozen_metadata(value):
+        return value
     if id(value) in memo:
         return memo[id(value)]
     if is_dataclass(value):

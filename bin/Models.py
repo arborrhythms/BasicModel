@@ -14198,6 +14198,7 @@ class BasicModel(BaseModel):
                       source_rows=None, trial_mode='reconstruct', single_input_update=False):
         """One sentence-boundary context for raw forward, evaluation and training."""
         from SentenceCompose import saved_sentence_values
+        from Meaning import share_meaning_metadata
         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
         from GrammarLessons import ComposeLessonStates
         annotations = getattr(self.inputSpace.data, 'grammar_lessons', {}).get(split, ())
@@ -14257,7 +14258,7 @@ class BasicModel(BaseModel):
         hooks = (saved_sentence_values(self.parameters(), self.buffers())
                  if training and self._sentence_ends and not single_input_update else nullcontext())
         try:
-            with hooks:
+            with hooks, share_meaning_metadata():
                 yield
         finally:
             self._opening_errors = None
@@ -21593,6 +21594,8 @@ class BasicModel(BaseModel):
                 self._sentence_read_order = None
             from SentenceTraining import finish_sentence
             finish_sentence(self)
+            from Meaning import expire_meaning_metadata
+            expire_meaning_metadata()
             if growth:
                 GrowthTrial.commit(growth, selected)
             observations.clear()

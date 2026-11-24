@@ -2,6 +2,7 @@
 from dataclasses import fields, is_dataclass, replace
 from types import MappingProxyType
 import torch
+from Meaning import frozen_metadata
 
 
 def detached(value):
@@ -13,6 +14,8 @@ def detached(value):
         return MappingProxyType({key: detached(item) for key, item in value.items()})
     if isinstance(value, tuple) and hasattr(value, '_fields'):
         return type(value)(*(detached(item) for item in value))
+    if type(value) is tuple and frozen_metadata(value):
+        return value
     if isinstance(value, (tuple, list)):
         return type(value)(detached(item) for item in value)
     if is_dataclass(value) and not isinstance(value, type):

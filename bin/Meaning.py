@@ -3,6 +3,8 @@
 This module owns no memory, executor, or learned parameters. Integer references
 are addresses beside semantic payloads, never numeric features of those payloads.
 """
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from collections.abc import Mapping
 import math
@@ -116,10 +118,10 @@ def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_di
     if role_mask is None:
         occupied = torch.arange(3, device=value.device) < depth
     else:
-        occupied = torch.as_tensor(role_mask, device=value.device, dtype=torch.bool)
+        occupied = torch.as_tensor(role_mask, device=value.device, dtype=torch.bool).clone()
         if occupied.shape != (3,):
             raise ValueError("canonical role mask must have shape [3]")
-        if bool(occupied[depth:].any()):
+        if depth < 3 and bool(occupied[depth:].any()):
             raise ValueError("occupied role has no supplied payload")
     value = torch.where(occupied[:, None], value, torch.zeros_like(value))
     if not bool(torch.isfinite(value).all()):
@@ -152,6 +154,42 @@ def _freeze_metadata(value):
     raise TypeError("semantic metadata must contain finite scalar values or typed references")
 
 
+_owned_metadata = ContextVar('owned_meaning_metadata', default=None)
+
+
+@contextmanager
+def share_meaning_metadata():
+    token = _owned_metadata.set({})
+    try:
+        yield
+    finally:
+        _owned_metadata.reset(token)
+
+
+def expire_meaning_metadata():
+    known = _owned_metadata.get()
+    if known is not None:
+        known.clear()
+
+
+def frozen_metadata(value):
+    """An exact tuple already returned by validation during this sentence."""
+    known = _owned_metadata.get()
+    return value is not None and known is not None and known.get(id(value)) is value
+
+
+def _owned_tuple(value):
+    if type(value) is tuple and (not value or frozen_metadata(value)):
+        return value
+    frozen = _freeze_metadata(value)
+    known = _owned_metadata.get()
+    if known is not None and type(frozen) is tuple and frozen:
+        # Keeping the output alive also prevents address reuse. Mutable
+        # inputs are always validated again on their next presentation.
+        known[id(frozen)] = frozen
+    return frozen
+
+
 @dataclass(frozen=True, eq=False)
 class ConceptualMeaning:
     """One full-width grammatical description; occurrence ownership is external.
@@ -176,22 +214,23 @@ class ConceptualMeaning:
             raise ValueError("canonical meaning roles must have shape [3, concept_dim]")
         roles, mask = canonical_role_payload(
             self.roles, 3, "infix", self.role_mask)
-        if not bool(mask.any()):
+        occupied = mask.tolist()
+        if not any(occupied):
             raise ValueError("a conceptual meaning requires an occupied role")
         if self.sentence_kind not in (None, 'idea', 'relation'):
             raise ValueError('sentence kind must be idea, relation or unspecified')
-        refs = _freeze_metadata(self.role_refs)
+        refs = _owned_tuple(self.role_refs)
         if not isinstance(refs, tuple) or len(refs) != 3:
             raise ValueError("role references must contain three canonical entries")
-        for present, ref in zip(mask.tolist(), refs):
+        for present, ref in zip(occupied, refs):
             if ref is not None and not present:
                 raise ValueError("an absent role cannot carry a semantic reference")
-        object.__setattr__(self, "roles", roles.clone())
-        object.__setattr__(self, "role_mask", mask.clone())
+        object.__setattr__(self, "roles", roles)  # canonical_role_payload allocated independent storage
+        object.__setattr__(self, "role_mask", mask)
         object.__setattr__(self, "polarity", bool(self.polarity))
         object.__setattr__(self, "role_refs", refs)
-        object.__setattr__(self, "bindings", _freeze_metadata(() if self.bindings is None else self.bindings))
-        object.__setattr__(self, "scope", _freeze_metadata(() if self.scope is None else self.scope))
+        object.__setattr__(self, "bindings", _owned_tuple(() if self.bindings is None else self.bindings))
+        object.__setattr__(self, "scope", _owned_tuple(() if self.scope is None else self.scope))
         children = tuple(self.constituents)
         if any(not isinstance(child, ConceptualMeaning)
                or child.roles.shape[-1] != roles.shape[-1] for child in children):

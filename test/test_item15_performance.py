@@ -281,3 +281,30 @@ def test_sparse_entry_backward_retains_values_from_before_online_admission():
     actual, = torch.autograd.grad(cost, sigma.value)
     assert expected.count_nonzero() == 2
     assert torch.equal(actual, expected)
+
+
+def test_meaning_shares_only_validated_metadata_and_keeps_its_roles():
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning, expire_meaning_metadata, frozen_metadata, share_meaning_metadata
+    from SentenceBoundary import detached
+    source = torch.tensor([[.4], [.5], [.6]], requires_grad=True)
+    mask = torch.tensor([True, False, True])
+    metadata = {'roles': [['sym', 7]]}
+    with share_meaning_metadata():
+        meaning = ConceptualMeaning(source, mask, bindings=metadata)
+        other = replace(meaning, sentence_kind='idea')
+        assert other.bindings is meaning.bindings
+        assert detached(other.bindings) is meaning.bindings
+        metadata['roles'][0][1] = 8
+        new = replace(meaning, bindings=metadata)
+        assert new.bindings != other.bindings
+        with torch.no_grad():
+            source.fill_(1.)
+            mask.fill_(True)
+        assert torch.equal(other.roles.flatten(), torch.tensor([.4, 0., .6]))
+        assert other.role_mask.tolist() == [True, False, True]
+        assert torch.autograd.grad(other.roles.sum(), source)[0].flatten().tolist() == [1., 0., 1.]
+        assert frozen_metadata(meaning.bindings)
+        expire_meaning_metadata()
+        assert not frozen_metadata(meaning.bindings)
+    assert not frozen_metadata(other.bindings)
