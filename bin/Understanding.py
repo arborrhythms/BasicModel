@@ -237,22 +237,17 @@ class Reading:
             value = getattr(self, name)
             object.__setattr__(self, name, None if value is None else value.clone())
 
-    def detached(self):
-        """The open trial's values after its graph has trained and been freed."""
-        values = {name: (None if getattr(self, name) is None else
-                         getattr(self, name).detach().to("cpu"))
-                  for name in self._tensor_fields}
-        values["tree"] = self.tree
-        values["action_index"] = self.action_index
-        values["lexical_forms"] = self.lexical_forms
-        values['binding_choices'] = self.binding_choices
-        values['close_references'] = self.close_references
-        values['interpret_forced'] = self.interpret_forced
+    def detached(self, **admissions):
+        """Own the admitted values on their device after the selected backward."""
+        values = {name: getattr(self, name) for name in self._tensor_fields}
+        values.update(admissions)
+        values = {name: value.detach() if torch.is_tensor(value) else value
+                  for name, value in values.items()}
         values['case_bank'] = None if self.case_bank is None else self.case_bank.detached()
         for name in ('held_initial','held_final'):
             value = getattr(self,name)
             values[name] = None if value is None else value.detached()
-        return type(self)(**values)
+        return replace(self, **values)
 
 
 @dataclass(frozen=True)

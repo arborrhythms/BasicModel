@@ -179,6 +179,14 @@ def held_at(bank, table, codes=None):
     return part, whole, added
 
 
+def fold_boundaries(table, addresses, rows, lengths, *, whole):
+    """Join parts or meet wholes, including repeated members in a row."""
+    values = table[addresses]
+    bounds = table.new_full((lengths.shape[0], table.shape[1]), float('inf') if whole else -float('inf'))
+    bounds = bounds.scatter_reduce(0, rows[:, None].expand_as(values), values, 'amin' if whole else 'amax')
+    return torch.where(lengths[:, None] > 0, bounds, 1. if whole else 0.)
+
+
 class PlaceEntries(nn.Module):
     """Each row's entries on the where wires and on the when wires of an
     attended percept: ``where_entries`` ``[capacity, 2 * WHERE_WIRES]`` and
@@ -630,6 +638,53 @@ class BasicPercepts(nn.Module):
             properties = torch.minimum(properties, tightest.to(properties))
         return identity, properties
 
+    def _bank_bounds(self, groups, *, whole):
+        """Gather each occupied native address once for this set of row folds."""
+        width = self.property_width if whole else self.identity_width
+        references = sorted({ref for group in groups for ref in group})
+        if not references or not width:
+            return self.value_codes.new_ones(len(groups), width)
+        bank = self.whole if whole else self.native._basis
+        if bank is None:
+            raise ValueError('basic percept property read requires its WholeSpace')
+        position = {ref: i for i, ref in enumerate(references)}
+        device = self.value_codes.device
+        addresses = torch.tensor([position[ref] for group in groups for ref in group], dtype=torch.long, device=device)
+        rows = torch.tensor([i for i, group in enumerate(groups) for _ in group], dtype=torch.long, device=device)
+        lengths = torch.tensor(list(map(len, groups)), dtype=torch.long, device=device)
+        refs = torch.tensor(references, device=device, dtype=torch.long)
+        native = bank.lookup_rows(refs)
+        table = native[:, self.identity_width:self.width] if whole else native[:, :width]
+        return fold_boundaries(table.to(self.value_codes), addresses, rows, lengths, whole=whole)
+
+    def _codes_for(self, rows):
+        """Read ordinary stored rows together; keep the place-specific value charts."""
+        ordinary, parts, wholes = [], [], []
+        codes = [None] * len(rows)
+        for n, row in enumerate(rows):
+            if not 0 <= row < len(self.index):
+                raise ValueError('unavailable basic percept reference')
+            members = self.occurrences[row]
+            if members is None:
+                codes[n] = self.code(row)
+                continue
+            p, w = members
+            if (row in self.place_rows or row in self.runs or row in self.conjunctions
+                    or min((*p, *w), default=0) < -self.identity_width):
+                codes[n] = self.code(row)
+            else:
+                ordinary.append(n)
+                parts.append(p)
+                wholes.append(w)
+        if ordinary:
+            lower = self._bank_bounds(parts, whole=False)
+            upper = self._bank_bounds(wholes, whole=True)
+            for i, n in enumerate(ordinary):
+                tightest = self._tightest(parts[i]) if self.property_width else None
+                bound = upper[i] if tightest is None else torch.minimum(upper[i], tightest.to(upper))
+                codes[n] = torch.cat((lower[i], bound))
+        return codes
+
     def _form_of(self, parts):
         identity = getattr(self.native, 'identity', None)
         if identity is None or min(parts) < -self.identity_width:
@@ -964,6 +1019,8 @@ class BasicPercepts(nn.Module):
         place's is the what it keeps (no parts and every whole where it
         keeps none), with nothing against."""
         result = self.value_codes.new_zeros(len(rows), 2, self.width)
+        ordinary = [row for row in rows if row not in self.place_rows and row not in self.conjunctions]
+        kept = iter(self._codes_for(ordinary))
         for n, row in enumerate(rows):
             if row in self.place_rows:
                 what = self.place_rows[row][2]
@@ -972,7 +1029,8 @@ class BasicPercepts(nn.Module):
                 else:
                     result[n, 0] = what.to(result)
             elif row not in self.conjunctions:
-                result[n] = self.lanes(row).detach().to(result)
+                code = next(kept)
+                result[n] = torch.stack((code, self.against(row, code=code))).detach().to(result)
         return result.clamp(0., 1.)
 
     def _form_spans(self, part_ids, part_spans, keys):
@@ -1282,7 +1340,7 @@ class BasicPercepts(nn.Module):
         selected, inverse = torch.unique(rows[valid], return_inverse=True)
         result = self.value_codes.new_zeros(*rows.shape, self.width)
         if len(selected):
-            codes = torch.stack([self.code(row) for row in selected.tolist()])
+            codes = torch.stack(self._codes_for(selected.tolist()))
             result[valid] = codes[inverse]
         return result
 

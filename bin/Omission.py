@@ -56,19 +56,22 @@ class Omission(nn.Module):
         word_correct = (correct | ~valid).all(-1)
         # Form accuracy excludes words omitted as a whole.
         form_valid = valid & ~draw.words[..., None]
-        samples = ((word_correct, word_valid, draw.words), (correct, form_valid, draw.forms))
-        for row in range(len(valid)):
-            if not bool(word_valid[row].any()):
-                continue
-            for scale, (right, present, hidden) in enumerate(samples):
-                for side in range(2):
-                    mask = present[row] & (hidden[row] if side else ~hidden[row])
-                    if bool(mask.any()):
-                        value = right[row][mask].to(self.accuracies).mean()
-                        count = self.observations[scale, side]
-                        alpha = 1. if not int(count) else 1. / self.horizon
-                        self.accuracies[scale, side].lerp_(value, alpha)
-                        count.add_(1)
+        hits, counts = [], []
+        for right, present, hidden in ((word_correct, word_valid, draw.words), (correct, form_valid, draw.forms)):
+            present, hidden = present.flatten(1), hidden.flatten(1)
+            masks = torch.stack((present & ~hidden, present & hidden), -1)
+            counts.append(masks.sum(1))
+            hits.append((masks & right.flatten(1)[..., None]).sum(1))
+        counts = torch.stack(counts, 1)
+        fractions = torch.stack(hits, 1).to(self.accuracies) / counts.clamp_min(1)
+        # Rows teach in presentation order. Both scales and both sides
+        # share each update. An absent category leaves its history intact.
+        for n in range(len(valid)):
+            seen = counts[n] > 0
+            filtered = torch.lerp(self.accuracies, fractions[n], 1. / self.horizon)
+            updated = torch.where(self.observations == 0, fractions[n], filtered)
+            self.accuracies.copy_(torch.where(seen, updated, self.accuracies))
+            self.observations.add_(seen.long())
         self.rates.copy_(self.rate(self.accuracies[:, 0], self.accuracies[:, 1],
                                    self.target, self.limit))
         if self.target == 1:
@@ -78,6 +81,16 @@ class Omission(nn.Module):
         return dict(word_rate=float(self.rates[0]), form_rate=float(self.rates[1]),
             word_visible=float(self.accuracies[0, 0]), word_omitted=float(self.accuracies[0, 1]),
             form_visible=float(self.accuracies[1, 0]), form_omitted=float(self.accuracies[1, 1]))
+
+
+def covered_bytes(spans, forms, length):
+    """Union of the drawn byte intervals, including overlapping nested forms."""
+    starts, stops = spans.clamp(0, length).flatten(1, 2).unbind(-1)
+    counts = (forms.flatten(1) & (starts < stops)).long()
+    changes = counts.new_zeros(len(forms), length + 1)
+    changes.scatter_add_(1, starts.contiguous(), counts)
+    changes.scatter_add_(1, stops.contiguous(), -counts)
+    return changes[:, :-1].cumsum(1) > 0
 
 
 def prepare(model, units):
@@ -112,10 +125,10 @@ def prepare(model, units):
         words |= draw.words
         protected[sid] = draw.protected
     raw_target = model._staged_concepts_in.detach().clone()
-    hidden = torch.zeros_like(raw_target[:, 0], dtype=torch.bool)
-    for b, w, part in forms.nonzero().tolist():
-        lo, hi = plans[b][w]['spans'][part]
-        hidden[b, lo:hi] = True
+    spans = [[word['spans'] + [(0, 0)] * (capacity - len(word['spans'])) for word in row]
+             + [[(0, 0)] * capacity] * (width - len(row)) for row in plans]
+    span_table = torch.tensor(spans, device=device, dtype=torch.long).reshape(*forms.shape, 2)
+    hidden = covered_bytes(span_table, forms, raw_target.shape[-1])
     model._omission_prepared = dict(raw=raw_target, units=units, plans=plans,
         draw=Draw(words, forms, protected), bytes=hidden,
         sentences=sentences.detach().clone())

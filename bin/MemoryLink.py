@@ -58,13 +58,19 @@ def candidate_eligible(owner, identity, record, *, kind, order, stream, allow_pr
 
 def chunk_candidates(owner, kind, order, stream):
     """Read unpooled retained members through STM0/LTM0's common reader."""
-    from Memory import STMChunks
+    from Memory import STMChunks as chunks
     stm = getattr(owner, 'stm', None)
     if stm is None or stream is None:
         return {}
     state, result = stm.state, {}
     if not 0 <= stream < state[0].shape[0]:
         raise ValueError('link stream exceeds the constructed STM batch')
+    if kind == ('state' if order == 0 else 'reference'):
+        wanted = chunks.OCCURRENCE
+    elif kind == 'event':
+        wanted = chunks.RELATION
+    else:
+        return result
     store = owner._closed_clause_store()
     # Non-reference collections can share members, so token_of deliberately
     # does not map those members to one owner. They are nevertheless pooled:
@@ -74,18 +80,12 @@ def chunk_candidates(owner, kind, order, stream):
               if entry.refinement.get('member_kind', 'reference') == kind
               and entry.refinement.get('member_order') == order
               for address in entry.occurrences}
-    for index in range(state[0].shape[1]):
-        if int(state[STMChunks.READ][stream, index]) <= 0 or int(state[STMChunks.ORDERS][stream, index]) != order:
-            continue
-        tag, member = state[STMChunks.REFS][stream, index, 0].tolist()
-        if tag == STMChunks.OCCURRENCE:
-            address = ('ltm', store.address_domain, member)
-            actual_kind = 'state' if order == 0 else 'reference'
-        elif tag == STMChunks.RELATION:
-            address, actual_kind = ('sym', member), 'event'
-        else:
-            continue
-        if kind != actual_kind or address in pooled or owner.mtm.token_of(address) is not None:
+    refs = state[chunks.REFS][stream, :, 0]
+    selected = (state[chunks.READ][stream] > 0) & (state[chunks.ORDERS][stream] == order) & (refs[:, 0] == wanted)
+    indices = selected.nonzero().flatten()
+    for index, member in torch.stack((indices, refs[indices, 1]), 1).tolist():
+        address = ('ltm', store.address_domain, member) if wanted == chunks.OCCURRENCE else ('sym', member)
+        if address in pooled or owner.mtm.token_of(address) is not None:
             continue
         result[address] = dict(value=owner.mtm.read_member(address, live=True),
             role=0, position=(index, 0), in_stm=True)

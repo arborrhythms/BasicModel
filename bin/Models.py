@@ -13026,10 +13026,7 @@ class BasicModel(BaseModel):
                     transient = (selected_ids >= int(reserved[0])) & (selected_ids <= int(reserved[-1]))
                     # Stable handles need not be dense physical row numbers:
                     # an admitted concept can lie inside this numeric range.
-                    transient &= torch.tensor([
-                        concept_owner._concept_row_of(cid) is None
-                        for cid in selected_ids.detach().cpu().tolist()
-                    ], dtype=torch.bool, device=selected_ids.device)
+                    transient &= concept_owner._concept_allocator.layer(0).concept_rows(selected_ids) < 0
                     lexical = (torch.full_like(selected_ids, -1) if selected_lexical_ids is None else
                                selected_lexical_ids.to(selected_ids))
                     selected_ids = torch.where(transient, lexical, selected_ids)
@@ -20555,10 +20552,10 @@ class BasicModel(BaseModel):
             if references is not None and native.reference_ids is not None:
                 references = torch.where(references == program.concept_ids,
                                          native.reference_ids, references)
-            entries.append(replace(program,
+            entries.append(program.detached(
                 reference_ids=references, reference_orders=native.reference_orders,
                 reference_values=(program.leaves if program.reference_values is None
-                                  and references is not None else program.reference_values)).detached())
+                                  and references is not None else program.reference_values)))
         view['entries'] = tuple(entries)
         comprehensions = [None if source.get('comprehensions') is None or admitted[b] is None
             or source['comprehensions'][b] is None or not bool(view['mask'][b])

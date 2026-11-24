@@ -64,7 +64,7 @@ class PartClosing:
             return RELATION, location[1]
         if isinstance(reference,tuple) and reference[:1] == ('sym',):
             reference=reference[1]
-        if isinstance(reference,int) and reference > 0 and (self._point(reference) is not None or reference in self.alloc.symbol_types):
+        if isinstance(reference,int) and reference > 0 and (self.owner._concept_row_of(reference) is not None or reference in self.alloc.symbol_types):
             return SYMBOL, reference
         return None
 
@@ -97,7 +97,7 @@ class PartClosing:
             if resolved and reference[0] == SYMBOL:
                 # A bare, uninterpreted word is a name, not its own object.
                 resolved = not self.owner.interpret.no_object(reference[1]) and not (
-                    'word' in self.alloc.symbol_types.get(reference[1], ()) and self._point(reference[1]) is None)
+                    'word' in self.alloc.symbol_types.get(reference[1], ()) and self.owner._concept_row_of(reference[1]) is None)
         identity = reference
         if value.operation in self._assertions and len(children) == 2:
             # A semantic pair has references and evidence, not an idea value.

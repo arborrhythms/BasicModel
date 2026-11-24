@@ -278,17 +278,16 @@ def reverse(model, sub, field):
     # Each leaf's concepts on the order-zero Sigma's outputs, each lane
     # apart (a sign is two lanes, up and back): for, and against negated.
     sigma = cs.install_order_zero()
-    ids = field.concept_ids
+    from SentenceField import inventory
+    rows_at = inventory(cs, field)
     value = torch.stack((field.evidence[..., 0], -field.evidence[..., 1]), -1)
-    concepts = value.new_zeros(sigma.nOutput, B, E, 2)
-    for b in range(B):
-        column = ids if ids.ndim == 1 else ids[:, b]
-        found = [(n, row) for n, cid in enumerate(column.tolist()) if int(cid) >= 0
-                 for row in (cs._concept_row_of(int(cid)),) if row is not None and 0 <= row < sigma.nOutput]
-        if found:
-            at = torch.tensor([n for n, _ in found], device=value.device)
-            to = torch.tensor([row for _, row in found], device=value.device)
-            concepts[:, b] = concepts[:, b].index_add(0, to, value.index_select(0, at)[:, b])
+    if rows_at.ndim == 1:
+        rows_at = rows_at[:, None]
+    # Accumulate every lane of each stream independently. A spare row
+    # absorbs padding and higher orders without reading their indices back.
+    address = torch.where((rows_at >= 0) & (rows_at < sigma.nOutput), rows_at, sigma.nOutput)
+    address = address[..., None, None].expand_as(value)
+    concepts = value.new_zeros(sigma.nOutput + 1, B, E, 2).scatter_add(0, address, value)[:-1]
     # The Sigma's way back, then the first Pi's: the recreated .what.
     rows = list(range(len(basic.index)))
     held = sigma.reverse(concepts, rows).clamp_min(0).sum(-1)                # [R, B, E]

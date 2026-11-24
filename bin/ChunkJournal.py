@@ -372,12 +372,12 @@ class ChunkJournal(nn.Module):
 def leaf_orders(scope,records,*,batch,positions,orders):
     """Read the shifted order before lexical reference admission can change it."""
     members = torch.cat((records[batch,:,12:24],records[batch,:,24:36],scope[batch,:,2:]),0)
-    stamps = positions.new_full(positions.shape,-1) if orders is None else orders.clone()
-    for index,word in enumerate(positions.tolist()):
-        shifted = members[(members[:,SOURCE-2] == -word-1) & (members[:,LEAVES-2] > 0)]
-        if len(shifted):
-            stamps[index] = shifted[0,UNLOWERED-2]
-    return stamps
+    stamps = positions.new_full(positions.shape, -1) if orders is None else orders
+    if not members.shape[0]:
+        return stamps.clone()
+    match = (members[:, SOURCE-2] == -positions[:, None]-1) & (members[:, LEAVES-2] > 0)
+    first = match.to(torch.int32).argmax(1)
+    return torch.where(match.any(1), members[first, UNLOWERED-2], stamps)
 
 
 def capture(owner, state, scope, records, values, *, batch, positions, columns, actions):

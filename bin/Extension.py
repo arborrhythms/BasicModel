@@ -113,9 +113,10 @@ def interpreted(owner, source, *, stream=0):
         objects = owner.interpret.preferred(identity, batch=stream) if identity in words else ()
         for reference in objects or (identity,):
             contributions.setdefault(reference,[]).append(value)
-    ids = source.ids.new_tensor(sorted(contributions))
-    values = (torch.stack([torch.stack(contributions[int(cid)]).amax(0) for cid in ids])
-              if len(ids) else source.values.new_zeros(0,2))
+    ordered = sorted(contributions)
+    ids = source.ids.new_tensor(ordered)
+    values = (torch.stack([torch.stack(contributions[cid]).amax(0) for cid in ordered])
+              if ordered else source.values.new_zeros(0,2))
     return ConceptSet(ids,values,source.missing)
 
 

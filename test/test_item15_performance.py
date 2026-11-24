@@ -37,6 +37,37 @@ def test_byte_counts_fullgraph():
     assert torch.equal(compiled(ids, spans, ids != 0), old_counts(ids, spans, ids != 0))
 
 
+@pytest.mark.parametrize('whole', [True, False])
+def test_stored_fold_matches_repeated_addresses_and_tied_gradients(whole):
+    from BasicPercepts import fold_boundaries
+    table = torch.tensor([[.2, .8], [.2, .4], [.9, .4]], requires_grad=True)
+    addresses = torch.tensor([0, 2, 0, 0, 1])
+    lengths = torch.tensor([2, 3, 0])
+    rows = torch.tensor([0, 0, 1, 1, 1])
+    reduce = torch.amin if whole else torch.amax
+    expected = torch.stack((reduce(table[[0, 2]], 0), reduce(table[[0, 0, 1]], 0),
+                            table.new_full((2,), float(whole))))
+    captured = torch.compile(fold_boundaries, backend='aot_eager', fullgraph=True)
+    actual = captured(table, addresses, rows, lengths, whole=whole)
+    assert torch.equal(actual, expected)
+    weights = torch.tensor([[1., 2.], [3., -1.], [1., 1.]])
+    torch.testing.assert_close(torch.autograd.grad((actual * weights).sum(), table)[0],
+                               torch.autograd.grad((expected * weights).sum(), table)[0])
+
+
+def test_concept_lookup_tracks_incremental_admission_and_checkpoint_replacement():
+    from Layers import ConceptualAttentionLayer
+    store = ConceptualAttentionLayer.square(8)
+    ids = torch.tensor([[-1, 42, 9, 8], [12, 9, 8, 42]])
+    assert torch.equal(store.concept_rows(ids), torch.full_like(ids, -1))
+    store.assign_row(('concept', 42), base=2)
+    store.assign_row(('concept', 9), base=5)
+    store.assign_row(('other', 8))
+    assert store.concept_rows(ids).tolist() == [[-1, 2, 5, -1], [-1, 5, -1, 2]]
+    store._tensor_rows = {('concept', 42): 1, ('concept', 8): 6, ('other', 9): 3}
+    assert store.concept_rows(ids).tolist() == [[-1, 1, -1, 6], [-1, -1, 6, 1]]
+
+
 def test_whole_part_reads_fullgraph_keep_ties_and_gradients():
     from BasicPercepts import held_at
     from test_item17_looks import hand_bank

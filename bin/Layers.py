@@ -6817,6 +6817,23 @@ class ConceptualAttentionLayer(SparseLayer):
         k = key if isinstance(key, tuple) else int(key)
         return self._tensor_rows.get(k)
 
+    def concept_rows(self, ids):
+        """Resolve a tensor of concept names in the occupied inventory."""
+        # Admission appends assignments. Checkpoint restore replaces the map.
+        rows = self._tensor_rows
+        cached = self.__dict__.get('_concept_row_lookup')
+        if (cached is None or cached[0] is not rows or cached[1] != len(rows)
+                or cached[2].device != ids.device):
+            ordered = sorted((key[1], row) for key, row in rows.items()
+                             if isinstance(key, tuple) and key[:1] == ('concept',))
+            # The extra row absorbs absent names, including an empty inventory.
+            table = ids.new_tensor(ordered + [(-1, -1)], dtype=torch.long)
+            cached = rows, len(rows), table[:, 0].contiguous(), table[:, 1].contiguous()
+            self.__dict__['_concept_row_lookup'] = cached
+        names, seats = cached[2:]
+        at = torch.searchsorted(names[:-1], ids.contiguous())
+        return torch.where((ids >= 0) & (names[at] == ids), seats[at], -1)
+
     def hebbian_strengthen_row(self, row, eta=0.1, cap=4.0):
         """Raise the weight of every entry on ``row`` by ``eta`` (to at most
         ``cap``), keeping each entry's option; ``no_grad`` -- evidence

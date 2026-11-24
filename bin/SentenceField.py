@@ -8,9 +8,7 @@ def inventory(owner, field):
     ids = field.concept_ids
     if ids is getattr(owner, "_cs_field_concept_ids", None):
         return torch.where(ids >= 0, owner._cs_field_rows, -1)
-    return torch.tensor([(-1 if int(cid) < 0 else owner._concept_row_of(int(cid)))
-                         for cid in ids.reshape(-1).tolist()],
-                        dtype=torch.long, device=ids.device).reshape(ids.shape)
+    return owner._concept_allocator.layer(0).concept_rows(ids)
 
 
 def publish(model, field):
