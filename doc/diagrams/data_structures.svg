@@ -1,0 +1,107 @@
+<svg width='1338' height='745' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1338' height='745' fill='#fafafa'/>
+<defs></defs>
+<rect x='0' y='0' width='1338' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='669' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>BasicModel data structures</text>
+<text x='669' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Arrows follow references. Percept and Concept are addressable rows. The two LTM classes hold occurrences and relations.</text>
+<defs><marker id="association" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M 1 1 L 9 5 L 1 9" fill="none" stroke="#2c3e50"/></marker></defs>
+<rect x='26' y='88' width='334' height='265' fill='white' fill-opacity='1.0' rx='3' stroke='#2980b9' stroke-width='1.5'/>
+<text x='193.0' y='111' text-anchor='middle' font-size='18' fill='#2980b9' font-weight='bold'>Percept</text>
+<text x='193.0' y='131' text-anchor='middle' font-size='13' fill='#626567'>«row» BasicPercepts</text>
+<line x1='26' y1='143' x2='360' y2='143' stroke='#2980b9' stroke-width='1'/>
+<text x='39' y='163' text-anchor='start' font-size='14' fill='#2980b9' font-weight='bold'>Basic percept identity</text>
+<text x='39' y='184' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>(&#x27;bp&#x27;, row)</text>
+<text x='39' y='202' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>occurrences[row] = (parts, wholes)</text>
+<text x='39' y='220' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>promoted[row]</text>
+<line x1='26' y1='231' x2='360' y2='231' stroke='#2980b9' stroke-width='1'/>
+<text x='39' y='251' text-anchor='start' font-size='14' fill='#2980b9' font-weight='bold'>Location-bound occurrences · PerceptBank</text>
+<text x='39' y='272' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>table, span, token, time, activity</text>
+<text x='39' y='290' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>where, when</text>
+<line x1='26' y1='301' x2='360' y2='301' stroke='#2980b9' stroke-width='1'/>
+<text x='39' y='321' text-anchor='start' font-size='14' fill='#2980b9' font-weight='bold'>Code read from the row</text>
+<text x='39' y='342' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>lanes(row)</text>
+<rect x='502' y='88' width='334' height='247' fill='white' fill-opacity='1.0' rx='3' stroke='#8e44ad' stroke-width='1.5'/>
+<text x='669.0' y='111' text-anchor='middle' font-size='18' fill='#8e44ad' font-weight='bold'>Concept</text>
+<text x='669.0' y='131' text-anchor='middle' font-size='13' fill='#626567'>«row» addressed by concept ID</text>
+<line x1='502' y1='143' x2='836' y2='143' stroke='#8e44ad' stroke-width='1'/>
+<text x='515' y='163' text-anchor='start' font-size='14' fill='#8e44ad' font-weight='bold'>Identity · ConceptAllocator</text>
+<text x='515' y='184' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>(&#x27;sym&#x27;, cid)</text>
+<text x='515' y='202' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>concepts, order_zero_members</text>
+<line x1='502' y1='213' x2='836' y2='213' stroke='#8e44ad' stroke-width='1'/>
+<text x='515' y='233' text-anchor='start' font-size='14' fill='#8e44ad' font-weight='bold'>Constituents · ConceptualAttentionLayer</text>
+<text x='515' y='254' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>constituents(cid)</text>
+<line x1='502' y1='265' x2='836' y2='265' stroke='#8e44ad' stroke-width='1'/>
+<text x='515' y='285' text-anchor='start' font-size='14' fill='#8e44ad' font-weight='bold'>Allocator reads</text>
+<text x='515' y='306' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>records(cid)</text>
+<text x='515' y='324' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>seated_order(cid)</text>
+<rect x='978' y='88' width='334' height='229' fill='white' fill-opacity='1.0' rx='3' stroke='#2c3e50' stroke-width='1.5'/>
+<text x='1145.0' y='111' text-anchor='middle' font-size='18' fill='#2c3e50' font-weight='bold'>LTM · relation</text>
+<text x='1145.0' y='131' text-anchor='middle' font-size='13' fill='#626567'>LTM1</text>
+<line x1='978' y1='143' x2='1312' y2='143' stroke='#2c3e50' stroke-width='1'/>
+<text x='991' y='163' text-anchor='start' font-size='14' fill='#2c3e50' font-weight='bold'>Relation columns</text>
+<text x='991' y='184' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>refs, ref_kinds, truth_plus,</text>
+<text x='991' y='202' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>truth_minus, activity</text>
+<line x1='978' y1='213' x2='1312' y2='213' stroke='#2c3e50' stroke-width='1'/>
+<text x='991' y='233' text-anchor='start' font-size='14' fill='#2c3e50' font-weight='bold'>Ordered pair of tagged endpoints</text>
+<text x='991' y='254' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>SYMBOL | OCCURRENCE | RELATION</text>
+<line x1='978' y1='265' x2='1312' y2='265' stroke='#2c3e50' stroke-width='1'/>
+<text x='991' y='285' text-anchor='start' font-size='14' fill='#2c3e50' font-weight='bold'>Find incoming references</text>
+<text x='991' y='306' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>rows_referencing(kind, value)</text>
+<rect x='26' y='452' width='334' height='267' fill='white' fill-opacity='1.0' rx='3' stroke='#2980b9' stroke-width='1.5'/>
+<text x='193.0' y='475' text-anchor='middle' font-size='18' fill='#2980b9' font-weight='bold'>STM</text>
+<text x='193.0' y='495' text-anchor='middle' font-size='13' fill='#626567'>ShortTermMemory</text>
+<line x1='26' y1='507' x2='360' y2='507' stroke='#2980b9' stroke-width='1'/>
+<text x='39' y='527' text-anchor='start' font-size='14' fill='#2980b9' font-weight='bold'>Working set · STMChunks</text>
+<text x='39' y='548' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>buffer, depth, orders, grammar_orders,</text>
+<text x='39' y='566' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>concept_rows, concept_activations,</text>
+<text x='39' y='584' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>chunk_refs, chunk_identity,</text>
+<text x='39' y='602' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>chunk_timeline, chunk_stack,</text>
+<text x='39' y='620' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>chunk_read, chunk_where, chunk_when,</text>
+<text x='39' y='638' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>chunk_truth</text>
+<line x1='26' y1='649' x2='360' y2='649' stroke='#2980b9' stroke-width='1'/>
+<text x='39' y='669' text-anchor='start' font-size='14' fill='#2980b9' font-weight='bold'>Thought storage per stream and chunk</text>
+<text x='39' y='690' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>_thought_stores → STM0</text>
+<text x='39' y='708' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>STM0.parts → STM1</text>
+<rect x='502' y='452' width='334' height='265' fill='white' fill-opacity='1.0' rx='3' stroke='#16a085' stroke-width='1.5'/>
+<text x='669.0' y='475' text-anchor='middle' font-size='18' fill='#16a085' font-weight='bold'>MTM</text>
+<text x='669.0' y='495' text-anchor='middle' font-size='13' fill='#626567'>MediumTermMemory</text>
+<line x1='502' y1='507' x2='836' y2='507' stroke='#16a085' stroke-width='1'/>
+<text x='515' y='527' text-anchor='start' font-size='14' fill='#16a085' font-weight='bold'>Retained identities</text>
+<text x='515' y='548' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>entries → Token</text>
+<text x='515' y='566' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>names → Name</text>
+<text x='515' y='584' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>capacity, horizon</text>
+<line x1='502' y1='595' x2='836' y2='595' stroke='#16a085' stroke-width='1'/>
+<text x='515' y='615' text-anchor='start' font-size='14' fill='#16a085' font-weight='bold'>Token references</text>
+<text x='515' y='636' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>occurrences, symbol, transient</text>
+<text x='515' y='654' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>timelines → Timeline → Event</text>
+<line x1='502' y1='665' x2='836' y2='665' stroke='#16a085' stroke-width='1'/>
+<text x='515' y='685' text-anchor='start' font-size='14' fill='#16a085' font-weight='bold'>Resolve an identity</text>
+<text x='515' y='706' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>token_of(occurrence)</text>
+<rect x='978' y='452' width='334' height='265' fill='white' fill-opacity='1.0' rx='3' stroke='#2c3e50' stroke-width='1.5'/>
+<text x='1145.0' y='475' text-anchor='middle' font-size='18' fill='#2c3e50' font-weight='bold'>LTM · occurrence</text>
+<text x='1145.0' y='495' text-anchor='middle' font-size='13' fill='#626567'>LTM0 extends IdeaRows</text>
+<line x1='978' y1='507' x2='1312' y2='507' stroke='#2c3e50' stroke-width='1'/>
+<text x='991' y='527' text-anchor='start' font-size='14' fill='#2c3e50' font-weight='bold'>Occurrence columns · IdeaRows</text>
+<text x='991' y='548' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>slots, episodic_concepts,</text>
+<text x='991' y='566' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>episodic_values, trust, referent,</text>
+<text x='991' y='584' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>activity, row_names</text>
+<line x1='978' y1='595' x2='1312' y2='595' stroke='#2c3e50' stroke-width='1'/>
+<text x='991' y='615' text-anchor='start' font-size='14' fill='#2c3e50' font-weight='bold'>Stable occurrence address</text>
+<text x='991' y='636' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>(&#x27;ltm&#x27;, &#x27;name-v1&#x27;, row_name)</text>
+<line x1='978' y1='647' x2='1312' y2='647' stroke='#2c3e50' stroke-width='1'/>
+<text x='991' y='667' text-anchor='start' font-size='14' fill='#2c3e50' font-weight='bold'>Read by row</text>
+<text x='991' y='688' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>referent_of(index)</text>
+<text x='991' y='706' text-anchor='start' font-size='13' fill='#2c3e50' font-family='monospace'>meaning_of(index)</text>
+<polyline points="502,166 360,166" fill="none" stroke="#2c3e50" stroke-width="1.5" marker-end="url(#association)"/>
+<text x='431.0' y='157' text-anchor='middle' font-size='13' fill='#2c3e50'>order-zero members</text>
+<polyline points="836,166 978,166" fill="none" stroke="#2c3e50" stroke-width="1.5" marker-end="url(#association)"/>
+<text x='907.0' y='157' text-anchor='middle' font-size='13' fill='#2c3e50'>allocator.parts</text>
+<polyline points="193.0,452 193.0,397 542,397 542,335" fill="none" stroke="#2c3e50" stroke-width="1.5" marker-end="url(#association)"/>
+<text x='367.5' y='389' text-anchor='middle' font-size='13' fill='#2c3e50'>concept_rows</text>
+<polyline points="798,452 798,335" fill="none" stroke="#2c3e50" stroke-width="1.5" marker-end="url(#association)"/>
+<text x='734' y='411' text-anchor='middle' font-size='13' fill='#2c3e50'>Token.symbol (0..1)</text>
+<polyline points="1145.0,452 1145.0,317" fill="none" stroke="#2c3e50" stroke-width="1.5" marker-end="url(#association)"/>
+<text x='1168.0' y='411' text-anchor='middle' font-size='13' fill='#2c3e50'>parts</text>
+<polyline points="836,530 978,530" fill="none" stroke="#2c3e50" stroke-width="1.5" marker-end="url(#association)"/>
+<text x='907.0' y='521' text-anchor='middle' font-size='13' fill='#2c3e50'>kept occurrences</text>
+</svg>
