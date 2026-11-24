@@ -13122,6 +13122,16 @@ class BasicModel(BaseModel):
                 result = table.new_full((L, *table.shape[2:]), fill)
                 return result.index_copy(0, operation_steps, table[b, operation_columns])
 
+            form_bank = getattr(self.languageSpace, '_form_wholes', None)
+            forms = {}
+            if form_bank is not None:
+                from FormCentroids import form_witnesses
+                forms = form_witnesses(action_index, form_bank, b, source_positions[:n], leaf_slab,
+                                       selected_leaf_orders, identity_record.get('timeline_actions'), self.languageSpace)
+            case_bank = getattr(getattr(self.languageSpace, '_reference_bank', None), 'cases', None)
+            if case_bank is not None:
+                case_bank = type(case_bank)(*(value.clone() if torch.is_tensor(value) else value
+                    for value in case_bank.for_stream(b)))
             entry = Reading(
                 held_initial=(None if getattr(self, '_sentence_initial_concepts', None) is None else
                               self._sentence_initial_concepts.for_stream(b)),
@@ -13150,7 +13160,7 @@ class BasicModel(BaseModel):
                 close_references=bool(getattr(self, '_component_reading', False)),
                 interpret_forced=interpret_forced,
                 operation_probabilities=None if probabilities is None else probabilities[b, :L],
-                **identity_record,
+                case_bank=case_bank, **forms, **identity_record,
                 case_values=None if case_state is None else operation_rows(case_state[3]),
                 case_selected=None if case_state is None else operation_rows(case_state[4]),
                 **{name: value[b].index_select(0, pos.to(value.device))
@@ -13160,15 +13170,6 @@ class BasicModel(BaseModel):
                        ('symbol_where', word_view(getattr(self, 'inputSpace', None), 'symbol_where')),
                        ('symbol_when', word_view(getattr(self, 'inputSpace', None), 'symbol_when')))
                    if torch.is_tensor(value)})
-            form_bank = getattr(getattr(self, 'languageSpace', None), '_form_wholes', None)
-            if form_bank is not None:
-                from FormCentroids import capture
-                entry = capture(entry, form_bank, b, pos, self.languageSpace)
-            case_bank = getattr(getattr(self.languageSpace, '_reference_bank', None), 'cases', None)
-            if case_bank is not None:
-                case_bank = type(case_bank)(*(value.clone() if torch.is_tensor(value) else value
-                    for value in case_bank.for_stream(b)))
-            entry = replace(entry, case_bank=case_bank)
             self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b,
                 after=int(self.symbolSpace.ltm_store.names_issued))
             entries.append(entry)

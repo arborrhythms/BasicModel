@@ -15597,26 +15597,27 @@ class ConceptualSpace(Space):
             binding = self._field_inventory_rows(rows.device)
             active = (binding[rows, batches] if binding.ndim == 2 else binding[rows]).unique().tolist()
             active = [r for r in active if r >= 0]
-        seen = set()
-        for store in (getattr(self, '_sparse_fam', None) or {}).values():
-            for matrix in (store,):
-                if id(matrix) in seen or matrix.values is None:
-                    continue
-                seen.add(id(matrix))
-                defined = [(row, col) for (row, col), pos in list(matrix._index.items())
-                           if row not in frozen and float(matrix.values[pos]) != 0]
-                for row in sorted({row for row, _ in defined}):
-                    order = self._row_order(row)
-                    for source in active:
-                        if ((order == 1 and self._order0_inventory_row(source))
-                                or (order > 1 and self._row_order(source) == order - 1)):
-                            # The context offers the things that exist: a
-                            # concept with none is not offered a symbol here.
-                            for thing in self.things_reading(row, source, make=False):
-                                col = matrix.column_of_thing(thing)
-                                if (row, col) not in matrix._index:
-                                    matrix.add_edge(row, col, weight=0.)
-                                    changed = True
+        families = getattr(self, '_sparse_fam', None) or {}
+        for matrix in dict.fromkeys(families.values()):
+            if not active or matrix.values is None:
+                continue
+            entries = [(row, pos) for (row, _), pos in matrix._index.items() if row not in frozen]
+            if not entries:
+                continue
+            rows, positions = zip(*entries)
+            live = matrix.values[list(positions)].ne(0).tolist()
+            for row in sorted({row for row, defined in zip(rows, live) if defined}):
+                order = self._row_order(row)
+                for source in active:
+                    if ((order == 1 and self._order0_inventory_row(source))
+                            or (order > 1 and self._row_order(source) == order - 1)):
+                        # The context offers the things that exist: a
+                        # concept with none is not offered a symbol here.
+                        for thing in self.things_reading(row, source, make=False):
+                            col = matrix.column_of_thing(thing)
+                            if (row, col) not in matrix._index:
+                                matrix.add_edge(row, col, weight=0.)
+                                changed = True
         if changed and frozen:
             self._refresh_frozen_values_hook()
 

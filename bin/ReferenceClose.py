@@ -85,23 +85,47 @@ class ReferenceClose(nn.Module):
     def _predicate_key(point):
         return hashlib.sha256(point.detach().float().cpu().contiguous().numpy().tobytes()).digest()
 
+    def _participant_events(self):
+        """Retained participant observations, in the order used for binding."""
+        owner = self.components.owner
+        return [(event.verb, (event.occurrence, event.role, token))
+                for token, entry in owner.mtm.entries.items() for event in entry.events]
+
     def _participants(self):
-        """Role observations owned by the retained identities' event histories."""
+        """Snapshot all predicate keys for inspection and restore checks."""
         from IdentityRows import point
         owner = self.components.owner
         rows = {}
-        for token, entry in owner.mtm.entries.items():
-            for event in entry.events:
-                value = point(owner, self._event_symbol(event.verb))
-                if value is not None:
-                    rows.setdefault(self._predicate_key(self.predicate_coordinates(value)), []).append(
-                        (event.occurrence, event.role, token))
+        for verb, witness in self._participant_events():
+            value = point(owner, self._event_symbol(verb))
+            if value is not None:
+                rows.setdefault(self._predicate_key(self.predicate_coordinates(value)), []).append(witness)
         return {key: tuple(dict.fromkeys(value)) for key, value in rows.items()}
+
+    def _matching_participants(self, predicate):
+        owner = self.components.owner
+        events = self._participant_events()
+        verbs = tuple(dict.fromkeys(verb for verb, _ in events))
+        identified = [(verb, owner._concept_row_of(self._event_symbol(verb))) for verb in verbs]
+        rows = [(verb, row) for verb, row in identified if row is not None]
+        if not rows:
+            return ()
+        verbs, seats = zip(*rows)
+        bank = owner.similarity_codebook
+        points = self.predicate_coordinates(bank.lookup_rows(list(seats)))
+        # The persisted digest compares the exact float32 bytes, including
+        # signed zero. Compare the words themselves while scoring a sentence.
+        points = points.detach().float().contiguous().view(torch.int32).reshape(len(rows), -1)
+        query = predicate.detach().to(device=points.device, dtype=torch.float32).contiguous().view(torch.int32).reshape(-1)
+        if points.shape[1] != query.numel():
+            return ()
+        matched = (points == query).all(-1).tolist()
+        accepted = {verb for verb, match in zip(verbs, matched) if match}
+        return tuple(dict.fromkeys(witness for verb, witness in events if verb in accepted))
 
     def _event_symbol(self, reference):
         """A captured lexical verb reads its declared object, never a word alias."""
-        from IdentityRows import point
-        if point(self.components.owner, reference) is not None:
+        if self.components.owner._concept_row_of(reference) is not None:
             return reference
         objects = self.components.owner.definitions.objects(reference)
         return objects[0] if len(objects) == 1 else reference
@@ -191,23 +215,23 @@ class ReferenceClose(nn.Module):
         if target is None:
             return predicate.sum()*0
         rows = [(edge, target) for edge, r, target in
-                self._participants().get(self._predicate_key(predicate), ()) if r == role]
+                self._matching_participants(predicate) if r == role]
         total = len(rows)
         count = sum(candidate == target for _, candidate in rows)
         return predicate.new_tensor(count/total) if total else predicate.sum()*0
 
     def expected_roles(self, predicate):
-        rows = self._participants().get(self._predicate_key(self.predicate_coordinates(predicate)), ())
+        rows = self._matching_participants(self.predicate_coordinates(predicate))
         return tuple(role for role in (0, 2) if sum(r == role
             for _, r, _ in rows) >= self.components.verbs.recurrence)
 
     def expected_content(self, predicate, role):
         """An elided role reads what its retained participant witnesses describe."""
         value = self.predicate_coordinates(predicate)
-        if role not in self.expected_roles(value):
+        records = self._matching_participants(value)
+        if role not in (0, 2) or sum(r == role for _, r, _ in records) < self.components.verbs.recurrence:
             return torch.zeros_like(value)
         pool = self.components.owner.mtm
-        records = self._participants().get(self._predicate_key(value), ())
         tokens = tuple(dict.fromkeys(token for _, observed_role, token in records if observed_role == role))
         descriptions = []
         for token in tokens:

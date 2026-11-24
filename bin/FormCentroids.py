@@ -4,7 +4,6 @@ This transient bank contains existing property rows and input primitive
 counts. It owns no run types, lexical read, identity, or durable membership.
 """
 
-from ReadingIndex import steps as recorded_steps
 from typing import NamedTuple
 
 import torch
@@ -371,55 +370,62 @@ def selected(context, arity, like, rule):
     return WholeRead(mean.to(like), count.to(like), carrier.to(like))
 
 
-def capture(program, bank, batch, positions, language):
-    """Retain the same span witnesses for this open derivation's inverse."""
-    from dataclasses import replace
+def form_witnesses(index, bank, batch, positions, leaves, leaf_orders, timeline, language):
+    """Read each chosen operation's span from the operands the chooser retained."""
     from ReferenceContext import denoted_order
-    stack, stamps, spans, counts, active = [], [], [], [], []
-    for index, (kind, operation, word) in enumerate(recorded_steps(program)):
-        pair = (1, 1)
+    bounds, orders, spans, counts, active = [], [], [], [], []
+    observed_orders = leaf_orders.tolist() if timeline is None and leaf_orders is not None else None
+    for at, (kind, operation, word) in enumerate(index.steps):
+        span, pair, order = (-1, -1), (1, 1), -1
         if kind == 0:
-            stack.append((int(positions[word]),))
-            stamps.append(-1 if program.leaf_orders is None else int(program.leaf_orders[word]))
-            span = (-1, -1)
-            order = -1
+            start = positions[word]
+            node = (start, start + 1, 1)
+            order = -1 if observed_orders is None else observed_orders[word]
         elif kind == 3:
-            stack[-2:] = reversed(stack[-2:])
-            stamps[-2:] = reversed(stamps[-2:])
-            span = (-1, -1)
-            order = -1
-        elif kind == 2 or (kind == 1 and
-                language._compose_binary_rules[operation].method_name == 'bind'):
-            field_bind = kind == 1
-            at = len(stack)-1-(0 if field_bind else max(0, word))
-            part = stack[at]
-            pair = (len(part), 0)
-            span = (min(part), max(part)+1)
-            order = (stamps[at] if field_bind else denoted_order(
-                language._compose_unary_rules[operation], (stamps[at],), (), None))
-            if program.timeline_actions is not None:
-                order = int(program.timeline_actions[index, 0])
-            stamps[at] = order
+            # A transpose changes the subsequent operands and owns no new span.
+            node = None
         else:
-            right, left = stack.pop(), stack.pop()
-            part = left+right
-            stack.append(part)
-            right_order, left_order = stamps.pop(), stamps.pop()
-            order = denoted_order(language._compose_binary_rules[operation], (left_order, right_order), (), None)
-            if program.timeline_actions is not None:
-                order = int(program.timeline_actions[index, 0])
-            stamps.append(order)
-            pair = (len(left), len(right))
-            span = (min(part), max(part)+1)
+            children = index.operands[at]
+            left = bounds[children[0]]
+            if len(children) == 1:
+                node = left
+                pair = (left[2], 0)
+            else:
+                right = bounds[children[1]]
+                node = (min(left[0], right[0]), max(left[1], right[1]), left[2] + right[2])
+                pair = (left[2], right[2])
+            span = node[:2]
+            if timeline is None:
+                child_orders = tuple(orders[child] for child in children)
+                if kind == 1 and len(children) == 1:
+                    order = child_orders[0]
+                else:
+                    rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+                    order = denoted_order(rules[operation], child_orders, (), None)
+        orders.append(order)
+        bounds.append(node)
         spans.append(span)
         counts.append(pair)
-        active.append(order == 0)
-    local = bank.for_stream(batch)
-    values, number, carrier = local.read_presence(program.actions.new_tensor(spans)[None])
-    return replace(program, operand_counts=program.leaves.new_tensor(counts),
-                   form_wholes=values[0], form_whole_counts=number[0] *
-                       number.new_tensor(active)[:, None], form_whole_presence=carrier[0],
-                   form_whole_counts_raw=number[0])
+        active.append(kind in (1, 2) and (timeline is not None or order == 0))
+
+    brackets = index.actions.new_tensor(spans).reshape(1, -1, 2)
+    values, number, carrier = bank.for_stream(batch).read_presence(brackets)
+    used = torch.tensor(active, dtype=torch.bool, device=number.device)
+    if timeline is not None:
+        used = used & (timeline[:, 0].to(used.device) == 0)
+    return dict(operand_counts=leaves.new_tensor(counts).reshape(-1, 2),
+                form_wholes=values[0], form_whole_counts=number[0] * used[:, None],
+                form_whole_presence=carrier[0], form_whole_counts_raw=number[0])
+
+
+def capture(program, bank, batch, positions, language):
+    """Attach span witnesses to an already-constructed reading."""
+    from dataclasses import replace
+    from ReadingIndex import ReadingIndex
+    index = program.action_index or ReadingIndex(program.actions, len(program.leaves), language)
+    positions = positions.tolist() if torch.is_tensor(positions) else positions
+    return replace(program, **form_witnesses(index, bank, batch, positions, program.leaves,
+                                             program.leaf_orders, program.timeline_actions, language))
 
 
 def inverse_context(program, index):
