@@ -2707,3 +2707,22 @@ repeated word, whole-field reconstruction error and time per sentence.
 Normalize the per-look contribution across the sentence so extra looks
 alone cannot increase its training weight. Either direction can reconstruct
 three isolated words exactly. Measure order from the actual walk.
+
+## Locating overlapping spelling parts at every byte position
+
+Compare the current stride-one byte windows with a sparse list of
+(part, start) hits as the learned inventory grows. For one-hot atom
+columns X[:, t], the outer product of columns t and t+1 identifies the
+ordered pair at t. Summing those products gives pair counts for the
+sentence and loses the starts. The two adjacent byte IDs already encode
+the one occupied pair at each start. Extend a hit only with the byte
+immediately after it, within the same sentence. All overlapping starts
+remain eligible, independently of the tiling selected for a reading.
+
+Use the same learned inventory for both matchers. Check that prefixing
+a space shifts every hit for `hell`, `ell` and `ll` in `hello` by one,
+and that `aaa` has two hits for `aa`. Compare matched starts, span
+evidence and its gradients, peak memory and training sentences per second
+across sentence lengths and vocabulary sizes. The four-page comparison
+already favors exact windows over dense signed-bit matching. [Item 1.5
+measurements](plans/2026-11-24-item1-5-handoff.md)
