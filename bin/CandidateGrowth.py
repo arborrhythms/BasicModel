@@ -349,7 +349,7 @@ def withheld_words(model, extent):
     one: ``[{cid: 1.}]`` for each stream. What the sentence held, though
     the stem the look read had them taken out."""
     targets = getattr(model, '_omission_targets', None)
-    if targets is None or extent is None:
+    if extent is None or targets is None or 'word_bytes' not in targets:
         return [{} for _ in range(len(extent) if extent is not None else 0)]
     owner = model._concept_owner()
     hidden = targets['draw'].forms.any(-1)

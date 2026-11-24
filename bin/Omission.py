@@ -203,11 +203,13 @@ def stage(model):
     fi_spans = ps._forward_input['part_spans'].reshape(*valid.shape, 2)
     spans.copy_(fi_spans)
     prepared.update(native=native, word_values=word_values, valid=valid.detach().clone(),
-                    ids=isp._ar_word_part_ids.detach().clone(), spans=spans,
-                    word_bytes=tuple(tuple(raw[lo:hi] for lo, hi in units)
-                                     for raw, units in prepared['units']))
+                    ids=isp._ar_word_part_ids.detach().clone(), spans=spans)
+    hiding = can_hide and bool(forms.any())
+    if hiding or 'unit_spans' not in native:
+        prepared['word_bytes'] = tuple(tuple(raw[lo:hi] for lo, hi in units)
+                                       for raw, units in prepared['units'])
     model._omission_targets = prepared
-    if not can_hide or not bool(forms.any()):
+    if not hiding:
         prepared.pop('bytes', None)
         prepared.pop('units')
         prepared.pop('plans', None)
