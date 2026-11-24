@@ -600,3 +600,69 @@ def test_compiled_spread_preserves_local_stage_gradient(symbol_cycle):
         torch.testing.assert_close(left, right)
     torch.testing.assert_close(torch.autograd.grad(actual.sum(), weight)[0],
                                torch.autograd.grad(expected.sum(), weight)[0])
+
+
+def test_native_forecast_forks_at_the_shared_opening_and_scores_its_own_history():
+    from Expectation import PerceptExpectation
+    predictor = PerceptExpectation(2, streams=1, capacity=2)
+    predictor.known.fill_(True)
+    keys = torch.eye(2)[None]
+    bank = lambda: [(torch.arange(2), keys)]
+    active = torch.ones(1, dtype=torch.bool)
+    base = predictor.history(1)
+    before = base.fork()
+    first, second = base.fork(), base.fork()
+    opening = predictor.forecast(bank, 1, history=first)
+    predictor.preview(first, opening, keys[:, 0], active)
+    greedy_second = predictor.forecast(bank, 1, history=first)
+    candidate_first = predictor.forecast(bank, 1, history=second)
+    assert torch.equal(candidate_first[0], opening[0])
+    assert not torch.equal(greedy_second[0], candidate_first[0])
+    _, candidate_loss = predictor.preview(second, candidate_first, keys[:, 1], active)
+    reference = .5 * (opening[0] - keys[:, 1]).square().mean(-1)
+    assert torch.equal(candidate_loss, reference)
+    for old, current in zip(before, base, strict=True):
+        assert torch.equal(old, current)
+
+
+def test_mixed_native_winners_replay_only_their_own_observations_and_gradients():
+    from types import SimpleNamespace
+    from Expectation import PerceptExpectation
+    from ModelAttention import NativeReading, observe_percept, stage_percept_expectation
+
+    owner = PerceptExpectation(2, streams=2, capacity=6)
+    model = SimpleNamespace(percept_expectation=owner, symbolSpace=SimpleNamespace(), _sentence_training=True)
+    masks = torch.eye(2, dtype=torch.bool)
+    both = masks.any(0)
+    stage_percept_expectation(model, both[:, None].expand(2, 2))
+    opening = owner.history(2)
+    paths = [NativeReading(owner, opening, model._percept_expected, model._percept_arrival_loss)
+             for _ in range(2)]
+    raw = torch.tensor([[[.25, .4], [.8, .1]], [[.9, .7], [.2, .3]]])
+    guesses = []
+    for path, columns in zip(paths, ((0, 1), (1, 0)), strict=True):
+        path.publish(model)
+        for turn, col in enumerate(columns):
+            expected = torch.full((2, 2), .25 + .1 * turn, requires_grad=True)
+            guesses.append(expected)
+            observed = raw[:, col]
+            payload = (observed, None, None, None, None, None, observed)
+            observe_percept(model, (expected, torch.tensor([col])), payload, (None, raw), col,
+                            both, path=path, turn=turn)
+    assert owner.updates.item() == 0
+    NativeReading.select(model, paths, torch.arange(2))
+    NativeReading.commit(paths, torch.arange(2), [0, 1])
+    selected_contexts = [path.history.recent[row] for row, path in enumerate(paths)]
+    torch.testing.assert_close(owner.context_recent, torch.stack(selected_contexts))
+    control = PerceptExpectation(2, streams=2, capacity=6)
+    for turn in range(2):
+        for col in range(2):
+            control.arrive((guesses[turn], torch.tensor([col])), raw[:, col], masks[col ^ turn], training=True)
+    for actual, expected in zip(owner.history(2), control.history(2), strict=True):
+        torch.testing.assert_close(actual, expected)
+    model._percept_arrival_loss.sum().backward()
+    for index, guess in enumerate(guesses):
+        winner = index // 2
+        col = (index % 2) ^ winner
+        torch.testing.assert_close(guess.grad[winner], (guess[winner] - raw[winner, col]) / 2)
+        assert not guess.grad[1-winner].any()

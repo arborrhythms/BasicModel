@@ -4,6 +4,7 @@ Predictor sources/targets are detached; only its local residual trains it.
 Content, expected activation, and excess/omission are separate consumers.
 """
 from dataclasses import dataclass
+from typing import NamedTuple
 import math
 
 import torch
@@ -530,6 +531,17 @@ def percept_arrival_brick(mean, recent, count, last, moment_mean, moment_varianc
     return (*state, *moments, local)
 
 
+class PerceptHistory(NamedTuple):
+    mean: torch.Tensor
+    recent: torch.Tensor
+    count: torch.Tensor
+    expected: torch.Tensor
+    known: torch.Tensor
+
+    def fork(self):
+        return PerceptHistory(*(value.detach().clone() for value in self))
+
+
 class PerceptExpectation(nn.Module):
     """Causal native-form expectation with arrival state and sentence training.
 
@@ -550,10 +562,15 @@ class PerceptExpectation(nn.Module):
         self.register_buffer('last_expected', torch.zeros(streams, self.width))
         self.register_buffer('known', torch.zeros(capacity, dtype=torch.bool))
         self.register_buffer('updates', torch.zeros((), dtype=torch.long))
-    def forecast(self, bank, batch, *, completed=None):
+    def history(self, batch):
+        return PerceptHistory(self.context_mean[:batch], self.context_recent[:batch],
+            self.context_count[:batch], self.last_expected[:batch], self.known)
+
+    def forecast(self, bank, batch, *, completed=None, history=None):
         if batch > len(self.context_count):
             raise ValueError('percept expectation exceeds constructed streams')
-        context = torch.cat((self.context_mean[:batch], self.context_recent[:batch]), -1).detach().clone()
+        history = self.history(batch) if history is None else history
+        context = torch.cat((history.mean, history.recent), -1).detach()
         if completed is not None:
             context = context + completed.detach().to(context)
         total = context.new_zeros(batch, self.width)
@@ -566,7 +583,7 @@ class PerceptExpectation(nn.Module):
             if bool(((rows < 0) | (rows >= len(self.known))).any()):
                 raise ValueError('percept forecast key exceeds constructed inventory')
             probability = self.predictor(keys, context).sigmoid()[..., 0]
-            probability = probability * self.known[rows].to(probability)[None]
+            probability = probability * history.known[rows].to(probability)[None]
             total = total + torch.einsum('bn,bnd->bd', probability, keys)
             mass = mass + probability.sum(-1, keepdim=True)
             admitted.append(rows)
@@ -575,6 +592,18 @@ class PerceptExpectation(nn.Module):
             # Keep the empty-domain local objective differentiable and zero.
             total = total + sum(p.sum()*0 for p in self.predictor.parameters())
         return total/mass.clamp_min(1.), admitted
+
+    def preview(self, history, forecast, observed, active):
+        """Advance a trial's causal inputs and score the live prediction."""
+        expected, admitted = forecast
+        value = recombine_percept(observed, expected.detach())
+        local = torch.where(active, .5 * (expected - observed.detach()).square().mean(-1), 0.)
+        with torch.no_grad():
+            context = history[:4]
+            for dest, update in zip(context, percept_arrival_state(*context, observed, expected, active), strict=True):
+                dest.copy_(update)
+            history.known[admitted] = True
+        return value, local
 
     def arrive(self, forecast, observed, active, *, native=None, training=False):
         expected, admitted = forecast

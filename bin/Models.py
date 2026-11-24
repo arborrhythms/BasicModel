@@ -21173,7 +21173,24 @@ class BasicModel(BaseModel):
                 # No row-wide read has admitted the other sentences. Keep
                 # their leaves closed until their own walk publishes them.
                 source_leaf_mask = torch.zeros_like(active)
+            from ModelAttention import NativeReading
+            speculative = single and self.explore_paths and self.grammar_phases.vector
+            opening_history = self.percept_expectation.history(B) if speculative else None
+            if speculative:
+                opening_expected, opening_loss = self._percept_expected, self._percept_arrival_loss
+            opening_sub, opening_sym = sub, sym
+            native_paths, native_carries = [], []
             def compose(cached, exploit, *, kept=None, fork=fork):
+                nonlocal sub, sym
+                native_path = None
+                if speculative:
+                    # The perceived payload included a forecast from the previous
+                    # walk. Recompute it from this candidate's observations.
+                    cached = {}
+                    sub, sym = opening_sub, opening_sym
+                    native_path = NativeReading(self.percept_expectation, opening_history, opening_expected, opening_loss)
+                    native_path.publish(self)
+                    native_paths.append(native_path)
                 nonlocal greedy_attention
                 self.inputSpace._ar_grammar_leaf_mask = source_leaf_mask
                 if kept is not None:
@@ -21297,16 +21314,23 @@ class BasicModel(BaseModel):
                     from ModelAttention import forecast_percept, observe_percept
                     from SentenceAttention import masked_payload
                     index = word_slots[word]
-                    old = cached.get(word)
-                    fresh = rows if old is None else rows & ~old[3]
                     lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
                              torch.stack((rows,torch.zeros_like(rows)),-1).to(words))
                     path_forecast.arrive(index,rows,lanes)
+                    old = cached.get(word)
+                    fresh = rows if old is None else rows & ~old[3]
                     if old is None or bool(fresh.any()):
-                        forecast = forecast_percept(self,fresh)
+                        if native_path is None:
+                            forecast = forecast_percept(self, fresh)
+                        else:
+                            forecast = forecast_percept(self, fresh, history=native_path.history)
                         payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
                         payload, sym = symbolize(payload,empty_feedback,index,None,sym)
-                        payload = observe_percept(self,forecast,payload,sub,word,fresh)
+                        if native_path is None:
+                            payload = observe_percept(self, forecast, payload, sub, word, fresh)
+                        else:
+                            payload = observe_percept(self, forecast, payload, sub, word, fresh,
+                                path=native_path, turn=word if reading_walk is None else reading_walk.taken)
                         native = sub[3:9] if native_support else ()
                         if old is not None:
                             payload = select_rows(old[1],payload,fresh)
@@ -21361,6 +21385,8 @@ class BasicModel(BaseModel):
                     self.inputSpace._ar_grammar_leaf_mask = field.grammar_leaves(source_leaf_mask)
                 if kept is None and self._sentence_training and torch.is_grad_enabled():
                     pending_steps.append((self._sentence_trial, self._sentence_pullback, path))
+                if speculative:
+                    native_carries.append((sub, sym))
                 return path
             def score(path, alternative):
                 self._sentence_field = field_trials[-1]
@@ -21440,6 +21466,10 @@ class BasicModel(BaseModel):
                             candidate = compose(cache, first)
                         else:
                             candidate = first
+                            if speculative:
+                                native_paths.append(native_paths[0])
+                                native_carries.append(native_carries[0])
+                                native_paths[0].publish(self)
                             forecast_paths.append(forecast_paths[0])
                             forecast_paths[0].publish()
                             attention_trials.append(attention_trials[0])
@@ -21454,7 +21484,14 @@ class BasicModel(BaseModel):
                 parts = torch.stack(cost_parts, 1)
                 audit = comparison(parts, present)
                 selected = audit['winner']
+                winner_indices = selected.tolist()
                 WordForecast.keep(forecast_paths, selected)
+                if speculative:
+                    NativeReading.select(self, native_paths, selected)
+                    sub, sym = native_carries[0]
+                    for index, carry in enumerate(native_carries[1:], 1):
+                        if carry is not native_carries[0]:
+                            sub, sym = select_rows((sub, sym), carry, selected == index)
                 if growth:
                     GrowthTrial.keep_forecasts(self, growth, selected)
                 wins, costs = selected.ne(0), audit['costs']
@@ -21536,7 +21573,7 @@ class BasicModel(BaseModel):
                 handoff(self, kept)
                 for b, meter in enumerate(self._attention_meters):
                     if bool(present[b]):
-                        for kind, units in attention_work_trials[int(selected[b])][b].items():
+                        for kind, units in attention_work_trials[winner_indices[b]][b].items():
                             meter.require(kind, units)
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
@@ -21545,7 +21582,7 @@ class BasicModel(BaseModel):
                     wins=wins.detach(),selected=selected.detach(),iterations=iterations.detach())
             if look_trials[0] is not None:
                 self._sentence_look_fields = dict(getattr(self,'_sentence_look_fields',{}))
-                self._sentence_look_fields[sid] = tuple(look_trials[int(selected[b])].fields for b in range(B))
+                self._sentence_look_fields[sid] = tuple(look_trials[index].fields for index in winner_indices)
             audit.update(sentence=sid, departure=draws[0] if draws else None, departures=tuple(draws),
                 actions=tuple(paths), readers=tuple(dict(mse=p.parts[:, 2],
                     predictions=p.observation.get('answer_predictions')) for p in complete_paths),
@@ -21592,10 +21629,10 @@ class BasicModel(BaseModel):
             if field_trials[0] is not None:
                 self.inputSpace._ar_grammar_leaf_mask = choose_tensors([
                     field.grammar_leaves(source_leaf_mask) for field in field_trials])
-                self._sentence_read_order = tuple(field_trials[int(selected[b])].source_order(b) for b in range(B))
+                self._sentence_read_order = tuple(field_trials[index].source_order(b) for b, index in enumerate(winner_indices))
             elif look_trials[0] is not None:
                 orders = [looks.source_orders() for looks in look_trials]
-                self._sentence_read_order = tuple(orders[path][b] for b, path in enumerate(selected.tolist()))
+                self._sentence_read_order = tuple(orders[path][b] for b, path in enumerate(winner_indices))
             # The sentence walk owns admission. Close may use trial scratch,
             # but its exit must retain the selected leaves, not the old prefix.
             kept_leaf_mask = self.inputSpace._ar_grammar_leaf_mask
@@ -21659,6 +21696,8 @@ class BasicModel(BaseModel):
             finish_sentence(self)
             from Meaning import expire_meaning_metadata
             expire_meaning_metadata()
+            if speculative:
+                NativeReading.commit(native_paths, selected, winner_indices)
             if growth:
                 GrowthTrial.commit(growth, selected)
             observations.clear()

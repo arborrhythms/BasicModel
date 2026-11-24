@@ -364,7 +364,7 @@ def stage_percept_expectation(model, active):
     model._percept_prior = None
 
 
-def forecast_percept(model, active):
+def forecast_percept(model, active, *, history=None):
     """Eager serial boundary, before the current word's percept is computed."""
     owner, expectation = model._concept_owner(), model.percept_expectation
     rows = sorted({row for cid in owner.interpret.lexical_identities()
@@ -385,11 +385,77 @@ def forecast_percept(model, active):
     codes = owner.similarity_codebook.lookup_rows(indices).detach()[..., :expectation.width]
     values = codes[None] * weights[..., None]
     completed = ActivationPredictor.context_from(values, weights > 0)
-    return expectation.forecast(bank,len(active),completed=completed)
+    return expectation.forecast(bank,len(active),completed=completed,history=history)
 
 
-def observe_percept(model, forecast, payload, sub, index, active):
-    """Advance arrival state; both composition trials share the frozen value."""
+class NativeReading:
+    """Percept forecasts, observations and their gradients for one speculative walk."""
+
+    def __init__(self, owner, opening, expected, loss):
+        self.owner = owner
+        self.history = opening.fork()
+        self.expected = expected.clone()
+        self.loss = loss.clone()
+        self.arrivals = {}
+
+    def publish(self, model):
+        model._percept_expected = self.expected
+        model._percept_arrival_loss = self.loss
+
+    @staticmethod
+    def select(model, paths, winners):
+        """Select the forecasts and their live losses for the retained rows."""
+        from SentenceCompose import select_rows
+        if all(path is paths[0] for path in paths):
+            paths[0].publish(model)
+            return
+        def choose(values):
+            value = values[0]
+            for index, other in enumerate(values[1:], 1):
+                value = select_rows(value, other, winners == index)
+            return value
+        model._percept_expected = choose([path.expected for path in paths])
+        model._percept_arrival_loss = choose([path.loss for path in paths])
+
+    @staticmethod
+    @torch.no_grad()
+    def commit(paths, winners, winner_indices):
+        """Advance the existing durable predictor only after a successful close."""
+        owner = paths[0].owner
+        retained = {paths[index] for index in winner_indices}
+        if len(retained) == 1:
+            only, = retained
+            for observed, forecast, active, training in only.arrivals.values():
+                owner.arrive(forecast, observed[:, :owner.width], active,
+                             native=observed, training=training)
+            return
+        groups = {path: torch.zeros_like(winners, dtype=torch.bool) for path in retained}
+        for index, path in enumerate(paths):
+            if path in retained:
+                groups[path] = groups[path] | (winners == index)
+        # The persistent owner receives only winning rows, in the same
+        # source-column order as one live walk. Forecasts are already scored.
+        for key in sorted(set().union(*(path.arrivals for path in groups))):
+            active = torch.zeros_like(winners, dtype=torch.bool)
+            expected = torch.zeros_like(owner.last_expected[:len(active)])
+            native = owner.moments.mean.new_zeros(len(active), owner.moments.mean.numel())
+            for path, won in groups.items():
+                if key not in path.arrivals:
+                    continue
+                observation, forecast, seen, training = path.arrivals[key]
+                rows = won & seen
+                active = active | rows
+                expected = torch.where(rows[:, None], forecast[0].detach(), expected)
+                native = torch.where(rows[:, None], observation, native)
+                # Each path can have different provisional native keys.
+                admitted = forecast[1]
+                owner.known[admitted] = owner.known[admitted] | rows.any()
+            owner.arrive((expected, winners[:0]), native[:, :owner.width], active,
+                         native=native, training=training)
+
+
+def observe_percept(model, forecast, payload, sub, index, active, *, path=None, turn=None):
+    """Score this arrival against its own pre-observation forecast."""
     expectation = model.percept_expectation
     width = expectation.width
     native = sub[1][:,int(index)]
@@ -397,13 +463,18 @@ def observe_percept(model, forecast, payload, sub, index, active):
     discourse = getattr(model.symbolSpace,'expectation',None)
     training = bool(getattr(model,'_sentence_training',False) and torch.is_grad_enabled()
         and not getattr(discourse,'_external_observations_suspended',False))
-    arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
+    if path is None:
+        arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
+        local = expectation.last_arrival['local_loss']
+    else:
+        arrival, local = expectation.preview(path.history, forecast, observed, active)
+        path.arrivals[turn, index] = (native.detach(), (forecast[0].detach(), forecast[1]), active, training)
     # Different pages can reach one source word on different looks. A
     # later arrival updates only the streams that actually observed it.
     prior = model._percept_expected[:, index]
     loss = model._percept_arrival_loss[:, index]
     model._percept_expected[:, index] = torch.where(active[:, None], arrival.expected, prior)
-    model._percept_arrival_loss[:, index] = torch.where(active, expectation.last_arrival['local_loss'], loss)
+    model._percept_arrival_loss[:, index] = torch.where(active, local, loss)
     # Identity-valued forward chart, retaining the ordinary source pullback.
     # The two poles of conceptual evidence are unchanged by this P interface.
     from Expectation import recombine_percept
