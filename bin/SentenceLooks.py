@@ -321,7 +321,8 @@ class Looks:
             from Attention import occurrence_probabilities, select_occurrence
             logits = read(units, words, bank.where[:, :W])
             probabilities = occurrence_probabilities(logits)
-            index = select_occurrence(probabilities, sample=model.training, replay=replay, masked=masked)
+            index, proposal = select_occurrence(probabilities, sample=model.training, replay=replay,
+                                                masked=masked, return_proposal=True)
             others = (probabilities.detach().gt(0).sum(-1) - 1).clamp_min(0)
             probability = probabilities.gather(1, index.clamp_min(0)[:, None])[:, 0]
             index = torch.where(rows, index, -1)
@@ -329,7 +330,7 @@ class Looks:
             state.actions.append(index)
             state.alternatives.append((others > 0) & rows & (index >= 0) & (self.supplied is None))
             state.probabilities.append(probability)
-            state.counts.append(torch.where(rows, others, 0))
+            state.proposals.append(torch.where(rows, proposal, 0.))
             found = index >= 0
             if not bool(found.any()):
                 break

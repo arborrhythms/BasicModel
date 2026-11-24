@@ -64,9 +64,10 @@ class _State:
             elif (hasattr(value, '__dict__') and not isinstance(value,
                     (type, types.ModuleType, types.FunctionType, types.MethodType))):
                 # Library modules are owned through their Module dictionaries;
-                # external engines and file handles are not model state.
+                # Child optimizers own the moments that move when STM/MTM
+                # reallocates a parameter during a probe.
                 module = type(value).__module__
-                if isinstance(value, torch.nn.Module) or module.split('.')[0] in (
+                if isinstance(value, (torch.nn.Module, torch.optim.Optimizer)) or module.split('.')[0] in (
                         'types', 'collections') or (Path(__file__).parent / (module.split('.')[-1]+'.py')).is_file():
                     self.saved.append(('object', value, dict(vars(value))))
                     for item in tuple(vars(value).values()):
@@ -442,6 +443,7 @@ def _answer(model, case, index, answers):
 
 def _xor_result(model):
     """Use the standing gate's four inputs and its MSE bar on these weights."""
+    from AgeChart import xor_mse_bar
     with preserved(model):
         pairs = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]])
         source = model.inputSpace.prepInput(list(pairs))
@@ -454,7 +456,7 @@ def _xor_result(model):
         if actual.numel() != 4:
             return dict(status='failed', returned=actual.tolist())
         mse = float((actual.reshape(4) - target.reshape(4).to(actual)).square().mean())
-        return dict(status='passed' if mse < .20 else 'failed', returned=actual.tolist(), mse=mse)
+        return dict(status='passed' if mse < xor_mse_bar() else 'failed', returned=actual.tolist(), mse=mse)
 
 
 def _text_row(model, cases):

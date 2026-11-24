@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 import torch
-from torch.nn import functional as F
+from What import What
 
 from Assessment import assess_age, preserved
 from util import parse
@@ -44,41 +44,24 @@ def words(text):
     return [form for form, _ in parse(text, lex='words') if form.strip()]
 
 
-def presentation(model, texts, batch_size, *, optimizer=None):
-    """Observe the ordinary walk. Use labels only after the sentence has ended."""
-    turns = []
-    def capture(_module, _args, scores):
-        turns.append(scores)
+@torch.no_grad()
+def presentation(model, texts, batch_size):
+    """Measure the completed walk; source order is visible only to the assessor."""
     try:
-        with model.request_read.register_forward_hook(capture):
-            model.understand(staged_input(model, texts, batch_size))
+        model.understand(staged_input(model, texts, batch_size))
         reading = model._attention_words
         if reading is None:
             raise ValueError('reading pretraining requires a model with an occurrence walk')
         forms = model._attention_forms[0]
         actions = reading.actions.tolist()
         accepted = reading.accepted.tolist()
-        correct, losses = [], []
+        correct = []
         for b, text in enumerate(texts):
             slots = [i for i, form in enumerate(forms[b]) if form]
             if [forms[b][i] for i in slots] != words(text):
                 raise ValueError(f'input does not fit the model or lesson tokenizer: {text!r}')
             taken = [index for index in actions[b] if index >= 0]
-            correct.append(bool(turns) and taken == slots and all(accepted[b][i] for i in slots))
-            if optimizer is None:
-                continue
-            # Supervise decisions on the learner's own prefix. Once it departs,
-            # a later teacher action no longer belongs to that trajectory.
-            for t, (target, logits) in enumerate(zip(slots, turns)):
-                if not torch.isfinite(logits[b, target]):
-                    break
-                losses.append(-F.log_softmax(logits[b], dim=-1)[target])
-                if t >= len(taken) or taken[t] != target:
-                    break
-        if optimizer is not None and losses:
-            optimizer.zero_grad(set_to_none=True)
-            torch.stack(losses).mean().backward(inputs=tuple(model.request_read.parameters()))
-            optimizer.step()
+            correct.append(taken == slots and all(accepted[b][i] for i in slots))
         return correct
     finally:
         model.End()
@@ -124,7 +107,22 @@ def train_reader(model, spec, optimizer):
         model.train()
         train = [spec['train'][i] for i in torch.randperm(len(spec['train'])).tolist()]
         for batch in batches(train, size):
-            presentation(model, batch, size, optimizer=optimizer)
+            # Keep this unlabeled presentation independent of the corpus
+            # whose grammar will run after the prerequisite.
+            data = model.inputSpace.data
+            supervised = data.has_supervised_outputs
+            try:
+                with data.runtime_batch(batch):
+                    data.has_supervised_outputs = False
+                    source = model.inputSpace.prepInput(batch)
+                    questions = tuple(What.present(i, split='runtime') for i in range(len(batch)))
+                    model.runBatch(train=True, optimizer=optimizer, batchSize=len(batch),
+                        split='runtime', questions=questions,
+                        batch_override=(source, torch.empty(len(batch), 0, device=source.device)))
+            finally:
+                data.has_supervised_outputs = supervised
+                model.End()
+                model.dispatch_per_row_reset([True] * len(batch))
         results = measure(model, spec['validation'], size)
         history.append(results)
         print('epoch', epoch, {name: (r['correct'], r['total']) for name, r in results.items()}, flush=True)
@@ -140,7 +138,7 @@ def run(config, lesson, output):
     output.mkdir(parents=True, exist_ok=False)
     data = Data()
     model, _ = BaseModel.from_config(str(config), data=data)
-    manifest = dict(dataset='reading-order', sha256=hashlib.sha256(lesson.read_bytes()).hexdigest())
+    manifest = dict(dataset='reading-order', training='sentence-reconstruction-and-expectation', sha256=hashlib.sha256(lesson.read_bytes()).hexdigest())
     model.inputSpace.data.source_manifest = manifest
     report = dict(lesson=manifest, config=str(config.resolve()),
                   config_sha256=hashlib.sha256(config.read_bytes()).hexdigest(), epochs=[])

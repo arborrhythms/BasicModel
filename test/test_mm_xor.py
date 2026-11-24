@@ -189,7 +189,8 @@ class TestMMXorConvergence(unittest.TestCase):
     @pytest.mark.learning_certificate
     def test_mm_grammar_learns_xor_signal(self):
         """The former grammar learning bar now certifies the numeric field."""
-        self._fit_xor(_CONFIG, epochs=900, threshold=.20)
+        from AgeChart import xor_mse_bar
+        self._fit_xor(_CONFIG, epochs=900, threshold=xor_mse_bar())
 
     @pytest.mark.learning_certificate
     def test_convergence(self):

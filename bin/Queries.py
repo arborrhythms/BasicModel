@@ -581,32 +581,22 @@ def _detach_boundary_value(value):
     return value
 
 
-def _freeze_boundary_value(value):
-    """Detach a boundary value and make container evidence non-writable.
-
-    A result can carry nested provenance records, so a top-level
-    ``MappingProxyType`` alone is not a meaningful ownership boundary.  The
-    public result still has the familiar mapping/tuple shape, but no executor
-    tensor or mutable evidence container survives into history/controller
-    code.
-    """
+def _freeze_boundary_value(value, *, detach=True):
+    """Own boundary tensors and freeze containers. Production can retain its
+    operand's gradient until the response is scored. Stored snapshots detach."""
     if torch.is_tensor(value):
-        return value.detach().clone()
+        return value.detach().clone() if detach else value.clone()
     if isinstance(value, ConceptualMeaning):
-        return value.detached()
+        return value.detached() if detach else replace(value, constituents=tuple(
+            _freeze_boundary_value(child, detach=False) for child in value.constituents))
     if isinstance(value, (dict, MappingProxyType)):
-        return MappingProxyType({
-            key: _freeze_boundary_value(item)
-            for key, item in value.items()})
-    if isinstance(value, list):
-        return tuple(_freeze_boundary_value(item) for item in value)
-    if isinstance(value, tuple):
-        return tuple(_freeze_boundary_value(item) for item in value)
+        return MappingProxyType({key: _freeze_boundary_value(item, detach=detach)
+                                 for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze_boundary_value(item, detach=detach) for item in value)
     if is_dataclass(value) and not isinstance(value, type):
-        return replace(value, **{
-            field.name: _freeze_boundary_value(getattr(value, field.name))
-            for field in fields(value) if field.init
-        })
+        return replace(value, **{field.name: _freeze_boundary_value(getattr(value, field.name), detach=detach)
+                                 for field in fields(value) if field.init})
     return value
 
 
@@ -1955,12 +1945,10 @@ class ThoughtSignature:
                 payload = value.roles if kind == 'description' else value
                 if torch.is_tensor(payload) and payload.shape[-1] != width:
                     raise ValueError('thought argument must have the full conceptual width')
-        # An executor is a checked reader.  It cannot retain a live structural
-        # operand (or mutate one through an alias) across the thought boundary.
-        # The controller's learned policy uses its separately supplied selected
-        # meanings; this call path is deliberately data-only.
-        frozen_arguments = tuple(_freeze_boundary_value(value)
-                                 for value in arguments)
+        # Production forwards the selected operand into the differentiable
+        # writer. Every executor receives its own copy.
+        detach = self.descriptor.effect_kind != 'production'
+        frozen_arguments = tuple(_freeze_boundary_value(value, detach=detach) for value in arguments)
         by_role = dict(zip(self.occupied_roles, frozen_arguments))
         try:
             context.work.require('operation')
@@ -1979,7 +1967,7 @@ class ThoughtSignature:
             write_target=target.value,
             evidence_kind=result.get('evidence_kind', self.descriptor.evidence_kind),
             semantic_id=self.operation.semantic_id,
-            domain=self.descriptor.domain))
+            domain=self.descriptor.domain), detach=detach)
         if not isinstance(result, MappingProxyType):  # pragma: no cover - helper invariant
             raise AssertionError('thought result evidence must be frozen')
         return result
@@ -2898,16 +2886,14 @@ class GrammaticalThoughtRegistry:
                 evidence_kind=signature.descriptor.evidence_kind,
                 semantic_id=signature.operation.semantic_id,
                 domain=signature.descriptor.domain))
-        evidence = _freeze_boundary_value(dict(
-            evidence,
-            resolution_records_scanned=resolved,
-            records_scanned=evidence.get('records_scanned', 0)))
+        evidence = dict(evidence, resolution_records_scanned=resolved,
+                        records_scanned=evidence.get('records_scanned', 0))
         if not meaning.polarity:
             swapped = dict(evidence)
             swapped['support_true'], swapped['support_false'] = (
                 evidence.get('support_false', 0.0), evidence.get('support_true', 0.0))
-            evidence = _freeze_boundary_value(swapped)
+            evidence = swapped
         return ThoughtResult(
             semantic_id=evidence['semantic_id'], domain=evidence['domain'],
             result_kind=evidence['result_kind'], evidence_kind=evidence['evidence_kind'],
-            request=meaning.detached(), evidence=evidence)
+            request=meaning.detached(), evidence=MappingProxyType(evidence))

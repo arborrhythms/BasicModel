@@ -80,7 +80,7 @@ class Observed:
 
         def reconstructed(model_, field, **kw):
             result = one(model_, field, **kw)
-            self.row['reconstruction'] = text(result[1].materialize()[0])
+            self.row['reconstruction'] = text(result.materialize()[0])
             return result
 
         def resolved(understanding, question, **kw):

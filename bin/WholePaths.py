@@ -342,6 +342,15 @@ def credit(model, exploit, path, active):
     draw = path.draw
     costs = torch.stack((exploit.parts[:, 0] + exploit.parts[:, 2],
                          path.parts[:, 0] + path.parts[:, 2]), -1)
+    reading = path.attention_words
+    if reading is not None and bool((draw['attention_round'] >= 0).any()):
+        at = torch.arange(reading.actions.shape[1], device=costs.device)[None]
+        chosen = active[:, None] & (at == draw['attention_round'][:, None]) & (reading.proposal > 0)
+        rounds = (draw['walk_count'] * draw['walk_rounds'])[:, None]
+        correction = rounds / torch.where(chosen, reading.proposal, 1.)
+        policy, _ = score_function(reading.probabilities, correction, chosen, costs)
+        path.registry.add('attention.outcome', policy,
+            category='output', objective='attention', side='A')
     first, other = exploit.output_trace, path.output_trace
     if first is not None and other is not None and bool((draw['output_round'] >= 0).any()):
         audit = dict(departure=draw['output_round'], greedy=first[0], explore=other[0],

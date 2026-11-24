@@ -264,7 +264,7 @@ def put_back(model, field, *, record=None, programs=()):
 
 def reconstruction(model, field):
     """Invert opening evidence through the common perceptual inverse."""
-    return None, model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
+    return model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
 
 
 def selected_field(first, second, wins):

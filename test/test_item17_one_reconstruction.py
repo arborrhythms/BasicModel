@@ -26,9 +26,8 @@ def test_mm_xor_one_reconstruction_is_the_numeric_inverse_alone():
         field = understanding.reconstruction_carriers.get('field')
         assert field is not None and m.numeric_percepts is not None
         with torch.no_grad():
-            generation, put = reconstruction(m, field)
+            put = reconstruction(m, field)
             shorter = m.numeric_percepts.reverse(field)
-        assert generation is None
         torch.testing.assert_close(put.materialize().reshape(shorter.shape), shorter, rtol=0, atol=0)
     finally:
         m.End()
@@ -76,17 +75,16 @@ def test_text_model_with_no_grammar_one_reconstruction_is_the_open_fields_invers
             model.End()
         assert held
         for row in held:
-            generation, put = row['result']
+            put = row['result']
             shorter = row['shorter']
             # A model that reads (a grammar of no rule) puts back the
             # basic level from itself: no walk (§19.135, 3).
-            assert generation is None
             assert torch.equal(put.materialize(), shorter.materialize())
             torch.testing.assert_close(put._radix_activity.amounts, shorter._radix_activity.amounts, rtol=0, atol=0)
             torch.testing.assert_close(put._reconstruction_percepts, shorter._reconstruction_percepts,
                                        rtol=0, atol=0)
         print('calls', len(held), 'with a record', sum(row['record'] is not None for row in held),
-              'put back', [bytes(int(v) for v in row['result'][1].materialize().reshape(-1).tolist()
+              'put back', [bytes(int(v) for v in row['result'].materialize().reshape(-1).tolist()
                                  if 0 < int(v) < 256) for row in held])
     finally:
         model.End()

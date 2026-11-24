@@ -378,6 +378,15 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   weights that read the where. The mereology's entries of the first Pi and
   the weights that read the what take none of it, so that perception keeps
   its one teacher, reconstruction.
+- **Outcome credit for a sampled occurrence.** When a trial changes one
+  look, the two completed trials supply the difference in reconstruction plus
+  answer cost. The live probability of the alternative receives this
+  difference, corrected for the actual proposal after excluding the first
+  trial's choice and for the probability of drawing its walk and round.
+  Equal outcomes give zero credit. The opening reconstruction is shared
+  across both trials. The independent expectation term measures how the
+  preceding look changed the forecast of the next observation.
+
 - **The where parameter is fixed.** The `.where` stamped
   onto percepts flows from one parameter that holds the constant sinusoid, a
   row for each address of the registry (`WhereRegistry`), written from

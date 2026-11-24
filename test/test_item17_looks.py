@@ -244,6 +244,13 @@ def test_37_occurrence_policy_uses_graded_scores_and_masks_unavailable_words():
     empty = occurrence_probabilities(torch.full((1, 3), -torch.inf))
     assert select_occurrence(empty, sample=True).tolist() == [-1]
 
+    policy = torch.tensor([[.6, .3, .1]]).expand(3, -1)
+    drawn, proposal = select_occurrence(policy, sample=True, masked=torch.tensor([0, 0, -1]),
+                                        replay=torch.tensor([-1, 2, -1]), return_proposal=True)
+    assert drawn[0] in (1, 2) and drawn[1] == 2
+    torch.testing.assert_close(proposal[0], policy[0, drawn[0]] / .4)
+    assert proposal[1:].tolist() == [0., 0.]
+
 
 def test_34_the_where_match_multiplies_a_reading_once_at_its_start():
     """``exp(s - max s)`` of the share on the band of each reading's start,
@@ -509,8 +516,8 @@ def test_41_a_sentence_whose_trees_do_not_reduce_is_written_as_silence():
         put = []
         def kept(*args, **kwargs):
             result = generated(*args, **kwargs)
-            native = result[1]._reconstruction_percepts
-            put.append((result[1], native.detach().clone()))
+            native = result._reconstruction_percepts
+            put.append((result, native.detach().clone()))
             return result
         SentenceField.reconstruction = kept
         try:

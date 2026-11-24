@@ -8619,7 +8619,7 @@ class BasicModel(BaseModel):
         if self.numeric_percepts is not None:
             # The one reconstruction with no symbols: the perceptual inverse
             # of the basic-level concepts alone (§19.134).
-            value = reconstruction(self, field)[1].materialize()
+            value = reconstruction(self, field).materialize()
             score = None
             if torch.is_tensor(target):
                 target = target.reshape_as(value)
@@ -8629,7 +8629,7 @@ class BasicModel(BaseModel):
             return value, score
         if field is not None:
             from SentenceField import native_target
-            rev = reconstruction(self, field)[1]
+            rev = reconstruction(self, field)
             cost = None
             if target is not None:
                 observed = native_target(self, field)
@@ -8824,7 +8824,8 @@ class BasicModel(BaseModel):
                 items = concluded_meanings(meaning, perception_owner=self._concept_owner() if without_thought else None,
                                            row=row)
                 from ThoughtReferences import bindings as meaning_bindings
-                if without_thought and items and meaning_bindings(items[0]).get('_evidence_kind') == 'perception':
+                if (row_sources[row] == 'identity' and without_thought and items
+                        and meaning_bindings(items[0]).get('_evidence_kind') == 'perception'):
                     row_sources[row] = 'perception'
                 answer_meanings[row] = items
                 selected_answer_rows[row] = (torch.cat(tuple(item.roles.to(answer) for item in items))
@@ -9625,7 +9626,10 @@ class BasicModel(BaseModel):
                     reference_table.append(reference)
         stack_references = self._walk_operand(reference_ids[..., None],
             infix_rows=infix_rows, occupied=occupied)[..., 0]
-        reference_orders = reference_ids.new_tensor([0] + [
+        # The compiled walk's shape follows offered slots, including those
+        # with no reference. The number of named operands varies per reading.
+        reference_orders = reference_ids.new_zeros(1 + reference_ids.numel())
+        reference_orders[1:len(reference_table)] = reference_ids.new_tensor([
             max(0, self._concept_owner()._concept_source_order(reference))
             for reference in reference_table[1:]])
         walk = (
@@ -10634,7 +10638,7 @@ class BasicModel(BaseModel):
         teach_concept_lessons(self)
         self._optimizer   = self.getOptimizer(lr=lr)
         lesson = self.cfg['architecture']['data']['readingOrderLesson']
-        if lesson and not self._training_step_count and not getattr(self, '_resume_corpus_cursor', None):
+        if lesson and not getattr(self, '_resume_corpus_cursor', None):
             from pretrain_reading import load_lesson, measure, qualifies, train_reader
             spec = load_lesson(os.path.join(ProjectPaths.DATA_DIR, lesson))
             readiness = measure(self, spec['validation'], spec['batch_size'])
@@ -12326,10 +12330,8 @@ class BasicModel(BaseModel):
 
     @_sentence_query_mask
     def reconstruct_grammar_sentence(self, state, sid, active):
-        """Report the concluded sentence as its one reconstruction puts it
-        back (:func:`SentenceField.put_back`): from the idea, the walk made
-        to take the recorded steps; in a model that reads, the perceptual
-        inverse of the field. Nothing is kept on the model."""
+        """Report the return from the idea along its recorded grammar steps.
+        The training reconstruction runs on the open field before these steps."""
         self._publish_sentence_scratch(state)
         record = self._trial_understanding(state, sid, active)
         programs = self._sentence_observation(state, sid, active, record=record)['entries']
@@ -19953,8 +19955,7 @@ class BasicModel(BaseModel):
             compose_exposures=(mask & advantage.ne(0)[:, None] & walks.eq(1)).sum(-1))
         if not surrogate.requires_grad:
             return probabilities.new_zeros(())
-        # This departure trains the compose chooser. A sampled occurrence
-        # receives its own credit from the next observation.
+        # Occurrence departures have a separate owner, the attention request.
         from ObjectiveOwnership import policy_objective
         self._sentence_cost_registry.add('output.compose_score_function', surrogate,
             category='output', objective=policy_objective(self, 'compose', 'chooser'), side='A')
@@ -21009,7 +21010,9 @@ class BasicModel(BaseModel):
             if disc is not None:
                 disc._prepare_expectation_documents(self._expectation_documents_for_slot(sid, B), present, B)
             questions = getattr(self, '_active_what_questions', None)
-            if questions:
+            # ask retains the last questions for diagnostics, but installs
+            # their grammar context only for the duration of its own forward.
+            if questions and getattr(self.languageSpace, '_what_context', None) is not None:
                 context, detail = self._what_grammar_context(questions, device=words.device, dtype=words.dtype)
                 for module in self.symbolSpace.modules():
                     if hasattr(module, '_what_context'):
@@ -21042,7 +21045,7 @@ class BasicModel(BaseModel):
             if self._sentence_reconstruction:
                 from SentenceField import reconstruction, charge
                 opened = self._sentence_open_fields[sid]
-                _, self._sentence_order_zero_reverse = reconstruction(self, opened)
+                self._sentence_order_zero_reverse = reconstruction(self, opened)
                 self._opening_errors = Error(row_mask=present)
                 self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
                     self._sentence_order_zero_reverse, opened, present, hidden=False)

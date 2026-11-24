@@ -48,10 +48,10 @@ def test_the_leaf_filled_by_its_concepts_inverse(tmp_path, monkeypatch):
         responses = []
 
         def measured(owner, field):
-            generation, returned = opened(owner, field)
+            returned = opened(owner, field)
             surface = bytes(returned.materialize()[0, 0].tolist()).rstrip(b'\0')
             responses.append((field.concept_ids.detach().flatten().tolist(), surface))
-            return generation, returned
+            return returned
 
         monkeypatch.setattr(SentenceField, 'reconstruction', measured)
         with torch.no_grad():

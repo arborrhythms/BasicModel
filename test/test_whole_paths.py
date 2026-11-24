@@ -480,10 +480,9 @@ def test_old_twin_checkpoint_keys_are_dropped_and_named(tmp_path, monkeypatch):
 
 def test_kept_verbal_output_reaches_the_live_understanding_and_conditioner(tmp_path, monkeypatch):
     from dataclasses import replace
-    from types import MappingProxyType
     from test_compiled_word_chunk import _tiny_canonical_model
     from Models import SelectedThoughtResult
-    from Queries import ThoughtResult
+    from Thoughts import ThoughtRecord
     from QueryWork import QueryWorkBudget
     from What import WhatAnswer
     import WholePaths, util
@@ -511,8 +510,15 @@ def test_kept_verbal_output_reaches_the_live_understanding_and_conditioner(tmp_p
         value = replace(ConceptualMeaning.from_description(point),
                         sentence_kind='idea',
                         bindings={'_evidence_kind': 'truth', '_producing_operation': 'isTrue'})
-        result = ThoughtResult('isTrue', 'concept', 'truth', 'truth', value, MappingProxyType({}))
-        return SelectedThoughtResult(value, dict(support_true=1., support_false=0.), QueryWorkBudget(32), (), result)
+        # This grammar speaks when the thought executes output. Exercise
+        # that production with the live result of the transformation.
+        registry = model.grammatical_thoughts
+        request = registry.form('output', value)
+        work = QueryWorkBudget(32)
+        context = model._thought_grammar_context(request, row=0, work=work, continuation=None)
+        result = registry.execute(request, context)
+        record = ThoughtRecord(0, 0, 'thought', 0, request, operation='output', result=result)
+        return SelectedThoughtResult(value, dict(result.evidence), work, (record,), result)
     monkeypatch.setattr(model, 'run_selected_thought', conclude)
     observed = []
     native = WholePaths.output

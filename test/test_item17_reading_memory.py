@@ -59,7 +59,7 @@ def test_looks_extend_one_head_and_commit_it_once(tmp_path, monkeypatch, eager_r
         def reconstructed(*args, **kwargs):
             result = reconstruct(*args, **kwargs)
             surfaces.extend(bytes(row).rstrip(b'\0').decode('latin1')
-                            for row in result[1].materialize().reshape(len(args[1].where), -1).tolist())
+                            for row in result.materialize().reshape(len(args[1].where), -1).tolist())
             return result
 
         monkeypatch.setattr(STM1, 'append_occurrence', appended)

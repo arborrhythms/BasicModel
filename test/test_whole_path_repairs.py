@@ -119,6 +119,33 @@ def test_no_departure_does_not_share_later_registry_writes():
     assert other.registry.total(objective='reconstruction') == 2
 
 
+def test_attention_outcome_credits_only_the_sampled_departure():
+    from Layers import Error
+    from WholePaths import credit
+    # One cheaper answer, one costlier answer, one tie. Changing the
+    # expectation column alone must leave the outcome gradient zero.
+    scores = torch.zeros(3, 2, 3, requires_grad=True)
+    probabilities = scores.softmax(-1)[..., 2]
+    rounds = torch.tensor([0, 1, 1])
+    proposal = torch.zeros_like(probabilities)
+    proposal[torch.arange(3), rounds] = .5
+    reading = NS(actions=torch.full((3, 2), 2), probabilities=probabilities, proposal=proposal)
+    draw = dict(attention_round=rounds, thought_round=torch.full_like(rounds, -1),
+                walk_count=torch.ones_like(rounds), walk_rounds=torch.full_like(rounds, 2))
+    active = torch.ones(3, dtype=torch.bool)
+    base = NS(parts=torch.ones(3, 3), output_trace=None)
+    other = NS(parts=torch.tensor([[1., 1., 0.], [1., 1., 2.], [1., 0., 1.]]),
+               output_trace=None, attention_words=reading, draw=draw, registry=Error(row_mask=active))
+    credit(None, base, other, active)
+    other.registry.total(objective='attention').sum().backward()
+    expected = torch.zeros_like(scores)
+    # Two possible rounds, proposal probability 1/2. The gradient of
+    # softmax at these equal scores is (-1, -1, 2)/9 for the sampled action.
+    expected[1, 1] = scores.new_tensor([-1., -1., 2.]) * (4. / 9.)
+    expected[0, 0] = -expected[1, 1]
+    torch.testing.assert_close(scores.grad, expected)
+
+
 def test_two_explore_paths_credit_their_own_compose_and_attention_state(tmp_path, monkeypatch):
     import WholePaths
     import SentenceCredit
@@ -312,12 +339,11 @@ def test_sentence_inverts_the_live_open_field_once_before_its_looks(tmp_path, mo
         opened, events, returned = [], [], []
 
         def inverted(owner, field, **kwargs):
-            generation, surface = reconstruct(owner, field, **kwargs)
-            assert generation is None
+            surface = reconstruct(owner, field, **kwargs)
             opened.append(field)
             returned.append(surface.materialize().detach().clone())
             events.append('inverse')
-            return generation, surface
+            return surface
 
         def observed(path, arrive):
             assert path.model._sentence_open_fields[path.sid] is opened[0]

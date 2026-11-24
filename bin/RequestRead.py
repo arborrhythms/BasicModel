@@ -44,7 +44,11 @@ class RequestRead(nn.Module):
         initialization every location contributes equally.
         """
         direction = self.place(units).to(evidence)
-        return evidence + (spans.to(evidence) * direction[:, None]).sum(-1)
+        # Relative coordinates keep the location contribution on the same
+        # scale for a paragraph and a word, with no preferred endpoint.
+        extent = spans[..., 1].amax(-1, keepdim=True).clamp_min(1)
+        relative = spans.to(evidence) / extent[:, :, None].to(evidence)
+        return evidence + (relative * direction[:, None]).sum(-1)
 
     def stopping(self, h):
         return self.stop(h)[:, 0]

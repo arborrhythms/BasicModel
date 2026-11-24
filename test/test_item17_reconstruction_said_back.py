@@ -20,10 +20,10 @@ class Held:
         inverse, choose = SentenceField.reconstruction, language.choose_operation
 
         def reconstructed(owner, field):
-            generation, reverse = inverse(owner, field)
+            reverse = inverse(owner, field)
             surface = bytes(reverse.materialize()[0, 0].tolist()).rstrip(b'\0')
             self.rows.append(dict(joined=surface.decode('latin1')))
-            return generation, reverse
+            return reverse
 
         def chosen(state, row_gate, **kwargs):
             result = choose(state, row_gate, **kwargs)

@@ -24,7 +24,7 @@ class Reading(NamedTuple):
     actions: torch.Tensor             # [B, looks] the word each look took
     alternatives: torch.Tensor        # [B, looks] had multiple eligible occurrences
     probabilities: torch.Tensor       # [B, looks] the draw's probability
-    alternative_counts: torch.Tensor  # [B, looks] number of other eligible occurrences
+    proposal: torch.Tensor            # [B, looks] probability under the departure draw
     poles: torch.Tensor               # [B, W, 2] each word's evidence
     looks: torch.Tensor               # [B] looks taken
 
@@ -49,7 +49,7 @@ class SentenceReading:
     actions: list = field(default_factory=list)
     alternatives: list = field(default_factory=list)
     probabilities: list = field(default_factory=list)
-    counts: list = field(default_factory=list)
+    proposals: list = field(default_factory=list)
 
     def __post_init__(self):
         self.accepted = torch.zeros_like(self.known)
@@ -84,7 +84,7 @@ class SentenceReading:
         looks = torch.stack(self.actions, 1).ge(0).sum(1) if self.actions else self.spans.new_zeros(B)
         reading = Reading(self.values, self.accepted, self.descended,
             history(self.actions, self.spans, -1), history(self.alternatives, self.known),
-            history(self.probabilities, self.keys), history(self.counts, self.spans), poles.detach(), looks)
+            history(self.probabilities, self.keys), history(self.proposals, self.keys), poles.detach(), looks)
         pad = self.width - W
         return reading._replace(values=F.pad(reading.values, (0, 0, 0, pad)),
             accepted=F.pad(reading.accepted, (0, pad)), descended=F.pad(reading.descended, (0, pad)),
@@ -99,7 +99,7 @@ def occurrence_probabilities(scores):
     return logits.softmax(-1) * live
 
 
-def select_occurrence(probabilities, *, sample, replay=None, masked=None):
+def select_occurrence(probabilities, *, sample, replay=None, masked=None, return_proposal=False):
     """Sample the policy in training, take its mode in evaluation, and draw equal modes fairly."""
     weights = probabilities.detach()
     if masked is not None:
@@ -115,7 +115,17 @@ def select_occurrence(probabilities, *, sample, replay=None, masked=None):
     if replay is not None:
         # A supplied reading may explicitly request a word absent from the policy.
         index = torch.where(replay >= 0, replay, index)
-    return index
+    if not return_proposal:
+        return index
+    proposal = weights.new_zeros(len(index))
+    if masked is not None:
+        departed = (masked >= 0) & (index >= 0) & (index != masked)
+        if replay is not None:
+            departed &= replay < 0
+        mass = weights.sum(-1)
+        selected = weights.gather(1, index.clamp_min(0)[:, None])[:, 0]
+        proposal = torch.where(departed, selected / torch.where(departed, mass, 1.), 0.)
+    return index, proposal
 
 
 def read_code_field(codes, valid=None):
