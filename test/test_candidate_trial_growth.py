@@ -1,0 +1,111 @@
+"""Speculative learning belongs to one trial until the sentence chooses its rows."""
+from types import SimpleNamespace
+
+import pytest
+import torch
+
+import CandidateGrowth as growth
+
+
+def test_provisional_sigma_serves_later_reads_without_registering_a_parameter():
+    from test_item17_symbols import _small_space
+    owner, store, ids, rows = _small_space()
+    root, first, second, kind, _ = ids
+    owner.nominate_symbol(('source', first), first)
+    owner.nominate_symbol(('source', second), second)
+    owner.kind_entry(kind, first)
+    weight = store.values
+    optimizer = torch.optim.Adam([weight], lr=.01)
+    edges = store._index.copy()
+    sibling, discarded = growth.GrowthTrial(owner), growth.GrowthTrial(owner)
+    with discarded.active():
+        assert discarded.promote(kind, second) == rows[3]
+        assert owner.reads_concept(rows[3], rows[2])
+        projection = growth.visible_store(store)
+        assert projection.nnz == store.nnz + 1
+        local_cost = projection.values.square().sum()
+        assert list(store.parameters())[0] is weight
+        assert not optimizer.state
+    with sibling.active():
+        assert not owner.reads_concept(rows[3], rows[2])
+        assert growth.visible_store(store) is store
+    assert store._index == edges and store.values is weight
+    assert torch.equal(torch.autograd.grad(local_cost, weight)[0], 2 * weight)
+    assert weight.grad is None
+    assert optimizer.param_groups[0]['params'] == [weight]
+
+
+def test_mixed_winners_replay_observations_in_look_then_stream_order(monkeypatch):
+    from test_item17_symbols import _small_space
+    owner, _, _, _ = _small_space()
+    left, right = growth.GrowthTrial(owner), growth.GrowthTrial(owner)
+    def observation(value):
+        return ({value: .5}, {value: 1.}, [(value, .25)])
+    left.looks = [{0: observation(1), 1: observation(2)}, {0: observation(3)}]
+    right.looks = [{0: observation(4), 1: observation(5)}, {0: observation(6), 1: observation(7)}]
+    actual = []
+    monkeypatch.setattr(growth, 'pi_step', lambda owner, sentence: actual.append(('pi', sentence)))
+    monkeypatch.setattr(growth, 'sigma_step', lambda owner, present, expected:
+                        actual.append(('sigma', present, expected)))
+    growth.GrowthTrial.commit([left, right], torch.tensor([1, 0]))
+    assert actual == [event for cid in (4, 2, 6) for event in
+                      [('pi', {cid: 1.}), ('sigma', {cid: .5}, [(cid, .25)])]]
+
+
+def test_trial_restores_on_error_and_retained_forecast_only_has_winner_gradients():
+    from test_item17_symbols import _small_space
+    owner, _, _, _ = _small_space()
+    owner._expected_knowing = torch.zeros(2, 16, 2)
+    model = SimpleNamespace(_expectation_looks=[], _expectation_percept_looks=[])
+    opening = owner._expected_knowing.clone()
+    left, right = growth.GrowthTrial(owner), growth.GrowthTrial(owner)
+    costs = [torch.tensor([2., 3.], requires_grad=True), torch.tensor([5., 7.], requires_grad=True)]
+    for index, trial in enumerate((left, right)):
+        with trial.active(model, 2):
+            assert torch.equal(owner._expected_knowing, opening)
+            owner._expected_knowing.fill_(index + 1)
+            model._expectation_looks.append((costs[index], torch.tensor([True, True])))
+        assert torch.equal(owner._expected_knowing, opening)
+        assert model._expectation_looks == []
+    with pytest.raises(ValueError):
+        with growth.GrowthTrial(owner).active(model, 2):
+            owner._expected_knowing.fill_(99)
+            raise ValueError
+    assert torch.equal(owner._expected_knowing, opening)
+    growth.GrowthTrial.keep_forecasts(model, (left, right), torch.tensor([1, 0]))
+    assert torch.equal(owner._expected_knowing[:, 0, 0], torch.tensor([2., 1.]))
+    loss = sum(cost.sum() for cost, mask in model._expectation_looks)
+    left_grad, right_grad = torch.autograd.grad(loss, costs)
+    assert left_grad.tolist() == [0., 1.]
+    assert right_grad.tolist() == [1., 0.]
+
+
+def test_mixed_streams_read_their_own_promotions_and_compact_live_rows():
+    from test_item17_symbols import _small_space
+    from FieldProjection import close
+    owner, store, ids, rows = _small_space()
+    _, first, second, kind, _ = ids
+    owner.nominate_symbol(('source', first), first)
+    owner.nominate_symbol(('source', second), second)
+    owner.kind_entry(kind, first)
+    trial = growth.GrowthTrial(owner)
+    trial.streams[1] = private = growth.GrowthTrial(owner)
+    with private.active():
+        private.promote(kind, second)
+    evidence = torch.zeros(5, 3, 1, 2)
+    evidence[2, :, 0, 0] = .7
+    evidence.requires_grad_()
+    with trial.active():
+        visible = close(owner, rows, evidence)[3, :, 0, 0]
+        live = torch.tensor([False, True, True])
+        compact = growth.read_streams(owner, lambda: torch.full((2,), growth.visible_store(store).nnz),
+                                      axis=0, live=live)
+    with private.active():
+        reference = close(owner, rows, evidence[:, 1:2])[3, 0, 0, 0]
+    assert reference > 0
+    assert visible.tolist() == [0., reference.item(), 0.]
+    assert compact.tolist() == [store.nnz + 1, store.nnz]
+    gradient, = torch.autograd.grad(visible.sum(), evidence)
+    reference_gradient, = torch.autograd.grad(reference, evidence)
+    assert reference_gradient[2, 1, 0, 0] > 0
+    assert torch.equal(gradient[2], reference_gradient[2])

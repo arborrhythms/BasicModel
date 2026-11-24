@@ -13,6 +13,7 @@ promoted into the matrix proper when it has held above nothing for ``hold``
 reads in a row, and forgotten when the penalty returns it to nothing after it
 had held, or when room is needed (the weakest first).
 """
+from copy import copy
 from dataclasses import dataclass
 
 from util import TheXMLConfig
@@ -44,6 +45,12 @@ class CandidateMatrix:
         # when more pairs are tallied than sixteen times the room.
         self.tallies = {}
         self.entered = self.promoted = self.forgotten = 0
+
+    def fork(self):
+        other = copy(self)
+        other.entries = {key: copy(entry) for key, entry in self.entries.items()}
+        other.tallies = {key: tally.copy() for key, tally in self.tallies.items()}
+        return other
 
     def __contains__(self, key):
         return key in self.entries

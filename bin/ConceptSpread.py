@@ -75,7 +75,8 @@ def _store_edges(owner, V, device):
     if alloc is None:
         edges = []
         return _pair_edges(owner, V, edges, device), edges
-    store = _concept_alloc_of(owner).layer(0)
+    from CandidateGrowth import visible_store
+    store = visible_store(_concept_alloc_of(owner).layer(0))
     if not getattr(store, '_thing_columns', False) or store.values is None or not store.nnz:
         edges = []
         return _pair_edges(owner, V, edges, device), edges
@@ -105,7 +106,8 @@ def _store_edges(owner, V, device):
 def _pair_edges(owner, start, edges, device):
     """The rows of the pairs the candidate matrices promoted, as symbols
     from ``start``, each reading its two concepts at one."""
-    pairs = getattr(getattr(owner, 'mtm', None), 'pair_rows', None) or ()
+    from CandidateGrowth import visible_pairs
+    pairs = visible_pairs(owner)
     rows = [(owner._concept_row_of(a), owner._concept_row_of(b)) for a, b in pairs]
     rows = [pair for pair in rows if None not in pair]
     if not rows:
@@ -282,9 +284,11 @@ def expected(owner, knowing, *, percepts=None):
     observed = knowing.new_zeros(V, B, 2)
     observed[:width] = knowing.transpose(0, 1).detach()
     value, graph = spread(owner, observed, percepts=percepts)
-    owner._expected_percepts = value[graph.percept_start:graph.part_start]
-    owner._expected_parts = (graph.part_keys, value[graph.part_start:])
-    owner._expected_symbols = value[graph.concepts:graph.percept_start]
+    from CandidateGrowth import speculative
+    if not speculative(owner):
+        owner._expected_percepts = value[graph.percept_start:graph.part_start]
+        owner._expected_parts = (graph.part_keys, value[graph.part_start:])
+        owner._expected_symbols = value[graph.concepts:graph.percept_start]
     return value[:V].transpose(0, 1)
 
 

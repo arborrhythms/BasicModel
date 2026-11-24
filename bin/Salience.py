@@ -110,6 +110,11 @@ class _Walk(torch.autograd.Function):
 
 
 def concepts_asked(owner, request, field=None):
+    from CandidateGrowth import read_streams
+    return read_streams(owner, lambda: _concepts_asked(owner, request, field), axis=1)
+
+
+def _concepts_asked(owner, request, field=None):
     """Each concept's request with what reaches it from above order zero,
     ``[V, B, 2]``: :func:`_down` on the structure without the order-zero
     Sigma's and the first Pi's edges. ``field`` ``[V, B, readings, 2]``, the

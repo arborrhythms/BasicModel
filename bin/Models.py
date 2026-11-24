@@ -14212,7 +14212,7 @@ class BasicModel(BaseModel):
 
     @contextmanager
     def _sentence_run(self, *, training=False, optimizer=None, split='runtime',
-                      source_rows=None, trial_mode='reconstruct'):
+                      source_rows=None, trial_mode='reconstruct', single_input_update=False):
         """One sentence-boundary context for raw forward, evaluation and training."""
         from SentenceCompose import saved_sentence_values
         language = getattr(getattr(self, 'symbolSpace', None), 'languageLayer', None)
@@ -14272,7 +14272,7 @@ class BasicModel(BaseModel):
         # Packed sentences share one perception forward across sentence steps.
         # Each backward must read the parameter values of that original forward.
         hooks = (saved_sentence_values(self.parameters(), self.buffers())
-                 if training and self._sentence_ends else nullcontext())
+                 if training and self._sentence_ends and not single_input_update else nullcontext())
         try:
             with hooks:
                 yield
@@ -14315,8 +14315,15 @@ class BasicModel(BaseModel):
         # when a caller owns the epoch loop instead of BasicModel.trainModel.
         if call['train'] and call['optimizer'] is not None:
             self._optimizer = call['optimizer']
+        # An explicitly prepared, unpacked input has exactly one closing.
+        # The input-only objective is consumed before its optimizer step.
+        # Packed perception and supervised batches keep their versioned saves.
+        single_input = (call['batch_override'] is not None
+                        and not self.inputSpace._sentence_pack_enabled
+                        and not self.inputSpace.data.has_supervised_outputs)
         with self._sentence_run(training=call['train'], optimizer=call['optimizer'],
-                split=call['split'], source_rows=call['source_rows'], trial_mode=call['trial_mode']):
+                split=call['split'], source_rows=call['source_rows'], trial_mode=call['trial_mode'],
+                single_input_update=single_input):
             return self._run_batch_once(**call)
 
     def _run_batch_once(self, train=True, batchNum=0, batchSize=10, split="train",
@@ -21366,30 +21373,43 @@ class BasicModel(BaseModel):
                     thought=complete_paths[0].thinking.eligible(present),
                     output=None if output is None else output[1], used=draws)
 
+            from CandidateGrowth import GrowthTrial
+            growth = []
+            def trial_scope(*, reuse=False):
+                if not single or not self.explore_paths:
+                    return nullcontext()
+                trial = growth[0].from_reading() if reuse else GrowthTrial(self._concept_owner())
+                growth.append(trial)
+                return trial.active(self, B)
+
             try:
-                first = compose(cache, None)
-                score(first, False)
+                with trial_scope():
+                    first = compose(cache, None)
+                    score(first, False)
                 for path_index in range(self.explore_paths if single else 0):
                     draw = draw_path()
                     draws.append(draw)
                     self._sentence_departure = draw
                     reading = bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
-                    if reading:
-                        candidate = compose(cache, first)
-                    else:
-                        candidate = first
-                        attention_trials.append(attention_trials[0])
-                        field_trials.append(field_trials[0])
-                        look_trials.append(look_trials[0])
-                        compound_trials.append(compound_trials[0])
-                        self._sentence_trial = 'explore'
-                        if fork is not None:
-                            fork.start(dict(draw, narrowing=draw['narrowing']))
-                    score(candidate, True)
+                    with trial_scope(reuse=not reading):
+                        if reading:
+                            candidate = compose(cache, first)
+                        else:
+                            candidate = first
+                            attention_trials.append(attention_trials[0])
+                            field_trials.append(field_trials[0])
+                            look_trials.append(look_trials[0])
+                            compound_trials.append(compound_trials[0])
+                            self._sentence_trial = 'explore'
+                            if fork is not None:
+                                fork.start(dict(draw, narrowing=draw['narrowing']))
+                        score(candidate, True)
                 from SentenceCredit import comparison
                 parts = torch.stack(cost_parts, 1)
                 audit = comparison(parts, present)
                 selected = audit['winner']
+                if growth:
+                    GrowthTrial.keep_forecasts(self, growth, selected)
                 wins, costs = selected.ne(0), audit['costs']
                 if single:
                     for path_index, candidate in enumerate(complete_paths[1:], 1):
@@ -21555,8 +21575,14 @@ class BasicModel(BaseModel):
                 chosen = self._commit_sentence(chosen, sid, present, observations, selected)
                 from ConceptSpread import complete
                 complete(self, present, close_errors)
-                if look_trials[0] is not None and look_trials[0].look_credit is not None:
-                    look_trials[0].look_credit.register(close_errors)
+                for look in dict.fromkeys(look_trials):
+                    if look is not None and look.look_credit is not None:
+                        mask = torch.zeros_like(present)
+                        for index, trial in enumerate(look_trials):
+                            if trial is look:
+                                mask |= selected == index
+                        if bool(mask.any()):
+                            look.look_credit.for_rows(mask).register(close_errors)
                 from IntuitionField import complete as complete_intuition
                 complete_intuition(self, present, close_errors)
                 from IdeaRead import complete as complete_idea
@@ -21584,6 +21610,8 @@ class BasicModel(BaseModel):
                 self._sentence_read_order = None
             from SentenceTraining import finish_sentence
             finish_sentence(self)
+            if growth:
+                GrowthTrial.commit(growth, selected)
             observations.clear()
             # The sentence's bank closes with it.
             self._sentence_banks = {}

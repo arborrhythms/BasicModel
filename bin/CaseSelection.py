@@ -199,7 +199,8 @@ def stage_case_bank(space, required_ids, *, limit):
                                                                 device=basis.device, dtype=basis.dtype))
     cases = seat_lanes(matrix, source, count).transpose(0, 1)
     request = torch.stack((identity, torch.zeros_like(identity)), -1).unsqueeze(2)
-    observed = space.cs_reverse_presence(request, observed=torch.ones_like(request), inventory_rows=addresses)
+    observed = space.cs_reverse_presence(request, observed=torch.ones_like(request), inventory_rows=addresses,
+                                         stream_batch=False)
     required = required_ids.reshape(1, -1) if required_ids.ndim < 2 else required_ids.reshape(required_ids.shape[0], -1)
     eligible = ((identities[None, :, None] == required[:, None].to(identities.device))
                 & (identities[None, :, None] > 0)).any(-1)

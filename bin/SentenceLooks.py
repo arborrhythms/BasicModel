@@ -270,7 +270,7 @@ class Looks:
         extent = live
         surprise = forecasts.latest if forecasts is not None else None
         from CandidateGrowth import at_look
-        at_look(model, field, extent)
+        at_look(model, field, extent, rows)
         self.fields.append(dict(field=field, extent=extent.clone(), active=rows.clone(), surprise=surprise))
         if bank is None:
             return state.reading()
@@ -333,7 +333,7 @@ class Looks:
                     percepts = model.__dict__.setdefault('_expectation_percept_looks', [])
                     perceived = getattr(owner, '_percept_field', None)
                     percepts.append((forecasts.percept_stage_cost(perceived, extent, rows), rows.clone()))
-            at_look(model, look_field, extent)
+            at_look(model, look_field, extent, rows)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
                                     surprise=surprise))
             replay = masked = None

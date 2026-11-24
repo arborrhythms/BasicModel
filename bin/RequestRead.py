@@ -99,6 +99,11 @@ def at_rows(rows, field, V, B, index=None):
 
 
 def spread_once(owner, held):
+    from CandidateGrowth import read_streams
+    return read_streams(owner, lambda: _spread_once(owner, held), axis=0)
+
+
+def _spread_once(owner, held):
     """The last look's field ``[B, V, 2]`` spread once (up then down on the
     structure, :func:`ConceptSpread.spread`), joined with what it held as
     the product on complements; detached."""

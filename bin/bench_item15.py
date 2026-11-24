@@ -27,7 +27,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--seed', type=int, default=1505)
     parser.add_argument('--explore-paths', type=int, help='override the candidate count in a benchmark-only config')
-    parser.add_argument('--batch-size', type=int, help='fixed step workload only, extend with distinct lesson pages')
+    parser.add_argument('--batch-size', type=int, help='study a different batch width using distinct lesson pages')
     parser.add_argument('--steps', type=int, default=12)
     parser.add_argument('--lesson', action='store_true')
     parser.add_argument('--training-seconds', type=float,
@@ -56,8 +56,13 @@ def main():
     from What import What
     spec = load_lesson(LESSON)
     config = ROOT / 'data/XOR_grammar.xml'
+    lesson = LESSON
     if args.lesson and args.batch_size is not None:
-        parser.error('the full reading lesson uses its declared batch size')
+        if args.batch_size < 1:
+            parser.error('--batch-size must be positive')
+        spec['batch_size'] = args.batch_size
+        lesson = args.output.resolve() / 'lesson.json'
+        lesson.write_text(json.dumps(spec, indent=2) + '\n')
     if args.corpus:
         if args.lesson or args.batch_size or args.explore_paths is not None or args.compiled_step:
             parser.error('--corpus uses its own lesson configuration')
@@ -79,7 +84,7 @@ def main():
                   threads=torch.get_num_threads(), batch_size=spec['batch_size'],
                   compiled_step=args.compiled_step,
                   config=str(config), config_sha256=hashlib.sha256(config.read_bytes()).hexdigest(),
-                  lesson_sha256=hashlib.sha256(LESSON.read_bytes()).hexdigest(),
+                  lesson_sha256=hashlib.sha256(lesson.read_bytes()).hexdigest(),
                   environment={k: v for k, v in os.environ.items() if k.startswith(('MODEL_', 'BASICMODEL_', 'PYTHONHASH', 'TORCHINDUCTOR'))},
                   steps=[])
     record['explore_paths_override'] = args.explore_paths
@@ -174,7 +179,7 @@ def main():
         if args.training_seconds is not None:
             pretrain_reading.train_reader = budgeted_reader
         try:
-            report = run(config, LESSON, args.output / 'reader')
+            report = run(config, lesson, args.output / 'reader')
         finally:
             pretrain_reading.train_reader = train_reader
         record['training_budget_seconds'] = args.training_seconds
@@ -283,7 +288,7 @@ def main():
             def growth_state():
                 pool = model._concept_owner().mtm
                 return {name: dict(counts=matrix.counts(), entries={str(k): vars(v).copy() for k, v in
-                                    matrix.entries.items()}, tallies=dict((str(k), v) for k, v in matrix.tallies.items()))
+                                    matrix.entries.items()}, tallies={str(k): v.copy() for k, v in matrix.tallies.items()})
                         for name, matrix in (getattr(pool, 'candidates', None) or {}).items()}
             trial_audit = []
             def looking(walk, *a, **kw):

@@ -12,11 +12,17 @@ def inventory(owner):
 
 
 def close(owner, rows, evidence):
+    from CandidateGrowth import read_streams
+    return read_streams(owner, lambda: _close(owner, rows, evidence), axis=1)
+
+
+def _close(owner, rows, evidence):
     """Read each definition once, in dependency order: each kind's entries,
     each on its symbol's value or not-value (the Not), summed by the
     store's Sigma and stored as one signed value on two lanes."""
     from Layers import NotLayer3, sigma_fold, signed_lanes
-    store = owner._concept_allocator.layer(0)
+    from CandidateGrowth import visible_store
+    store = visible_store(owner._concept_allocator.layer(0))
     positions = {int(row): i for i, row in enumerate(rows)}
     values = store.values
     definitions = {}

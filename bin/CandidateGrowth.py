@@ -12,6 +12,9 @@ At each look, in training:
   that thing; held above the penalty it is written as the kind's entry. A
   thing read at another look is never offered.
 """
+from contextlib import contextmanager, nullcontext
+from contextvars import ContextVar
+from copy import copy
 import itertools
 
 import torch
@@ -23,14 +26,206 @@ from util import TheXMLConfig
 PRESENT = .5
 
 
+_current_trial = ContextVar('candidate_growth_trial', default=None)
+
+
+class GrowthTrial:
+    """Provisional observations and sparse promotions of one batched reading."""
+
+    def __init__(self, owner):
+        self.owner = owner
+        self.store = owner._concept_allocator.layer(0)
+        self.candidates = None
+        self.pairs = None
+        self.edges = {}
+        self.streams = {}
+        self.looks = []
+        self.expected = None
+        self.costs = {'_expectation_looks': [], '_expectation_percept_looks': []}
+
+    def from_reading(self):
+        """An output-only departure inherits the completed reading by value."""
+        other = GrowthTrial(self.owner)
+        other.streams = {b: stream.from_reading() for b, stream in self.streams.items()}
+        other.expected = self.expected
+        other.looks = self.looks.copy()
+        other.edges = self.edges.copy()
+        other.costs = {name: entries.copy() for name, entries in self.costs.items()}
+        other.pairs = self.pairs.copy() if self.pairs is not None else None
+        if self.candidates is not None:
+            other.candidates = {name: matrix.fork() for name, matrix in self.candidates.items()}
+        return other
+
+    @contextmanager
+    def active(self, model=None, batch=None):
+        token = _current_trial.set(self)
+        if model is None:
+            try:
+                yield self
+            finally:
+                _current_trial.reset(token)
+            return
+        field = self.owner._expected_knowing[:batch]
+        opening = field.detach().clone()
+        prior = {name: getattr(model, name, None) for name in self.costs}
+        try:
+            if self.expected is not None:
+                field.copy_(self.expected)
+            for name, terms in self.costs.items():
+                setattr(model, name, terms)
+            yield self
+            self.expected = field.detach().clone()
+        finally:
+            field.copy_(opening)
+            for name, original in prior.items():
+                setattr(model, name, original)
+            _current_trial.reset(token)
+
+    @staticmethod
+    def keep_forecasts(model, trials, selected):
+        # An output-only departure uses the greedy reading's same trial.
+        streams = torch.arange(len(selected), device=selected.device)
+        owner = trials[0].owner
+        owner._expected_knowing[:len(selected)].copy_(
+            torch.stack([trial.expected for trial in trials], 1)[streams, selected])
+        for name in trials[0].costs:
+            terms = []
+            for trial in dict.fromkeys(trials):
+                winners = torch.zeros_like(selected, dtype=torch.bool)
+                for index, candidate in enumerate(trials):
+                    if candidate is trial:
+                        winners |= selected == index
+                if bool(winners.any()):
+                    terms.extend((torch.where(winners, cost, 0.), mask & winners)
+                                 for cost, mask in trial.costs[name])
+            setattr(model, name, terms)
+
+    def projected_store(self):
+        # Keep the optimizer's registered Parameter and sparse metadata intact.
+        # Earlier weights retain their gradient through the concatenation. New
+        # edges become parameters only after the retained sentence's update.
+        store = self.store
+        added = [edge for edge in self.edges if edge not in store._index]
+        if not added:
+            return store
+        view = copy(store)
+        view._rows = store._rows + [r for r, _ in added]
+        view._cols = store._cols + [c for _, c in added]
+        view._index = {**store._index, **{edge: store.nnz + i for i, edge in enumerate(added)}}
+        view._dev_cache = None
+        weight = store.values
+        additions = torch.ones(len(added), device=store._device(),
+                               dtype=weight.dtype if weight is not None else torch.get_default_dtype())
+        object.__setattr__(view, 'values', additions if weight is None else torch.cat((weight, additions)))
+        return view
+
+    def promote(self, kind, member):
+        owner = self.owner
+        row, source = owner._concept_row_of(kind), owner._concept_row_of(member)
+        if row is None or source is None or owner._row_order(source) >= owner._row_order(row):
+            return None
+        if owner.reads_concept(row, source) or (getattr(owner, '_frozen_concepts', None) and row in owner._frozen_rows()):
+            return row
+        # The candidate came from an existing symbol over this member.
+        for thing in owner.things_reading(row, source, make=False):
+            owner._check_thing_order(row, thing)
+            self.edges[row, self.store.column_of_thing(thing)] = None
+        return row
+
+    @staticmethod
+    @torch.no_grad()
+    def commit(trials, selected):
+        """Replay observations in look/stream order, including mixed winners."""
+        winners = [trials[index] for index in selected.tolist()]
+        for turn in range(max((len(trial.looks) for trial in winners), default=0)):
+            for batch, trial in enumerate(winners):
+                if turn >= len(trial.looks) or batch not in trial.looks[turn]:
+                    continue
+                present, sentence, expected = trial.looks[turn][batch]
+                pi_step(trial.owner, sentence)
+                sigma_step(trial.owner, present, expected)
+
+
+def row_scope(owner, batch):
+    trial = _current_trial.get()
+    if trial is None or trial.owner is not owner or not trial.streams:
+        return nullcontext()
+    stream = trial.streams.get(batch)
+    return (stream if stream is not None else GrowthTrial(owner)).active()
+
+
+def read_streams(owner, read, *, axis, live=None):
+    """Use each stream's own provisional topology, sharing equal topologies.
+
+    The callback returns independent batch rows. A compacted forecast supplies
+    its physical stream mask so its first live row keeps its original owner.
+    """
+    trial = _current_trial.get()
+    if trial is None or trial.owner is not owner or not trial.streams:
+        return read()
+    base_pairs = getattr(getattr(owner, 'mtm', None), 'pair_rows', None) or ()
+    groups = {}
+    for b, stream in trial.streams.items():
+        pairs = stream.pairs[len(base_pairs):] if stream.pairs else ()
+        key = (tuple(stream.edges), tuple(pairs))
+        if key != ((), ()):
+            groups.setdefault(key, []).append(b)
+    result = read()
+    for members in groups.values():
+        with trial.streams[members[0]].active():
+            local = read()
+        indices = torch.tensor(members, device=result.device)
+        if live is None:
+            mask = torch.zeros(result.shape[axis], dtype=torch.bool, device=result.device)
+            mask[indices] = True
+        else:
+            mask = torch.zeros_like(live)
+            mask[indices] = True
+            mask = mask[live]
+        shape = [1] * result.ndim
+        shape[axis] = -1
+        result = torch.where(mask.view(shape), local, result)
+    return result
+
+
+def speculative(owner):
+    trial = _current_trial.get()
+    return trial is not None and trial.owner is owner
+
+
+def visible_store(store):
+    trial = _current_trial.get()
+    return trial.projected_store() if trial is not None and trial.store is store and trial.edges else store
+
+
+def visible_pairs(owner):
+    trial = _current_trial.get()
+    if trial is not None and trial.owner is owner and trial.pairs is not None:
+        return trial.pairs
+    return getattr(getattr(owner, 'mtm', None), 'pair_rows', None) or ()
+
+
 def matrices(owner):
     """The candidate matrices of ``owner``'s MTM, made on first use, each
     sized by ``architecture.candidateCapacity``."""
     pool = owner.mtm
     held = getattr(pool, 'candidates', None)
+    trial = _current_trial.get()
+    if trial is not None and trial.owner is owner:
+        if trial.candidates is not None:
+            return trial.candidates
+        if held is not None:
+            trial.candidates = {name: matrix.fork() for name, matrix in held.items()}
+            return trial.candidates
+    else:
+        trial = None
     if held is None:
         room = int(TheXMLConfig.get('architecture.candidateCapacity', default=64))
-        held = pool.candidates = dict(pi=CandidateMatrix(room), sigma=CandidateMatrix(room))
+        held = dict(pi=CandidateMatrix(room), sigma=CandidateMatrix(room))
+        if trial is None:
+            pool.candidates = held
+        else:
+            trial.candidates = held
     return held
 
 
@@ -83,6 +278,11 @@ def pair_rows(owner):
     alone, so no kind reads them for a member."""
     pool = owner.mtm
     rows = getattr(pool, 'pair_rows', None)
+    trial = _current_trial.get()
+    if trial is not None and trial.owner is owner:
+        if trial.pairs is None:
+            trial.pairs = list(rows or ())
+        return trial.pairs
     if rows is None:
         rows = pool.pair_rows = []
     return rows
@@ -116,7 +316,7 @@ def sigma_step(owner, present, expected, batch=None):
             observed = present.get(int(kind), 0.)
             if value > observed:
                 wanted[int(kind)] = (value, observed)
-    store = alloc.layer(0)
+    store = visible_store(alloc.layer(0))
     for kind in wanted:
         kind_row = owner._concept_row_of(kind)
         for symbol in things:
@@ -135,7 +335,9 @@ def sigma_step(owner, present, expected, batch=None):
     promoted, _ = held.step(gradients)
     written = []
     for (kind, symbol), value in promoted:
-        if owner.kind_entry(kind, table.brought[symbol]) is not None:
+        trial = _current_trial.get()
+        promote = trial.promote if trial is not None and trial.owner is owner else owner.kind_entry
+        if promote(kind, table.brought[symbol]) is not None:
             written.append((kind, symbol))
     return written
 
@@ -164,7 +366,7 @@ def withheld_words(model, extent):
     return held
 
 
-def at_look(model, field, extent=None):
+def at_look(model, field, extent=None, active=None):
     """The candidates' step at one look, in training. A pair is offered and
     weighed from what the sentence held at the look: its field, and the
     words the omission withheld inside the look's ``extent`` (``[B, W]``)."""
@@ -177,11 +379,24 @@ def at_look(model, field, extent=None):
     held = withheld_words(model, extent) if extent is not None else None
     forecasts = [[] for _ in range(field.evidence.shape[1])]
     if expected is not None:
-        positive = (expected[..., 0] > 0).nonzero()
-        values = expected[..., 0][positive[:, 0], positive[:, 1]].tolist()
+        column = expected[:len(forecasts), :, 0]
+        positive = (column > 0).nonzero()
+        values = column[positive[:, 0], positive[:, 1]].tolist()
         for (b, row), value in zip(positive.tolist(), values, strict=True):
             forecasts[b].append((row, value))
+    trial = _current_trial.get()
+    events = {}
+    if trial is not None:
+        trial.looks.append(events)
+    active = active.tolist() if trial is not None and active is not None else None
     for batch, present in enumerate(presences(field)):
+        if active is not None and not active[batch]:
+            continue
         sentence = present if not held or not held[batch] else {**present, **held[batch]}
-        pi_step(owner, sentence)
-        sigma_step(owner, present, forecasts[batch])
+        if trial is not None:
+            events[batch] = (present, sentence, forecasts[batch])
+            if batch not in trial.streams:
+                trial.streams[batch] = GrowthTrial(owner)
+        with row_scope(owner, batch):
+            pi_step(owner, sentence)
+            sigma_step(owner, present, forecasts[batch])

@@ -76,7 +76,9 @@ def read(owner, *, row, work):
             addition = prediction[0,address][None] * locations[:,None]
             evidence[index,row] = torch.maximum(evidence[index,row], addition)
     # Closure writes only the active stream; another stream's field is held.
-    evidence[:,row:row+1] = close(owner, rows, evidence[:,row:row+1])
+    from CandidateGrowth import row_scope
+    with row_scope(owner, row):
+        evidence[:,row:row+1] = close(owner, rows, evidence[:,row:row+1])
     publish(model, ConceptualField(ids, evidence, field.where, field.when, field.percepts))
 
 

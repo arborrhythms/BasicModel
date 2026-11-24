@@ -15128,44 +15128,50 @@ class ConceptualSpace(Space):
         the concepts its symbols hold. Only the reached rows come back to the
         host, to be grouped by order.
         """
+        from CandidateGrowth import read_streams, visible_store
         store = _concept_alloc_of(self).layer()
-        device = required.device
         S = int(store.nOutput)
+        device = required.device
         active = (required.amax((2, 3)) > 0 if required.shape[2] else
                   required.new_zeros(required.shape[:2], dtype=torch.bool))
         B = int(required.shape[1])
         rows_t = rows_t.to(device)
-        targets, sources = [], []
-        standing = torch.zeros(S, dtype=torch.bool, device=device)
-        reached = torch.zeros(S, B, dtype=torch.long, device=device)
-        if len(rows_t):
-            reached = reached.index_add(0, rows_t, active.to(torch.long))
-        reached = reached > 0
-        for parent in (store,):
-            if not parent.nnz:
-                continue
-            dep_t, dep_s = [], []
-            bias = parent.bias_column()
-            for row, column in zip(parent._rows, parent._cols):
-                if column == bias:
-                    standing[row] = True
+
+        def closure():
+            targets, sources = [], []
+            standing = torch.zeros(S, dtype=torch.bool, device=device)
+            reached = torch.zeros(S, B, dtype=torch.long, device=device)
+            if len(rows_t):
+                reached = reached.index_add(0, rows_t, active.to(torch.long))
+            reached = reached > 0
+            for parent in (visible_store(store),):
+                if not parent.nnz:
                     continue
-                for source in parent.column_rows(column):
-                    dep_t.append(row)
-                    dep_s.append(source)
-            if dep_t:
-                targets.append(torch.tensor(dep_t, dtype=torch.long, device=device))
-                sources.append(torch.tensor(dep_s, dtype=torch.long, device=device))
-        reached = reached | standing[:, None]
-        if targets:
-            dep_t, dep_s = torch.cat(targets), torch.cat(sources)
-            while True:
-                parents = torch.zeros(S, B, dtype=torch.long, device=device).index_add(
-                    0, dep_t, reached[dep_s].to(torch.long)) > 0
-                fresh = parents & ~reached
-                if not bool(fresh.any()):
-                    break
-                reached = reached | fresh
+                dep_t, dep_s = [], []
+                bias = parent.bias_column()
+                for row, column in zip(parent._rows, parent._cols):
+                    if column == bias:
+                        standing[row] = True
+                        continue
+                    for source in parent.column_rows(column):
+                        dep_t.append(row)
+                        dep_s.append(source)
+                if dep_t:
+                    targets.append(torch.tensor(dep_t, dtype=torch.long, device=device))
+                    sources.append(torch.tensor(dep_s, dtype=torch.long, device=device))
+            reached = reached | standing[:, None]
+            if targets:
+                dep_t, dep_s = torch.cat(targets), torch.cat(sources)
+                while True:
+                    parents = torch.zeros(S, B, dtype=torch.long, device=device).index_add(
+                        0, dep_t, reached[dep_s].to(torch.long)) > 0
+                    fresh = parents & ~reached
+                    if not bool(fresh.any()):
+                        break
+                    reached = reached | fresh
+            return reached
+
+        reached = read_streams(self, closure, axis=1)
         orders = max(2, int(self._symbolic_order)) + 1
         retired = _concept_alloc_of(self).retired
         by_batch = [[[] for _ in range(orders)] for _ in range(B)]
@@ -15349,7 +15355,8 @@ class ConceptualSpace(Space):
         the bias gives ``nVectors``. An entry at zero reads the value.
         Empty when none."""
         alloc = getattr(self, "_concept_allocator", None)
-        ly = None if alloc is None else alloc._layers.get(0)
+        from CandidateGrowth import visible_store
+        ly = visible_store(None if alloc is None else alloc._layers.get(0))
         if ly is None or ly.values is None:
             return []
         r = int(row)
@@ -15370,7 +15377,8 @@ class ConceptualSpace(Space):
         reads concept ``source`` (a row), by either option: on the symbol
         that :meth:`things_reading` finds without making."""
         alloc = getattr(self, "_concept_allocator", None)
-        ly = None if alloc is None else alloc._layers.get(0)
+        from CandidateGrowth import visible_store
+        ly = visible_store(None if alloc is None else alloc._layers.get(0))
         if ly is None or self.concept_id_at_row(int(source)) is None:
             return ()
         found = (ly._index.get((int(row), ly.column_of_thing(thing)))
@@ -15630,7 +15638,8 @@ class ConceptualSpace(Space):
                 continue
             end = start + count
             rows = torch.arange(start, end, device=field.device)
-            raw = self._concept_rung_presence(field, start, end)
+            from CandidateGrowth import read_streams, row_scope
+            raw = read_streams(self, lambda: self._concept_rung_presence(field, start, end), axis=1)
             addresses = self._field_inventory_rows(field.device)[start:end]
             if addresses.ndim == 1:
                 addresses = addresses[:, None].expand(-1, B)
@@ -15645,7 +15654,8 @@ class ConceptualSpace(Space):
                     addresses = self._field_inventory_rows()
                     hops = []
                     for b in range(B):
-                        bound = self._concept_field_store(addresses[:, b] if addresses.ndim == 2 else addresses)
+                        with row_scope(self, b):
+                            bound = self._concept_field_store(addresses[:, b] if addresses.ndim == 2 else addresses)
                         # Each thing's priority is its concepts' greatest.
                         pole = thing_priorities(bound, p_rel[:, b:b+1])
                         pole = torch.cat((pole, pole.new_zeros(1, 1)))
@@ -15666,7 +15676,13 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_wave_qe', None)
         return field
 
-    def cs_reverse_presence(self, field, *, observed=None, inventory_rows=None):
+    def cs_reverse_presence(self, field, *, observed=None, inventory_rows=None, stream_batch=True):
+        if not stream_batch:
+            return self._reverse_presence(field, observed, inventory_rows)
+        from CandidateGrowth import read_streams
+        return read_streams(self, lambda: self._reverse_presence(field, observed, inventory_rows), axis=1)
+
+    def _reverse_presence(self, field, observed, inventory_rows):
         """Select cases by pi against the field, or choose without a field.
 
         Higher orders descend through sigma cases. Intersections are expanded
@@ -15678,7 +15694,7 @@ class ConceptualSpace(Space):
             raise ValueError('the observed field must match the requested field')
         addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
         if addresses.ndim == 2:
-            return torch.cat([self.cs_reverse_presence(field[:, b:b+1],
+            return torch.cat([self._reverse_presence(field[:, b:b+1],
                 observed=None if observed is None else observed[:, b:b+1],
                 inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
         from Layers import thing_lanes, sigma_transpose, seat_lanes

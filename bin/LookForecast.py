@@ -7,6 +7,7 @@ import torch
 from torch.nn import functional as F
 
 import ConceptSpread
+from CandidateGrowth import read_streams
 from FieldProjection import inventory
 from SentenceField import inventory as field_rows
 
@@ -87,7 +88,8 @@ class LookForecast:
         result = self.observations.new_zeros(*live.shape, self.width, 2)
         if not bool(live.any()):
             return result
-        result[live] = self._compact(ConceptSpread.expected(self.owner, inputs))
+        result[live] = self._compact(read_streams(
+            self.owner, lambda: ConceptSpread.expected(self.owner, inputs), axis=0, live=live))
         return result
 
     def inventory_rows(self):
@@ -106,7 +108,8 @@ class LookForecast:
         actual = self.read(evidence, extent)[live]
         arrived = actual.new_zeros(len(actual), int(self.owner.nVectors), 2)
         arrived[:, self.inventory_rows()] = actual
-        cost = ConceptSpread.look_cost(self.owner, inputs, arrived)
+        cost = read_streams(self.owner, lambda: ConceptSpread.look_cost(self.owner, inputs, arrived),
+                            axis=0, live=live)
         batch = live.nonzero()[:, 0]
         return error.index_add(0, batch, cost)
 
@@ -128,7 +131,9 @@ class LookForecast:
         for i, row in held:
             arrived[:, row] = values[i]
         batch = live.nonzero()[:, 0]
-        cost = ConceptSpread.percept_cost(self.owner, inputs, arrived.index_select(0, batch))
+        observed = arrived.index_select(0, batch)
+        cost = read_streams(self.owner, lambda: ConceptSpread.percept_cost(self.owner, inputs, observed),
+                            axis=0, live=live)
         return error.index_add(0, batch, cost)
 
     def read(self, evidence, extent):
@@ -214,6 +219,12 @@ class OccurrenceCredit:
         shared, mass = Error.pyramid_match(put, wanted)
         error = (put.sum((1, 2)) + mass - 2 * shared).clamp_min(0.)
         self.terms.append((error, mass, live))
+
+    def for_rows(self, rows):
+        from copy import copy
+        selected = copy(self)
+        selected.terms = [(error, mass, live & rows) for error, mass, live in self.terms]
+        return selected
 
     def register(self, registry):
         for error, mass, live in self.terms:

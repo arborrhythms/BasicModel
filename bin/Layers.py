@@ -6595,6 +6595,10 @@ class ConceptualAttentionLayer(SparseLayer):
         seated is missing: it contributes no evidence, as a source outside
         the field.
         """
+        from CandidateGrowth import visible_store
+        projected = visible_store(self)
+        if projected is not self:
+            return projected.bind(inventory_rows)
         if not self._thing_columns:
             return super().bind(inventory_rows)
         device = self._device()
