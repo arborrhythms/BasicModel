@@ -133,8 +133,12 @@ def main():
         nonlocal training_time
         device = next(model.parameters()).device
         record['device'] = str(device)
-        from torch._dynamo.utils import counters
+        from torch._dynamo.utils import compilation_time_metrics, counters
         before = dict(counters['stats'])
+        # These are the outer frame compiler and the separately timed lazy
+        # backward compiler. Nested compiler passes overlap those intervals.
+        timers = ('_compile.compile_inner', 'backward._backward_impl')
+        offsets = [len(compilation_time_metrics.get(name, ())) for name in timers]
         updates = getattr(model, '_training_step_count', 0)
         sync(device)
         start = time.perf_counter()
@@ -144,6 +148,8 @@ def main():
                    updates=getattr(model, '_training_step_count', 0) - updates,
                    graphs=counters['stats'].get('unique_graphs', 0) - before.get('unique_graphs', 0),
                    train=kw.get('train', False), sentences=kw.get('batchSize', 0) if kw.get('train') else 0)
+        row['compiler_seconds'] = sum(sum(compilation_time_metrics.get(name, ())[offset:])
+                                      for name, offset in zip(timers, offsets, strict=True))
         record['steps'].append(row)
         save()
         print('step', len(record['steps']), row, flush=True)
@@ -504,7 +510,7 @@ def main():
     record['warmup_steps'] = record['steps'][:3]
     # Each reading presentation contains one sentence per real batch row.
     # Candidate walks are internal work on that sentence.
-    steady_rows = [r for r in record['steps'][3:] if not r['graphs'] and r['train']]
+    steady_rows = [r for r in record['steps'][3:] if not r['graphs'] and not r['compiler_seconds'] and r['train']]
     steady = [r['seconds'] for r in steady_rows]
     record['steady_sentences'] = sum(r['sentences'] for r in steady_rows)
     record['steady_sentences_per_second'] = record['steady_sentences'] / sum(steady) if steady else None

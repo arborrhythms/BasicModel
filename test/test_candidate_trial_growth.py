@@ -111,6 +111,35 @@ def test_mixed_streams_read_their_own_promotions_and_compact_live_rows():
     assert torch.equal(gradient[2], reference_gradient[2])
 
 
+def test_rejected_trial_preserves_an_existing_adam_moment():
+    from ConceptSpread import loss
+    from test_item17_symbols import _small_space
+    owner, _, _, _ = _small_space()
+    owner._expected_knowing = torch.zeros(1, 16, 2)
+    model = SimpleNamespace(_expectation_looks=[], _expectation_percept_looks=[])
+    kept, rejected = [torch.nn.Parameter(torch.ones(1)) for _ in range(2)]
+    optimizer = torch.optim.Adam([kept, rejected], lr=.01)
+    (kept + rejected).sum().backward()
+    optimizer.step()
+    optimizer.zero_grad(set_to_none=True)
+    before = [parameter.detach().clone() for parameter in (kept, rejected)]
+    state = {key: value.clone() for key, value in optimizer.state[rejected].items()}
+    assert state['exp_avg'].abs().sum() > 0
+
+    trials = [growth.GrowthTrial(owner), growth.GrowthTrial(owner)]
+    for trial, cost in zip(trials, (kept * 0., rejected.square()), strict=True):
+        with trial.active(model, 1):
+            model._expectation_looks.append((cost, torch.ones_like(cost, dtype=torch.bool)))
+    growth.GrowthTrial.keep_forecasts(model, trials, torch.tensor([0]))
+    loss(model).sum().backward()
+    assert torch.equal(kept.grad, torch.zeros_like(kept)) and rejected.grad is None
+    optimizer.step()
+    assert not torch.equal(kept, before[0])
+    assert torch.equal(rejected, before[1])
+    for key, value in state.items():
+        assert torch.equal(optimizer.state[rejected][key], value)
+
+
 def test_each_fixation_path_grades_its_own_requests_against_the_shared_page():
     from Layers import Error
     from LookForecast import OccurrenceCredit
