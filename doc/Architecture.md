@@ -789,14 +789,17 @@ unconditionally, gated only by `reconstructionScale`):
 
 ### Single Optimizer with Overlapping Weight Spaces
 
-Representation learning and response learning use one optimizer step over
-explicitly owned parameters. Reconstruction, expectation and generation have
-separate state paths. Expectation's predictors train only on their own local
-objectives, with sources, targets and consumed forecasts detached. Shared
-operators are the intended coupling: they receive gradient from their uses in
-each computation, so every objective shapes the one central representation
-through named, interpretable parameters. Independent heads specialize in
-their own paths.
+On a reading, reconstruction compares the wide-open field’s inverse with
+the input before narrowed looks or thinking. At each narrowed look, the
+attention request predicts basic percept activity and its location. The
+spatial pyramid compares that forecast with the sensory field inside the
+chosen fixation and teaches the network that issued the request. After
+the model fixes its response, the supplied answer scores the produced
+field. Silence is the target when the lesson supplies no answer.
+
+These errors contribute to one optimizer step. The observed field is
+detached, and the expectation predictors learn from their local errors.
+Shared operators receive gradients from the computations that use them.
 
 By default (`separateChooser=false`) each sentence's single backward projects
 the answer gradient A against the reconstruction gradient R on every shared

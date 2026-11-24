@@ -326,6 +326,11 @@ reconstruction runs immediately after wide-open attention, before
 narrowing or thought. The grammar prerequisite requires the validation
 threshold in both sampled and evaluation reading.
 
+The before-and-after lesson trace, the full said-back reconstruction
+measure, and the repeated reading-and-counting experiment run with
+`RUN_SLOW=1`. The exact-order reading certificate, the attention-gradient
+checks and the verbal XOR gate run in the default tier.
+
 To produce a reusable reader and an independent test report, run
 `.venv/bin/python bin/pretrain_reading.py --output output/reader` in a fresh
 output directory. The lesson has 72 training, 58 validation and 122 test
