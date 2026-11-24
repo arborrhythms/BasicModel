@@ -22,6 +22,21 @@ def counts_in_spans(byte_ids, spans, observed=None):
         raise ValueError('byte extents require bytes [B,L] and spans [B,E,2]')
     B, L = byte_ids.shape
     spans = spans.to(byte_ids.device).clamp(0, L)
+    # Pages have many padding bytes and few extents. For binary observations,
+    # integer multiplicities fit exactly in float32 through this length. Count
+    # directly into the requested histograms, including reversed extents.
+    if (spans.shape[1] <= 64 and L <= 2**24 and torch.get_default_dtype() == torch.float32
+            and (observed is None or observed.dtype == torch.bool)):
+        start, end = spans.unbind(-1)
+        positions = torch.arange(L, device=byte_ids.device)
+        inside = ((positions >= torch.minimum(start, end)[..., None])
+                  & (positions < torch.maximum(start, end)[..., None]))
+        if observed is not None:
+            inside = inside & observed.to(device=byte_ids.device)[:, None]
+        addresses = byte_ids.long().clamp(0, 255)[:, None].expand_as(inside)
+        output = torch.zeros(B, spans.shape[1], 256, device=byte_ids.device)
+        output.scatter_add_(2, addresses, inside.to(output.dtype))
+        return torch.where((end < start)[..., None], -output, output)
     # Keep the scan axis contiguous. The old [B,L,256] one-hot needed a
     # large int64 temporary and a strided cumsum for every byte channel.
     # Each (batch, position) writes one distinct cell, including repeats.

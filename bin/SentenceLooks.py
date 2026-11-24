@@ -294,6 +294,8 @@ class Looks:
         if model.training and torch.is_grad_enabled() and self.supplied is None and self.prior is None:
             from LookForecast import OccurrenceCredit
             self.look_credit = OccurrenceCredit(owner, bank)
+        stream = torch.arange(B, device=own.device)
+        word_slots = torch.arange(W, device=own.device)[None]
         while True:
             turn = state.taken
             left = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
@@ -361,7 +363,7 @@ class Looks:
             word = index.clamp_min(0)
             allowed = found & (state.known.gather(1, word[:, None])[:, 0]
                                | torch.isfinite(words.gather(1, word[:, None])[:, 0]))
-            state.descended = state.descended | ((torch.arange(W, device=word.device)[None] == word[:, None])
+            state.descended = state.descended | ((word_slots == word[:, None])
                                                  & (found & ~state.known.gather(1, word[:, None])[:, 0])[:, None])
             options = {}
             decision = len(self.decisions)
@@ -379,14 +381,13 @@ class Looks:
                 options['replay_action'] = torch.where(replay_grammar, old['action'], -1)
                 replay_branch = replay_grammar | (options.get('masked_action', -1) != -1)
                 options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
-            choice = state.chooser.interpret_at_look(state.keys[torch.arange(len(word), device=word.device), word],
+            choice = state.chooser.interpret_at_look(state.keys[stream, word],
                                                      allowed, **options)
             choice.update(index=index, slot=index.clamp_min(0))
             # The record of the look (§19.125): the request it was given, and
             # the .where and the code of the word it took (nothing where none);
             # the chance of stopping read before the look.
             taken = index.clamp(0, found_where.shape[1] - 1)
-            stream = torch.arange(len(index), device=index.device)
             choice.update(request=request.detach(),
                           where=torch.where(found[:, None], found_where[stream, taken].detach(), 0.),
                           code=torch.where(found[:, None], found_code[stream, taken].detach(), 0.),
@@ -406,7 +407,7 @@ class Looks:
             state.record(word, interpreted)
             own = lower(own, bank, index, interpreted)
             if fragment is not None and fragment['idea'] is not None:
-                others = fragment['run'] & (torch.arange(W, device=index.device)[None] != index[:, None])
+                others = fragment['run'] & (word_slots != index[:, None])
                 for value in others.any(0).nonzero().flatten().tolist():
                     with_it = others[:, value]
                     at = torch.full_like(index, value)

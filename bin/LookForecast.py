@@ -22,6 +22,9 @@ class LookForecast:
         self.basic_count = sum(row < self.order_zero_width for row in self.rows)
         self.spans = spans
         allocated = spans.new_tensor(self.rows)
+        self.higher_rows = allocated[self.basic_count:]
+        self.forecast_rows = torch.cat((torch.arange(self.order_zero_width, device=spans.device),
+                                        self.higher_rows))
         self.index = spans.new_full((owner.nVectors + 1,), -1)
         self.index[allocated] = torch.arange(len(allocated), device=spans.device)
         # All order-zero addresses are forecast, including currently silent rows.
@@ -30,8 +33,6 @@ class LookForecast:
         self.width = self.order_zero_width + len(allocated) - self.basic_count
         evidence = self._located(opened)
         readings = evidence.shape[1]
-        self.readings = readings
-        self.slots = torch.arange(readings, device=spans.device)
         self.observations = evidence[:, :, :self.basic_count]
         everything = torch.zeros(len(evidence), readings, dtype=torch.bool, device=spans.device)
         width = min(readings, spans.shape[1])
@@ -58,9 +59,7 @@ class LookForecast:
 
     def _extent(self, extent):
         """``extent`` ``[B, readings]`` as wide as the observations' readings."""
-        # slots contains consecutive ranges appended by observe. Its maximum
-        # is shape metadata; reading it back synchronizes every forecast.
-        width = self.readings
+        width = self.observations.shape[1]
         return F.pad(extent, (0, max(0, width - extent.shape[1])))[:, :width]
 
     def _outside(self, extent, looked=None):
@@ -70,7 +69,7 @@ class LookForecast:
         nothing is expected from everything observed."""
         extent = self._extent(extent)
         live = extent.any(-1) if looked is None else looked.to(extent.device)
-        outside = ~extent.gather(1, self.slots[None].expand(len(extent), -1))
+        outside = ~extent
         knowing = self._pool(self.observations, outside[:, None])[:, 0][live]
         inputs = knowing.new_zeros(len(knowing), self.order_zero_width, 2)
         inputs[:, self.address[:self.basic_count]] = knowing
@@ -78,8 +77,7 @@ class LookForecast:
 
     def _compact(self, value):
         """The inventory's values ``[n, V, 2]`` at this forecast's positions."""
-        allocated = self.address.new_tensor(self.rows)
-        return torch.cat((value[:, :self.order_zero_width], value[:, allocated[self.basic_count:]]), 1)
+        return torch.cat((value[:, :self.order_zero_width], value[:, self.higher_rows]), 1)
 
     @torch.no_grad()
     def forecast(self, extent, looked=None):
@@ -94,9 +92,7 @@ class LookForecast:
 
     def inventory_rows(self):
         """The inventory row of each forecast position."""
-        allocated = self.address.new_tensor(self.rows)
-        return torch.cat((torch.arange(self.order_zero_width, device=allocated.device),
-                          allocated[self.basic_count:]))
+        return self.forecast_rows
 
     def stage_cost(self, field, extent, looked=None):
         """The concepts' stage at a look, ``[B]``: what each concept expected
@@ -161,11 +157,19 @@ class LookForecast:
         pair = self.surprise(self.read(evidence, extent), forecast, extent, looked)
         live = extent.any(-1) if looked is None else looked
         self.latest = torch.where(live[:, None], pair, self.latest)
-        self.slots = torch.cat((self.slots, torch.arange(evidence.shape[1], device=self.slots.device)))
-        self.readings = max(self.readings, evidence.shape[1])
-        self.observations = torch.cat((self.observations, torch.where(
-            F.pad(extent, (0, max(0, evidence.shape[1] - extent.shape[1])))[:, :evidence.shape[1], None, None],
-            evidence[:, :, :self.basic_count], 0.)), 1)
+        # Every forecast selects entire reading positions, then takes the
+        # greatest evidence on each lane. Maxima at the same position can
+        # be folded as they arrive, once the current forecast has been graded.
+        width = evidence.shape[1]
+        observed = torch.where(
+            F.pad(extent, (0, max(0, width - extent.shape[1])))[:, :width, None, None],
+            evidence[:, :, :self.basic_count], 0.)
+        old = self.observations
+        if old.shape[1] < width:
+            old = F.pad(old, (0, 0, 0, 0, 0, width - old.shape[1]), value=-torch.inf)
+        if width < old.shape[1]:
+            observed = F.pad(observed, (0, 0, 0, 0, 0, old.shape[1] - width), value=-torch.inf)
+        self.observations = torch.maximum(old, observed)
         return pair
 
 

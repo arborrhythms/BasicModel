@@ -137,7 +137,7 @@ class SymbolTable:
 
     def members(self, symbol):
         """The concepts the symbol's Pi row reads."""
-        return [self.concepts[i] for i, _, _ in self.pi.entries(int(symbol))]
+        return [self.concepts[i] for i in self.pi.inputs_read(int(symbol))]
 
     def reading(self, concept):
         """The symbols whose Pi rows read ``concept``."""

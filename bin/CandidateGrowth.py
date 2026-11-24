@@ -34,13 +34,24 @@ def matrices(owner):
     return held
 
 
+def presences(field):
+    """Stage one sparse batch of positive readings for the host candidate tables."""
+    ids = field.concept_ids
+    if ids.ndim == 1:
+        ids = ids[:, None].expand(-1, field.evidence.shape[1])
+    lanes = field.evidence.detach().amax(2)
+    values = (lanes[..., 0] - lanes[..., 1]).clamp_min(0)
+    row, batch = ((ids >= 0) & (values > 0)).nonzero(as_tuple=True)
+    places = torch.stack((batch, ids[row, batch]), -1).tolist()
+    result = [{} for _ in range(field.evidence.shape[1])]
+    for (b, cid), value in zip(places, values[row, batch].tolist(), strict=True):
+        result[b][cid] = value
+    return result
+
+
 def presence(owner, field, batch):
-    """Each concept's presence at a look, ``{cid: value}``: its greatest
-    reading on the for lane less what it reads against, at zero or above."""
-    ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, batch]
-    lanes = field.evidence[:, batch].detach().amax(1)
-    value = (lanes[..., 0] - lanes[..., 1]).clamp_min(0)
-    return {int(cid): float(v) for cid, v in zip(ids.tolist(), value.tolist()) if int(cid) >= 0 and v > 0}
+    """The positive readings of one stream, for callers outside the look loop."""
+    return presences(field)[batch]
 
 
 def pi_step(owner, present):
@@ -77,9 +88,16 @@ def pair_rows(owner):
     return rows
 
 
-def sigma_step(owner, present, expected, batch):
+def sigma_step(owner, present, expected, batch=None):
     """One step of the Sigma's candidates at a look: a kind expected there
     and not read, with a thing present there. The entries written."""
+    if batch is not None:
+        if expected is None:
+            expected = ()
+        else:
+            column = expected[batch, :, 0]
+            rows = (column > 0).nonzero().flatten()
+            expected = zip(rows.tolist(), column[rows].tolist(), strict=True)
     alloc = owner._concept_allocator
     table = alloc.symbol_table()
     held = matrices(owner)['sigma']
@@ -90,15 +108,14 @@ def sigma_step(owner, present, expected, batch):
                 if all(present.get(member, 0.) >= PRESENT for member in table.members(symbol)):
                     things[int(symbol)] = value
     wanted = {}
-    if expected is not None and things:
-        rows = (expected[batch, :, 0] > 0).nonzero().flatten().tolist()
-        for row in rows:
+    if things:
+        for row, value in expected:
             kind = owner.concept_id_at_row(row)
             if kind is None or alloc.order_of(int(kind)) < 1:
                 continue
-            gap = float(expected[batch, row, 0]) - present.get(int(kind), 0.)
-            if gap > 0:
-                wanted[int(kind)] = (float(expected[batch, row, 0]), present.get(int(kind), 0.))
+            observed = present.get(int(kind), 0.)
+            if value > observed:
+                wanted[int(kind)] = (value, observed)
     store = alloc.layer(0)
     for kind in wanted:
         kind_row = owner._concept_row_of(kind)
@@ -135,18 +152,15 @@ def withheld_words(model, extent):
     owner = model._concept_owner()
     hidden = targets['draw'].forms.any(-1)
     words = targets['word_bytes']
-    held = []
-    for b in range(len(extent)):
-        row = {}
-        width = min(extent.shape[1], hidden.shape[1])
-        for w in (extent[b, :width] & hidden[b, :width].to(extent.device)).nonzero().flatten().tolist():
-            if b < len(words) and w < len(words[b]):
-                raw = words[b][w]
-                form = raw.decode('latin1') if isinstance(raw, bytes) else str(raw)
-                cid = owner.interpret.word_for_form(form.strip())
-                if cid is not None:
-                    row[int(cid)] = 1.
-        held.append(row)
+    held = [{} for _ in range(len(extent))]
+    width = min(extent.shape[1], hidden.shape[1])
+    for b, w in (extent[:, :width] & hidden[:, :width].to(extent.device)).nonzero().tolist():
+        if b < len(words) and w < len(words[b]):
+            raw = words[b][w]
+            form = raw.decode('latin1') if isinstance(raw, bytes) else str(raw)
+            cid = owner.interpret.word_for_form(form.strip())
+            if cid is not None:
+                held[b][int(cid)] = 1.
     return held
 
 
@@ -161,8 +175,13 @@ def at_look(model, field, extent=None):
         return
     expected = getattr(owner, '_expected_knowing', None)
     held = withheld_words(model, extent) if extent is not None else None
-    for batch in range(field.evidence.shape[1]):
-        present = presence(owner, field, batch)
+    forecasts = [[] for _ in range(field.evidence.shape[1])]
+    if expected is not None:
+        positive = (expected[..., 0] > 0).nonzero()
+        values = expected[..., 0][positive[:, 0], positive[:, 1]].tolist()
+        for (b, row), value in zip(positive.tolist(), values, strict=True):
+            forecasts[b].append((row, value))
+    for batch, present in enumerate(presences(field)):
         sentence = present if not held or not held[batch] else {**present, **held[batch]}
         pi_step(owner, sentence)
-        sigma_step(owner, present, expected, batch)
+        sigma_step(owner, present, forecasts[batch])

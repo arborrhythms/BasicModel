@@ -510,19 +510,25 @@ class LiveConstituents:
     @torch.no_grad()
     def observe(self, state, rows, support):
         from Memory import STMChunks
-        values,depth = STMChunks.stack_view(state)[:2]
-        for b in rows.nonzero().flatten().tolist():
-            for slot, value in enumerate(values[b, :int(depth[b])].detach()):
-                if support is not None and int(support[b, slot].count_nonzero()) < 2:
-                    continue
-                if (not bool(value.any()) or not bool(torch.isfinite(value).all())
-                        or bool((self.word_valid[b] & self.words[b].eq(value).all(-1)).any())
-                        or bool((self.valid[b] & self.codes[b].eq(value).all(-1)).any())):
-                    continue
-                # Recency determines eviction only. Pair search is invariant
-                # to this order except genuinely indistinguishable inverse ties.
-                self.codes[b] = torch.cat((self.codes[b, 1:], value[None]), 0)
-                self.valid[b] = torch.cat((self.valid[b, 1:], self.valid.new_ones(1)), 0)
+        indices = STMChunks.stack_indices(state)
+        occupied = ((torch.arange(indices.shape[1], device=indices.device) < state[STMChunks.DEPTH][:, None])
+                    & (indices >= 0))
+        eligible = occupied & rows[:, None]
+        if support is not None:
+            eligible = eligible & (support.count_nonzero(-1) >= 2)
+        batch, slot = eligible.nonzero(as_tuple=True)
+        source_slot = indices[batch, slot]
+        candidates = state[STMChunks.BUFFER][batch, source_slot]
+        novel = candidates.ne(0).any(-1) & candidates.isfinite().all(-1)
+        known = (self.word_valid[batch] & self.words[batch].eq(candidates[:, None]).all(-1)).any(-1)
+        # Keep admission sequential within a stream. An earlier admission
+        # can evict an older duplicate before its next appearance.
+        for b, k in torch.stack((batch, source_slot), -1)[novel & ~known].tolist():
+            value = state[STMChunks.BUFFER][b, k]
+            if bool((self.valid[b] & self.codes[b].eq(value).all(-1)).any()):
+                continue
+            self.codes[b] = torch.cat((self.codes[b, 1:], value[None]), 0)
+            self.valid[b] = torch.cat((self.valid[b, 1:], self.valid.new_ones(1)), 0)
 
 
 @torch.no_grad()

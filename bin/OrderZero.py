@@ -49,12 +49,13 @@ class SparsePiLayer3(nn.Module):
         self.register_buffer('ccol', torch.zeros(0, dtype=torch.long), persistent=False)
         self.register_buffer('crow_of', torch.zeros(0, dtype=torch.long), persistent=False)
         self.n_rows = 0
+        self._nnz = 0
         self.members = {}
         self.keys = []
 
     @property
     def nnz(self):
-        return int(self.crow[self.n_rows])
+        return self._nnz
 
     def member(self, key):
         """The id of a key of the percept tower, made on first use."""
@@ -85,6 +86,7 @@ class SparsePiLayer3(nn.Module):
             self.against[start + len(ids):end] = True
         self.crow[row + 1] = end
         self.n_rows = row + 1
+        self._nnz = end
         # The column index is made again when it is next read.
         self._columns_stale = True
         return row
@@ -192,6 +194,7 @@ class SparsePiLayer3(nn.Module):
         self.value.zero_()
         self.against.zero_()
         self.n_rows, self.members, self.keys = 0, {}, []
+        self._nnz = 0
         self._index_columns()
 
 

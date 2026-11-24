@@ -15293,11 +15293,13 @@ class ConceptualSpace(Space):
         index = {key: i for i, key in enumerate(perception.keys)}
         sigma = getattr(self, 'order_zero', None)
         n0 = self._order_caps()[0]
+        entries = ({} if sigma is None else sigma.entries_by_row(
+            row for row in rows if 0 <= row < min(n0, sigma.nOutput)))
         for slot, row in enumerate(rows):
             held = ()
-            if sigma is not None and 0 <= row < min(n0, sigma.nOutput):
+            if row in entries:
                 held = sorted((index[('bp', percept)], int(negated))
-                              for percept, weight, negated in sigma.entries(row)
+                              for percept, weight, negated in entries[row]
                               if weight > 0 and ('bp', percept) in index)
             if held:
                 given = torch.stack([lanes[found].flip(-1) if negated else lanes[found]
@@ -15312,6 +15314,8 @@ class ConceptualSpace(Space):
         ``[n0, B, E]``."""
         addresses = self._field_inventory_rows()
         n0 = self._field_caps()[0]
+        if addresses.ndim == 1 and perception.keys:
+            return self.order_zero_both(perception, addresses[:n0])
         return torch.cat([self.order_zero_both(perception,
             (addresses[:, b] if addresses.ndim == 2 else addresses)[:n0], batch=b)
             for b in range(perception.values.shape[1])], 1)

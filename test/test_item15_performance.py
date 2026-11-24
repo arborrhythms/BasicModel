@@ -203,3 +203,66 @@ def test_menu_percepts_are_live_shared_and_expire_even_on_error():
         weight.add_(1)
     assert torch.equal(read(owner, ('bp', 1))[:2], weight.square())
     assert calls == [1, 1, 1]
+
+
+def test_sparse_topology_tracks_swap_removal_and_checkpoint():
+    from Layers import SparseSigmaLDU
+    sigma = SparseSigmaLDU(5, 4, 8)
+    for row, source, weight in [(1, 2, .3), (2, 3, .5), (1, 1, .6), (0, 0, .2)]:
+        sigma.add(row, source, weight, negated=source == 1)
+    sigma.remove(2, 3)
+    saved = SparseSigmaLDU(5, 4, 8)
+    saved.load_state_dict(sigma.state_dict())
+    for layer in (saved, sigma):
+        weights = layer.w(occupied_only=True).tolist()
+        edges = list(zip(layer.entry_row[:layer.nnz].tolist(), layer.entry_input[:layer.nnz].tolist(),
+                         weights, strict=True))
+        expected = {r: [(c, abs(w), w < 0) for row, c, w in edges if row == r] for r in range(4)}
+        assert layer.entries_by_row([1, 1, 2, 0, 3]) == expected
+        assert [layer.inputs_read(r) for r in range(4)] == [[e[0] for e in expected[r]] for r in range(4)]
+        assert layer.rows_reading(3) == []
+        layer.clear()
+        assert layer.entries_by_row(range(4)) == {r: [] for r in range(4)}
+
+
+def test_inverse_admission_respects_eviction_and_reappearance_in_one_stream():
+    from Generative import LiveConstituents
+    from Memory import STMChunks
+    words = torch.tensor([[[3., 0.]], [[3., 0.]]])
+    bank = LiveConstituents(words, torch.ones(2, 1, dtype=torch.bool), 2)
+    bank.codes[:, 0] = torch.tensor([5., 0.])
+    bank.valid[:, 0] = True
+    state = STMChunks.empty(2, 8, 2)
+    values = words.new_tensor([3., 1., 2., 1., 5., float('nan')])
+    state[STMChunks.BUFFER][:, :6, 0] = values
+    state[STMChunks.DEPTH].fill_(6)
+    state[STMChunks.STACK][:, :6] = torch.arange(6)
+    bank.observe(state, torch.tensor([True, False]), None)
+    assert bank.codes.tolist() == [[[2., 0.], [5., 0.]], [[5., 0.], [0., 0.]]]
+    assert bank.valid.tolist() == [[True, True], [True, False]]
+
+
+def test_forecast_keeps_the_same_outside_evidence_with_bounded_history():
+    from LookForecast import LookForecast
+    forecast = LookForecast.__new__(LookForecast)
+    forecast.basic_count = forecast.order_zero_width = forecast.width = 2
+    forecast.address = torch.arange(2)
+    forecast._located = lambda evidence: evidence
+    initial = torch.arange(24, dtype=torch.float32).reshape(2, 3, 2, 2) / 24
+    forecast.observations = initial
+    forecast.latest = torch.zeros(2, 2)
+    observed, positions = [initial], [torch.arange(3)]
+    for width in (6, 2, 4, 7):
+        extent = (torch.arange(width)[None] + torch.arange(2)[:, None]) % 3 == 0
+        evidence = torch.rand(2, width, 2, 2)
+        forecast.observe(evidence, extent, torch.zeros(2, 2, 2))
+        observed.append(torch.where(extent[..., None, None], evidence, 0.))
+        positions.append(torch.arange(width))
+        longest = max(len(slots) for slots in positions)
+        assert forecast.observations.shape[1] == longest
+        for held in (0, 1, 2):
+            extent = torch.arange(longest)[None].expand(2, -1) % 3 == held
+            live, actual = forecast._outside(extent)
+            outside = ~extent[:, torch.cat(positions)]
+            expected = torch.where(outside[..., None, None], torch.cat(observed, 1), 0.).amax(1)
+            assert torch.equal(actual, expected[live])

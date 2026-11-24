@@ -5284,6 +5284,7 @@ class SparseLDULayer(Layer):
                            ('slot_input', slots), ('slot_output', slots), ('slot_diagonal', slots)):
             self.register_buffer(name, torch.full((size,), -1, dtype=torch.long), persistent=False)
         self._entry_of, self._n = {}, 0
+        self._entry_pairs = []
         self._reset_slots()
         self._rows = _EntryIndex(self.nOutput, self.entry_row.device)
         self._columns = _EntryIndex(self.nInput, self.entry_row.device)
@@ -5357,7 +5358,8 @@ class SparseLDULayer(Layer):
         self._columns = _EntryIndex(self.nInput, self.entry_input.device)
         self._columns.rebuild(self.entry_input, n)
         rows, inputs = self.entry_row[:n].tolist(), self.entry_input[:n].tolist()
-        self._entry_of = {(r, i): e for e, (r, i) in enumerate(zip(rows, inputs))}
+        self._entry_pairs = list(zip(rows, inputs, strict=True))
+        self._entry_of = {pair: e for e, pair in enumerate(self._entry_pairs)}
         self._product_cache = None
         return rows, inputs
 
@@ -5703,7 +5705,9 @@ class SparseLDULayer(Layer):
             self.entry_apart[entry] = weight == 0
             self._n = entry + 1
             self.count.fill_(self._n)
-            self._entry_of[(row, input)] = entry
+            pair = (row, input)
+            self._entry_pairs.append(pair)
+            self._entry_of[pair] = entry
             self._rows.add(row, entry, self.entry_row)
             self._columns.add(input, entry, self.entry_input)
             signed = -weight if negated else weight
@@ -5786,16 +5790,30 @@ class SparseLDULayer(Layer):
     def entries(self, row):
         """An output's entries, ``[(input read, weight, negated)]``, W at
         each, by the compressed rows."""
-        entries = self._rows.of(row)
-        if not entries:
-            return []
-        value = self.w(occupied_only=True)
-        return [(int(self.entry_input[e]), float(value[e].abs()), bool(value[e] < 0))
-                for e in entries]
+        return self.entries_by_row((row,))[row]
+
+    @torch.no_grad()
+    def entries_by_row(self, rows):
+        """Read the requested rows' current signed weights with one weight transfer."""
+        groups = {row: self._rows.of(row) for row in dict.fromkeys(rows)}
+        flat = [entry for group in groups.values() for entry in group]
+        if not flat:
+            return groups
+        indices = self.entry_input.new_tensor(flat)
+        inputs = (self._entry_pairs[e][1] for e in flat)
+        weights = self.w(occupied_only=True).index_select(0, indices).tolist()
+        edges = ((source, abs(weight), weight < 0)
+                 for source, weight in zip(inputs, weights, strict=True))
+        return {row: [next(edges) for _ in group]
+                for row, group in groups.items()}
+
+    def inputs_read(self, row):
+        """Input identities in stored entry order, independent of weights."""
+        return [self._entry_pairs[e][1] for e in self._rows.of(row)]
 
     def rows_reading(self, input):
         """The outputs with an entry on ``input``, by the index of columns."""
-        return sorted(int(self.entry_row[e]) for e in self._columns.of(input))
+        return sorted(self._entry_pairs[e][0] for e in self._columns.of(input))
 
     def entry(self, rows, inputs):
         """W at the entry of each ``rows[k]`` on ``inputs[k]`` (its size the
@@ -6580,7 +6598,8 @@ class ConceptualAttentionLayer(SparseLayer):
         if not self._thing_columns:
             return super().bind(inventory_rows)
         device = self._device()
-        addresses = [int(row) for row in torch.as_tensor(inventory_rows).reshape(-1).tolist()]
+        addresses = (inventory_rows if isinstance(inventory_rows, range) else
+                     torch.as_tensor(inventory_rows).reshape(-1).tolist())
         size = len(addresses)
         lookup = {}
         for seat, row in enumerate(addresses):

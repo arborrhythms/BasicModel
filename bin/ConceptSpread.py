@@ -79,7 +79,7 @@ def _store_edges(owner, V, device):
     if not getattr(store, '_thing_columns', False) or store.values is None or not store.nnz:
         edges = []
         return _pair_edges(owner, V, edges, device), edges
-    view = store.bind(torch.arange(V))
+    view = store.bind(range(V))
     seats = view._thing_seats.to(device)
     T = int(seats.shape[0])
     if not T:
@@ -140,12 +140,13 @@ def structure(owner, device=None):
             P = len(keys)
             nnz = pi.nnz
             counts = (pi.crow[1:pi.n_rows + 1] - pi.crow[:pi.n_rows]).to(device)
-            row_of = torch.repeat_interleave(torch.arange(pi.n_rows, device=device), counts)
+            row_of = torch.repeat_interleave(torch.arange(pi.n_rows, device=device), counts, output_size=nnz)
             col = pi.col[:nnz].to(device)
             weight = pi.value[0, :nnz].to(device)
             keep = ~pi.against[:nnz].to(device) & (col >= 0)
-            edges.append((V + T + row_of[keep], V + T + R + col[keep], weight[keep],
-                          torch.zeros(int(keep.sum()), dtype=torch.bool, device=device)))
+            source = col[keep]
+            edges.append((V + T + row_of[keep], V + T + R + source, weight[keep],
+                          torch.zeros_like(source, dtype=torch.bool)))
     if edges:
         parent, child, weight, negated = (torch.cat(part) for part in zip(*edges))
     else:

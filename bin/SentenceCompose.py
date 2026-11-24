@@ -36,7 +36,7 @@ def saved_sentence_values(parameters=(), buffers=()):
         # HOP backward capture constructs symbolic placeholders here. They
         # have no optimizer-owned runtime storage to freeze, and symbolic
         # sizes are deliberately unhashable. Let the traced graph own them.
-        if is_fake(value):
+        if type(value) is not torch.Tensor and is_fake(value):
             return _SavedValue(value, None, False)
         if value.layout != torch.strided:
             return _SavedValue(value, None, True)
@@ -48,6 +48,10 @@ def saved_sentence_values(parameters=(), buffers=()):
             if isinstance(value if base is None else base, torch.nn.Parameter):
                 protected.add(storage_id)
                 copy = True
+            else:
+                # An immutable activation needs only its version guard. Its
+                # detached view already keeps the underlying storage alive.
+                return _SavedValue(value, None, False)
         # Shape is already an immutable tuple-compatible torch.Size. A
         # protected storage also needs no repeated Parameter/base lookup.
         key = (storage_id, value._version, value.storage_offset(),

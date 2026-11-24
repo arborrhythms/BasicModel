@@ -26,13 +26,22 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--seed', type=int, default=1505)
+    parser.add_argument('--explore-paths', type=int, help='override the candidate count in a benchmark-only config')
+    parser.add_argument('--batch-size', type=int, help='fixed step workload only, extend with distinct lesson pages')
     parser.add_argument('--steps', type=int, default=12)
     parser.add_argument('--lesson', action='store_true')
+    parser.add_argument('--training-seconds', type=float,
+                        help='assess a fresh lesson reader after this budget of complete training updates')
+    parser.add_argument('--corpus', choices=('lesson-13', 'math-chain'))
+    parser.add_argument('--path-audit', action='store_true', help='record candidate-table changes during individual trial walks')
+    parser.add_argument('--allocations', action='store_true', help='profile allocation operators on a separate CPU step')
     parser.add_argument('--compiled-step', action='store_true',
                         help='enable the native compiled entry (step mode only)')
     parser.add_argument('--source', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--source-revision', help='revision of an archived --source without Git metadata')
     args = parser.parse_args()
+    if args.training_seconds is not None and (not args.lesson or args.training_seconds <= 0):
+        parser.error('--training-seconds needs --lesson and a positive training time')
     if args.lesson and args.compiled_step:
         parser.error('--lesson uses the native lesson runner; --compiled-step requires step mode')
     args.output.mkdir(parents=True, exist_ok=False)
@@ -47,6 +56,24 @@ def main():
     from What import What
     spec = load_lesson(LESSON)
     config = ROOT / 'data/XOR_grammar.xml'
+    if args.lesson and args.batch_size is not None:
+        parser.error('the full reading lesson uses its declared batch size')
+    if args.corpus:
+        if args.lesson or args.batch_size or args.explore_paths is not None or args.compiled_step:
+            parser.error('--corpus uses its own lesson configuration')
+        config = ROOT / 'data' / ('MM_corpus_lessons.xml' if args.corpus == 'lesson-13' else 'MM_math_chain.xml')
+    if args.explore_paths is not None:
+        import xml.etree.ElementTree as ET
+        if args.explore_paths < 0:
+            parser.error('--explore-paths must be nonnegative')
+        tree = ET.parse(config)
+        architecture = tree.getroot().find('architecture')
+        setting = architecture.find('explorePaths')
+        if setting is None:
+            setting = ET.SubElement(architecture, 'explorePaths')
+        setting.text = str(args.explore_paths)
+        config = args.output.resolve() / 'benchmark.xml'
+        tree.write(config, encoding='utf-8', xml_declaration=True)
     record = dict(source=args.source_revision or subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
                   seed=args.seed, torch=torch.__version__, platform=platform.platform(),
                   threads=torch.get_num_threads(), batch_size=spec['batch_size'],
@@ -55,6 +82,7 @@ def main():
                   lesson_sha256=hashlib.sha256(LESSON.read_bytes()).hexdigest(),
                   environment={k: v for k, v in os.environ.items() if k.startswith(('MODEL_', 'BASICMODEL_', 'PYTHONHASH', 'TORCHINDUCTOR'))},
                   steps=[])
+    record['explore_paths_override'] = args.explore_paths
     record['source_files'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                               for p in sorted((ROOT / 'bin').glob('*.py'))}
 
@@ -65,7 +93,14 @@ def main():
     from Models import BasicModel
     original = BasicModel.runBatch
 
+    class TrainingBudgetReached(Exception):
+        pass
+
+    train_budget_active = False
+    training_time = 0.
+
     def measured(model, *a, **kw):
+        nonlocal training_time
         device = next(model.parameters()).device
         record['device'] = str(device)
         def sync():
@@ -83,16 +118,67 @@ def main():
         row = dict(seconds=time.perf_counter() - start,
                    updates=getattr(model, '_training_step_count', 0) - updates,
                    graphs=counters['stats'].get('unique_graphs', 0) - before.get('unique_graphs', 0),
-                   train=kw.get('train', False))
+                   train=kw.get('train', False), sentences=kw.get('batchSize', 0) if kw.get('train') else 0)
         record['steps'].append(row)
         save()
         print('step', len(record['steps']), row, flush=True)
+        if train_budget_active and row['train']:
+            training_time += row['seconds']
+            if training_time >= args.training_seconds:
+                raise TrainingBudgetReached
         return result
 
     BasicModel.runBatch = measured
     start = time.perf_counter()
-    if args.lesson:
-        report = run(config, LESSON, args.output / 'reader')
+    if args.corpus:
+        from dataclasses import asdict
+        from corpus_lessons import measure, stage_documents
+        from math_chain_corpus import MathChainCorpus
+        from MathChainTraining import present
+        from data import TheData
+        record.update(workload=args.corpus, batch_size=1)
+        if args.corpus == 'lesson-13':
+            corpus = ROOT / 'data/corpus-lessons.json'
+            record['lesson_sha256'] = hashlib.sha256(corpus.read_bytes()).hexdigest()
+            measure(config, corpus, args.output / 'curriculum', eager=True, presentations=1)
+        else:
+            corpus = MathChainCorpus()
+            corpus.generator.rng.seed(args.seed)
+            document = corpus.problem((3, 5), split='train', training=True)
+            record['document'] = asdict(document)
+            record.pop('lesson_sha256')
+            data = TheData
+            data.processLM({split: dict(text=['.'] if split == 'train' else [], label=[])
+                            for split in ('train', 'validation', 'test')})
+            model, _ = BaseModel.from_config(str(config), data=data)
+            try:
+                stage_documents(data, {'documents': [{'document': document.key, 'records': [asdict(document)]}]})
+                optimizer = model.getOptimizer()
+                model._optimizer = optimizer
+                record['presentation'] = present(model, split='train', optimizer=optimizer, batch_size=1)
+            finally:
+                model.End()
+    elif args.lesson:
+        import pretrain_reading
+        train_reader = pretrain_reading.train_reader
+        def budgeted_reader(model, spec, optimizer):
+            nonlocal train_budget_active
+            train_budget_active = True
+            try:
+                return train_reader(model, spec, optimizer)
+            except TrainingBudgetReached:
+                record['training_budget_reached'] = True
+                return [pretrain_reading.measure(model, spec['validation'], spec['batch_size'])]
+            finally:
+                train_budget_active = False
+        if args.training_seconds is not None:
+            pretrain_reading.train_reader = budgeted_reader
+        try:
+            report = run(config, LESSON, args.output / 'reader')
+        finally:
+            pretrain_reading.train_reader = train_reader
+        record['training_budget_seconds'] = args.training_seconds
+        record['training_budget_used'] = training_time if args.training_seconds is not None else None
         record['lesson_seconds'] = time.perf_counter() - start
         record['passed'] = report['passed']
     else:
@@ -105,6 +191,13 @@ def main():
         model._optimizer = optimizer
         model.train()
         texts = ['hello world hello', 'world hello world', 'red blue red', 'blue red blue']
+        if args.batch_size is not None:
+            pages = list(dict.fromkeys([*texts, *spec['train']]))
+            if not 1 <= args.batch_size <= len(pages):
+                parser.error('batch size must fit the available distinct pages')
+            texts = pages[:args.batch_size]
+        record['batch_size'] = len(texts)
+        record['explore_paths'] = model.explore_paths
         record['texts'] = texts
         data = model.inputSpace.data
 
@@ -123,9 +216,21 @@ def main():
                 model.End()
                 model.dispatch_per_row_reset([True] * len(texts))
 
+        def fixed_storage():
+            owner = model._concept_owner()
+            pi, sigma = owner.basic_percepts.pi, owner.order_zero
+            arrays = [*(('pi.' + n, getattr(pi, n)) for n in ('col', 'crow', 'value', 'against')),
+                      *(('sigma.' + n, getattr(sigma, n)) for n in ('entry_input', 'entry_row'))]
+            return {name: (tuple(t.shape), t.untyped_storage()._cdata) for name, t in arrays}
+
         try:
-            for _ in range(args.steps):
+            storage = fixed_storage()
+            record['fixed_store_resizes'] = []
+            for update in range(args.steps):
                 step()
+                current = fixed_storage()
+                record['fixed_store_resizes'].extend((update, n) for n in current if current[n] != storage[n])
+                storage = current
             torch.save(dict(parameters={n: p.detach().cpu().clone() for n, p in model.named_parameters()},
                             buffers={n: p.detach().cpu().clone() for n, p in model.named_buffers()},
                             initialized_buffer_lengths={f'{n}.{suffix}': sum(module._priming_bridge_counts)
@@ -152,6 +257,7 @@ def main():
             from Spaces import Codebook
             host, at_look, calls = Counter(), Counter(), Counter()
             in_look = [False]
+            sites, percept_addresses = Counter(), Counter()
             methods = {name: getattr(torch.Tensor, name) for name in
                        ('tolist', 'item', 'cpu', '__bool__', '__int__', '__float__')}
             def counted(name, function):
@@ -159,17 +265,37 @@ def main():
                     host[name] += 1
                     if in_look[0]:
                         at_look[name] += 1
+                        caller = sys._getframe(1)
+                        sites[(Path(caller.f_code.co_filename).name, caller.f_code.co_name, name)] += 1
                     return function(*a, **kw)
                 return invoke
             lookup, looks = Codebook.lookup_rows, SentenceLooks.Looks.run
             def rows_read(book, indices, **kw):
                 caller = sys._getframe(1)
-                calls[(Path(caller.f_code.co_filename).name, caller.f_code.co_name)] += 1
+                site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name)
+                calls[site] += 1
+                if site == ('BasicPercepts.py', '_boundary_codes'):
+                    # The separate census is untimed. Bypass its host counter
+                    # for this instrumentation-only read of the requested IDs.
+                    ids = methods['tolist'](indices.detach().reshape(-1))
+                    percept_addresses.update((id(book), row) for row in ids)
                 return lookup(book, indices, **kw)
-            def looking(*a, **kw):
+            def growth_state():
+                pool = model._concept_owner().mtm
+                return {name: dict(counts=matrix.counts(), entries={str(k): vars(v).copy() for k, v in
+                                    matrix.entries.items()}, tallies=dict((str(k), v) for k, v in matrix.tallies.items()))
+                        for name, matrix in (getattr(pool, 'candidates', None) or {}).items()}
+            trial_audit = []
+            def looking(walk, *a, **kw):
                 in_look[0] = True
                 try:
-                    return looks(*a, **kw)
+                    previous = growth_state() if args.path_audit else None
+                    result = looks(walk, *a, **kw)
+                    if args.path_audit:
+                        after = growth_state()
+                        trial_audit.append(dict(kind=model._sentence_trial, shared_tables_changed=previous != after,
+                                                before=previous, after=after))
+                    return result
                 finally:
                     in_look[0] = False
             try:
@@ -181,7 +307,13 @@ def main():
                 for name, function in methods.items():
                     setattr(torch.Tensor, name, function)
                 Codebook.lookup_rows, SentenceLooks.Looks.run = lookup, looks
+            if args.path_audit:
+                record['trial_growth'] = trial_audit
+                record['selected_paths'] = model._last_sentence_credit['winner'].tolist()
+            record['percept_addresses'] = dict(total=percept_addresses.total(),
+                distinct=len(percept_addresses), repeated=percept_addresses.total() - len(percept_addresses))
             record['host_census'] = dict(update=dict(host), looks=dict(at_look),
+                                         look_reads_by_caller={':'.join(k): v for k, v in sites.most_common()},
                                          lookups_by_caller={':'.join(k): v for k, v in calls.items()})
             # Capture live gradients at every optimizer boundary in a separate
             # complete update. runBatch clears .grad before returning, so a
@@ -199,11 +331,22 @@ def main():
             record['gradient_audit'] = dict(steps=len(gradients),
                 live_tensors=[sum(g is not None for g in snapshot.values()) for snapshot in gradients])
             torch.save(gradients, args.output / 'gradients.pt')
+            if args.allocations:
+                with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
+                                            profile_memory=True) as memory:
+                    step()
+                record['allocation_ops'] = {op.key: dict(calls=op.count, self_bytes=op.self_cpu_memory_usage)
+                    for op in memory.key_averages() if op.self_cpu_memory_usage > 0 or 'resize' in op.key}
         finally:
             model.End()
     record['total_seconds'] = time.perf_counter() - start
     record['warmup_steps'] = record['steps'][:3]
-    steady = [r['seconds'] for r in record['steps'][3:] if not r['graphs'] and r['train']]
+    # Each reading presentation contains one sentence per real batch row.
+    # Candidate walks are internal work on that sentence.
+    steady_rows = [r for r in record['steps'][3:] if not r['graphs'] and r['train']]
+    steady = [r['seconds'] for r in steady_rows]
+    record['steady_sentences'] = sum(r['sentences'] for r in steady_rows)
+    record['steady_sentences_per_second'] = record['steady_sentences'] / sum(steady) if steady else None
     record['steady_median_seconds'] = statistics.median(steady) if steady else None
     record['steady_mean_seconds'] = statistics.mean(steady) if steady else None
     save()

@@ -48,7 +48,7 @@ def main():
         elif left != right:
             failures.append(path)
 
-    snapshots = [torch.load(p / 'updated.pt', weights_only=False) for p in (args.before, args.after)]
+    snapshots = [torch.load(p / 'updated.pt', map_location='cpu', weights_only=True) for p in (args.before, args.after)]
     for snapshot in snapshots:
         # These nonpersistent capacity buffers use torch.empty. Only their
         # initialized prefix is read by the model; compare every other buffer
@@ -57,7 +57,7 @@ def main():
             snapshot['buffers'][name] = snapshot['buffers'][name][:length]
     for group in snapshots[0]:
         compare(snapshots[0][group], snapshots[1][group], group, group)
-    gradients = [torch.load(p / 'gradients.pt', weights_only=False) for p in (args.before, args.after)]
+    gradients = [torch.load(p / 'gradients.pt', map_location='cpu', weights_only=True) for p in (args.before, args.after)]
     if not gradients[0] or not all(any(g is not None for g in step.values()) for step in gradients[0]):
         raise ValueError('the audit did not capture live gradients')
     compare(*gradients, 'gradients', 'live_gradients')
