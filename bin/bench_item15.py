@@ -352,12 +352,24 @@ def main():
             def looking(walk, *a, **kw):
                 in_look[0] = True
                 try:
-                    previous = growth_state() if args.path_audit else None
+                    if args.path_audit:
+                        previous = growth_state()
+                        predictor = model.percept_expectation
+                        counts = predictor.context_count[:len(walk.present)].detach().clone()
+                        updates = predictor.updates.detach().clone()
                     result = looks(walk, *a, **kw)
                     if args.path_audit:
                         after = growth_state()
+                        # These diagnostic reads use the original tensor
+                        # method so they do not count as model host calls.
+                        indices = [methods['tolist'](torch.where(step['interpreted'], step['index'], -1))
+                                   for step in walk.decisions]
+                        shared_arrivals = methods['tolist'](predictor.context_count[:len(counts)] - counts)
+                        shared_updates = methods['tolist'](predictor.updates - updates)
                         trial_audit.append(dict(kind=model._sentence_trial, shared_tables_changed=previous != after,
-                                                before=previous, after=after))
+                                                before=previous, after=after, interpreted_by_look=indices,
+                                                shared_native_arrivals=shared_arrivals,
+                                                shared_native_updates=shared_updates))
                     return result
                 finally:
                     in_look[0] = False

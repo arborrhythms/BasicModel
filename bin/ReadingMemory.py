@@ -335,9 +335,15 @@ def _read(model, bank, concepts):
         evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
         episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,
                          found, unkept=excluded, uncertain=ambiguous)
-        for b in found.nonzero().flatten().tolist():
-            w, store = int(index[b]), stores[b]
-            cid = int(concepts[b, w])
+        # The row writers still take native names. Gather the selected
+        # metadata once per look before writing each stream's own store.
+        seats = index.clamp_min(0)
+        names = concepts[batch, seats].tolist()
+        trust = scores[batch, seats].detach().clamp(0, 1).tolist()
+        for b, (w, cid) in enumerate(zip(index.tolist(), names, strict=True)):
+            if w < 0:
+                continue
+            store = stores[b]
             code = percept_codes[b, w]
             if cid >= 0:
                 row = owner._concept_row_of(cid)
@@ -346,9 +352,9 @@ def _read(model, bank, concepts):
             point[store.when_start-4:store.when_start] = field.wires[b, w]
             point[store.when_start:store.when_start+4] = bank.when_band[b, w]
             row = store.append_idea(point, referent=None if cid < 0 else ('sym', cid),
-                trust=float(scores[b, w].detach().clamp(0, 1)), entry=(episode[0][b], episode[1][b]))
+                trust=trust[b], entry=(episode[0][b], episode[1][b]))
             heads[b] = store.parts.append_occurrence(heads[b], store.row_name(row))
-            left[b, w] = False
+        left = left & ~(found[:, None] & (index[:, None] == torch.arange(left.shape[1], device=index.device)))
         memory = torch.where(found[:, None, None], spread_once(owner, located(field, index)), memory)
         own = lower(own, bank, index, found)
     if credit is not None:

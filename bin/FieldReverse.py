@@ -430,11 +430,13 @@ def reverse(model, sub, field):
         live = best & (values.reshape(B, -1) > 0)
         selected = torch.zeros(B, width, dtype=torch.long, device=value.device).scatter(
             1, torch.where(live, at, width - 1), torch.where(live, ids_at.reshape(B, -1).clamp_min(0), 0))
-        used = (strength > 0).any(0).nonzero()
+        positions = torch.arange(1, width + 1, device=value.device)
+        emitted_end = torch.where((strength > 0).any(0), positions, 0).amax().clamp_min(1)
         # The buffer holds the sentence's extent, so that a percept not put
         # back is missing at its places, and whatever is pasted beyond it.
         ends = torch.where((field.where[..., 0] >= t0) & (field.where[..., 1] <= t1), field.where[..., 1] - t0, 0)
-        span = max(int(used.max()) + 1 if len(used) else 1, int(ends.max()) if ends.numel() else 0)
+        extent = emitted_end.maximum(ends.amax()) if ends.numel() else emitted_end
+        span = int(extent)
     if span >= len(decoder.positions):
         raise OverflowError('a reconstructed sentence exceeds decoder position capacity')
     amounts, strength, selected = amounts[:, :span], strength[:, :span], selected[:, :span]
