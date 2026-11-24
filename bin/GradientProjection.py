@@ -100,27 +100,38 @@ def backward(model, costs, optimizer, strength, *, scale=1.):
             continue
         writers.setdefault(id(p), set()).update(name for name, gradient in (('R', r), ('A', a)) if gradient is not None)
         name, kind, ids = metadata.get(p, (f'parameter.{index}', 'tensor', None))
-        sparse = [g.coalesce() for g in (r, a) if g is not None and g.is_sparse]
+        if r is None or a is None:
+            # With one writer there is no opposing component. Preserve its
+            # original gradient and count the same units in the epoch report.
+            gradient = r if a is None else a
+            rows = None
+            if gradient.is_sparse:
+                if gradient.sparse_dim() != 1:
+                    raise RuntimeError('projection requires sparse row gradients')
+                rows = gradient.coalesce().indices()[0]
+            count = 1 if kind == 'tensor' else (len(rows) if rows is not None else len(p))
+            stats = p.new_zeros(count, 3)
+            p.grad = _sum_gradients(p.grad, gradient.detach() * scale)
+            _record(receipt, name, kind, ids, p, rows, stats)
+            continue
+        sparse = [g.coalesce() for g in (r, a) if g.is_sparse]
         rows = None
         if sparse:
             if any(g.sparse_dim() != 1 for g in sparse):
                 raise RuntimeError('projection requires sparse row gradients')
             # Dense partners have support on the whole table; ordinary sparse
             # readers need only the union of the two touched row sets.
-            rows = (torch.arange(p.shape[0], device=p.device) if any(g is not None and not g.is_sparse for g in (r, a))
+            rows = (torch.arange(p.shape[0], device=p.device) if not r.is_sparse or not a.is_sparse
                     else torch.unique(torch.cat([g.indices()[0] for g in sparse]), sorted=True))
             rv, av = _aligned(r, rows, p), _aligned(a, rows, p)
         else:
-            rv = torch.zeros_like(a) if r is None else r
-            av = torch.zeros_like(r) if a is None else a
+            rv, av = r, a
         adjusted, stats = project(rv, av, metric(optimizer, p, rv, rows), per_row=kind != 'tensor')
-        if a is not None and r is not None:
-            if rows is not None:
-                adjusted = torch.sparse_coo_tensor(rows[None], adjusted, p.shape, device=p.device).coalesce()
-                if not a.is_sparse:
-                    adjusted = adjusted.to_dense()
-            a = adjusted
-        combined = _sum_gradients(r, a)
+        if rows is not None:
+            adjusted = torch.sparse_coo_tensor(rows[None], adjusted, p.shape, device=p.device).coalesce()
+            if not a.is_sparse:
+                adjusted = adjusted.to_dense()
+        combined = _sum_gradients(r, adjusted)
         p.grad = _sum_gradients(p.grad, combined.detach() * scale)
         # The statistics describe this epoch. Keep their sums on the same
         # device and materialize the public labels only when a report is read.
