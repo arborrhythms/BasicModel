@@ -380,6 +380,43 @@ def leaf_orders(scope,records,*,batch,positions,orders):
     return torch.where(match.any(1), members[first, UNLOWERED-2], stamps)
 
 
+def publication_sources(records, identities, held_ids, timelines, stack, reference_kinds):
+    """Locate the last journal write or first eligible resident seat per timeline.
+
+    The object write follows the subject write within a column. A resident
+    lexical/identity reference takes precedence over another off-stack seat.
+    """
+    subject = (identities[:, None] == records[:, 2]) & (records[:, 36] == 3)
+    event = (identities[:, None] == records[:, 3]) & (records[:, 7] != 0) & (records[:, 11] == 0)
+    actual = event & (records[:, 9] <= 0)
+    alternative = event & (records[:, 9] > 0)
+    column = torch.arange(len(records), device=records.device)
+    # -1 means use the original MTM value. Odd addresses are object writes.
+    moment = torch.stack((torch.where(actual, 2 * column + 1, torch.where(subject, 2 * column, -1)),
+                          torch.where(alternative, 2 * column + 1, -1)), 1)
+    if len(records):
+        last = moment.amax(-1)
+        at = last.clamp_min(0) // 2
+        # Operand pairs for the publication. Equal indices denote one
+        # operand, preserving its original autograd edge without a max.
+        kind = records[:, 36][at]
+        obj = (last % 2) == 1
+        left = torch.where(obj, torch.where(kind == 1, 1, torch.where(kind == 2, 0, 2)),
+                           torch.where(records[:, 6][at] > 0, 0, 2))
+        right = torch.where(obj & ((kind == 1) | (kind == 2)), 1, 2)
+        at = at.masked_fill(last < 0, -1)
+    else:
+        at = records.new_full((len(identities), 2), -1)
+        left = right = at
+    target = torch.arange(2, device=records.device)[None, :, None]
+    match = (identities[:, None, None] == held_ids) & (stack < 0) & (timelines == target)
+    field = match & ((reference_kinds == chunks.SYMBOL) | (reference_kinds == chunks.IDENTITY_REF))
+    eligible = torch.where(field.any(-1, keepdim=True), field, match)
+    seat = (eligible.int().argmax(-1).masked_fill(~eligible.any(-1), -1) if len(held_ids)
+            else torch.full_like(at, -1))
+    return torch.stack((at, left, right, seat), -1)
+
+
 def capture(owner, state, scope, records, values, *, batch, positions, columns, actions):
     """Translate the kept journal to closing handles, after the tensor walk.
 
@@ -412,7 +449,9 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     handles = {identity:i+1 for i,identity in enumerate(ids)}
     origins = row.new_zeros(len(ids),3)
     actual,alternative = [],[]
-    publications = row[:, [2, 3, 36, 6, 7, 11, 9]].tolist()
+    identity_ids = row.new_tensor(ids)
+    publications = publication_sources(row, identity_ids, state[chunks.IDENTITY][batch],
+        state[chunks.TIMELINE][batch], state[chunks.STACK][batch], state[chunks.REFS][batch, :, 0, 0]).tolist()
     pos = {int(position):index for index,position in enumerate(positions.tolist())}
     leaves = row.new_zeros(len(positions))
     for identity in ids:
@@ -455,36 +494,16 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
         base = (pool.value_of(token).to(values) if token is not None else values.new_zeros(values.shape[-1]//3))
         branch = (pool.value_of(token, timeline=len(pool.entries[token].timelines)-1).to(values)
                   if token is not None and len(pool.entries[token].timelines)>1 else base)
-        for column, (subject, obj, publication, bound, event, suppressed, timeline) in enumerate(publications):
-            if subject == identity and publication == 3:
-                operands = values[batch,column].reshape(3,-1)
-                base = torch.maximum(operands[0],operands[2]) if bound > 0 else operands[2]
-            if obj == identity and event and not suppressed:
-                operands = values[batch,column].reshape(3,-1)
-                current = (operands[1] if publication == 1 else
-                    torch.maximum(operands[0],operands[1]) if publication == 2 else operands[2])
-                if timeline > 0:
-                    branch = current
-                else:
-                    base = current
-        # Publication can encode equality/part differently from its ordinary
-        # grammatical result. The resident chunk is that exact working value.
-        for timeline in (0,1):
-            match = ((state[chunks.IDENTITY][batch] == identity) & (state[chunks.TIMELINE][batch] == timeline)
-                     & (state[chunks.STACK][batch] < 0))
-            field = match & ((state[chunks.REFS][batch,:,0,0] == chunks.SYMBOL)
-                            | (state[chunks.REFS][batch,:,0,0] == chunks.IDENTITY_REF))
-            if bool(field.any()):
-                match = field
-            if bool(match.any()):
-                current = state[0][batch,int(match.long().argmax())]
-                if timeline:
-                    branch = current
-                else:
-                    base = current
-        actual.append(base)
-        alternative.append(branch)
-    identity_ids = row.new_tensor(ids)
+        pair = [base, branch]
+        for timeline, (column, left, right, seat) in enumerate(publications[index]):
+            if seat >= 0:
+                pair[timeline] = state[0][batch, seat]
+            elif column >= 0:
+                operands = values[batch, column].reshape(3, -1)
+                pair[timeline] = (operands[left] if left == right else
+                                  torch.maximum(operands[left], operands[right]))
+        actual.append(pair[0])
+        alternative.append(pair[1])
     events = selected[:, 2:8].clone()
     original = events[:, (0, 1, 2, 4)]
     keys = torch.cat((row.new_zeros(1), identity_ids))
