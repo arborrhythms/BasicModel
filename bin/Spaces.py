@@ -15294,6 +15294,8 @@ class ConceptualSpace(Space):
         when = torch.stack((positions, positions + 1), -1)
         bank = basic.lookup(percepts, extents, rows,
             dtype=self.similarity_codebook.W.dtype, when=when,
+            delivered=(getattr(model.inputSpace, '_delivered_length', None)
+                       if getattr(model, '_staged_concepts_in', None) is percepts[3] else None),
             registry=getattr(model, 'where_registry', None),
             when_encoding=getattr(model, 'when_encoding', None))
         # The occurrences at each place are met, and a place's row is

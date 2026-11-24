@@ -251,11 +251,14 @@ def test_learned_subword_extents_reach_the_open_bank_alongside_the_word(tmp_path
             ws.ends_weight.fill_(-8.)
             ws.atom_level.fill_(-8.)
             ws.begins_weight[ord('l')] = 8.
+        inventory = model.perceptualSpace.percept_store.identity
+        for run in ('hell', 'ell', 'll'):
+            inventory.admit_part(run)
         for text, offset in (('hello', 0), (' hello', 1)):
             read(model, text)
             bank = banks[-1]
             intervals = [tuple(pair) for pair in bank.span[0].tolist()]
-            for start, stop in ((0, 2), (2, 5), (0, 5)):
+            for start, stop in ((0, 2), (2, 5), (0, 5), (0, 4), (1, 4), (2, 4)):
                 span = (offset + start, offset + stop)
                 assert intervals.count(span) == 1
                 seat = intervals.index(span)

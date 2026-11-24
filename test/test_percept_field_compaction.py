@@ -93,3 +93,31 @@ def test_interior_gap_does_not_become_an_ordered_literal_match():
     assert gap == [[]]
     found = basic._form_spans(torch.tensor([[7, 8]]), torch.tensor([[[0, 1], [1, 2]]]), [('ps', (7, 8))])
     assert found == [[(0, 2)]]
+
+
+def test_compiled_overlapping_spellings_preserve_nomination_order_and_locations():
+    from FieldReverse import index_spellings
+    from BasicPercepts import merge_occurrences, spelling_occurrences
+
+    patterns = (b'aba', b'ba', b'ab', b'a')
+    _, codes, groups = index_spellings(list(enumerate(patterns)), 'cpu')
+    ranks = torch.tensor([1, 0, 2, -1])
+    known = torch.tensor([True, True, True, True])
+
+    def lookup(raw):
+        whole, part, _ = spelling_occurrences(raw, codes, groups, ranks, known, 2)
+        return merge_occurrences(whole, part)
+
+    raw = torch.tensor([list(b'ababa'), list(b' abax')])
+    eager = lookup(raw)
+    actual = torch.compile(lookup, fullgraph=True, backend='eager')(raw)
+    for left, right in zip(eager, actual, strict=True):
+        assert torch.equal(left, right)
+    spans, from_whole, widths = actual
+    for b, expected in enumerate((
+        [(1, 3), (3, 5), (0, 3), (2, 5), (0, 2), (2, 4)],
+        [(2, 4), (1, 4), (1, 3)],
+    )):
+        assert widths[b] == len(expected)
+        assert [tuple(extent) for extent in spans[b, :widths[b]].tolist()] == expected
+        assert from_whole[b].sum() == (4, 2)[b]

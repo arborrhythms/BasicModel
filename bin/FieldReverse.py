@@ -128,6 +128,13 @@ def store_forms(radix, device=None):
     if held is not None and held[0] is table and held[1:3] == (len(table), device):
         return held[3]
     found = [(row, raw) for row, raw in enumerate(table) if len(raw) > 1]
+    forms = index_spellings(found, device)
+    radix.__dict__['_multi_byte_forms'] = (table, len(table), device, forms)
+    return forms
+
+
+def index_spellings(found, device):
+    """Index (address, bytes) pairs by length, preserving every hash collision."""
     length = max((len(raw) for _, raw in found), default=1)
     spellings = torch.full((len(found), length), -1, dtype=torch.long, device='cpu')
     by_length = {}
@@ -151,10 +158,8 @@ def store_forms(radix, device=None):
         for keys, indices in buckets:
             groups.append((size, torch.tensor(keys, dtype=torch.long, device=device),
                            torch.tensor(indices, dtype=torch.long, device=device)))
-    forms = (torch.tensor([row for row, _ in found], dtype=torch.long, device=device),
+    return (torch.tensor([row for row, _ in found], dtype=torch.long, device=device),
              spellings.to(device), groups)
-    radix.__dict__['_multi_byte_forms'] = (table, len(table), device, forms)
-    return forms
 
 
 def _window_hits(raw, valid, spellings, groups):

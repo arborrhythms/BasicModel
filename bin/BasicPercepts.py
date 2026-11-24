@@ -158,6 +158,53 @@ def least_of_greater(x, c, chunk=1 << 24):
     return torch.maximum(taken, kept)
 
 
+def merge_occurrences(own, context):
+    """Deduplicate exact intervals in nomination order, independently in each stream."""
+    spans = torch.cat((own, context), dim=1)
+    if not spans.shape[1]:
+        return spans, spans[..., 0].bool(), spans.new_zeros(len(spans))
+    start, end = spans.unbind(-1)
+    # Stable lexicographic order groups equal intervals, earliest nomination first.
+    order = end.argsort(dim=1, stable=True)
+    order = order.gather(1, start.gather(1, order).argsort(dim=1, stable=True))
+    ordered = spans.gather(1, order[..., None].expand_as(spans))
+    distinct = F.pad((ordered[:, 1:] != ordered[:, :-1]).any(-1), (1, 0), value=True)
+    first = torch.zeros_like(distinct).scatter(1, order, distinct) & (end > start)
+    order = (~first).int().argsort(dim=1, stable=True)
+    live = first.gather(1, order)
+    extents = spans.gather(1, order[..., None].expand_as(spans))
+    return torch.where(live[..., None], extents, 0), live & (order < own.shape[1]), first.sum(1)
+
+
+def spelling_occurrences(surface, spellings, groups, nominations, known, first_part):
+    """Exact overlapping matches, the nominated extents and all known extent keys."""
+    from FieldReverse import _window_hits
+    batch, width = surface.shape
+    empty = surface.new_empty(batch, 0)
+    extent_keys, priorities, lengths = [], [], []
+    matches = _window_hits(surface, torch.ones_like(surface, dtype=torch.bool), spellings, groups)
+    for size, rows, match in matches:
+        start = torch.arange(rows.shape[1], device=surface.device)
+        key = start * (width + 1) + start + size
+        extent_keys.append(torch.where(match & known[rows], key, -1))
+        lengths.append(torch.full_like(rows, size))
+        rank = nominations[rows]
+        priorities.append(torch.where(match & (rank >= 0), rank * (width + 1) + start, -1))
+    if not priorities:
+        return empty.reshape(batch, 0, 2), empty.reshape(batch, 0, 2), empty
+    priority = torch.cat(priorities, dim=1)
+    keys = torch.cat(extent_keys, dim=1)
+    # Match the form-major nomination order. A length/position has only one
+    # exact spelling, even if several hashes collide.
+    order = priority.argsort(dim=1, stable=True)
+    sizes = torch.cat(lengths, 1)
+    starts = priority.remainder(width + 1)
+    spans = torch.where((priority >= 0)[..., None], torch.stack((starts, starts + sizes), -1), 0)
+    spans = spans.gather(1, order[..., None].expand_as(spans))
+    learned = priority.gather(1, order) >= first_part * (width + 1)
+    return torch.where(learned[..., None], 0, spans), torch.where(learned[..., None], spans, 0), keys.sort(1).values
+
+
 def occurrence_parts(raw, spans, spellings, part_codes, catalog):
     """Join the native parts contained in each byte extent, including learned runs.
 
@@ -1073,14 +1120,13 @@ class BasicPercepts(nn.Module):
                 result[n] = torch.stack((code, self.against(row, code=code))).detach().to(result)
         return result.clamp(0., 1.)
 
-    def _form_spans(self, part_ids, part_spans, keys):
+    def _run_extents(self, part_ids, part_spans, keys):
         """Where each run of several parts among ``keys`` is found as an
         ordered, adjacent run of the part events: its span, for each
         stream."""
         identity = getattr(self.native, 'identity', None)
         atoms = (set(identity.atoms.values()) | set(identity.word_rows.values())) if identity is not None else set()
         valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
-        found = [[] for _ in range(part_ids.shape[0])]
         starts, ends = [], []
         # A stored form's parts are a set; a row's run is in order.
         ordered = {tuple(self.occurrences[row][0]) for row in self.runs}
@@ -1096,29 +1142,38 @@ class BasicPercepts(nn.Module):
                     match &= part_spans[:, offset - 1:offset - 1 + count, 1] == part_spans[:, offset:offset + count, 0]
             starts.append(torch.where(match, part_spans[:, :count, 0], -1))
             ends.append(torch.where(match, part_spans[:, len(run) - 1:len(run) - 1 + count, 1], -1))
-        if starts:
-            spans = torch.stack((torch.cat(starts, 1), torch.cat(ends, 1)), -1)
-            for b, row in enumerate(spans.tolist()):
-                found[b] = [tuple(span) for span in row if span[0] >= 0]
-        return found
+        if not starts:
+            return part_spans[:, :0]
+        return torch.stack((torch.cat(starts, 1), torch.cat(ends, 1)), -1)
 
-    def _spelled_spans(self, lines, rows):
-        """Where the stored form of each of ``rows`` of two or more bytes is
-        found in the sentence's bytes: its span, for each stream. The bytes
-        are read on the host once."""
-        spellings = {form for form in (self.form_of(row) for row in rows
+    def _form_spans(self, part_ids, part_spans, keys):
+        """Host inspection of the same native run extents used by the lookup."""
+        spans = self._run_extents(part_ids, part_spans, keys)
+        return [[tuple(span) for span in row if span[0] >= 0] for row in spans.tolist()]
+
+    def _spelling_geometry(self, text, rows, identity, delivered):
+        from FieldReverse import index_spellings
+        nominated = {form for form in (self.form_of(row) for row in rows
                                        if row not in self.place_rows and row not in self.conjunctions)
                      if form is not None and len(form) > 1}
-        found = []
-        for text in lines:
-            spans = []
-            for form in spellings:
-                start = text.find(form)
-                while start >= 0:
-                    spans.append((start, start + len(form)))
-                    start = text.find(form, start + 1)
-            found.append(spans)
-        return found
+        words = () if identity is None else identity.words
+        # Learned multibyte parts may overlap and can be present at several
+        # locations before the corresponding whole has a promoted Pi row.
+        from WordIdentity import bytes_of
+        learned = () if identity is None else tuple(bytes_of(run) for run in identity.added)
+        candidates = tuple(dict.fromkeys((*nominated, *learned)))
+        forms = tuple(dict.fromkeys((*candidates, *words)))
+        if delivered is not None and all(b'\x00' not in form for form in forms):
+            text = text[:, :delivered]
+        forms = [form for form in forms if 0 < len(form) <= text.shape[1]]
+        ranks = {form: i for i, form in enumerate(candidates)}
+        surface = text.to(torch.uint8).long()
+        _, spellings, groups = index_spellings(list(enumerate(forms)), text.device)
+        rank = surface.new_tensor([ranks.get(form, -1) for form in forms])
+        known_forms = set(learned).union(words)
+        known = torch.tensor([form in known_forms for form in forms], device=text.device, dtype=torch.bool)
+        spelled, learned, keys = spelling_occurrences(surface, spellings, groups, rank, known, len(nominated))
+        return spelled, learned, keys, text.shape[1]
 
     def lookup(self, percepts, brackets, rows, **options):
         """The one lookup of a sentence (:class:`PerceptBank`): its
@@ -1175,32 +1230,33 @@ class BasicPercepts(nn.Module):
         part_ids, part_spans, _primitive, raw, whole_spans = percepts
         device = (raw[:, 0] if raw.ndim == 3 else raw).device
         brackets = brackets.to(device)
-        forms = self._form_spans(part_ids.to(device), part_spans.to(device), keys)
-        byte_input = not raw.is_floating_point()
-        lines = None
-        if byte_input:
-            text = raw[:, 0] if raw.ndim == 3 else raw
-            lines = [bytes(line) for line in text.detach().to(torch.uint8).tolist()]
-        spelled = (self._spelled_spans(lines, rows) if lines is not None else [[] for _ in range(len(raw))])
-        identity = getattr(self.native, 'identity', None) if byte_input else None
-        # These five sources keep their original nomination order. Each
-        # device interval crosses the legacy inventory boundary only once.
-        parts, wholes, apertures = part_spans.tolist(), whole_spans.tolist(), brackets.tolist()
-        found, holders = [], []
-        for b in range(len(brackets)):
-            own = dict.fromkeys(tuple(span) for source in (parts[b], forms[b], spelled[b])
-                                for span in source if span[1] > span[0])
-            held = dict(own)
-            for source in (wholes[b], apertures[b]):
-                held.update((tuple(span), None) for span in source if span[1] > span[0])
-            found.append(list(held))
-            holders.append([span in own or (identity is not None and lines[b][span[0]:span[1]] in identity.words)
-                            for span in held])
-        O = max(map(len, found), default=0)
-        spans = brackets.new_tensor([row + [(0, 0)] * (O - len(row)) for row in found],
-                                    dtype=torch.long).reshape(len(found), O, 2)
-        holder = torch.tensor([row + [False] * (O - len(row)) for row in holders],
-                              dtype=torch.bool, device=device).reshape(len(found), O)
+        parts = part_spans.to(device)
+        runs = self._run_extents(part_ids.to(device), parts, keys)
+        text = raw[:, 0] if raw.ndim == 3 else raw
+        identity = getattr(self.native, 'identity', None)
+        if not raw.is_floating_point():
+            spelled, learned, known, width = self._spelling_geometry(text, rows, identity, options.get('delivered'))
+        else:
+            spelled = learned = parts[:, :0]
+            known, width = None, text.shape[1]
+        own = torch.cat((parts, runs, spelled), 1)
+        context = torch.cat((whole_spans.to(device), brackets, learned), 1)
+        spans, holder, counts = merge_occurrences(own, context)
+        # The precise live width preserves attention's draw among equal
+        # nominations, including the RNG consumed when the table is over capacity.
+        if spans.numel():
+            ends = torch.where(spans[..., 0] < 0, text.shape[1], spans[..., 1])
+            seats, limit = torch.stack((counts.max(), ends.max())).tolist()
+        else:
+            seats = limit = 0
+        spans, holder = spans[:, :seats], holder[:, :seats]
+        if known is not None and known.shape[1]:
+            # Native inspection accepts Python slice bounds on external intervals.
+            bounds = torch.where(spans < 0, text.shape[1] + spans, spans).clamp(0, text.shape[1])
+            lo, hi = bounds.unbind(-1)
+            key = lo * (width + 1) + hi
+            at = torch.searchsorted(known, key.contiguous()).clamp_max(known.shape[1] - 1)
+            holder = holder | ((hi > lo) & (hi <= width) & (known.gather(1, at) == key))
         real = spans[..., 1] > spans[..., 0]
         holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
                  & real[:, None])
@@ -1216,8 +1272,6 @@ class BasicPercepts(nn.Module):
         # The occurrence fold reads only the bytes inside nominated
         # intervals. Preserve legacy negative slice semantics for unusual
         # external intervals, and leave the original source geometry intact.
-        limit = max((end if start >= 0 else raw.shape[-1]
-                     for row in found for start, end in row), default=0)
         surface = raw[..., :limit]
         what, outside = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans), spans, wholes)
         dtype = options.get('dtype') or what.dtype
