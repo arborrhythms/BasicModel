@@ -300,3 +300,17 @@ def test_reserved_relation_handle_overflow_leaves_earlier_stream_untouched():
     with pytest.raises(OverflowError, match='relation capacity'):
         commit((source, source), ((OCCURRENCE, source.row_name(idea)), (RELATION, link)), target)
     assert len(target) == 0 and len(target.parts) == 1 and int(target.names_issued) == 0
+
+
+def test_retained_pairs_follow_a_store_supplied_handle_allocator():
+    from Memory import LTM0, STM0, SYMBOL, RELATION
+    from ReadingMemory import commit
+    source = STM0(12, capacity=2, relation_capacity=16)
+    target = LTM0(12, capacity=2, relation_capacity=16)
+    child = source.parts.add((SYMBOL, 20), (SYMBOL, 21))
+    root = source.parts.add((RELATION, child), (SYMBOL, 42))
+    target.parts.allocate = iter((12, 5)).__next__
+    saved = commit((source, source), ((RELATION, root), (RELATION, root)), target)
+    assert saved == ((RELATION, 5), (RELATION, 5))
+    assert target.parts.references(5) == ((RELATION, 12), (SYMBOL, 42))
+    assert target.parts.references(12) == ((SYMBOL, 20), (SYMBOL, 21))

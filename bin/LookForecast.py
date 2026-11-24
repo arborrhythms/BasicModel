@@ -12,6 +12,18 @@ from FieldProjection import inventory
 from SentenceField import inventory as field_rows
 
 
+def locate_evidence(values, rows, width):
+    """Copy each stream's readings to its addressed inventory, skipping empty seats."""
+    batch, readings, slots, lanes = values.shape
+    # Each assignment reads the last source slot at that address. Slot zero
+    # of the padded values supplies silence for an absent inventory row.
+    source = torch.arange(1, slots + 1, device=rows.device).expand_as(rows)
+    at = rows.new_zeros(batch, width + 1).scatter_reduce(
+        1, torch.where(rows >= 0, rows, width), source, 'amax')
+    gather = at[:, None, :width, None].expand(batch, readings, width, lanes)
+    return F.pad(values, (0, 0, 1, 0)).gather(2, gather)
+
+
 class LookForecast:
     """A path's observations, each at the reading it was read at, and the
     most recent surprise."""
@@ -44,14 +56,9 @@ class LookForecast:
         """Put each native reading at its allocated row, preserving both lanes."""
         rows = field_rows(self.owner, field)
         values = field.evidence.detach().permute(1, 2, 0, 3)
-        result = values.new_zeros(*values.shape[:2], len(self.rows), 2)
         if rows.ndim == 1:
             rows = rows[:, None].expand(-1, len(values))
-        for batch, column in enumerate(rows.T):
-            indices = self.index[column]
-            valid = indices >= 0
-            result[batch, :, indices[valid]] = values[batch, :, valid]
-        return result
+        return locate_evidence(values, self.index[rows.T], len(self.rows))
 
     @staticmethod
     def _pool(values, mask):

@@ -256,7 +256,8 @@ def test_sparse_topology_tracks_swap_removal_and_checkpoint():
         assert layer.entries_by_row(range(4)) == {r: [] for r in range(4)}
 
 
-def test_inverse_admission_respects_eviction_and_reappearance_in_one_stream():
+@pytest.mark.parametrize("compiled", [False, True])
+def test_inverse_admission_respects_eviction_and_reappearance_in_one_stream(compiled):
     from Generative import LiveConstituents
     from Memory import STMChunks
     words = torch.tensor([[[3., 0.]], [[3., 0.]]])
@@ -268,9 +269,22 @@ def test_inverse_admission_respects_eviction_and_reappearance_in_one_stream():
     state[STMChunks.BUFFER][:, :6, 0] = values
     state[STMChunks.DEPTH].fill_(6)
     state[STMChunks.STACK][:, :6] = torch.arange(6)
-    bank.observe(state, torch.tensor([True, False]), None)
+    observe = torch.compile(bank.observe, fullgraph=True, backend='eager') if compiled else bank.observe
+    observe(state, torch.tensor([True, False]), None)
     assert bank.codes.tolist() == [[[2., 0.], [5., 0.]], [[5., 0.], [0., 0.]]]
     assert bank.valid.tolist() == [[True, True], [True, False]]
+
+
+def test_forecast_places_the_last_addressed_slot_in_each_stream():
+    from LookForecast import locate_evidence
+    rows = torch.tensor([[1, -1, 1], [-1, 0, 2]])
+    values = torch.arange(2 * 4 * 3 * 2).reshape(2, 4, 3, 2).float()
+    expected = torch.zeros_like(values)
+    expected[0, :, 1] = values[0, :, 2]
+    expected[1, :, 0] = values[1, :, 1]
+    expected[1, :, 2] = values[1, :, 2]
+    compiled = torch.compile(locate_evidence, fullgraph=True, backend='eager')
+    assert torch.equal(compiled(values, rows, 3), expected)
 
 
 def test_forecast_keeps_the_same_outside_evidence_with_bounded_history():

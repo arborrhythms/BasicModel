@@ -116,7 +116,8 @@ def _reserve_symbols(blocked, values):
     blocked.index_fill_(0, torch.where(legal, values, 0).flatten(), True)
 
 
-def translate_pairs(handles, endpoints, head, refs, tags, blocked, next_id, *, sequential):
+def translate_pairs(handles, endpoints, head, refs, tags, blocked, next_id, *, sequential,
+                    reserve_symbols=True):
     """Intern the incoming topology into private copies of the LTM address arrays.
 
     Existing pairs keep their handles, including pairs encountered on a prior
@@ -149,7 +150,7 @@ def translate_pairs(handles, endpoints, head, refs, tags, blocked, next_id, *, s
         refs.index_copy_(0, index, values[None])
         tags.index_copy_(0, index, kinds[None].to(tags.dtype))
         blocked.index_fill_(0, index, True)
-        if not sequential:
+        if not sequential and reserve_symbols:
             _reserve_symbols(blocked, torch.where(kinds == SYMBOL, values, 0))
         names[i] = name
         translated[i] = torch.stack((kinds, values), -1)
@@ -157,6 +158,35 @@ def translate_pairs(handles, endpoints, head, refs, tags, blocked, next_id, *, s
         next_id = next_id + (~found).long()
     root_value = torch.where((head[0] == RELATION) & (root_at[0] < n), names[root_at][0], head[1])
     return names[:n], translated, fresh, torch.stack((head[0], root_value)), next_id, ok
+
+
+def _bind_allocated_handles(parts, plans):
+    """Resolve provisional seats when a store supplies its own handle allocator."""
+    allocated, used = {}, set()
+    for plan in plans:
+        if plan is None:
+            continue
+        for provisional, *_, fresh in plan[0]:
+            if fresh:
+                handle = int(parts.allocate())
+                if not 0 < handle < parts.capacity:
+                    raise OverflowError('allocated relation handle exceeds capacity')
+                if handle in used or parts.contains(handle):
+                    raise ValueError('a live relation cannot be reassigned')
+                allocated[provisional] = handle
+                used.add(handle)
+    def endpoint(kind, name):
+        return allocated.get(name, name) if kind == RELATION else name
+    result = []
+    for plan in plans:
+        if plan is None:
+            result.append(None)
+            continue
+        links, (kind, root) = plan
+        links = [(allocated.get(name, name), ka, endpoint(ka, a), kb, endpoint(kb, b), fresh)
+                 for name, ka, a, kb, b, fresh in links]
+        result.append((links, (kind, endpoint(kind, root))))
+    return result
 
 
 def commit(stores, heads, durable):
@@ -177,13 +207,14 @@ def commit(stores, heads, durable):
         raise OverflowError('reading exceeds remaining long-term idea capacity')
     parts = durable.parts
     planned = []
+    sequential = False
     if n_pairs:
         refs, tags = parts.refs.clone(), parts.ref_kinds.clone()
         blocked = tags[:, 0] != 0
         blocked[0] = True
         allocator = getattr(parts.allocate, '__self__', None)
-        sequential = allocator is not None
-        if not sequential:
+        sequential = allocator is not None and parts.allocate == getattr(allocator, '_allocate_part_symbol', None)
+        if parts.allocate is None:
             _reserve_symbols(blocked, torch.where(tags == SYMBOL, refs, 0))
             _reserve_symbols(blocked, durable.episodic_concepts[:len(durable)])
             if parts.handle_reserved is not None:
@@ -196,16 +227,19 @@ def commit(stores, heads, durable):
             continue
         rows, names, referents, handles, endpoints, root = plan
         links = []
-        if n_pairs and not sequential:
+        if n_pairs and parts.allocate is None:
             _reserve_symbols(blocked, store.episodic_concepts[rows])
         if len(handles):
             assigned, endpoints, fresh, root, next_id, ok = translate_pairs(
-                handles, endpoints, root, refs, tags, blocked, next_id, sequential=sequential)
+                handles, endpoints, root, refs, tags, blocked, next_id, sequential=sequential,
+                reserve_symbols=parts.allocate is None)
             valid = valid & ok
             links = torch.cat((assigned[:, None], endpoints.flatten(1), fresh[:, None]), 1).tolist()
         planned.append((links, tuple(root.tolist())))
     if n_pairs and not bool(valid):
         raise OverflowError('reading exceeds remaining long-term relation capacity')
+    if n_pairs and parts.allocate is not None and not sequential:
+        planned = _bind_allocated_handles(parts, planned)
 
     committed = []
     for store, plan, allocation in zip(stores, plans, planned, strict=True):
@@ -218,7 +252,7 @@ def commit(stores, heads, durable):
         evidence = torch.stack((store.parts.truth_plus[handles], store.parts.truth_minus[handles],
                                 store.parts.activity[handles]), 1).tolist()
         for (name, ka, a, kb, b, fresh), (positive, negative, activity) in zip(links, evidence, strict=True):
-            if fresh and parts.allocate is not None and parts.allocate() != name:
+            if fresh and sequential and parts.allocate() != name:
                 raise RuntimeError('the relation allocator changed during the reading close')
             parts.add((ka, a), (kb, b), symbol=name, truth_plus=positive, truth_minus=negative,
                       surprise=activity)

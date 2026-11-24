@@ -203,11 +203,14 @@ class InterpretLayer(GrammarLayer):
     def preferred_objects(self, candidates, *, batch=0, order=None):
         """Choose within the highest expected order, or the highest order."""
         cs = self.owner
+        candidates = tuple(candidates) if candidates is not None else ()
+        if len(candidates) <= 1:
+            return candidates
         if order is not None:
             matching = tuple(cid for cid in candidates if cs._concept_source_order(cid) == int(order))
             candidates = matching or candidates
-        if not candidates:
-            return ()
+            if len(candidates) == 1:
+                return candidates
         expected = getattr(cs, '_expected_knowing', None)
         def key(cid):
             row = cs._concept_row_of(cid)

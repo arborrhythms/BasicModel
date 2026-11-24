@@ -325,7 +325,7 @@ class PartsOfSpeech(nn.Module):
             self._place_groups(words, occupied)
         else:
             placements.append((words, occupied))
-        return self._occupied_field(field, program, occupied, stream) if field is not None else None
+        return self._occupied_field(field, program, words, occupied, stream) if field is not None else None
 
     def _place_groups(self, words, occupied):
         owner = self.owner
@@ -353,16 +353,17 @@ class PartsOfSpeech(nn.Module):
         derived.place_groups(groups, key)
 
 
-    def _occupied_field(self, field, program, occupied, stream):
+    def _occupied_field(self, field, program, words, occupied, stream):
         """Keep the word evidence and place; only the concept address changes."""
         from Understanding import ConceptualField
-        ids = sorted(set(map(int, field.concept_ids)) | set(self.concepts.values()))
+        source = field.concept_ids.tolist()
+        ids = sorted(set(source) | set(self.concepts.values()))
         lookup = {cid: i for i, cid in enumerate(ids)}
         places, times = field.where.clone(), field.when.clone()
         evidence = field.evidence.new_zeros(len(ids), *field.evidence.shape[1:])
-        evidence[[lookup[int(cid)] for cid in field.concept_ids]] = field.evidence
+        evidence[[lookup[cid] for cid in source]] = field.evidence
         for position, arguments in occupied.items():
-            if int(program.word_ids[position]) < 0:
+            if words[position] is None or words[position] < 0:
                 continue
             if program.word_extents is None:
                 raise ValueError('kept argument evidence requires the word input extents')

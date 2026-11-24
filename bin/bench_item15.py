@@ -40,6 +40,8 @@ def main():
     parser.add_argument('--allocations', action='store_true', help='profile allocation operators on a separate CPU step')
     parser.add_argument('--compiled-step', action='store_true',
                         help='enable the native compiled entry (step mode only)')
+    parser.add_argument('--strict-sentence', choices=('eager', 'inductor'),
+                        help='probe fullgraph capture of the entire normal input sentence on one training update')
     parser.add_argument('--compile-percept-fold', action='store_true',
                         help='also compile the live whole/part fold for a native step comparison')
     parser.add_argument('--source', type=Path, default=Path(__file__).resolve().parents[1])
@@ -49,6 +51,8 @@ def main():
         parser.error('--training-seconds needs --lesson and a positive training time')
     if args.dispatch_census and (args.lesson or args.corpus):
         parser.error('--dispatch-census requires step mode')
+    if args.strict_sentence and (args.lesson or args.corpus or args.compiled_step):
+        parser.error('--strict-sentence probes the ordinary unpartitioned step')
     if args.lesson and args.compiled_step:
         parser.error('--lesson uses the native lesson runner; --compiled-step requires step mode')
     if args.compile_percept_fold and not args.compiled_step:
@@ -91,7 +95,7 @@ def main():
     record = dict(source=args.source_revision or subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
                   seed=args.seed, torch=torch.__version__, platform=platform.platform(),
                   threads=torch.get_num_threads(), batch_size=spec['batch_size'],
-                  compiled_step=args.compiled_step,
+                  compiled_step=args.compiled_step, strict_sentence=args.strict_sentence,
                   config=str(config), config_sha256=hashlib.sha256(config.read_bytes()).hexdigest(),
                   lesson_sha256=hashlib.sha256(lesson.read_bytes()).hexdigest(),
                   environment={k: v for k, v in os.environ.items() if k.startswith(('MODEL_', 'BASICMODEL_', 'PYTHONHASH', 'TORCHINDUCTOR'))},
@@ -236,6 +240,19 @@ def main():
                 data.has_supervised_outputs = supervised
                 model.End()
                 model.dispatch_per_row_reset([True] * len(texts))
+
+        if args.strict_sentence:
+            method = torch.compile(BasicModel._execute_input_sentence, backend=args.strict_sentence,
+                                   fullgraph=True)
+            try:
+                with patch.object(BasicModel, '_execute_input_sentence', method):
+                    step()
+            except Exception as error:
+                record['capture_error'] = str(error)
+                raise
+            finally:
+                save()
+            return
 
         def fixed_storage():
             owner = model._concept_owner()

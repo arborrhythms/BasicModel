@@ -1433,8 +1433,17 @@ class MediumTermMemory(MemoryStore):
                 return torch.zeros_like(self.read_member(entry.occurrences[0],
                     live=live_candidate))
             raise ValueError(f'identity {token!r} has no member references')
-        values = [self.read_member(address, concept, live=live_candidate)
-                  for address, concept in members]
+        values, percepts = [], {}
+        for address, concept in members:
+            ref = address if concept is None else concept
+            if isinstance(ref, tuple) and ref[:1] == ('bp',):
+                # Repeated occurrences still participate in the fold. A
+                # native percept needs just one read in this collection.
+                if ref not in percepts:
+                    percepts[ref] = self.read_member(address, concept, live=live_candidate)
+                values.append(percepts[ref])
+            else:
+                values.append(self.read_member(address, concept, live=live_candidate))
         if any(value.shape != values[0].shape for value in values):
             raise ValueError(f'identity {token!r} references have different widths')
         return torch.stack(values).amax(0)
