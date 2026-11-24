@@ -152,6 +152,14 @@ def field_factor(lanes, entries):
     where a row's entries sum to nothing."""
     total = entries.sum((-1, -2))                                              # [R]
     R = entries.shape[0]
+    # Small forward-only reads can keep every row on device. The gradient
+    # path below preserves the disconnected result when no row participates.
+    if R * lanes.numel() <= 1 << 20 and not (torch.is_grad_enabled() and
+                                               (lanes.requires_grad or entries.requires_grad)):
+        present = total > 0
+        denominator = torch.where(present, total, 1.)[:, None, None]
+        shared = lesser(lanes[None], entries[:, None, None]).sum((-1, -2))
+        return torch.where(present[:, None, None], shared / denominator, 1.).to(lanes)
     out = lanes.new_ones(R, *lanes.shape[:2])
     live = (total > 0).nonzero().flatten()
     if len(live):
@@ -955,10 +963,13 @@ class BasicPercepts(nn.Module):
             raise ValueError('basic percept property read requires its WholeSpace')
         position = {ref: i for i, ref in enumerate(references)}
         device = self.value_codes.device
-        addresses = torch.tensor([position[ref] for group in groups for ref in group], dtype=torch.long, device=device)
-        rows = torch.tensor([i for i, group in enumerate(groups) for _ in group], dtype=torch.long, device=device)
-        lengths = torch.tensor(list(map(len, groups)), dtype=torch.long, device=device)
-        refs = torch.tensor(references, device=device, dtype=torch.long)
+        addresses = [position[ref] for group in groups for ref in group]
+        rows = [i for i, group in enumerate(groups) for _ in group]
+        lengths = list(map(len, groups))
+        # The stored links already supply all four index columns. Stage them
+        # together, with one device transfer per bank and no persistent copy.
+        columns = torch.tensor(references + addresses + rows + lengths, dtype=torch.long, device=device)
+        refs, addresses, rows, lengths = columns.split((len(references), len(addresses), len(rows), len(lengths)))
         native = bank.lookup_rows(refs)
         table = native[:, self.identity_width:self.width] if whole else native[:, :width]
         return fold_boundaries(table.to(self.value_codes), addresses, rows, lengths, whole=whole)

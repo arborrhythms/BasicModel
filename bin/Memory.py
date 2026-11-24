@@ -1257,6 +1257,7 @@ class MediumTermMemory(MemoryStore):
     def read_occurrences(self, store, head):
         """Read live occurrences under one head and resolve their concept in the hierarchy."""
         owner = self._owner()
+        rows = []
         for kind, name in store.parts.leaves(head):
             if kind == SYMBOL:
                 continue
@@ -1265,8 +1266,14 @@ class MediumTermMemory(MemoryStore):
             row = store.index_of_row(name)
             if row is None:
                 raise ValueError('memory head names an expired occurrence')
-            ref = store.referent_of(row)
-            concept = ref[1] if ref is not None and ref[0] == 'sym' else None
+            rows.append(row)
+        if not rows:
+            return
+        # A retained head can use one occurrence several times. Gather its
+        # native reference pairs in traversal order, including repetitions.
+        pairs = store.referent.index_select(0, store.referent.new_tensor(rows))
+        for row, (tag, value) in zip(rows, pairs.tolist(), strict=True):
+            concept = value if tag == SYMBOL else None
             address = None if concept is None else owner._concept_row_of(concept)
             yield row, concept, address
 

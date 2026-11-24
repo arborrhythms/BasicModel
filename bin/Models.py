@@ -6877,7 +6877,6 @@ class BasicModel(BaseModel):
         limit = int(self.reconstruction_basis_limit)
         selected, own = primed_selection(seen, heat, registered.shape[1], limit)
         valid = selected >= 0
-        codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0), streams=True).clone()
         # An object's composed code and the word naming it have different
         # owners. Reconstruct the exact form through its native definition
         # reference, while retaining the object's code for conceptual reads.
@@ -6895,7 +6894,17 @@ class BasicModel(BaseModel):
                 word_row = None if word is None else owner._concept_row_of(word)
                 if word_row is not None:
                     form_rows[b][j] = word_row
-        forms = owner.similarity_codebook.lookup_rows(selected.new_tensor(form_rows).clamp_min(0), streams=True)
+        book = owner.similarity_codebook
+        if form_rows == selected_rows:
+            codes = forms = book.lookup_rows(selected.clamp_min(0), streams=True)
+        elif getattr(book, 'mereology', None) is not None:
+            # derive() deduplicates addresses across both reads. Keep the
+            # page axis for page-specific codes and the original slot order.
+            addresses = torch.cat((selected, selected.new_tensor(form_rows)), 1)
+            codes, forms = book.lookup_rows(addresses.clamp_min(0), streams=True).chunk(2, dim=1)
+        else:
+            codes = book.lookup_rows(selected.clamp_min(0), streams=True)
+            forms = book.lookup_rows(selected.new_tensor(form_rows).clamp_min(0), streams=True)
         sparse_forms = torch.where(valid[..., None], forms, torch.zeros_like(forms)).detach().clone()
         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
@@ -11296,12 +11305,17 @@ class BasicModel(BaseModel):
         # Public columns can be edited independently after staging.
         (basic_ids, word_ids, word_rows, word_orders, rows, object_ids,
          referent_ids, object_orders) = torch.unbind_copy(metadata.to(active.device))
-        atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0), streams=True)
+        book = owner.similarity_codebook
+        derived = getattr(book, 'mereology', None)
+        if derived is not None:
+            addresses = torch.cat((rows, word_rows), 1)
+            atoms, word_atoms = book.lookup_rows(addresses.clamp_min(0), streams=True).chunk(2, dim=1)
+        else:
+            atoms = book.lookup_rows(rows.clamp_min(0), streams=True)
+            word_atoms = book.lookup_rows(word_rows.clamp_min(0), streams=True)
         atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
-        word_atoms = owner.similarity_codebook.lookup_rows(word_rows.clamp_min(0), streams=True)
         # The observed word and its seat have already been resolved together.
         # Only a higher-order referent borrows that word's perceptual lanes.
-        derived = getattr(owner.similarity_codebook, 'mereology', None)
         if derived is not None:
             width = derived.percept_event_width
             named = owner._concept_allocator.layer(0).concept_rows(word_ids)
