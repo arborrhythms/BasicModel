@@ -438,12 +438,13 @@ def keep_output(model, paths, selected, sid):
     """Retain the already realized per-stream output for the public handoff."""
     from SentenceBoundary import detached
     from Output import AnswerConstruction
-    rows = [paths[index].construction for index in selected.tolist()]
-    active = (torch.ones_like(selected, dtype=torch.bool) if sid is None else
-              model.inputSpace._packed_sentence_slot_mask[:, int(sid)])
+    indices = selected.tolist() if torch.is_tensor(selected) else selected
+    rows = [paths[index].construction for index in indices]
     previous = getattr(model, '_kept_path_output', None)
-    if previous is not None:
-        rows = [value if bool(active[row]) else previous for row, value in enumerate(rows)]
+    active = None
+    if previous is not None and sid is not None:
+        active = model.inputSpace._packed_sentence_slot_mask[:, int(sid)].tolist()
+        rows = [value if active[row] else previous for row, value in enumerate(rows)]
     if not rows or all(row is None for row in rows):
         model._kept_path_output = None
         return
@@ -482,9 +483,9 @@ def keep_output(model, paths, selected, sid):
         trace=rows[0].trace, texts=tuple(value.texts[row] for row, value in enumerate(rows)))
     model._kept_path_output = detached(result)
     old_actions = getattr(model, '_kept_path_output_actions', None)
-    actions = [old_actions[row] if previous is not None and not bool(active[row])
+    actions = [old_actions[row] if active is not None and not active[row]
                else paths[index].output_trace[0][row]
-               for row, index in enumerate(selected.tolist())]
+               for row, index in enumerate(indices)]
     width = max(value.shape[0] for value in actions)
     model._kept_path_output_actions = torch.stack([
         torch.nn.functional.pad(value, (0, width - value.shape[0]), value=-1)

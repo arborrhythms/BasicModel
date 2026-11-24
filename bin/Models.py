@@ -21528,7 +21528,7 @@ class BasicModel(BaseModel):
                         if carry is not native_carries[0]:
                             sub, sym = select_rows((sub, sym), carry, selected == index)
                 if growth:
-                    GrowthTrial.keep_forecasts(self, growth, selected)
+                    GrowthTrial.keep_forecasts(self, growth, selected, winner_indices)
                 wins, costs = selected.ne(0), audit['costs']
                 if single:
                     for path_index, candidate in enumerate(complete_paths[1:], 1):
@@ -21688,7 +21688,7 @@ class BasicModel(BaseModel):
                 if not self.inputSpace.data.has_supervised_outputs:
                     publish(self, field)
                     think_kept(self, complete_paths, selected, sid, present)
-                keep_output(self, complete_paths, selected, sid)
+                keep_output(self, complete_paths, winner_indices, sid)
                 from Omission import observe as observe_omission
                 for index, path in enumerate(complete_paths):
                     if 'order_zero_reverse' in path.observation:
@@ -21736,7 +21736,7 @@ class BasicModel(BaseModel):
             if speculative:
                 NativeReading.commit(native_paths, selected, winner_indices)
             if growth:
-                GrowthTrial.commit(growth, selected)
+                GrowthTrial.commit(growth, winner_indices)
             observations.clear()
             # Later reads of a retained bank must use current where/when entries.
             from BasicPercepts import BasicPercepts

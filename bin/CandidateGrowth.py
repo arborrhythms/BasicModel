@@ -82,22 +82,25 @@ class GrowthTrial:
             _current_trial.reset(token)
 
     @staticmethod
-    def keep_forecasts(model, trials, selected):
+    def keep_forecasts(model, trials, selected, indices=None):
         # An output-only departure uses the greedy reading's same trial.
         streams = torch.arange(len(selected), device=selected.device)
         owner = trials[0].owner
         owner._expected_knowing[:len(selected)].copy_(
             torch.stack([trial.expected for trial in trials], 1)[streams, selected])
+        indices = selected.tolist() if indices is None else indices
+        retained = {trials[index] for index in indices}
         for name in trials[0].costs:
             terms = []
             for trial in dict.fromkeys(trials):
+                if trial not in retained:
+                    continue
                 winners = torch.zeros_like(selected, dtype=torch.bool)
                 for index, candidate in enumerate(trials):
                     if candidate is trial:
                         winners |= selected == index
-                if bool(winners.any()):
-                    terms.extend((torch.where(winners, cost, 0.), mask & winners)
-                                 for cost, mask in trial.costs[name])
+                terms.extend((torch.where(winners, cost, 0.), mask & winners)
+                             for cost, mask in trial.costs[name])
             setattr(model, name, terms)
 
     def projected_store(self):
@@ -136,7 +139,8 @@ class GrowthTrial:
     @torch.no_grad()
     def commit(trials, selected):
         """Replay observations in look/stream order, including mixed winners."""
-        winners = [trials[index] for index in selected.tolist()]
+        indices = selected.tolist() if torch.is_tensor(selected) else selected
+        winners = [trials[index] for index in indices]
         for turn in range(max((len(trial.looks) for trial in winners), default=0)):
             for batch, trial in enumerate(winners):
                 if turn >= len(trial.looks) or batch not in trial.looks[turn]:
