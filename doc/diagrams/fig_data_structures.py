@@ -3,7 +3,7 @@
 
 Run from the repository root with python3 doc/diagrams/fig_data_structures.py.
 The STM and LTM column lists come from bin/Memory.py. The associations follow
-BasicPercepts.py, Layers.py, ThoughtStrata.py, ClauseRow.py and MemberRead.py.
+BasicPercepts.py, Understanding.py, Layers.py, SentenceStrata.py and ReadingMemory.py.
 """
 import ast
 from html import escape
@@ -59,11 +59,12 @@ def class_box(body, x, y, title, implementation, color, sections):
     return y + height
 
 
-def association(body, points, label, x, y):
-    """An open arrow points to the representation referenced by the label."""
+def association(body, points, label, x, y, *, dependency=False):
+    """Draw a reference or a dashed dependency between representations."""
+    dash = ' stroke-dasharray="6 4"' if dependency else ""
     coords = " ".join(f"{px},{py}" for px, py in points)
     body.append(f'<polyline points="{coords}" fill="none" stroke="{BLUE_DK}" '
-                'stroke-width="1.5" marker-end="url(#association)"/>')
+                f'stroke-width="1.5"{dash} marker-end="url(#association)"/>')
     body.append(txt(x, y, label, fs=13, fill=BLUE_DK))
 
 
@@ -75,17 +76,18 @@ def make():
     top = 88
     percept_end = class_box(body, LEFT, top, "Percept", "«row» BasicPercepts", BLUE, (
         ("Basic percept identity", ["('bp', row)", "occurrences[row] = (parts, wholes)", "promoted[row]"]),
-        ("Location-bound occurrences · PerceptBank", ["table, span, token, time, activity", "where, when"]),
+        ("Location-bound occurrences · PerceptBank", ["table: what | where | when", "two evidence lanes per channel", "span, token, time, activity"]),
         ("Code read from the row", ["lanes(row)"]),
     ))
     concept_end = class_box(body, MIDDLE, top, "Concept", "«row» addressed by concept ID", PURP, (
         ("Identity · ConceptAllocator", ["('sym', cid)", "concepts, order_zero_members"]),
         ("Constituents · ConceptualAttentionLayer", ["constituents(cid)"]),
-        ("Allocator reads", ["records(cid)", "seated_order(cid)"]),
+        ("Located evidence · ConceptualField", ["concept_ids, evidence", "where, when, wires"]),
     ))
     relation_end = class_box(body, RIGHT, top, "LTM · relation", "LTM1", BLUE_DK, (
         ("Relation columns", columns["LTM1"]),
         ("Ordered pair of tagged endpoints", ["SYMBOL | OCCURRENCE | RELATION"]),
+        ("Sequence of three occurrences", ["head = (A, tail)", "tail = (B, C)"]),
         ("Find incoming references", ["rows_referencing(kind, value)"]),
     ))
 
@@ -94,12 +96,13 @@ def make():
     bottom = middle_y + 55
     stm_end = class_box(body, LEFT, bottom, "STM", "ShortTermMemory", BLUE, (
         ("Working set · STMChunks", columns["STMChunks"]),
-        ("Thought storage per stream and chunk", ["_thought_stores → STM0", "STM0.parts → STM1"]),
+        ("Working ideas and ordered relations", ["strata.idea_stores → IdeaStack (STM0)", "_thought_stores → STM0", "STM0.parts → STM1"]),
+        ("Attention state · ModelState", ["last_where: last native span", "when_time, when_code"]),
     ))
     mtm_end = class_box(body, MIDDLE, bottom, "MTM", "MediumTermMemory", TEAL, (
         ("Retained identities", ["entries → Token", "names → Name", "capacity, horizon"]),
         ("Token references", ["occurrences, symbol, transient", "timelines → Timeline → Event"]),
-        ("Resolve an identity", ["token_of(occurrence)"]),
+        ("Read occurrences under one head", ["read_occurrences(store, head)", "token_of(occurrence)"]),
     ))
     ltm_end = class_box(body, RIGHT, bottom, "LTM · occurrence", "LTM0 extends IdeaRows", BLUE_DK, (
         ("Occurrence columns · IdeaRows", columns["IdeaRows"]),
@@ -126,10 +129,16 @@ def make():
     bottom_link = bottom + 78
     association(body, [(MIDDLE + BOX_WIDTH, bottom_link), (RIGHT, bottom_link)],
                 "kept occurrences", RIGHT - GAP / 2, bottom_link - 9)
-    return figure(WIDTH, max(stm_end, mtm_end, ltm_end) + 26,
+    commit_y = max(stm_end, mtm_end, ltm_end) + 38
+    association(body, [(left_centre, stm_end), (left_centre, commit_y),
+                       (relation_x, commit_y), (relation_x, ltm_end)],
+                "ReadingMemory.commit translates STM0 ideas and STM1 links into LTM0 and LTM1",
+                WIDTH / 2, commit_y - 9, dependency=True)
+    height = commit_y + 20
+    drawing = figure(WIDTH, height,
                   "BasicModel data structures",
-                  "Arrows follow references. Percept and Concept are addressable rows. "
-                  "The two LTM classes hold occurrences and relations.", body, markers=())
+                  "Solid arrows show references. The dashed arrow shows how a grammar-free reading is committed.", body, markers=())
+    return drawing.replace("<svg ", f'<svg viewBox="0 0 {WIDTH} {height}" ', 1)
 
 
 if __name__ == "__main__":
