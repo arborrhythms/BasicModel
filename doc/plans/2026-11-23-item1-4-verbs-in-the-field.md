@@ -1,4 +1,4 @@
-# Item 1.45: verbs in the field of concepts, and episodic memory as percepts
+# Item 1.4: verbs in the field of concepts, and episodic memory as percepts
 
 *Claude, 2026-11-23. A design for Alec, begun at his word. It has no text
 for Codex: nothing here is built before items 1.6 and 1.5, and the open
@@ -66,11 +66,12 @@ Then, deciding and setting the task:
 
 ## 2. Where it is placed, and why
 
-**Item 1.45, after items 1.6 and 1.5.** ("spec 1.4" above is read as this
-spec.)
+**Item 1.4, after items 1.6 and 1.5.** Claude first numbered it 1.45, by
+the rule at the end of §1; Alec then: "please rename 1.45 to 1.4". His
+words in §1 and §5.8 keep the number they were said with.
 
 Claude agrees with the thesis, and by the test Alec set the item passes:
-the mapping of §5 changes no operator. It is placed at 1.45 all the same,
+the mapping of §5 changes no operator. It is placed after 1.6 all the same,
 for a reason the test does not name:
 
 - *A change can be observed only where an object has a state the model
@@ -88,9 +89,13 @@ for a reason the test does not name:
   before they have been used by 1.6 is the churn Alec means to avoid.
 - *Replaying memory multiplies the passes*, which is item 1.5's matter.
 
-Nothing of item 1.6 or 1.5 waits on this item. Item 1.6's scenes are still
-(a word of place, not a word of change); a second scene for one object is
-this item's addition to that world.
+Nothing of item 1.6 or 1.5 waits on this item. Item 1.6's documents
+already hold moments in succession and frames of motion (its design
+§14.1 and §14.2: `displaced`, `event`, `approaches`, `recedes`). What a
+sentence there says of a movement is taught in 1.6 by the verb as it is
+built today; this item is what lets the change between two of those
+images be observed. So item 1.6 should keep its successive images as they
+are designed, and nothing more is asked of it.
 
 ## 3. What exists (read in the source at `47b4192fe5`)
 
@@ -433,7 +438,7 @@ What follows, Claude's reading:
 
 ## 8. What would show it (to be measured from input to output)
 
-Each on the felt world of item 1.6, with a second scene for one object:
+Each on the felt world of item 1.6, whose documents hold successive images:
 
 1. *A change is observed with no verb word.* The same object in two scenes
    with one intensity changed, presented without a sentence, several times:

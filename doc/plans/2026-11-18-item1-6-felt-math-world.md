@@ -1585,3 +1585,128 @@ For this item:
 - This corrects the section above, where the numbers were called felt things: the intensities are felt, and the numbers are symbolic.
 - Shapes are level sets of the intensity, and the geometry lessons are taught on them.
 
+
+## Hand-over: completing the item after item 1.7 (Claude, 2026-11-23)
+
+Alec, 2026-11-23: "After 1.7 gets pushed, I would ask you to complete 1.6
+while codex works independently on 1.5. You and I had a conversation about
+that thread already called "1.6", which I would ask you to complete on a
+different machine. The Codex text is §14.8". And: "Please use Opus for
+worker threads, as usual."
+
+This section is for the session that completes the item. It was written in
+the session that reviewed item 1.7, and says what that session knows and
+this document does not.
+
+### H.1 Who builds what
+
+- Claude completes item 1.6: the design that is still owed, the texts, the
+  review. Code and tests are written by Opus implementers that Claude
+  starts and reviews, not by Claude and not by Codex.
+- Codex works on item 1.5 (training speed) on `main` at the same time. So
+  item 1.6 is built on a branch of its own, in a worktree of its own, and
+  takes `main` in by merging. Neither moves the other's branch.
+- §14.8 is addressed to Codex. It is now a text for an Opus implementer;
+  its last paragraph and its "Return as §15" stand, with Claude as the one
+  it returns to.
+
+### H.2 Where item 1.7 stands at its close
+
+Read in `2026-11-14-sigma-pi-layers.md`: §19.142 to §19.149 (the last
+decisions), §23.7 (Codex's measurements and the sweep's failures), §23.8
+and §23.9 (Claude's reviews, with Alec's answers).
+
+What it can say, each measured from input to output: a word, a word with
+its mark and a sentence of two words are said back; sequences of familiar
+words are read in source order after the reading lesson; the input is put
+back by one pass at the opening.
+
+What it cannot yet say: that the model learns where to look without the
+lesson; that a novel word is read in its place; that it speaks on a
+condition; any age above 0.00.
+
+What changed under this document since §2.5 was written:
+
+- *The reconstruction is one pass at the sentence's opening, with attention
+  wide open* (sigma-pi §19.149). Thought, intuition and action are optional
+  after it. "Reading without comprehension" (the section added 2026-11-19)
+  is now this pass, and is what the item starts from.
+- *Reading in order is taught by a lesson with a label on the look's
+  choice* (`bin/pretrain_reading.py`, `data/lessons/reading-order.json`, the
+  key `architecture.data.readingOrderLesson`; sigma-pi §23.9). Whether it
+  stays the teacher, or the order is learned from the outcome, is Alec's and
+  was open when this was written. Ask before a lesson of this item leans on
+  it.
+- *Two collections are the same only at full cover both ways*
+  (`conceptMatchPart` = 1.0, sigma-pi §23.7). The tie of a word to its
+  object must not rest on a near match.
+- *The first measure of the tie* (sigma-pi §19.148): "The first grounding
+  measure presents the same two objects in both spatial orders and asks
+  about both operand orders."
+- *The age* is a parameter of the model that the assessment writes
+  (`Assessment.assess_age`, `bin/AgeChart.py`, `doc/ModelAge.md`). A test of
+  a saved model may name the row it needs (`requires_mental_age`), and an
+  unmet age fails.
+- *Every claim is measured from input to output.* Nothing is put into the
+  middle of the model to make a thing work or to measure it.
+
+### H.3 What is not this item
+
+Item 1.4 (`2026-11-23-item1-4-verbs-in-the-field.md`) comes after items 1.6
+and 1.5: a verb's extension, the last sentence's basic percepts as a second
+field, and episodic memory as percepts. None of it is built here. It asks
+one thing of this item: that a document keeps its successive images
+(§14.1, "Time") and its frames of motion as designed, since those are what
+it will observe a change in.
+
+### H.4 The order of work
+
+1. *Bring §14 up to the sections after it, then have the corpus built.* The
+   corpus is not built: there is no `bin/felt_world_corpus.py`, no
+   `data/felt/`, no `test/test_felt_corpus.py`. Before §14.8 goes to an
+   implementer, §14.4's frames and §14.8's list are amended by what came
+   later in this document: scene description in place of the verbs of an
+   animal (2026-11-20, frames 16 and 20); the object counting category
+   (2026-11-22); that intensities are felt and a number is a symbol with no
+   percept, so "one is above two" is a sentence about pixel values at places
+   (2026-11-22); and what was taken from `suggestions.txt` (2026-11-21).
+   The corpus touches no source of the model, so it can be built while the
+   rest is designed.
+2. *Read the model as item 1.7 left it, and write what §10's first round is
+   now.* §2 and §3 were written before the looks, the common space of three
+   dimensions and the opening reconstruction were built. Say what exists of
+   the scene beside a sentence, of places on three axes and of the one
+   reader, before specifying what is missing.
+3. *The questions still open with Alec* are in §11.6, §12.7 and §13.8 and
+   in the sections added afterwards ("To specify with the rest of this
+   item"). Gather them, drop those the later sections answered, and put the
+   rest to him once, before any text for the model's part.
+4. *Then the rounds of §10*, each with its targeted tests, and the item's
+   one default sweep at its end.
+
+### H.5 Rules that held through item 1.7
+
+- Commit locally; never push unless Alec says so in that conversation. The
+  pointer of the outer repository is his.
+- A text for an implementer is written in this document and names its
+  sections; it is written only after the questions it rests on are
+  answered. An implementer does not stop on a question: it proposes,
+  builds, and marks what it decided.
+- No seed is pinned to make an assertion pass. No skip and no expected
+  failure is added. Nothing is put under `RUN_SLOW`. The two stopping gates
+  are not changed: `test/test_mm_xor.py::TestMMXorConvergence::test_convergence`
+  and `test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`.
+- No second path and nothing kept for an older form. Something removed is
+  moved to a dated folder under `/tmp`, not deleted.
+- Every default is in `data/model.xml` and `data/model.xsd`; none in code.
+  `data/BasicModel.xml` gains no key. No language is named in code: a word
+  reaches the model from a data file.
+- No rule that forbids a walk. A tie is not an identification. Evidence is
+  summed by degree, not decided by a winner.
+- Rounds run targeted tests; the full sweep is run once for the item.
+- The standing docs (`doc/*.md`, not `doc/plans`) say what the code does
+  now: no dates, no item or round numbers, no history. Plans go to
+  `doc/FutureWork.md`, history to `doc/DevelopmentHistory.md`, decisions to
+  this document.
+- Write `.where`, `.what` and `.when` with the dot. Use Alec's words where
+  he gave them, and plain terms otherwise.
