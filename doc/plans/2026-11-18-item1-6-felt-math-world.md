@@ -5820,3 +5820,109 @@ same document (the frames' table, the checks, §14.8) and §15.11 and
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 28. The rest of the item, designed (Claude, 2026-11-24)
+
+*A design at the level of decisions and certificates. Each step's text is
+written when its turn comes, from the source as it then is. Where a point
+is Claude's proposal and not Alec's word it says so. It stands over 19.3's
+table.*
+
+### 28.1 What step B showed
+
+An image cannot be put back with its values from the concepts that exist.
+Only a place's row brings a concept, and its cone keeps the least and the
+greatest value met at the place (`Places.meet`); in the corpus any value
+lies at any place, so a place's concept comes to say "something here". The
+numeric stem's way back knows the value from the input (`field.percepts`),
+not from a concept. **So a value needs a concept of its own before an image
+is put back**, and step C is divided by it.
+
+### 28.2 The order
+
+| Step | Builds | Measured from input to output |
+|---|---|---|
+| C1 | The scene's bank in its sentence's field at the opening: `InputSpace._scenes` to `value_bank` in the `scene` box, places met, `read_values`, its rows and the sentence's through `order_zero_field` in one call; its readings joined to the field as columns | A sentence reads as it did with and without an image (both gates, echo); one call holds both kinds of rows; an image's places have their concepts in the field; `null` adds no column, `[]` adds columns that read nothing |
+| D1 | *Objects over values* (28.3) | Category 1's images alone: after the lessons there are nine objects, one for each value, and a reserved step (25d+1, 25d-1) falls in its value's object and in no other |
+| C2 | The image put back and charged, through the objects: an object's concept, the Sigma, the first Pi's kept percept, the place by its wires within the box; the cost place by place over the box | F1, F2, F11, F12 of §7: an image alone is put back at varied steps and at places not met; a sentence and its image are both put back; `null` is charged nothing; `[]` is charged for what is put back |
+| D2 | *Nouns and the name* (28.4), with `createMetaConcepts` | The count of units across modality at order one; each of naming's four stages (19.5) |
+| E | *Areas* (28.5) | The categories about size and shape |
+| F | *Intensities out* (§24, 1) | An image asked for in words is given, place by place |
+| G | *Relations of place* (28.6); what turns on the order of two words waits for item 1.4 | Category 14's contrast sets, per answer, on pairs held out |
+| H | The closing (28.7) | The item's one default sweep against the baseline |
+
+### 28.3 D1: objects over values (Claude's proposal on 22.2, question 6)
+
+1. *A value's row is nominated on recurrence and brings its concept,* as a
+   form's does (rule 20); it is not promoted at first sight. This is his
+   "made alike, each from its own occurrences".
+2. *An object is a cone over values:* its lower bound the greatest part its
+   occurrences all hold (the least value met), its upper bound the least
+   whole that holds them all (the greatest), as `collection_code` and a
+   place's cone already compute, and as he says of a character's percept.
+3. *What gathers the occurrences,* with no word: **proposed**, an
+   occurrence joins the cone it lies within or touches (the next bin), and
+   starts one of its own otherwise; two cones that come to touch are one.
+   In the corpus a value's steps span two or three bins and two values
+   lie six bins apart, so nine cones form and stay apart; a reserved step
+   lies inside its value's cone. The measure of D1 is whether this holds.
+   *His to accept or replace.*
+4. *XOR.* With a concept for the value, "1 somewhere" is read at the
+   bracket and XOR is learned without the conjunction (25.11). The
+   assertion of `test_concept_output` that it is not becomes: with
+   promotion off there is no conjunction's row. *His to confirm.*
+
+### 28.4 D2: nouns and the name
+
+1. *Nouns.* The word's concept and the object's each have their symbol in
+   the Pi of order one, where place and time are gone (22.0).
+2. *The meta concept* is a Sigma of order one over the two symbols, made by
+   MTM when the two are present together on the count that nominates
+   (22.1, question 1). **Proposed:** it is nominated where today's
+   promotion would make a Pi row of a conjunction (`FamiliarTier`), in the
+   one case that its members' percepts lie in two ranges of the registry;
+   within one modality the Pi row stands, a whole of parts. Of several
+   things present with a word, the pair that recurs wins by its count.
+3. *`createMetaConcepts`* in `data/model.xml`, true: `interpret` makes meta
+   concepts and blank objects as today. False, in the felt world's
+   configurations: neither is made directly, and `interpret` of a word
+   gives the other member of a unit across modality that holds its symbol,
+   or the word itself where there is none.
+4. *Naming, the test,* in four stages (19.5): each known alone; the unit
+   exists; one raises the other when met alone, by the Sigma's way down to
+   its other member; `interpret` gives the object. Measured on categories
+   1 and 2 at the reserved step and places, alone and with others present.
+5. *The assessment tool* counts units across modality by order.
+6. *The value beside the words* goes through the one reader here, and its
+   tie (`PerceptCollections.observe`, `WordTies`) with it.
+
+### 28.5 E: areas
+
+A percept on the part tower covers a range of places and keeps the
+greatest part all its pixels hold; on the whole tower a property pervades
+its range (19.1). **Proposed:** ranges grow by touching, as 28.3's cones
+do on the line of values: pixels of one object that touch are one thing,
+and the thing's percept has the box of its places as its `.where`. This is
+"what knits touching places into one thing" (C.5), and the categories
+about size and shape measure it.
+
+### 28.6 G: relations of place (Claude's proposal on 22.3, question 8)
+
+An axis of place is a sorted line, as the line of values is. "Above" is
+less-than on y between two things' places, read by bounds as a value is
+read; "left of", "between", "next to" likewise on their axes. So an
+arrangement is read by the one sort the model has (§23), by a relation of
+two places, and is no percept of its own. The words for it are learned as
+any words are. Its certificate is asked after item 1.4.
+
+### 28.7 H: the closing
+
+`mnist.xml`'s loader gives intensities in 0..1. The 0-or-1 match of a place
+is measured at bfloat16. The standing documents say what the source does.
+`main` is merged in. The default sweep is run once against the baseline,
+and the slow tier once at submission.
+
+### 28.8 What waits on Alec
+
+28.3, points 3 and 4. Whether the Pi over values may share `held_at`
+(25.11). Nothing else: the steps go in the order of 28.2.
