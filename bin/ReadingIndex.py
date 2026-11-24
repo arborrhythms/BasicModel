@@ -24,7 +24,7 @@ class ReadingIndex:
         for at, (kind, local, word) in enumerate(operations):
             self.parents.append(None)
             if kind == 0:
-                if not 0 <= word < word_count or word in self.word_actions:
+                if word_count is not None and (not 0 <= word < word_count or word in self.word_actions):
                     raise ValueError('a reading must shift each leaf exactly once')
                 self.word_actions[word] = at
                 local, children = -1, ()
@@ -38,8 +38,7 @@ class ReadingIndex:
             else:
                 if kind not in (1, 2):
                     raise ValueError('unknown sentence action')
-                rule = (language._compose_unary_rules if kind == 2 else language._compose_binary_rules)[local]
-                if kind == 2 or getattr(rule, 'method_name', None) == 'bind':
+                if kind == 2 or getattr(language._compose_binary_rules[local], 'method_name', None) == 'bind':
                     offset = max(0, word) if kind == 2 else 0
                     position = len(stack) - 1 - offset
                     if position < 0:
@@ -57,10 +56,14 @@ class ReadingIndex:
                     self.parents[child] = at
             self.operands.append(children)
             self.steps.append((kind, local, word))
-        if len(self.word_actions) != word_count:
+        if word_count is not None and len(self.word_actions) != word_count:
             raise ValueError('a reading must shift each leaf exactly once')
         self.roots = tuple(stack)
         self.actions = actions.new_tensor(self.steps).reshape(-1, 3)
+
+    @property
+    def forest(self):
+        """Nested display form, built only for a caller asking to inspect the tree."""
         nodes = []
         for at, (kind, local, word) in enumerate(self.steps):
             if kind == 0:
@@ -69,7 +72,7 @@ class ReadingIndex:
                 nodes.append(None)
             else:
                 nodes.append((kind, local, at, *(nodes[child] for child in self.operands[at])))
-        self.forest = tuple(nodes[at] for at in stack)
+        return tuple(nodes[at] for at in self.roots)
 
 
     def validate_interfaces(self, language):

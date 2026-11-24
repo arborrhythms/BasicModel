@@ -113,7 +113,7 @@ def taken_steps(model, record, programs):
     operands given (``values`` ``[B, T, 2, D]``, ``given`` ``[B, T]``) and,
     by row, each said word's ``(start, reference)`` in the order the walk
     puts them out (``None`` for a row that follows no edge)."""
-    from DerivationReconstruction import recorded_forest
+    from DerivationReconstruction import recorded_index
     language = model.languageSpace
     stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
     B, K, D = record.end_slots.shape
@@ -152,12 +152,13 @@ def taken_steps(model, record, programs):
                 operands[b, t, :, :len(code)] = code
             places[b] = [(start, ('sym', concept)) for concept, start, _ in words[:n]]
             continue
-        forest = recorded_forest(language, program)
-        if depth != len(forest):
+        reading = recorded_index(language, program)
+        roots = reading.roots
+        if depth != len(roots):
             raise ValueError('the recorded derivation must have the actual forest depth')
         values = (record.root[b:b + 1] if depth == 1 else record.end_slots[b, :depth])
         # Slot j holds forest[depth - 1 - j]; keep the composed roots in order.
-        kept = [j for j in range(depth) if forest[depth - 1 - j][0] != 0]
+        kept = [j for j in range(depth) if reading.steps[roots[depth - 1 - j]][0] != 0]
         met['roots_composed'] += len(kept)
         met['roots_alone'] += depth - len(kept)
         if not kept:
@@ -167,19 +168,19 @@ def taken_steps(model, record, programs):
             slots[b, k] = values[j]
             occupied[b, k] = True
         # The walk's stack, bottom to top: the oldest kept root at the bottom.
-        stack = [forest[depth - 1 - j] for j in reversed(kept)]
+        stack = [roots[depth - 1 - j] for j in reversed(kept)]
         taken = []
         while stack:
             node = stack.pop()
-            if node[0] == 0:
+            kind, operation, _ = reading.steps[node]
+            if kind == 0:
                 taken.append(stop)
                 continue
-            kind, operation = node[0], node[1]
             rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
             name = rules[operation].method_name
             if kind == 1 and name == 'bind':
                 met['binds'] += 1
-                stack.append(node[3])
+                stack.append(reading.operands[node][0])
                 continue
             action = walk_action(language, kind, operation)
             if action is None:
@@ -189,7 +190,7 @@ def taken_steps(model, record, programs):
                 continue
             met['steps'] += 1
             taken.append(action)
-            stack.extend(node[3:])
+            stack.extend(reading.operands[node])
         if len(taken) > T:
             met['over_budget'] += 1
             taken = taken[:T]

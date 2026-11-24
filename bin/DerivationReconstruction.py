@@ -6,7 +6,7 @@ used to choose a child. A retained co-operand is an occurrence witness. Certifie
 that source live; unsupported maps retain their detached witness contract.
 """
 
-from ReadingIndex import steps as recorded_steps
+from ReadingIndex import ReadingIndex
 import torch
 
 
@@ -142,28 +142,21 @@ def _transport_reread(value, operand, published, domain, layout):
     return torch.cat((form, evidence), -1)
 
 
+def recorded_index(language, program):
+    """Use the chooser's operand references, including its unfinished roots."""
+    tree = getattr(program, 'tree', None)
+    if tree is not None:
+        return tree.trace.index
+    index = getattr(program, 'action_index', None)
+    if index is not None:
+        return index
+    # Isolated and older journals can refer to positions in the full input
+    # without carrying the original leaf slab.
+    return ReadingIndex(program.actions, None, language)
+
+
 def recorded_forest(language, program):
-    """The forest a reading composed, oldest root first: a leaf ``(0,
-    word)``, a step ``(kind, operation, journal index, children...)``; a bind
-    has one child."""
-    if program.tree is not None:
-        return list(program.tree.forest())
-    forest = []
-    for index, (kind, operation, word) in enumerate(recorded_steps(program)):
-        if kind == 0:
-            forest.append((kind, word))
-        elif kind == 1:
-            if language._compose_binary_rules[operation].method_name == 'bind':
-                forest[-1] = (kind, operation, index, forest[-1])
-            else:
-                right, left = forest.pop(), forest.pop()
-                forest.append((kind, operation, index, left, right))
-        elif kind == 2:
-            position = len(forest)-1-max(0,word)
-            forest[position] = (kind, operation, index, forest[position])
-        elif kind == 3:
-            forest[-2:] = reversed(forest[-2:])
-    return forest
+    return list(recorded_index(language, program).forest)
 
 
 def reconstruct(language, record, programs, positions, stm=None):
@@ -176,7 +169,8 @@ def reconstruct(language, record, programs, positions, stm=None):
         if program is None:
             continue
         source = positions(b)
-        forest = recorded_forest(language, program)
+        reading = recorded_index(language, program)
+        roots = reading.roots
         depth = int(record.end_depth[b])
         if depth == -1:
             # An unfinished reading trains from the actual surviving roots.
@@ -191,17 +185,18 @@ def reconstruct(language, record, programs, positions, stm=None):
             values = stack[0][b, :depth]
         else:
             values = record.end_slots[b, :depth]
-        if depth != len(forest):
+        if depth != len(roots):
             raise ValueError('the recorded derivation must have the actual forest depth')
         # The compose forest is oldest first; STM's occupied slots are newest first.
         pending = [(node, values[depth-1-i:depth-i],
                     torch.ones_like(values[depth-1-i:depth-i], dtype=torch.bool), True)
-                   for i, node in enumerate(forest)]
+                   for i, node in enumerate(roots)]
         while pending:
             node, parent, coordinates, exact_path = pending.pop()
             coordinates = coordinates & torch.isfinite(parent)
-            if node[0] == 0:
-                position = source[node[1]]
+            kind, operation, word = reading.steps[node]
+            if kind == 0:
+                position = source[word]
                 recovered[b, position] = parent[0]
                 defined[b, position] = coordinates[0]
                 # A learned map can approach a numerical rail: no exact
@@ -210,7 +205,7 @@ def reconstruct(language, record, programs, positions, stm=None):
                 certified[b,position] = coordinates[0] & exact_path & torch.isclose(
                     parent[0].detach(),source_value,rtol=1e-5,atol=1e-6)
                 continue
-            kind, operation, index = node[:3]
+            index = node
             rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
             if getattr(rules[operation], 'relation_kind', None):
                 # ClauseScope publishes a relative result as a journal-local
@@ -241,13 +236,14 @@ def reconstruct(language, record, programs, positions, stm=None):
                 case_bank=None if bank is None else bank.for_stream(b), live_witness=native_exact,
                 action_context=action_context(program, index),
                 **inverse_context(program, index))
-            for role, (child, (value, domain)) in enumerate(zip(node[3:], children, strict=True)):
+            for role, (child, (value, domain)) in enumerate(zip(reading.operands[index], children, strict=True)):
                 operand = frame[role:role+1]
                 if band is not None:
                     value = torch.cat((value[..., :start], operand[..., start:end], value[..., end:]), -1)
-                selected_leaf = (child[0] == 0 and getattr(program, 'operation_resolved', None) is not None
+                child_kind, _, child_word = reading.steps[child]
+                selected_leaf = (child_kind == 0 and getattr(program, 'operation_resolved', None) is not None
                                  and bool(program.operation_resolved[index, role]))
-                if transaction and (child[0] != 0 or selected_leaf):
+                if transaction and (child_kind != 0 or selected_leaf):
                     # The consumer may read an off-stack identity or a typed
                     # reference in place of the prior publication. Transport
                     # the inverse discrepancy back to that producer's chart.
@@ -255,8 +251,8 @@ def reconstruct(language, record, programs, positions, stm=None):
                     # A selected reference can replace a word leaf as well
                     # as an intermediate. Its producer is the recorded word,
                     # never the scored reconstruction target.
-                    published = (program.leaves[child[1]:child[1]+1] if selected_leaf else
-                                 program.operation_values[child[2], 2:3])
+                    published = (program.leaves[child_word:child_word+1] if selected_leaf else
+                                 program.operation_values[child, 2:3])
                     value = _transport_reread(value, operand, published, domain,
                                               getattr(face, 'meaning_layout', None))
                 pending.append((child, value, domain, exact_path and native_exact))
