@@ -942,9 +942,13 @@ that are present, in 304 of 304.
 
 **The where is a pathway of its own, on fixed wires**. The
 `.where` stamped onto percepts flows from one parameter that holds the
-constant sinusoid, with one row for each address of the registry
-(`WhereRegistry`), written from `WhereEncoding.encode`; it is the one where
-tensor of every space. A percept's band is its row, taken by its place. The
+constant sinusoid, the grid (`WhereRegistry.grid`): one row for each address
+of the registry, the twelve wires of its place, four for each of three axes
+(`WhereEncoding.encode_place`); it is the one where tensor of every space. A
+percept's band is its row, taken by its place. Where a row's entries read a
+place, they read it axis by axis and the three results are multiplied
+(`BasicPercepts.place_factor_by_axis`), so an axis on which every place
+agrees, as the second and third do for text, takes nothing from the others. The
 parameter takes a gradient and is in no optimizer's groups: "The parameter
 itself must stay fixed if the sinusoid coding is to remain meaningful across
 all .where". What lights on a band says where to look. An event's where share

@@ -632,7 +632,7 @@ If transport noise proves to matter, the ladder generalizes to $k$ rungs with
 a fixed ratio of 32 between neighbours and byte resolution at the finest;
 decoding resolves branches from the coarsest rung down, so every cell keeps
 the same angular margin over the transport noise. The band grows to $2k$
-dimensions: three rungs cover 262,144 addresses and four cover 8,388,608, and
+dimensions an axis: three rungs cover 262,144 addresses and four cover 8,388,608, and
 the same construction applies to `.when`. If more rungs degrade transported
 accuracy, the remedy is rotary transport: each operator applies position as
 an exact rotation of content, learned maps act only on content, relative
@@ -2095,11 +2095,11 @@ need for multimodal at this point, that work is left to someone else)."
 
 The path is built. XOR's two numbers are two places on one axis, and an
 image's 784 are 28 by 28 places on two axes. Alec, 2026-11-13: "the .where
-for imagery has to be 2D"; each modality keeps its own perceptual space and
-its own range of `.where`, and modalities meet at order-zero concepts
-([Spaces](Spaces.md#percept-modalities)). A place on two axes is one
-row-major address in the modality's range, decoded by the declared shape
-(`WhereEncoding.decode_index`). `NumericPercepts` is the one reader for any
+for imagery has to be 2D"; each modality keeps its own range of `.where`,
+a box of the one space of places, and modalities meet at order-zero concepts
+([Spaces](Spaces.md#percept-modalities)). A place on two axes has its column
+on the first axis and its row on the second, and keeps a row-by-row address
+in the modality's range (`WhereRegistry.place`, `WhereRegistry.address`). `NumericPercepts` is the one reader for any
 number of dimensions: each number is a level percept at its place, and one
 order-zero concept per place collects the level percepts met there
 ([Spaces](Spaces.md#percept-level-sets); `BasicPercepts.read_collection`).
@@ -2671,12 +2671,19 @@ the part map, or both); how a centre of salience is read from it and
 how it moves a look; and how this lies with the draw among equals
 (sigma-pi plan, §19.121).
 
-## The grid in three dimensions (decided, not built)
+## The wires of an axis of the grid: four or three
 
-The grid ([Glossary](Glossary.md)) is to be a space of three dimensions for
-every modality: text on its first axis, with zeros on the other two; an image
-on two; a volume on three. Today it has one axis (`WhereRegistry.axes`), and
-the source calls it `WhereRegistry.code`.
+The grid ([Glossary](Glossary.md)) has three axes, each with the four wires
+of the two-rung ladder. Whether an axis needs four wires or three is not
+chosen ("I am not convinced that we need 4 elements per dim as opposed to
+3"). Measured at 4,179 addresses, the least distance between the codes of two
+neighbouring places is 1.2e-2 with four wires on two rungs; with three wires
+as three phases of the long rung it is 4.7e-4; with three phases of the short
+rung it is 1.5e-2, but two places far apart can then share a code. An axis
+keeps four until he chooses.
+
+A felt modality has no range of places yet: a sentence's image would be a box
+of its own, set off from the line of the sentence's text.
 
 ## Time and reconstruction at each look (Alec, 2026-11-23)
 

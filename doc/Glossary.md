@@ -420,6 +420,10 @@ every percept has its place. Its code at a place is copied into the basic
 percept there, beside the percept's `.what` and `.when`; on the way back the
 percept's `.where` is separated and matched against it, which gives the place
 of what the `.what` selected in the percept codebook. It is fixed: nothing of
-it is learned. It has one axis, on which text lies. It is named for the grid
-cells of the entorhinal cortex, which code place periodically at several
-scales. In the source it is `WhereRegistry.code`.
+it is learned. It has three axes. A place is three whole numbers, and its
+code is twelve wires, the four wires of one ladder for each axis. Text lies on
+the first axis, with zero on the other two, and an image lies on two. Each
+range of places is a box of the space, and no two boxes share a place; no axis
+indexes the modality. It is named for the grid cells of the entorhinal
+cortex, which code place periodically at several scales. In the source it is
+`WhereRegistry.grid`.

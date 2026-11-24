@@ -499,31 +499,40 @@ only different being the percept dims". One reader,
 For images, intensity as a code and never an amplitude is in
 [FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided).
 
-### Modalities: One Perceptual Space Each {#percept-modalities}
+### Modalities: One Space of Places {#percept-modalities}
 
-"the .where for imagery has to be 2D." He weighed one
-shared space for all the senses and chose otherwise: "perhaps the
-integration path is leave each modality in its own perceptual space with
-varying .where, and integrate only at the level of zero-order concepts by
-adding a .modality field according to the percepts that they unite. this
-still allows perceptual space to have basic-level perceptual objects on a
-modal basis."
+Every percept of every modality has its place in one space of three
+dimensions, the grid ([Glossary](Glossary.md)): "I would like to see .where
+as a 3D space for all models, it simplifies things." What lies on which
+axes: "Text will be 1D: zeros for dim 2 and 3. The perception of intensity
+(feelings) can be 1,2, or 3D. Images will generally be intensity, so zeros
+for dim 3."
 
-- **Each modality has its own perceptual space.** A modality declares how
-  many place axes it has. A place is one address in the modality's range
-  of `.where`, whatever its number of axes: a place on two axes is its
-  row-major index, which the declared shape decodes to row and column.
-  For example, row 3, column 5 of a 28 by 28 image is address
-  3 * 28 + 5 = 89 within the image's range. The band stays the four
-  coordinates of the one two-rung ladder, which recovers the exact
-  address (`WhereEncoding.decode_index`), and no vector is widened.
+- **A place is three whole numbers,** (x, y, z). Its code is twelve wires:
+  the four wires of the one two-rung ladder (`WhereEncoding`) for each
+  axis. One ladder serves the three axes, so a step along any axis moves
+  a place's code by the same amount.
+- **A range is a box.** Each range of the registry (`WhereRegistry`) has a
+  shape on the three axes and an origin. A range given by a count is a
+  line on the first axis that begins at x = its first address, so for it x
+  is the address. A numeric input of h rows of w numbers is a box, with x
+  its column and y its row. No two boxes share a place, and the registry
+  refuses a layout in which two would: the places of two modalities do
+  not overlap. No axis indexes the modality.
+- **An address stays.** Every place keeps a whole-number address in its
+  range, row by row within a box: row 3, column 5 of a 28 by 28 image is
+  address 3 * 28 + 5 = 89 within the image's range, at the place (5, 3, 0)
+  from the box's origin. The registry gives the place of an address and
+  the address of a place (`place`, `address`), and decodes twelve wires to
+  an address (`decode`). What keys a percept by its place uses the
+  address.
 
-  | Modality | Place axes | Place shape |
+  | Modality | Lies on | Places |
   |---|---|---|
-  | the scalar beside the words | 0 | one address |
-  | text | 1 | positions in a sentence |
-  | XOR | 1 | two positions |
-  | an image | 2 | 28 by 28; parts and wholes are boxes |
+  | the scalar beside the words | one place | one address |
+  | text | the first axis | positions in a sentence |
+  | XOR | the first axis | two positions |
+  | an image | two axes | 28 by 28; parts and wholes are boxes |
 
 - **A percept is a level at a place.** A pixel is a level percept at a
   place on two axes, as a letter is a byte percept at a place on one.
@@ -531,28 +540,31 @@ modal basis."
   so basic-level perceptual objects are modal.
 - **Modalities meet at order-zero concepts.** An order-zero concept
   collects basic percepts from one modality or from several, and one that
-  collects from several is where the modalities are integrated. No shared
-  space of places lies below it. Text's `.where` is an order in a sequence
-  and an image's is a place on a surface, so one space for both would give
-  them distances that mean nothing.
+  collects from several is where the modalities are integrated. The places
+  of two modalities are in one space and are not compared with one
+  another: text's `.where` is an order in a sequence and an image's is a
+  place on a surface, each in a box of its own, and the way back matches a
+  place of text within the range of text.
 - **Modality and order are read from the place.** "the .where that
   is baked into all concepts in virtue of muxing the .where of a percept
   will include a .where in a range that can uniquely identify the modality
-  and order of a percept." The model's places are one address space,
-  divided into fixed, disjoint ranges (`WhereRegistry`), and every muxed
-  vector carries its address in its band. The ranges are one input range
+  and order of a percept." The model's addresses are divided into fixed,
+  disjoint ranges (`WhereRegistry`), each a box of the one space, and
+  every muxed vector carries its place in its band. The ranges are one input range
   for each modality (text, a numeric input, the scalar beside the words,
   each sized by its configuration; the scalar's has one address), the
   part rows, the whole rows, the symbols and the live conceptual slots. A
   symbol has two addresses, one for each lane; rows lie in their order's
   block, so the range gives the order ([Orders §12](Orders.md)). Each
   modality's input has a range of its own, so the range gives the modality
-  too. Neither is stored beside the vector. The number of place axes would
-  not tell text from XOR, which both have one; the range does.
+  too. Neither is stored beside the vector. The axes a modality lies on
+  would not tell text from XOR, which both lie on the first; the range
+  does.
 - **The where is one fixed parameter** ("a pytorch param
   with the sinusoid written to it"). The `.where` stamped onto percepts
   flows from one tensor that holds the constant sinusoid, a row for each
-  address of the registry, written from `WhereEncoding.encode`. "The
+  address of the registry (`WhereRegistry.grid`), the twelve wires of the
+  address's place (`WhereEncoding.encode_place`). "The
   parameter itself must stay fixed if the sinusoid coding is to remain
   meaningful across all .where": nothing of it is learned, nothing is
   written into it as a state, and it is in no optimizer's groups. It takes
@@ -710,10 +722,11 @@ per-word residual-part capacity (at least the raw InputSpace extent). This
 converts unit counts into byte addresses using the fixed residual layout.
 The address guard still rejects overflow. Aligned readers retain their raw-byte
 extent. The mode is resolved before this fixed registry is constructed. Thought-produced symbols use their symbol-row
-address. The registry encodes locations through one model-owned `.where` ladder, held as
-the one fixed where parameter (see "Modalities" above). Its long period
-covers the registry and its short period resolves adjacent locations. The
-band carries the address; an integer location is decoded from it. Codebook
+address. The registry encodes a place through one model-owned `.where` ladder, applied to
+each of the place's three axes and held as the one fixed where parameter (see "Modalities"
+above). Its long period covers the registry and its short period resolves adjacent
+locations. The band carries the place; its address is decoded from it
+(`WhereRegistry.decode`). Codebook
 identity remains the row index. Every perceptual
 codebook reserves physical `nVectors` at construction, and admission changes
 occupancy in that allocation; checkpoint capacities must match.
@@ -1147,10 +1160,11 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
 
 - `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims (4) — two quadrature pairs encode one registry location.
-  One model-owned encoding serves input positions, PartSpace, every
-  WholeSpace, and symbols, written once into one fixed parameter, a row
-  for each address (see "Modalities: One Perceptual Space Each"). The long period is the next power of two covering
+- `nWhere` dims (12): for each of the three axes of a place, two
+  quadrature pairs encode its number. One model-owned encoding serves input
+  positions, PartSpace, every WholeSpace, and symbols, written once into one
+  fixed parameter, a row for each address (see "Modalities: One Space of
+  Places"). The long period is the next power of two covering
   the complete registry plus its seam guard. The fine period is at least
   256 positions and grows with large registries to keep float32 coarse-phase
   error inside the branch bound. Integer modulo occurs before float conversion;
@@ -1199,7 +1213,8 @@ Non-embedding inputs are scaled to `[-1, 1]` via the global data min/max.
 The band is architectural, not a per-Space setting:
 `architecture.canonical_shape(section)`
 ([`bin/architecture.py`](../bin/architecture.py)) gives (nWhere, nWhen) =
-(4, 4) on InputSpace, PartSpace, ModalSpace, WholeSpace and SymbolSpace, and
+(12, 4) on InputSpace, PartSpace, ModalSpace, WholeSpace and SymbolSpace (the
+`.where` is four wires for each of `architecture.whereAxes` axes), and
 (0, 0) on ConceptualSpace and OutputSpace. Percepts and symbols are located
 and timed; a concept is one opaque code that has generalised over where and
 when, and the answer has neither.

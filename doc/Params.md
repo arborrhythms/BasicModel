@@ -10,8 +10,8 @@ This document is the human-facing reference for common knobs and migrations.
 **Sizes.** Every constant set by hand that is a size (a
 capacity, horizon, budget, cap, cadence or width) is a power of two, for example
 `PartSpace.basicPerceptCapacity` $2^{18}$. A width made by adding such constants
-stays a sum: an event is its content plus the fixed eight-coordinate band (four
-`.where`, four `.when`), and a percept's code is $64 + 64$, a parts half and a
+stays a sum: an event is its content plus the fixed sixteen-coordinate band
+(twelve `.where`, four for each of three axes, and four `.when`), and a percept's code is $64 + 64$, a parts half and a
 wholes half (`identityPairDim`, `propertyDim`). Seeds, versions,
 booleans, 0 and 1, rates, weights and ratios are not sizes; nor are counts that
 the structure fixes (the eight canonical property rows plus the word row,
@@ -40,6 +40,10 @@ treat that as the same thing as `nOutput`.
 
 > `<nWhere>` / `<nWhen>` are not set in per-file configs.
 > The band widths are architectural (`canonical_shape` in `bin/architecture.py`).
+> The `.where` has four wires for each axis of a place; the number of axes is
+> `architecture.whereAxes`, 3, set in `data/model.xml` and in no other
+> configuration. A declared `nDim` that embraces the band counts all sixteen
+> of its coordinates.
 > Input, part, whole and symbol events use two quadrature pairs for `.where`
 > and two for `.when`; conceptual codes and final outputs have no local band.
 > A complete model shares **one** spatial ladder and **one** temporal ladder.
@@ -306,7 +310,7 @@ Lifts raw data into the model's internal representation.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Sequence length: max tokens per input. For XOR: 2. For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots --- a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
-| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$. Default 9 = 1 content + 4 `.where` + 4 `.when`. |
+| `nDim` | int | `17` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$. Default 17 = 1 content + 12 `.where` + 4 `.when`. |
 | `nInputDim` / `nOutputDim` | int | `0` | Raw shape hints. `0` defers to the loader's native dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
@@ -340,7 +344,7 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
-| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
+| `nDim` | int | `17` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 17 = 1 + 12 + 4). |
 | `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
 | `propertyDim` | positive int | `64` | Width of the wholes half of a percept's code, after the parts half, at text-model construction. The part catalog is drawn a second time in these coordinates; a whole's code is the OR of the codes of the catalog parts that belong to it, so the class of all characters is all ones. Numeric layouts are unchanged. |
 | `propertyOnes` | positive int | `3` | Coordinates each catalog part takes in the wholes half; must not exceed `propertyDim`. Every byte is a part of the catalog, so the OR of all of them covers the half. |
@@ -361,7 +365,7 @@ A form's code holds no length; a configuration that declares
 In an embedding configuration with `identityByParts` (the default),
 `WordIdentity.resolve_identity_layout` rewrites the declared widths before any
 space is built. Every input, percept and whole event is `identityPairDim` +
-`propertyDim` + the eight band coordinates, $64 + 64 + 8 = 136$ by default, and the conceptual width is that plus the declared difference
+`propertyDim` + the sixteen band coordinates, $64 + 64 + 16 = 144$ by default, and the conceptual width is that plus the declared difference
 between the ConceptualSpace and PartSpace `nDim`. The declared `nDim` values of
 such a configuration therefore matter only through that difference; numeric
 configurations, and those with `identityByParts` false, keep their declared
@@ -386,7 +390,7 @@ Grammatical lift/lower own their chart maps.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Active concept vectors. For XOR: 3. |
-| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
+| `nDim` | int | `17` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 17 = 1 + 12 + 4). |
 | `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns the concept inventory and taxonomy; word–object DEF relations live in the common LTM store. Aligned property-basis stages share one table. Rows lie in their order's block (`order_slice`), so a concept's order is read from where its row lies and is stored nowhere beside the vector; a full block raises a capacity error naming its order. This value is independent of `WholeSpace.nVectors`, PartSpace's physical capacity, live `nOutput`, SymbolSpace references, and STM capacity. |
 | `invertible` | bool | `false` | Space construction flag. Aligned native binding retains both perceptual views for reconstruction; ConceptualSpace owns no unary chart fold. |
 | `hasAttention` | bool | `false` | Inert: the boolean constructs no attention pass and is kept as an alias. Use `<attention>`. |
