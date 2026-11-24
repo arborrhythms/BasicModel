@@ -266,3 +266,18 @@ def test_forecast_keeps_the_same_outside_evidence_with_bounded_history():
             outside = ~extent[:, torch.cat(positions)]
             expected = torch.where(outside[..., None, None], torch.cat(observed, 1), 0.).amax(1)
             assert torch.equal(actual, expected[live])
+
+
+def test_sparse_entry_backward_retains_values_from_before_online_admission():
+    from Layers import SparseSigmaLDU
+    sigma = SparseSigmaLDU(4, 4, 16)
+    sigma.add(0, 0, .8)
+    sigma.add(1, 0, .3)
+    rows = torch.tensor([0, 1, 3])
+    inputs = torch.tensor([0, 0, 1])
+    cost = sigma.entry(rows, inputs).square().sum()
+    expected, = torch.autograd.grad(cost, sigma.value, retain_graph=True)
+    sigma.add(2, 1, .7)
+    actual, = torch.autograd.grad(cost, sigma.value)
+    assert expected.count_nonzero() == 2
+    assert torch.equal(actual, expected)

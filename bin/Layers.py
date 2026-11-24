@@ -5557,7 +5557,11 @@ class SparseLDULayer(Layer):
         value = self.value[:n]
         if not self._n:
             return value * 0
-        d = torch.cat((self._slot_d(), value.new_ones(1)))
+        # Online admission writes into this preallocated parameter even when
+        # it only appends new entries. Backward needs the earlier multipliers.
+        if torch.is_grad_enabled() and value.requires_grad:
+            value = value.clone()
+        d = torch.cat((self._slot_d(value), value.new_ones(1)))
         kind = self.entry_kind[:n].to(value.device)
         S = self._slots
         source = torch.where(self.entry_source[:n] >= 0, self.entry_source[:n], S).to(value.device)
@@ -5822,7 +5826,9 @@ class SparseLDULayer(Layer):
         inputs = torch.as_tensor(inputs, dtype=torch.long)
         found = [self._entry_of.get(key, -1) for key in zip(rows.flatten().tolist(), inputs.flatten().tolist())]
         index = torch.tensor(found, dtype=torch.long, device=self.value.device)
-        w = self.w()
+        if not self._n:
+            return self.value[:0].sum().expand(rows.shape)
+        w = self.w(occupied_only=True)
         value = w.index_select(0, index.clamp_min(0)) * (index >= 0).to(w)
         return value.reshape(rows.shape)
 
