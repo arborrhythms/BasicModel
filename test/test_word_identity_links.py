@@ -224,3 +224,27 @@ def test_disjoint_cover_decodes_utf8_within_each_cut_when_escaped_bytes_are_know
         n = counts[b, 0]
         assert parts[b, 0, :n].tolist() == [identity.atoms[part] for part, _, _ in cover]
         assert spans[b, 0, :n].tolist() == [[lo + start, lo + end] for _, start, end in cover]
+
+
+def test_full_unit_matches_count_exposures_without_becoming_spelling_operands():
+    import torch
+    from BasicPercepts import disjoint_occurrences
+
+    identity, *_ = coded((b'sho', b'pping', b'shopping', b'x'))
+    identity.admit_part(b'op')
+    raw = torch.tensor([list(b'shopping x shopping op y')])
+    spans = torch.tensor([[(0, 8), (9, 10), (11, 19), (20, 22), (23, 24), (0, 0)]])
+    ids, counts, extents, forms = identity.sentence_cover(raw, spans, -1, identify=True)
+    keys, rows, _, ranks, native = identity._occurrences(raw.device, False)
+    compiled = torch.compile(disjoint_occurrences, backend='eager', fullgraph=True)
+    for value, reference in zip(compiled(raw, spans, keys, rows, ranks, -1, form_rows=native),
+                                (ids, counts, extents, forms), strict=True):
+        torch.testing.assert_close(value, reference)
+    shopping, x = (identity.word_rows[name] for name in (b'shopping', b'x'))
+    assert forms.tolist() == [[shopping, x, shopping, -1, -1, -1]]
+    assert ids[0, :2].tolist() == [identity.atoms[('part', name)] for name in ('sho', 'pping')]
+    before = identity._witness_counts.clone()
+    identity.observe_rows(forms)
+    before[shopping] += 2
+    before[x] += 1
+    torch.testing.assert_close(identity._witness_counts, before, atol=0, rtol=0)

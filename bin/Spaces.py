@@ -11313,7 +11313,7 @@ class PartSpace(Space):
         byte_slab = getattr(self, '_staged_unit_bytes', None)
         identity = getattr(ps, 'identity', None)
         simple_parts = identity is not None and not identity.nested and identity._marker_pattern is None
-        layout = prepared_parts = prepared_counts = None
+        layout = prepared_parts = prepared_counts = recognized_units = None
         if torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab):
             compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
             layout = Meronomy.sentence_unit_spans(
@@ -11324,15 +11324,17 @@ class PartSpace(Space):
             delivered_layout = layout[:, :byte_count]
             if simple_parts and identity.atoms:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
-                                                        delivered_layout[:, :word_capacity], -1)
+                                                        delivered_layout[:, :word_capacity], -1, identify=True)
             if prepared_parts is None:
                 unit_spans_rows = delivered_layout.detach().tolist()
             else:
                 counts_device = prepared_parts[1]
                 all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
-                records = torch.cat((delivered_layout, all_counts[..., None]), -1).tolist()
-                unit_spans_rows = [[(lo, hi) for lo, hi, _ in row] for row in records]
-                prepared_counts = [[n for _, _, n in row[:word_capacity]] for row in records]
+                form_rows = F.pad(prepared_parts[3], (0, delivered_layout.shape[1] - counts_device.shape[1]), value=-1)
+                records = torch.cat((delivered_layout, all_counts[..., None], form_rows[..., None]), -1).tolist()
+                unit_spans_rows = [[(lo, hi) for lo, hi, _, _ in row] for row in records]
+                prepared_counts = [[n for _, _, n, _ in row[:word_capacity]] for row in records]
+                recognized_units = [[form for _, _, _, form in row[:word_capacity]] for row in records]
         staged_rows, cover_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         part_capacity = 3
@@ -11397,18 +11399,25 @@ class PartSpace(Space):
             # Register only observed characters. Cuts can split UTF-8, so decode
             # each actual unit with the same surrogate handling as WordIdentity.
             from WordIdentity import text_of
-            alphabet = dict.fromkeys(char for raw, spans in units
-                                     for lo, hi in spans[:word_capacity] for char in text_of(raw[lo:hi]))
+            alphabet = dict.fromkeys(char for b, (raw, spans) in enumerate(units)
+                                     for w, (lo, hi) in enumerate(spans[:word_capacity])
+                                     if recognized_units is None or recognized_units[b][w] < 0
+                                     for char in text_of(raw[lo:hi]))
             missing_atoms = [('part', char) for char in alphabet if ('part', char) not in identity.atoms]
             for atom in missing_atoms:
                 identity._atom(atom)
             if missing_atoms or prepared_parts is None:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
-                                                        layout[:, :min(byte_count, word_capacity)], -1)
+                                                        layout[:, :min(byte_count, word_capacity)], -1, identify=True)
                 prepared_counts = None
             if prepared_parts is not None:
-                flat_parts, lengths, flat_extents = prepared_parts
-                counts = lengths.tolist() if prepared_counts is None else prepared_counts
+                flat_parts, lengths, flat_extents, form_rows = prepared_parts
+                if prepared_counts is None:
+                    records = torch.stack((lengths, form_rows), -1).tolist()
+                    counts = [[n for n, _ in row] for row in records]
+                    recognized_units = [[form for _, form in row] for row in records]
+                else:
+                    counts = prepared_counts
                 missing = word_capacity - lengths.shape[1]
                 counts = [row + [0] * missing for row in counts]
                 lengths = F.pad(lengths, (0, missing))
@@ -11426,7 +11435,8 @@ class PartSpace(Space):
                 native_spans.append([(i, i+1) for i in range(len(raw))])
             if located_parts is not None:
                 if admit:
-                    observed_forms.extend(raw[lo:hi] for lo, hi in spans[:word_capacity])
+                    observed_forms.extend(raw[lo:hi] for (lo, hi), form in
+                                          zip(spans[:word_capacity], recognized_units[b]) if form < 0)
                 continue
             staged_words = []
             for word_index in range(word_capacity):
@@ -11509,7 +11519,10 @@ class PartSpace(Space):
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
         if identity is not None and admit and not teaching_marker:
-            identity.observe_forms(observed_forms)
+            if observed_forms:
+                identity.observe_forms(observed_forms)
+            if located_parts is not None:
+                identity.observe_rows(form_rows)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)
         if getattr(self, "_mereology_raise", False):

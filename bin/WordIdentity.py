@@ -238,12 +238,16 @@ class WordIdentity(nn.Module):
         return result
 
     def occurrence_bank(self, device, *, escaped_elements=False):
+        bank = self._occurrences(device, escaped_elements)
+        return None if bank is None else bank[:4]
+
+    def _occurrences(self, device, escaped_elements):
         """Group native part references by spelling length for the occurrence read.
 
         The cache holds addresses and fixed catalog coordinates. Native part
         codes are read through the actual basis on each differentiable forward.
         """
-        stamp = (len(self.atoms), len(self.added), self.revision, self._given_revision, device)
+        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, self._given_revision, device)
         key = ('occurrence_bank', escaped_elements)
         cached = self._catalog.get(key)
         if cached is not None and cached[0] == stamp:
@@ -263,20 +267,21 @@ class WordIdentity(nn.Module):
                     return None
                 raw = bytes_of(text)
             groups.setdefault(len(raw), []).append((raw, row, atom))
-        spellings, rows, catalogs, ranks = [], [], [], []
+        spellings, rows, catalogs, ranks, forms = [], [], [], [], []
         added_rank = self._added_rank()
         for size in sorted(groups):
             entries = groups[size]
             spellings.append(torch.tensor([list(raw) for raw, _, _ in entries],
                                           dtype=torch.uint8, device=device))
             rows.extend(row for _, row, _ in entries)
+            forms.extend(self.word_rows.get(raw, -1) for raw, _, _ in entries)
             ranks.extend(-1 if len(atom[1]) == 1 else added_rank[atom[1]] for _, _, atom in entries)
             if self.property_width:
                 catalogs.extend(self.catalog_code(atom) for _, _, atom in entries)
         addresses = torch.tensor(rows, dtype=torch.long, device=device)
         catalog = (torch.stack(catalogs).to(device) if catalogs else
                    torch.empty(len(rows), self.property_width, device=device))
-        bank = tuple(spellings), addresses, catalog, addresses.new_tensor(ranks)
+        bank = tuple(spellings), addresses, catalog, addresses.new_tensor(ranks), addresses.new_tensor(forms)
         self._catalog[key] = stamp, bank
         return bank
 
@@ -289,16 +294,16 @@ class WordIdentity(nn.Module):
         spellings, rows, _, ranks = bank
         return parts_for_units(surface, spans, spellings, rows, ranks, padding)
 
-    def sentence_cover(self, surface, spans, padding):
+    def sentence_cover(self, surface, spans, padding, *, identify=False):
         """Read ordered parts, including escaped bytes at a unit's UTF-8 boundaries."""
         from BasicPercepts import disjoint_occurrences
-        bank = self.occurrence_bank(surface.device)
+        bank = self._occurrences(surface.device, False)
         escapes = bank is None
         if escapes:
-            bank = self.occurrence_bank(surface.device, escaped_elements=True)
-        spellings, rows, _, ranks = bank
+            bank = self._occurrences(surface.device, True)
+        spellings, rows, _, ranks, forms = bank
         return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding,
-                                    escaped_elements=escapes)
+                                    escaped_elements=escapes, form_rows=forms if identify else None)
 
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""
@@ -454,7 +459,8 @@ class WordIdentity(nn.Module):
         if bits is not None:
             self.bits[atom] = max(self.bits.get(atom, self.ones), int(bits))
             self._codes.pop(atom, None)
-            self._catalog.pop('occurrence_bank', None)
+            self._catalog.pop(('occurrence_bank', False), None)
+            self._catalog.pop(('occurrence_bank', True), None)
         code = self.atom_code(atom)
         if atom not in self.atoms:
             key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
@@ -993,7 +999,9 @@ class WordIdentity(nn.Module):
 
     def observe_rows(self, rows):
         """One count per presentation, including repeated addresses in a batch."""
-        self._witness_counts.scatter_add_(0, rows, (self._witness_counts[rows] >= 0).long())
+        seats = rows.flatten().clamp_min(0)
+        valid = (rows.flatten() >= 0) & (self._witness_counts[seats] >= 0)
+        self._witness_counts.scatter_add_(0, seats, valid.long())
 
     def observe_forms(self, forms):
         """Count known native rows together and discover new forms in first-seen order."""

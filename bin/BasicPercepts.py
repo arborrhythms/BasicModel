@@ -301,12 +301,14 @@ def _utf8_boundaries(raw, remaining):
     return F.pad(~interior, (0, 1), value=True)
 
 
-def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False):
+def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False, form_rows=None):
     """Tile each ordered unit with its longest proper part at each surviving start."""
     batch, width = raw.shape
     units = spans.shape[1]
+    recognized = None if form_rows is None else spans.new_full((batch, units), -1)
     if not units or not width:
-        return rows.new_full((batch, width), padding), spans.new_zeros(batch, units), spans.new_zeros(batch, width, 2)
+        result = rows.new_full((batch, width), padding), spans.new_zeros(batch, units), spans.new_zeros(batch, width, 2)
+        return result if form_rows is None else (*result, recognized)
     pos = torch.arange(width, device=raw.device).expand(batch, -1).contiguous()
     lo, hi = spans.unbind(-1)
     seat = torch.searchsorted(torch.where(hi > lo, lo, width).contiguous(), pos, right=True) - 1
@@ -328,7 +330,15 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
                 hit = (windows[:, :, None] == keys).all(-1)
                 index = hit.to(torch.int32).argmax(-1) + base + offset
                 proper = (size < right[:, :count] - left[:, :count]) | (ranks[index] < 0)
-                keep = live[:, :count] & (pos[:, :count] + size <= right[:, :count]) & proper & hit.any(-1)
+                matched = hit.any(-1)
+                if form_rows is not None:
+                    # A full-unit hit is already present in this comparison.
+                    # Its native name can count an exposure without becoming
+                    # one of the form's own reconstruction operands.
+                    start = lo.clamp(0, count - 1)
+                    whole = (hi - lo == size) & matched.gather(1, start)
+                    recognized = torch.where(whole, form_rows[index.gather(1, start)], recognized)
+                keep = live[:, :count] & (pos[:, :count] + size <= right[:, :count]) & proper & matched
                 if boundaries is not None:
                     keep = keep & boundaries[:, :count] & boundaries[:, size:size+count]
                 keep = F.pad(keep, (0, size - 1))
@@ -352,7 +362,8 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
     valid = order < width
     take = order.clamp_max(width - 1)
     extents = torch.stack((order, successor.gather(1, take)), -1)
-    return torch.where(valid, address.gather(1, take), padding), counts, torch.where(valid[..., None], extents, 0)
+    result = torch.where(valid, address.gather(1, take), padding), counts, torch.where(valid[..., None], extents, 0)
+    return result if form_rows is None else (*result, recognized)
 
 
 def pack_disjoint_units(ids, counts, extents, padding, capacity):
