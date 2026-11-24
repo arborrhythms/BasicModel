@@ -20131,29 +20131,32 @@ class BasicModel(BaseModel):
                 lang[11][b, sid] = -1
         depths = lang[11][:, sid]
         mask = active & (depths > 0)
-        slots = lang[10][:, sid].reshape(B, 3, D)
-        payloads = [slots[b, :int(depths[b])] if bool(mask[b]) else None for b in range(B)]
-        depth_list = [int(d) if bool(m) else 0 for d, m in zip(depths, mask)]
+        # The host clause reader consumes one bounded depth per stream.
+        # Zero denotes an active partial reading, -1 an absent stream.
+        row_depths = torch.where(active, depths.clamp_min(0), -1).tolist()
         # A row whose trees did not reduce to one has no program to read.
-        entries = tuple(entry if bool(mask[b]) else None
+        entries = tuple(entry if row_depths[b] > 0 else None
                         for b, entry in enumerate(programs.get(sid, (None,) * B)))
         disc = getattr(self.symbolSpace, 'expectation', None)
         clauses = []
-        meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
-            self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
-            clauses=clauses)
+        registry = _boundary_registry(self)
         word_entries = entries
         extension = understanding_field = None
         comprehensions = None
-        if record is not None:
+        if record is None:
+            slots = lang[10][:, sid].reshape(B, 3, D)
+            depth_list = [max(0, depth) for depth in row_depths]
+            payloads = [slots[b, :depth] if depth else None for b, depth in enumerate(depth_list)]
+            meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
+                self.languageSpace, registry, entries, payloads, depth_list, clauses=clauses)
+        else:
             from Extension import understand, with_extensions
             extension, understanding_field, comprehensions = understand(self, record, entries, trust=incoming_trust)
             payloads = [None if value is None else value.clause.slots
                         for value in comprehensions]
             depth_list = [0 if value is None else len(value.clause.slots) for value in comprehensions]
-            clauses = []
             meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
-                self.languageSpace, _boundary_registry(self), entries, payloads, depth_list,
+                self.languageSpace, registry, entries, payloads, depth_list,
                 clauses=clauses, completed=[None if value is None else value.clause for value in comprehensions])
             clauses = [with_extensions(clause, extension[row]) for row, clause in enumerate(clauses)]
             for value, clause in zip(comprehensions, clauses):
@@ -20166,19 +20169,17 @@ class BasicModel(BaseModel):
             if meaning is None:
                 handles.append(None)
                 continue
-            ids = symbol_identities(meaning)
-            if clause is not None and clause.relation is not None:
-                ids = ids.new_tensor([value if type(value) is int and value not in (-1, 0) else -1
-                                      for value in clause.refs])
-            elif entry is not None and len(entry.leaves)==1 and bool((entry.actions[:, 0] == 0).all()):
-                ids[0] = entry.concept_ids[0]
             if clause is not None:
-                ids = ids.new_full((3,), -1)
+                ids = torch.full((3,), -1, device=meaning.roles.device, dtype=torch.long)
                 if entry is not None and len(entry.leaves) == 1:
                     ids[0] = (entry.concept_ids[0] if comprehensions is None
                               else comprehensions[b].concept_ids[0])
+            else:
+                ids = symbol_identities(meaning)
+                if entry is not None and len(entry.leaves) == 1:
+                    ids[0] = torch.where((entry.actions[:, 0] == 0).all(), entry.concept_ids[0], ids[0])
             handles.append(ids)
-        partial = tuple(entry if entry is not None and bool(active[b]) and not bool(mask[b])
+        partial = tuple(entry if entry is not None and row_depths[b] == 0
                         and len(entry.tree.roots) > 1 else None
                         for b, entry in enumerate(programs.get(sid, (None,) * B)))
         result = dict(payloads=payloads, depths=depth_list, mask=mask, entries=word_entries,
