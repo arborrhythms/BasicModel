@@ -1102,17 +1102,15 @@ class BasicPercepts(nn.Module):
                 found[b] = [tuple(span) for span in row if span[0] >= 0]
         return found
 
-    def _spelled_spans(self, raw, rows):
+    def _spelled_spans(self, lines, rows):
         """Where the stored form of each of ``rows`` of two or more bytes is
         found in the sentence's bytes: its span, for each stream. The bytes
         are read on the host once."""
-        raw = raw[:, 0] if raw.ndim == 3 else raw
         spellings = {form for form in (self.form_of(row) for row in rows
                                        if row not in self.place_rows and row not in self.conjunctions)
                      if form is not None and len(form) > 1}
         found = []
-        for line in raw.tolist():
-            text = bytes(v & 0xff for v in line)
+        for text in lines:
             spans = []
             for form in spellings:
                 start = text.find(form)
@@ -1179,31 +1177,30 @@ class BasicPercepts(nn.Module):
         brackets = brackets.to(device)
         forms = self._form_spans(part_ids.to(device), part_spans.to(device), keys)
         byte_input = not raw.is_floating_point()
-        spelled = self._spelled_spans(raw, rows) if byte_input else [[] for _ in range(len(raw))]
-        found, holders = [], []
+        lines = None
+        if byte_input:
+            text = raw[:, 0] if raw.ndim == 3 else raw
+            lines = [bytes(line) for line in text.detach().to(torch.uint8).tolist()]
+        spelled = (self._spelled_spans(lines, rows) if lines is not None else [[] for _ in range(len(raw))])
         identity = getattr(self.native, 'identity', None) if byte_input else None
-        lines = (raw[:, 0] if raw.ndim == 3 else raw).tolist() if identity is not None else None
-        for b in range(brackets.shape[0]):
-            held = dict.fromkeys(tuple(span) for source in (part_spans[b].tolist(), forms[b], spelled[b],
-                                                            whole_spans[b].tolist(), brackets[b].tolist())
-                                 for span in source if span[1] > span[0])
+        # These five sources keep their original nomination order. Each
+        # device interval crosses the legacy inventory boundary only once.
+        parts, wholes, apertures = part_spans.tolist(), whole_spans.tolist(), brackets.tolist()
+        found, holders = [], []
+        for b in range(len(brackets)):
+            own = dict.fromkeys(tuple(span) for source in (parts[b], forms[b], spelled[b])
+                                for span in source if span[1] > span[0])
+            held = dict(own)
+            for source in (wholes[b], apertures[b]):
+                held.update((tuple(span), None) for span in source if span[1] > span[0])
             found.append(list(held))
-            # The occurrences that can tell against a row they hold: a part's
-            # event, a run of a row's parts, a stored form. A bracket or a
-            # whole's span that is none of these tells only for.
-            own = {tuple(span) for source in (part_spans[b].tolist(), forms[b], spelled[b])
-                   for span in source if span[1] > span[0]}
-            if identity is not None:
-                own.update(span for span in held if span not in own
-                           and bytes(v & 0xff for v in lines[b][span[0]:span[1]]) in identity.words)
-            holders.append([span in own for span in held])
+            holders.append([span in own or (identity is not None and lines[b][span[0]:span[1]] in identity.words)
+                            for span in held])
         O = max(map(len, found), default=0)
-        spans = torch.zeros(brackets.shape[0], O, 2, dtype=torch.long, device=device)
-        holder = torch.zeros(brackets.shape[0], O, dtype=torch.bool, device=device)
-        for b, held in enumerate(found):
-            if held:
-                spans[b, :len(held)] = torch.tensor(held, dtype=torch.long, device=device)
-                holder[b, :len(held)] = torch.tensor(holders[b], dtype=torch.bool, device=device)
+        spans = brackets.new_tensor([row + [(0, 0)] * (O - len(row)) for row in found],
+                                    dtype=torch.long).reshape(len(found), O, 2)
+        holder = torch.tensor([row + [False] * (O - len(row)) for row in holders],
+                              dtype=torch.bool, device=device).reshape(len(found), O)
         real = spans[..., 1] > spans[..., 0]
         holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
                  & real[:, None])

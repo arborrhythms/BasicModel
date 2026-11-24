@@ -128,8 +128,11 @@ def form_identity(owner, cue):
 
 
 def form_region(owner, cue):
+    regions = allocator(owner).form_regions
+    if not regions:
+        return None
     form = form_identity(owner, cue)
-    identity = allocator(owner).form_regions.get(form)
+    identity = regions.get(form)
     return None if identity is None else coordinates(owner, point(owner, identity))
 
 

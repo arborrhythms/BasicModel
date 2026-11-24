@@ -15276,7 +15276,7 @@ class ConceptualSpace(Space):
         ``extents``, held on the device (:class:`BasicPercepts.PerceptBank`)."""
         self._refresh_basic_selectors()
         basic = self.basic_percepts
-        rows = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
+        rows = [row for row, promoted in enumerate(basic.promoted[:len(basic.index)].tolist()) if promoted]
         model = self._model
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
