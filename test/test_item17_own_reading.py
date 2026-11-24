@@ -48,6 +48,7 @@ def taught(model, optimizer, text):
         model.End()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize('run', range(int(os.environ.get('OWN_READING_RUNS', '3'))))
 def test_reading_and_counting_over_the_same_sentences_words_first(tmp_path, monkeypatch, run):
     from test_item17_echo import read_once

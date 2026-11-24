@@ -9,6 +9,8 @@ import pytest
 
 # Exact parameterized cases from Testing.md, October 16 tier decision.
 WEEKLY_CONTRACTS = frozenset({
+    'test/test_item17_places.py::test_reading_in_order_before_and_after_the_lesson',
+    'test/test_item17_reconstruction_said_back.py::test_the_row_at_one_by_the_models_reconstruction',
     'test/test_math_chain_section14.py::test_ordinary_initial_binding_distribution_includes_every_retained_candidate',
     'test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-explore]',
     'test/test_trial_policy_ownership.py::test_trial_and_batch_answer_leave_the_decoder_to_reconstruction[True-exploit]',
