@@ -62,3 +62,23 @@ Use a fresh output directory and the base archive and environment commands in th
 - `bin/bench_item15.py --output DIR` measures real steps. Add `--lesson`, `--explore-paths 3`, `--batch-size 8`, `--lesson --training-seconds 10` or `--corpus lesson-13|math-chain` for the studies above.
 - `--steps 1 --explore-paths 3 --path-audit` reproduces the early rejected promotions. `--compiled-step` uses the native entry. Add `--compile-percept-fold` to try the additional fold with a fresh Inductor cache.
 - Use `--explore-paths 0` on both sources for release-to-final exact replay. `bin/compare_item15.py BEFORE AFTER` checks parameters, buffers, optimizer, RNG and live gradients. Local JSON receipts, logs and profiles are under `output/item1-5/`, including `solo-*` for the isolated CPU runs.
+
+## Host-read checkpoint, pending architecture review
+
+Local training commit `883fbb21c67d18049ec3af5b95c632507c19c299` follows the measured stopping point `5a393548e30f0e8ba0c5fbacc15b52977b6c6a3b`. Item 1.5 remains open. The proposed comparison-only grammar reader and the later MTM layout are described in the [representation design](2026-11-24-item1-5-device-sentence.md).
+
+| Four-page CPU update | Before this checkpoint | After |
+| --- | ---: | ---: |
+| Six explicit tensor-read methods over the update | 16,089 | 8,772 |
+| Same methods within ordinary sentence execution | 15,962 | 8,645 |
+| Same methods inside looks | 360 | 360 |
+| Steady sentences/s, nine updates after three warm-ups | 10.33 | 10.24 |
+| Fresh lesson to restored 122/122 in both modes, seconds | 44.06 | 44.12 |
+
+The row writers now retain the occupied extent and row names that they publish. Buffer replacement, version changes and compaction invalidate the lookup. The close aligns winners’ fields on device, including duplicate concept IDs and different candidate widths. The residual winner selection still reads the winning paths to choose variable-sized fields, and the ID union has a data-dependent size. All 595 CPU replay tensors agreed, including the 26 live gradients. The focused path, memory and performance suite passed 93 tests. Four learning gates passed. Both newly trained and restored readers (one paired benchmark start, one independent gate start) scored 122/122 in sampled and evaluation modes. Fresh verbal XOR passed 4/4 ordered pairs into grammar and 4/4 through the inverse, and numeric XOR convergence and raised-class denotation passed.
+
+The newly timed Metal control on the archived stopping point reached 0.96 sentences/s while a CPU test was also running. The paired configuration and operator counts are comparable, while machine load limits a precise incremental speed claim. The new Metal run took 2.49, 3.36 and 3.70 s for its first three updates and sustained 1.22 sentences/s, compared with 0.87 at the previous checkpoint and 0.695 on 1.7. Metal replay against the previous checkpoint differed in 45 tensors. The maximum absolute parameter and live-gradient differences were 2.24e-8 and 2.92e-11. Earlier same-code repeat differences reached 5.22e-8 and 1.46e-10.
+
+The six-method census and the native dispatcher census are separate measurements. A strict capture probe on the ordinary entry stops at the input byte decoder’s `ndarray.tobytes()`. On Metal, the archived control and the new training code respectively issued 14,175 → 6,692 scalar extractions, 591 → 584 equality operations and 571 → 487 nonzero operations within sentence execution. Explicit device-to-host copies rose from 2,349 to 2,355. Some dispatches can operate on CPU tensors. PyTorch’s dynamic-shape tag also applies to indexing overloads that accept either integer or Boolean indices. These counts cannot be added to infer synchronization time.
+
+Run `bin/bench_item15.py --output DIR --dispatch-census` with the same environment as the earlier runs. The six-method census includes source file, function and line within `BasicModel._execute_input_sentence`. The native census runs on an extra update after the gradient snapshot. Local receipts are under `output/item1-5/host*`. The changed model files in the pre-commit receipts match the committed hashes. The additional integration surfaces are `Memory.IdeaRows`, `Memory.LTM1` and `SentenceField.select_fields`. The grammar reader, event writers and checkpoint schema are still the existing implementations.
