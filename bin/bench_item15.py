@@ -144,10 +144,16 @@ def main():
         start = time.perf_counter()
         result = original(model, *a, **kw)
         sync(device)
-        row = dict(seconds=time.perf_counter() - start,
+        seconds = time.perf_counter() - start
+        training = kw.get('train', False)
+        # Count the actual occupied sentence slots after the timed update.
+        # A packed page can close several sentences. Padding closes none.
+        slots = model.inputSpace._packed_sentence_slot_mask
+        row = dict(seconds=seconds,
                    updates=getattr(model, '_training_step_count', 0) - updates,
                    graphs=counters['stats'].get('unique_graphs', 0) - before.get('unique_graphs', 0),
-                   train=kw.get('train', False), sentences=kw.get('batchSize', 0) if kw.get('train') else 0)
+                   train=training, batch_size=kw.get('batchSize'),
+                   sentences=int(slots.sum()) if training else 0)
         row['compiler_seconds'] = sum(sum(compilation_time_metrics.get(name, ())[offset:])
                                       for name, offset in zip(timers, offsets, strict=True))
         record['steps'].append(row)
@@ -343,6 +349,8 @@ def main():
                 finally:
                     sentence_depth -= 1
             sites, percept_addresses = Counter(), Counter()
+            sentence_callers = Counter()
+            source_directory = str(args.source.resolve() / 'bin') + os.sep
             methods = {name: getattr(torch.Tensor, name) for name in
                        ('tolist', 'item', 'cpu', '__bool__', '__int__', '__float__')}
             def counted(name, function):
@@ -353,6 +361,15 @@ def main():
                         in_sentence[name] += 1
                         site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name, str(caller.f_lineno), name)
                         sentence_sites[site] += 1
+                        if args.dispatch_census and caller.f_code.co_filename.startswith(source_directory):
+                            chain = []
+                            frame = caller.f_back
+                            while frame is not None and len(chain) < 3:
+                                code = frame.f_code
+                                if code.co_filename.startswith(source_directory):
+                                    chain.append(f'{Path(code.co_filename).name}:{code.co_name}:{frame.f_lineno}')
+                                frame = frame.f_back
+                            sentence_callers[(':'.join(site), *chain)] += 1
                     if in_look[0]:
                         at_look[name] += 1
                         caller = sys._getframe(1)
@@ -421,6 +438,9 @@ def main():
                                          sentence_reads_by_caller={':'.join(k): v for k, v in sentence_sites.most_common()},
                                          look_reads_by_caller={':'.join(k): v for k, v in sites.most_common()},
                                          lookups_by_caller={':'.join(k): v for k, v in calls.items()})
+            if args.dispatch_census:
+                record['host_census']['sentence_caller_chains'] = {
+                    ' <- '.join(k): v for k, v in sentence_callers.most_common()}
             # Capture live gradients at every optimizer boundary in a separate
             # complete update. runBatch clears .grad before returning, so a
             # post-update .grad snapshot would certify nothing.
@@ -523,8 +543,7 @@ def main():
             model.End()
     record['total_seconds'] = time.perf_counter() - start
     record['warmup_steps'] = record['steps'][:3]
-    # Each reading presentation contains one sentence per real batch row.
-    # Candidate walks are internal work on that sentence.
+    # Candidate walks share the sentence whose slot is counted above.
     steady_rows = [r for r in record['steps'][3:] if not r['graphs'] and not r['compiler_seconds'] and r['train']]
     steady = [r['seconds'] for r in steady_rows]
     record['steady_sentences'] = sum(r['sentences'] for r in steady_rows)

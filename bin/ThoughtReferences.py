@@ -15,7 +15,7 @@ def evidence_pair(meaning):
     return tuple(bindings(meaning).get('_evidence_pair', (0., 0.)))
 
 
-def open_slots(meaning):
+def open_slots(meaning, *, declared=None):
     """An omitted relational operand is open even without an annotation.
 
     A fused idea has one role. A relational row has three roles, including
@@ -23,8 +23,11 @@ def open_slots(meaning):
     An annotation cannot preserve an already filled reference.
     """
     result = []
-    forward_roles = {role for role, _ in bindings(meaning).get('_forward_references', ())}
-    for kind, role in bindings(meaning).get('_open_references', ()):
+    data = bindings(meaning)
+    forward_roles = {role for role, _ in data.get('_forward_references', ())}
+    if declared is None:
+        declared = data.get('_open_references', ())
+    for kind, role in declared:
         # Old checkpoints may retain the retired evidence annotation. It
         # denotes ignorance, never a free variable or something bind fills.
         if kind == 'evidence':
@@ -34,12 +37,12 @@ def open_slots(meaning):
         if role not in (0, 1, 2):
             raise ValueError('an open role must name a canonical row slot')
         elif (meaning.role_refs[role] is None or role in forward_roles or
-              (bindings(meaning).get('_chain_view') and (kind, role) not in bindings(meaning).get('_bound_roles', ()))):
+              (data.get('_chain_view') and (kind, role) not in data.get('_bound_roles', ()))):
             # A structural address to an anonymous constituent is still the
             # raw pending site. Its refined working read clears the forward
             # marker; an address alone does not assert a successful bind.
             result.append((kind, role))
-    if not bindings(meaning).get('_chain_view') and (meaning.sentence_kind == 'relation' or
+    if not data.get('_chain_view') and (meaning.sentence_kind == 'relation' or
             (meaning.sentence_kind is None and int(meaning.role_mask.sum()) > 1)):
         for role in range(3):
             if (not bool(meaning.role_mask[role]) or
@@ -104,7 +107,7 @@ def conclude_exhausted(meaning):
                              constituents=tuple(children)), open_slots(meaning))
 
 
-def with_slots(meaning, slots, *, pair=None, source_evidence=None):
+def slot_bindings(meaning, slots, *, pair=None, source_evidence=None):
     data = bindings(meaning)
     data['_open_references'] = tuple(dict.fromkeys(slot for slot in slots if slot[0] != 'evidence'))
     if pair is not None:
@@ -117,7 +120,11 @@ def with_slots(meaning, slots, *, pair=None, source_evidence=None):
         if len(values) != 2 or any(not 0 <= x <= 1 for x in values):
             raise ValueError('source evidence requires two independent poles in [0,1]')
         data['_source_evidence'] = values
-    return replace(meaning, bindings=data)
+    return data
+
+
+def with_slots(meaning, slots, *, pair=None, source_evidence=None):
+    return replace(meaning, bindings=slot_bindings(meaning, slots, pair=pair, source_evidence=source_evidence))
 
 
 def validate_local_references(meaning):
@@ -258,6 +265,6 @@ def from_closing(meaning, *, evidence=(0., 0.), unresolved=False):
         slots.extend(('relation' if role == 1 else 'referent', role)
                      for role in range(3) if bool(meaning.role_mask[role])
                      and meaning.role_refs[role] is None)
-    data = bindings(meaning)
+    data = slot_bindings(meaning, slots, pair=evidence)
     data['_source_evidence'] = tuple(evidence)
-    return with_slots(replace(meaning, bindings=data), slots, pair=evidence)
+    return replace(meaning, bindings=data)

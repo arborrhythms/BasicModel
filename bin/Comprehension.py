@@ -40,9 +40,15 @@ def from_stack(value, points, memo=None):
     if id(value) in memo:
         return memo[id(value)]
     if is_dataclass(value):
-        result = replace(value, **{field.name:
-            points.get(id(value)) if isinstance(value, Composition) and field.name == 'point'
-            else from_stack(getattr(value, field.name), points, memo) for field in fields(value)})
+        # The operated extension already owns its live field and gradients.
+        # Only composition points have to resolve through the staged STM.
+        updates = {}
+        for field in fields(value):
+            if isinstance(value, Composition) and field.name == 'point':
+                updates[field.name] = points.get(id(value))
+            elif field.name != 'extension':
+                updates[field.name] = from_stack(getattr(value, field.name), points, memo)
+        result = replace(value, **updates)
     elif isinstance(value, dict):
         result = {key: from_stack(item, points, memo) for key, item in value.items()}
     elif isinstance(value, (tuple, list)):

@@ -332,9 +332,10 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
             tree.install_extension(node,action=at)
         if offset:
             stack.insert(len(stack)-1-offset,stack.pop())
+    roots = tuple(stack)
     if evaluation is not None:
-        evaluation.finish(roots=tuple(stack))
-    return tuple(stack)
+        evaluation.finish(roots=roots)
+    return roots
 
 
 def with_extensions(clause, roots=None):

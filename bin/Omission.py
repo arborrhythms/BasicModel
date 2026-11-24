@@ -149,26 +149,34 @@ def native_values(ps, units):
     neither the inventory nor the forward random stream observes that target.
     """
     store = ps.percept_store
+    like = store._basis.W
+    alphabet = dict.fromkeys(byte for raw, _ in units for byte in raw)
+    width = max((len(raw) for raw, _ in units), default=0)
+    if not width:
+        return like.new_zeros(len(units), 0, store.dim), like.new_zeros(len(units), 0, dtype=torch.bool)
+    # Use the first encounter order for the private initializer. The final
+    # zero row supplies padding even when NUL itself is a real target.
+    codes = like.new_zeros(len(alphabet) + 1, store.dim)
     generator = torch.Generator(device='cpu')
     generator.set_state(torch.random.get_rng_state())
-    like = store._basis.W
-    values = like.new_zeros(len(units), max((len(raw) for raw, _ in units), default=0), store.dim)
-    valid = torch.zeros(values.shape[:2], dtype=torch.bool, device=values.device)
-    unknown = {}
-    for b, (raw, _) in enumerate(units):
-        for position, byte in enumerate(raw):
-            pid = store.get_id(bytes([byte]))
-            if pid is not None:
-                value = store._basis.lookup_rows(torch.tensor(pid, device=like.device)).detach()
-            else:
-                if byte not in unknown:
-                    value = torch.randn(store.dim, generator=generator, dtype=like.dtype,
-                                        device=generator.device)
-                    unknown[byte] = (value / value.norm().clamp_min(1e-8)).clamp(0., 1.).to(like)
-                value = unknown[byte]
-            values[b, position] = value
-            valid[b, position] = True
-    return values, valid
+    known, rows, missing, initial = [], [], [], []
+    for seat, byte in enumerate(alphabet):
+        alphabet[byte] = seat
+        pid = store.get_id(bytes([byte]))
+        if pid is None:
+            value = torch.randn(store.dim, generator=generator, dtype=like.dtype, device='cpu')
+            initial.append((value / value.norm().clamp_min(1e-8)).clamp(0., 1.))
+            missing.append(seat)
+        else:
+            known.append(seat)
+            rows.append(pid)
+    if rows:
+        codes[known] = store._basis.lookup_rows(torch.tensor(rows, device=like.device)).detach()
+    if missing:
+        codes[missing] = torch.stack(initial).to(like)
+    seats = torch.tensor([[alphabet[byte] for byte in raw] + [len(alphabet)] * (width - len(raw))
+                          for raw, _ in units], device=like.device, dtype=torch.long).reshape(len(units), width)
+    return codes[seats], seats < len(alphabet)
 
 
 def stage(model):

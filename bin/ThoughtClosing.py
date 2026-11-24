@@ -3,7 +3,7 @@ from dataclasses import replace
 import torch
 
 from Meaning import ConceptualMeaning
-from ThoughtReferences import bindings, evidence_pair, fill, from_closing, has_open_slots, open_slots, with_slots
+from ThoughtReferences import bindings, evidence_pair, fill, has_open_slots, open_slots, slot_bindings, with_slots
 
 
 def closing_question(meaning, clause, parsed=None, program=None, *, store=None, written_rows=None):
@@ -84,23 +84,22 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
         source = replace(source, role_refs=(None, *source.role_refs[1:]))
         slots.append(('referent', 0))
     pair = evidence_pair(committed) if committed is not None else clause.evidence
-    source = with_slots(source, slots, pair=pair)
-    if tuple(pair) == (0., 0.):
-        source = with_slots(source, slots, pair=(0., 0.), source_evidence=(0., 0.))
-    result = from_closing(source, evidence=pair)
-    result = replace(result,extension=meaning.extension)
+    # Resolve the declared slots against the actual operands before making
+    # the owned question. Evidence and provenance edit only its bindings.
+    data = slot_bindings(source, open_slots(source, declared=slots), pair=pair)
+    data['_source_evidence'] = tuple(pair)
+    event = None
     if committed is not None:
-        data = bindings(result)
         data['_query_occurrence'] = store.occurrence_of(index)
         data['_source_evidence'] = tuple(clause.evidence)
         from TimelineRead import request
         event = request(clause, written_rows, store)
         if event is not None:
             data['_query_event'] = event
-        result = replace(result, bindings=data)
-        if event is not None and clause.identity.get('case_value') is not None:
-            from TimelineRead import phase_request
-            result = phase_request(result, clause.identity['case_value'])
+    result = replace(source, extension=meaning.extension, bindings=data)
+    if event is not None and clause.identity.get('case_value') is not None:
+        from TimelineRead import phase_request
+        result = phase_request(result, clause.identity['case_value'])
     return result
 
 

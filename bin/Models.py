@@ -20158,8 +20158,10 @@ class BasicModel(BaseModel):
             meanings, observed, observed_depths, layout, roles = _boundary_observation_view(
                 self.languageSpace, registry, entries, payloads, depth_list,
                 clauses=clauses, completed=[None if value is None else value.clause for value in comprehensions])
-            clauses = [with_extensions(clause, extension[row]) for row, clause in enumerate(clauses)]
-            for value, clause in zip(comprehensions, clauses):
+            for row, (value, clause) in enumerate(zip(comprehensions, clauses, strict=True)):
+                if clause is not None and (value is None or clause is not value.clause
+                                           or clause.meaning.extension is not extension[row]):
+                    clauses[row] = clause = with_extensions(clause, extension[row])
                 if value is not None:
                     value.clause = clause
             meanings = [None if clause is None else clause.meaning for clause in clauses]
