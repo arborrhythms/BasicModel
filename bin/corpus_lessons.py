@@ -278,9 +278,10 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                     owner = model._concept_owner()
                     opened = getattr(model, '_last_open_attention', None)
                     if opened is not None:
+                        from FamiliarTier import observed_row_lists
                         expected = owner._expected_knowing.detach()
                         attention.append(dict(brackets=opened['brackets'].tolist(),
-                            seen=opened['seen'], expected=[dict(rows=(value.amax(-1)>0).nonzero().flatten().tolist(),
+                            seen=observed_row_lists(opened['seen']), expected=[dict(rows=(value.amax(-1)>0).nonzero().flatten().tolist(),
                                 pairs=value[value.amax(-1)>0].tolist()) for value in expected],
                             accepted=(None if not hasattr(model, '_attention_words') else
                                       model._attention_words.accepted.detach().tolist())))

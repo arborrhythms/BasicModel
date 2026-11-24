@@ -6853,43 +6853,29 @@ class BasicModel(BaseModel):
         from ConceptSpread import open_prediction
         from FamiliarTier import open_sentence
         self._definition_fold_field = None
-        activated = open_sentence(self, sid, present)
+        activated = open_sentence(self, sid, present, device_rows=True)
         open_prediction(self, present, sid=sid)
         from DefinitionFold import prepare as prepare_definitions
         self._definition_fold_staged = (None if self._definition_fold_field is None else
             prepare_definitions(owner, self._definition_fold_field))
         # Repeated occurrences of one word prime its row once per sentence.
-        own_lists = [torch.unique(torch.cat((row[row >= 0], row.new_tensor(activated.get(b, ())))))
-                     for b, row in enumerate(own_rows)]
-        own_width = max(1, max(row.numel() for row in own_lists))
-        seen = rows.new_full((rows.shape[0], own_width), -1)
-        for b, row in enumerate(own_lists):
-            seen[b, :row.numel()] = row
+        from SentenceUnderstanding import unique_seen_rows, primed_selection
         registered = owner._sentence_seen_rows
-        if seen.shape[0] > registered.shape[0] or own_width > registered.shape[1]:
+        if own_rows.shape[0] > registered.shape[0]:
             raise RuntimeError('registered sentence exceeds constructed seen capacity')
+        candidates = own_rows if activated is None else torch.cat((own_rows, activated), 1)
+        seen = unique_seen_rows(candidates, registered.shape[1])
         registered.fill_(-1)
-        registered[:len(seen), :own_width].copy_(torch.where(present[:, None], seen, -1))
-        heat = owner.prime_seen(seen, active_rows=present)
+        registered[:len(seen), :seen.shape[1]].copy_(torch.where(present[:, None], seen, -1))
+        # The public priming surface takes a compact common width, with
+        # one padding seat for a batch whose pages are all empty.
+        occupied_columns = (seen >= 0).any(0)
+        occupied_columns[:1] = True
+        heat = owner.prime_seen(seen[:, occupied_columns], active_rows=present)
         if heat is None:
             raise RuntimeError('a reconstruction bank requires its concept priming surface')
         limit = int(self.reconstruction_basis_limit)
-        # The seen ledger is constructed once. Occupancy changes between
-        # sentences, but the compiled inverse's candidate axis cannot change.
-        own_capacity = registered.shape[1]
-        width = own_capacity + min(limit, heat.shape[1])
-        selected = rows.new_full((rows.shape[0], max(1, width)), -1)
-        own = torch.zeros_like(selected, dtype=torch.bool)
-        for b, row in enumerate(own_lists):
-            count = row.numel()
-            selected[b, :count], own[b, :count] = row, True
-            scores = heat[b].clone()
-            scores[row] = -torch.inf
-            scores = scores.masked_fill(scores <= 1, -torch.inf)
-            k = min(limit, scores.numel())
-            if k:
-                values, extra = scores.topk(k, sorted=True)
-                selected[b, own_capacity:own_capacity+k] = torch.where(torch.isfinite(values), extra, -1)
+        selected, own = primed_selection(seen, heat, registered.shape[1], limit)
         valid = selected >= 0
         codes = owner.similarity_codebook.lookup_rows(selected.clamp_min(0), streams=True).clone()
         # An object's composed code and the word naming it have different

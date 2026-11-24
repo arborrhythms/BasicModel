@@ -5,6 +5,36 @@ from torch import nn
 from torch.nn import functional as F
 
 
+def unique_seen_rows(candidates, capacity):
+    """Sorted distinct opening observations per page, padded with -1."""
+    if not candidates.shape[1]:
+        return candidates.new_full((len(candidates), 1), -1)
+    pad = torch.iinfo(candidates.dtype).max
+    rows = candidates.masked_fill(candidates < 0, pad).sort(1).values
+    repeated = rows[:, 1:] == rows[:, :-1]
+    rows = rows.masked_fill(F.pad(repeated, (1, 0)), pad).sort(1).values
+    if rows.shape[1] > capacity:
+        torch._assert_async((rows[:, capacity] == pad).all(),
+                            'registered sentence exceeds constructed seen capacity')
+        rows = rows[:, :capacity]
+    return rows.masked_fill(rows == pad, -1)
+
+
+def primed_selection(seen, heat, capacity, limit):
+    """Append the strongest additional rows after the fixed seats for seen symbols."""
+    selected = F.pad(seen, (0, capacity - seen.shape[1]), value=-1)
+    k = min(limit, heat.shape[1])
+    if not k:
+        return selected, selected >= 0
+    # All padding writes land beyond the inventory. Repeated writes put the
+    # same value there, including on a page with no lexical observations.
+    scores = F.pad(heat.masked_fill(heat <= 1, -torch.inf), (0, 1), value=-torch.inf)
+    scores.scatter_(1, seen.masked_fill(seen < 0, heat.shape[1]), -torch.inf)
+    values, extra = scores[:, :-1].contiguous().topk(k, dim=1, sorted=True)
+    extra = torch.where(torch.isfinite(values), extra, -1)
+    return torch.cat((selected, extra), 1), F.pad(selected >= 0, (0, k))
+
+
 def readback_scores(leaf, codes, priming, *, percept_width=None, meaning_start=None):
     """Read native surface identity by scale-free perceptual cosine and priming.
 

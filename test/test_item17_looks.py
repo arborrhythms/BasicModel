@@ -55,8 +55,8 @@ def held_banks(monkeypatch):
     a sentence's bank go when the sentence closes."""
     import FamiliarTier
     banks, opened = [], FamiliarTier.open_sentence
-    def recorded(model, sid, present):
-        result = opened(model, sid, present)
+    def recorded(model, sid, present, **kwargs):
+        result = opened(model, sid, present, **kwargs)
         banks.append(model._sentence_bank)
         return result
     monkeypatch.setattr(FamiliarTier, 'open_sentence', recorded)

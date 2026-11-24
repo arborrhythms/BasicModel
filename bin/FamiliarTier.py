@@ -355,12 +355,17 @@ def observe_native_cases(owner, batch, support):
                 literal=('ps', tuple(group)), literal_key=raw)
 
 
-def open_sentence(model, sid, present):
+def observed_row_lists(rows):
+    """Export each stream's observed addresses for the corpus report."""
+    return {b: [seat for seat in stream if seat >= 0] for b, stream in enumerate(rows.tolist())}
+
+
+def open_sentence(model, sid, present, *, device_rows=False):
     """Every present word bracket, independent of the grammar's attention."""
     owner, isp = model._concept_owner(), model.inputSpace
     owner._field_activated_references = {}
     if not hasattr(model, '_attention_spans'):
-        return {}  # Metadata-only callers have no native percept field.
+        return None if device_rows else {}  # Metadata-only callers have no native percept field.
     ps, ws = model.perceptualSpace, model.wholeSpace
     mask = isp._word_active_mask & (isp._packed_sentence_ids == int(sid)) & present[:, None]
     spans = model._attention_spans
@@ -388,15 +393,13 @@ def open_sentence(model, sid, present):
     from ConceptEvidence import symbols
     readings = symbols(acts)
     addresses = owner._field_inventory_rows(acts.device)
-    seen = {}
-    for b in range(len(present)):
-        rows = addresses[:, b] if addresses.ndim == 2 else addresses
-        seen[b] = rows[(rows >= 0) & (readings[:, b, 0] > 0)].tolist() if bool(present[b]) else []
+    rows = addresses[:, None] if addresses.ndim == 1 else addresses
+    seen = torch.where(present[None] & (readings[..., 0] > 0), rows, -1).T
     if model.training:
         owner.observe_open_field(acts, active_streams=present)
     model._last_open_attention = dict(sentence=int(sid), brackets=brackets.detach().clone(),
         field_rows=addresses.detach().clone(), seen=seen)
-    return seen
+    return seen if device_rows else observed_row_lists(seen)
 
 
 def member_row(owner, kind, identity):
