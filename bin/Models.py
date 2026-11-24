@@ -13029,24 +13029,27 @@ class BasicModel(BaseModel):
                                   journal_columns[batches, choice_columns])
         if bool((columns[batches, steps] < 0).any()):
             raise ValueError('reading operations require a journal column')
+        # The legacy clause reader consumes the selected lexical positions.
+        # Transfer their rectangular batch once alongside the two slice sizes.
+        sizes = torch.stack(((positions >= 0).sum(1), (actions[..., 0] >= 0).sum(1)), 1)
+        if complete is not None:
+            sizes[:, 0] = torch.where(complete, sizes[:, 0], 0)
+        metadata = torch.cat((sizes, positions), 1).tolist()
+        lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
         entries = []
-        for b in range(int(positions.shape[0])):
-            pos = positions[b]
-            n = int((pos >= 0).sum())
-            if n == 0 or (complete is not None and not bool(complete[b])):
+        for b, (n, L, *source_positions) in enumerate(metadata):
+            if not n:
                 entries.append(None)
                 continue
-            pos = pos[:n]
+            pos = positions[b, :n]
             acts = actions[b]
-            L = int((acts[:, 0] >= 0).sum())
             source_forms = (
                 lexical_forms[b]
                 if lexical_forms is not None and b < len(lexical_forms) else ())
             selected_forms = tuple(
                 source_forms[index] if 0 <= index < len(source_forms) else None
-                for index in pos.detach().to("cpu").tolist())
+                for index in source_positions[:n])
             selected_words = word_rows[b].index_select(0, pos.to(word_rows.device))
-            lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
             selected_lexical_ids = (None if not torch.is_tensor(lexical_ids) else
                 lexical_ids[b].index_select(0, pos.to(lexical_ids.device)))
             selected_ids = (concept_ids[b].index_select(0, pos.to(concept_ids.device))
@@ -13072,7 +13075,7 @@ class BasicModel(BaseModel):
                     # A handle introduced by this walk need not have an MTM
                     # entry/name yet. It remains in the identity/operand
                     # journal, never as a supposedly allocated concept ID.
-                    transient = (selected_ids >= int(reserved[0])) & (selected_ids <= int(reserved[-1]))
+                    transient = (selected_ids >= reserved[0].to(selected_ids.device)) & (selected_ids <= reserved[-1].to(selected_ids.device))
                     # Stable handles need not be dense physical row numbers:
                     # an admitted concept can lie inside this numeric range.
                     transient &= concept_owner._concept_allocator.layer(0).concept_rows(selected_ids) < 0
@@ -13109,20 +13112,21 @@ class BasicModel(BaseModel):
                 from ChunkJournal import capture
                 identity_record = capture(owner(),chunk_state,chunk_scope,transactions,journal,
                     batch=b,positions=pos,columns=columns[b,:L],actions=acts[:L])
+            operation_steps = operations[b, :L].nonzero().flatten()
+            operation_columns = columns[b, operation_steps]
             def operation_rows(table, *, fill=0):
                 if table is None:
                     return None
                 # Readers index by action and skip kinds 0 and 3. Preserve
                 # that alignment with empty sentinels; gather operations only.
-                active = operations[b, :L].nonzero().flatten()
                 result = table.new_full((L, *table.shape[2:]), fill)
-                return result.index_copy(0, active, table[b, columns[b, active]])
+                return result.index_copy(0, operation_steps, table[b, operation_columns])
 
             entry = Reading(
                 held_initial=(None if getattr(self, '_sentence_initial_concepts', None) is None else
                               self._sentence_initial_concepts.for_stream(b)),
                 rows=rows[b].index_select(0, pos.to(rows.device)),
-                word_rows=word_rows[b].index_select(0, pos.to(word_rows.device)),
+                word_rows=selected_words,
                 activations=activations[b].index_select(0, pos.to(activations.device)),
                 leaves=leaf_slab[b].index_select(0, pos.to(leaf_slab.device)),
                 actions=acts[:L], action_index=action_index, targets=targets[b], end_state=end_state[b],

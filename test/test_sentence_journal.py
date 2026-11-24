@@ -228,14 +228,21 @@ def test_program_keeps_the_identity_leaf_stamp_before_reference_resolution():
     def resolve(owner,rows,ids,actions,*,leaf_orders,admit):
         observed.append(leaf_orders.clone())
         return ids.clone(),torch.full_like(ids,-1)
+    from Layers import ConceptAllocator
+    allocator = ConceptAllocator(layer_sizer=lambda order: (17, 16, None, None))
+    inventory = allocator.layer(0)
+    for cid in (101, 102):
+        allocator.concepts[cid] = None
+        inventory.assign_row(('concept', cid), base=10)
+    owner = SimpleNamespace(mtm=MediumTermMemory(n_vectors=512), _concept_allocator=allocator,
+                            _concept_row_of=lambda cid: inventory.row_of(('concept', cid)))
     clock_reads = []
     model=SimpleNamespace(_reconstruction_stack=lambda:trace,inputSpace=SimpleNamespace(),
         symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7)),
                                     _word_reference_orders=torch.tensor([[0,2]])),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve,
             _compose_binary_rules=(SimpleNamespace(method_name='sum'),)),
-        _concept_owner=lambda:SimpleNamespace(mtm=MediumTermMemory(n_vectors=512),
-            _concept_row_of=lambda cid: {101: 10, 102: 11}.get(cid)),
+        _concept_owner=lambda: owner,
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))
     program=(torch.tensor([[0,1]]),torch.tensor([[[0,-1,0],[0,-1,1],[1,0,-1]]]),
