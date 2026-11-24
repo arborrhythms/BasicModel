@@ -112,9 +112,9 @@ def test_only_an_output_departure_credits_the_walk_policy(output_round):
     draw = dict(output_round=torch.tensor([output_round]), thought_round=torch.tensor([-1]))
     draw.update(walk_count=torch.ones(1), walk_rounds=torch.ones(1))
     exploit = SimpleNamespace(parts=torch.tensor([[3., 0., 1.]]),
-        observation={'generation': SimpleNamespace(trace=first)}, output_trace=first)
+        observation={'generation': SimpleNamespace(trace=first)}, attention_words=None, output_trace=first)
     path = SimpleNamespace(parts=torch.tensor([[1., 0., 1.]]), draw=draw,
-        observation={'generation': SimpleNamespace(trace=other)}, output_trace=other,
+        observation={'generation': SimpleNamespace(trace=other)}, attention_words=None, output_trace=other,
         registry=Error(row_mask=active))
     optimizer = torch.optim.SGD(model.parameters(), lr=.1)
     old = {name: p.detach().clone() for name, p in model.named_parameters()}
@@ -198,8 +198,8 @@ def test_separate_selection_credit_cannot_train_its_input_or_decoder(departure):
     else:
         draw = dict(output_round=torch.tensor([-1]),
             thought_round=torch.tensor([0]), walk_count=torch.ones(1), walk_rounds=torch.ones(1))
-        first = SimpleNamespace(parts=torch.tensor([[3., 0., 1.]]), observation={}, output_trace=None)
-        other = SimpleNamespace(parts=torch.tensor([[1., 0., 1.]]), observation={}, output_trace=None,
+        first = SimpleNamespace(parts=torch.tensor([[3., 0., 1.]]), observation={}, attention_words=None, output_trace=None)
+        other = SimpleNamespace(parts=torch.tensor([[1., 0., 1.]]), observation={}, attention_words=None, output_trace=None,
             draw=draw, registry=registry, thinking=SimpleNamespace(traces={0:dict(choices=[
                 dict(probability=probability, alternatives=1)])}))
         credit(model, first, other, active)

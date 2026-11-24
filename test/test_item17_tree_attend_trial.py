@@ -770,7 +770,7 @@ def test_each_look_records_its_request_and_the_where_and_code_of_its_word(tmp_pa
                        where=[round(v, 4) for v in decision['where'][0].tolist()],
                        code_columns=decision['code'][0].nonzero().flatten().tolist(),
                        request_rows_asked=decision['request'][:, 0, 0].nonzero().flatten().tolist()))
-            assert decision['request'].shape == (V, 1, 2)
+            assert decision['request'].shape == (V + wires.shape[-1], 1, 2)
             if index >= 0:
                 assert torch.equal(decision['where'][0], wires[0, index])
                 assert torch.equal(decision['code'][0], code[0, index])

@@ -57,7 +57,7 @@ def thoughts(model, meaning, score, **options):
             costs = dict(reconstruction=0., answer=costs) if not isinstance(costs, dict) else costs
             parts = torch.tensor([[float(costs.get('reconstruction', 0.)), 0., float(costs.get('answer', 0.))]])
             paths.append(SimpleNamespace(thinking=thinking, parts=parts, draw=draw,
-                registry=Error(row_mask=active), observation={}, output_trace=None))
+                registry=Error(row_mask=active), observation={}, attention_words=None, output_trace=None))
             results.append(result)
             effects.append(ThoughtTrialState(model))
         credit(model, paths[0], paths[1], active)
@@ -91,8 +91,8 @@ def thought_surrogate(trace, other, departure, costs):
     from Layers import Error
     probability = other['choices'][max(0, departure)]['probability']
     parts = probability.new_tensor([[costs[0], 0., 0.], [costs[1], 0., 0.]])
-    first = SimpleNamespace(parts=parts[:1], observation={}, output_trace=None)
-    path = SimpleNamespace(parts=parts[1:], observation={}, output_trace=None,
+    first = SimpleNamespace(parts=parts[:1], observation={}, attention_words=None, output_trace=None)
+    path = SimpleNamespace(parts=parts[1:], observation={}, attention_words=None, output_trace=None,
         thinking=SimpleNamespace(traces={0: other}), registry=Error(),
         draw=dict(thought_round=torch.tensor([departure]),
                   walk_count=torch.ones(1, dtype=torch.long),
