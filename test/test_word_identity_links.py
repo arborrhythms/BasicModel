@@ -218,8 +218,14 @@ def test_disjoint_cover_decodes_utf8_within_each_cut_when_escaped_bytes_are_know
     for value, expected in zip(compiled(surface, spans, keys, rows, ranks, -1, escaped_elements=True),
                                (flat, counts, extents), strict=True):
         torch.testing.assert_close(value, expected)
+    from BasicPercepts import escaped_part_starts
+    first = torch.compile(escaped_part_starts, backend='eager', fullgraph=True)(surface, spans, keys)
+    evidence, distinct = identity.located_parts(surface, spans, -1)
     parts, spans = pack_disjoint_units(flat, counts, extents, -1, len(raw))
     for b, (lo, hi) in enumerate(intervals):
+        available = [identity.atoms[atom] for atom in identity.atoms_of(raw[lo:hi]) if atom in identity.atoms]
+        assert evidence[b, 0, :distinct[b, 0]].tolist() == available
+        assert set(rows[first[b, 0] < len(raw)].tolist()) == set(available)
         cover = identity.ordered_cover(raw[lo:hi])
         n = counts[b, 0]
         assert parts[b, 0, :n].tolist() == [identity.atoms[part] for part, _, _ in cover]

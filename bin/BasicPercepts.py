@@ -272,9 +272,42 @@ def part_starts(raw, spans, spellings):
     return torch.cat(starts, -1) if starts else lo.new_empty((*lo.shape, 0))
 
 
-def parts_for_units(raw, spans, spellings, rows, added_rank, padding):
+def escaped_part_starts(raw, spans, spellings):
+    """First exact part in each interval, decoding truncated UTF-8 at its own boundaries."""
+    batch, width = raw.shape
+    if not width or not spans.shape[1] or not spellings:
+        return spans.new_full((*spans.shape[:2], sum(map(len, spellings))), width)
+    pos = torch.arange(width, device=raw.device)
+    found = []
+    # Only an inventory containing escaped bytes needs per-interval boundaries.
+    # Chunk intervals and keys so a long learned inventory has bounded scratch.
+    block = max(1, (1 << 16) // max(1, batch * width))
+    for intervals in spans.split(block, dim=1):
+        lo, hi = intervals.clamp(0, width).unbind(-1)
+        remaining = torch.where(pos >= lo[..., None], hi[..., None] - pos, 0)
+        surface = raw[:, None].expand_as(remaining).reshape(-1, width)
+        cut = _utf8_boundaries(surface, remaining.flatten(0, 1)).reshape(batch, -1, width + 1)
+        starts = []
+        for group in spellings:
+            size = group.shape[1]
+            if size > width:
+                starts.append(lo.new_full((*lo.shape, len(group)), width))
+                continue
+            at = raw.unfold(1, size, 1)
+            end = at.shape[1]
+            eligible = (remaining[..., :end] >= size) & cut[..., :end] & cut[..., size:]
+            chunk = max(1, (1 << 22) // max(1, batch * end * max(size, lo.shape[1])))
+            for keys in group.split(chunk):
+                matches = (at[:, :, None] == keys).all(-1)
+                valid = eligible[..., None] & matches[:, None]
+                starts.append(torch.where(valid, pos[:end, None], width).amin(-2))
+        found.append(torch.cat(starts, -1))
+    return torch.cat(found, 1)
+
+
+def parts_for_units(raw, spans, spellings, rows, added_rank, padding, *, escaped_elements=False):
     """Native addresses for the observed parts, in the ladder's constituent order."""
-    first = part_starts(raw, spans, spellings)
+    first = (escaped_part_starts if escaped_elements else part_starts)(raw, spans, spellings)
     width = raw.shape[1]
     present = first < width
     # Characters follow surface order. Learned runs follow admission order.
@@ -387,13 +420,14 @@ def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
     return parts, counts, locations
 
 
-def occurrence_parts(raw, spans, spellings, part_codes, catalog):
+def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
     if not spellings:
         return (part_codes.new_zeros(batch, occurrences, part_codes.shape[-1]),
                 catalog.new_ones(batch, occurrences, catalog.shape[-1]))
-    found = part_starts(raw, spans, spellings) < raw.shape[1]
+    starts = (escaped_part_starts if escaped_elements else part_starts)(raw, spans, spellings)
+    found = starts < raw.shape[1]
     coordinates = torch.cat((part_codes, catalog.to(part_codes)), -1)
     step = max(1, (1 << 22) // max(1, batch * coordinates.numel()))
     joined = torch.cat([coordinates.masked_fill(~mask[..., None], -torch.inf).amax(-2)
@@ -1207,7 +1241,8 @@ class BasicPercepts(nn.Module):
         if bank is not None:
             spellings, rows, catalog, _ = bank
             basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
-            parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog)
+            parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog,
+                                            escaped_elements=identity.escaped_elements(device))
             codes[..., :self.identity_width] = parts
             held = torch.minimum(held, tight)
         elif identity is not None and O:

@@ -237,7 +237,12 @@ class WordIdentity(nn.Module):
         self._catalog[key] = result
         return result
 
-    def occurrence_bank(self, device, *, escaped_elements=False):
+    def escaped_elements(self, device):
+        return self._occurrences(device, False) is None
+
+    def occurrence_bank(self, device, *, escaped_elements=None):
+        if escaped_elements is None:
+            escaped_elements = self.escaped_elements(device)
         bank = self._occurrences(device, escaped_elements)
         return None if bank is None else bank[:4]
 
@@ -292,7 +297,8 @@ class WordIdentity(nn.Module):
         if bank is None:
             return None
         spellings, rows, _, ranks = bank
-        return parts_for_units(surface, spans, spellings, rows, ranks, padding)
+        return parts_for_units(surface, spans, spellings, rows, ranks, padding,
+                               escaped_elements=self.escaped_elements(surface.device))
 
     def sentence_cover(self, surface, spans, padding, *, identify=False):
         """Read ordered parts, including escaped bytes at a unit's UTF-8 boundaries."""
