@@ -1237,6 +1237,7 @@ A row, one JSON object to a line:
 | `question`, `answer` | the entry that asks, and what is to be said: one word; in category 27 the counting words in order, a space between; the empty text where nothing follows (§14.5, category 24) |
 | `inference` | null, or one of `converse`, `kind`, `chain`, `time`, `rule`, `open` |
 | `set` | null, or the key that the rows of one contrast set share (§14.5) |
+| `probe` | null, or what a held-out row measures: `commuted` or `unseen` (§14.5, categories 4 and 26) |
 
 `load` gives a document with `sentences`, `question` and `answer` named
 as `math_chain_corpus.ChainDocument` names them (its `question` is the
@@ -1263,7 +1264,7 @@ these stand.
 | 1 | `{a}.` with no image; an image of a with no text | none |
 | 2 | `this is {a}.` `that is {a}.` | `what is this ?` {a} |
 | 3 | `{a} is here.` `{a} is not here.` | `is {a} here ?` yes, no. `what is here ?` {a} |
-| 4 | `{a} is {k}.` `{a} is not {k}.` `{a} is {aK}.` `the evens are two, four, six and eight.` `the odds are one, three, five, seven and nine.` | `is {a} {k} ?` yes, no. `what is {a} ?` {k} |
+| 4 | `{a} is {k}.` `{a} is not {k}.` `{a} is {aK}.` `the evens are two, four, six and eight.` `the odds are one, three, five, seven and nine.` And of the kinds themselves, {l} the other kind: `no {K} is {l}.` `the {Ks} are not {l}.` | `is {a} {k} ?` yes, no. `what is {a} ?` {k} |
 | 5 | `{a} and {b} are here.` `{a} or {b} is here.` `this is {a} or {b}.` `{a} is {k} and {b} is {k}.`, each with its own kind | `is {a} here ?` yes, no |
 | 6 | `{a} is less than {b}.` `{b} is greater than {a}.` `{b} is not less than {a}.` | `which is greater, {a} or {b} ?` {b}. `is {a} less than {b} ?` yes, no |
 | 7 | `{a} moved.` `{a} did not move.` `{a} stopped.` | `what moved ?` {a}. `did {a} move ?` yes, no |
@@ -1350,6 +1351,7 @@ For each category, as far as its frames allow:
 | `witness` | 20 | one statement that is false of its image, marked so; only in categories with images |
 | `inference` | 20 | said only, with no image: the answer is not among the statements and follows from them |
 | `contrast` | 20 sets of 12 | category 14 only: the first milestone's sets, below |
+| `haystack` | 20 | the constructions and casts of train in a crowded image: a needle in a haystack |
 
 - *Held out of a category with two things:* the four pairs of
   `math_chain_corpus.HELD_OUT_PAIRS`, (2, 7), (4, 8), (7, 3) and (9, 6),
@@ -1371,7 +1373,29 @@ For each category, as far as its frames allow:
   fifty-six places.
 - *Kinds are never held out.* Category 4's train states the kind of
   all nine. Its generalization split asks of a digit in a frame it was
-  not stated in.
+  not stated in. *What is held out of a kind is its denial, for two
+  digits:* of six and of seven no split but `inference` says that it is
+  not of the other kind, in a statement or in an answer of no, in any
+  category. Their own kind is stated as for the others.
+- *Both tests of a sum* (Alec, §15.10: "Both tests are good"). Of
+  category 26, the four sums above are held out in the order written
+  and taught the other way round: "five plus three is eight." is in
+  train at least twice and "three plus five" nowhere but in
+  `generalization`. Four more are held out both ways, with their
+  differences: 2 and 3, 2 and 5, 3 and 4, 4 and 5, so that "three plus
+  four", "four plus three", "seven minus three" and "seven minus four"
+  are nowhere but in `generalization`. Its twenty rows are ten of each,
+  marked `commuted` and `unseen` in `probe`; a row's statement is no
+  fact of the sum it asks. No sum with one is among the eight, so every
+  "plus one" is taught.
+- *A needle in a haystack* (Alec, §15.10: "Why not needle in an haystack
+  also?"). The two things added that no frame needs are a habit of the
+  other splits and not a rule. A `haystack` document is one of train's
+  constructions with every value its statements and its question leave
+  free put into the image, wherever that changes no truth and no
+  answer, and standing still: six things at the least in each image.
+  Not made in categories 1, 2, 26 and 27, and not where a frame's
+  meaning forbids the others (say which).
 - *Contrast sets* (suggestion 1, "Three is above four"). A set takes two
   values a and b, a column, and two rows of it. Its two scenes hold a
   above b at those places, and b above a at the same places. Each scene
@@ -1390,7 +1414,13 @@ For each category, as far as its frames allow:
   build, §15.8); 19, a chain through time; 24, the rule applied, eight
   that follow as yes and eight as no, and four with the premise left
   out, marked `open`, whose answer is the empty text; 25, through the
-  kind; the others have none.
+  kind; 4, two steps through the kinds (Alec, §15.10): after `{a} is
+  {k}.`, asked `is {a} {l} ?` of the other kind, which is no; half of
+  them with `no {K} is {l}.` or `the {Ks} are not {l}.` said in the row
+  and half with it left to what train taught; six and seven are in at
+  least half of each, marked `unseen` in `probe`. And, for its answers
+  of yes, after the list of a kind's members, asked `is {a} {k} ?` of
+  one of them. The others have none.
 - Answers of yes and no are each between 40 and 60 in a hundred, in
   every split of a category that has them; so are `first` and `second`
   in category 20.
@@ -1416,9 +1446,13 @@ imports no module of the model.
 5. The English that a rule can check: `is`, `was` and `has` with one
    subject and `are` with several; `an` before "even" and "odd" and `a`
    elsewhere; no doubled word; one terminal mark.
-6. The held-out casts are in no train, validation, test or witness row
-   of their category; every digit, every frame and every count is in
-   train.
+6. The held-out casts are in no train, validation, test, witness or
+   haystack row of their category; every digit, every frame and every
+   count is in train. Outside `inference` no row of any category denies
+   six or seven the other kind. Of category 26, a sum held out both ways
+   and its differences are in no row outside `generalization`; a sum
+   held out one way is in train the other way at least twice; each
+   `generalization` row's statement is no fact of the sum it asks.
 7. A scene is `null` in every entry of an `inference` row, in frame 1's
    word alone and in category 26, and nowhere else. An `inference`
    row's question does not ask a fact one of its statements states in
@@ -1434,6 +1468,8 @@ imports no module of the model.
 10. In category 27 every answer is the first n counting words, for the
     n things of its image.
 11. `load` returns the documents with no model built.
+12. Every image of a `haystack` row holds six things or more, and the
+    row's statements and answer hold as its recipe's do (check 3).
 
 ### 14.7 What it does not touch
 
@@ -3074,3 +3110,45 @@ Shown four of the decisions accepted in §15.8, each answer whole.
   training document, and "seven plus two" may be. As frozen, three of the
   four held-out sums are in training the other way round. Put to him:
   hold out both orders, so that a held-out sum has to be worked out.
+
+**His answers, the same day**, each whole:
+
+1. "Good"
+2. "Ok. Seems more like general guidance than a rule. Why not needle in
+   an haystack also?" *Taken:* the `haystack` split of §14.5.
+3. "We ought to be able to say that evens are not odds, and odds are not
+   even, in conceptual space by negation over their order relation. The
+   only problem is that they occur at the same order. Thoughts? We might
+   have not-odd and not-even at a higher order, and then we can have the
+   two entailments we wanted from positives to the negations."
+4. "Both tests are good." *Taken:* §14.5, "Both tests of a sum".
+
+*Claude's thoughts on 3, from the standing docs and not from the source*
+(`doc/Glossary.md`, "The layers" and "Negation"; `doc/Logic.md`, "And, or
+and not in the layers").
+
+- *The problem is as he says.* A kind collects "from every lower order and
+  from none at or above its own". Even and odd are kinds of one order, so
+  neither can hold an entry on the other, and "odd" cannot be made of "not
+  even" where they stand.
+- *His proposal fits the layers as they are described, with nothing new.*
+  A concept of not-odd one order above them is a column with two entries:
+  a Not entry on odd ("Above it, a Not entry reads a symbol's not-value")
+  and an entry on even. Then two lights even, and even lights not-odd:
+  two steps upward, each a positive entry. That not-odd is lit tells
+  against odd by the way back through its Not entry.
+- *One concept serves both sentences.* "two is not odd." and "the evens are
+  not odd." name the same not-odd: a kind collects from every lower order,
+  so it may hold two itself and even.
+- *It gives the two entailments and no third.* Even gives not-odd and odd
+  gives not-even. Not-odd does not give even, which is right: it holds here
+  only because two kinds divide nine digits between them.
+- *What it gives that the corpus could not test before.* Taught digit by
+  digit ("two is not odd."), the denial is a list. Held at the kinds, it
+  reaches a digit whose denial was never said. So the corpus now keeps the
+  denial of six and of seven out of every split but `inference`, and asks
+  it there after "six is even.".
+- *Not checked:* whether a sentence about two kinds raises such a concept
+  in the source as it is, and how a question's no is read from it. It is
+  reasoning across orders, which sigma-pi §19.148 puts after this item and
+  item 1.5; the rows are reported and are not a gate of this item.
