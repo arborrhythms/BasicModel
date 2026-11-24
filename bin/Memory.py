@@ -2364,21 +2364,24 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
     @torch.no_grad()
     def compact_rows(self,keep):
         keep=torch.as_tensor(keep,device=self.slots.device,dtype=torch.long)
-        if len(keep.unique()) != len(keep) or bool(((keep<0)|(keep>=len(self))).any()):
-            raise ValueError('invalid retained idea seats')
-        keep=keep.sort().values
-        kept=set(keep.tolist())
-        removed=[self.occurrence_of(row) for row in range(len(self)) if row not in kept]
+        if keep.numel():
+            if len(keep.unique()) != len(keep) or bool(((keep<0)|(keep>=len(self))).any()):
+                raise ValueError('invalid retained idea seats')
+            keep = keep.sort().values
+        owner = self.owner()
+        if owner is not None:
+            kept = set(keep.tolist()) if keep.numel() else set()
+            removed = [self.occurrence_of(row) for row in range(len(self)) if row not in kept]
         for name in self.columns:
-            value=getattr(self,name)
-            retained=value[keep].clone()
-            value.zero_()
-            if name == 'episodic_concepts': value.fill_(-1)
-            if name == 'referent': value[:,1]=-1
-            value[:len(keep)].copy_(retained)
+            value = getattr(self, name)
+            retained = value.index_select(0, keep) if keep.numel() else None
+            value.fill_(-1 if name == 'episodic_concepts' else 0)
+            if name == 'referent':
+                value[:, 1] = -1
+            if retained is not None:
+                value[:len(keep)].copy_(retained)
         self._write_count(len(keep))
         self.clear_caches()
-        owner=self.owner()
         if owner is not None:
             for reference in removed:
                 owner.mtm.pending.pop(reference,None)
@@ -2617,8 +2620,11 @@ class LTM1(_CountedRows, nn.Module):
         self._symbol_epoch = 0
         self.clear_caches()
 
-    def clear_caches(self):
+    def _clear_index(self):
         self._pairs, self._parts, self._wholes, self._references, self._endpoints = {}, {}, {}, {}, {}
+
+    def clear_caches(self):
+        self._clear_index()
         self._index_version = self._order_revision = None
         self.relation_order.fill_(-1)
         self._effective_source = None
@@ -2709,7 +2715,7 @@ class LTM1(_CountedRows, nn.Module):
     def _index(self):
         if self._index_version == self._topology_revision:
             return
-        self._pairs, self._parts, self._wholes, self._references, self._endpoints = {}, {}, {}, {}, {}
+        self._clear_index()
         for row, (left, right) in self.reference_pairs(self.indices()).items():
             if (left, right) in self._pairs:
                 raise ValueError('duplicate tagged relation')
@@ -2812,6 +2818,21 @@ class LTM1(_CountedRows, nn.Module):
     @torch.no_grad()
     def retain(self, indices):
         indices = torch.as_tensor(indices, dtype=torch.long, device=self.refs.device)
+        if not indices.numel():
+            # An expiring trial has no retained dependencies. Reset the
+            # physical rows and publish the known empty order directly.
+            if self._index_version == self._topology_revision:
+                removed_symbol = any(right[0] == SYMBOL for _, right in self._endpoints.values())
+            else:
+                removed_symbol = bool((self.ref_kinds[:, 1] == SYMBOL).any())
+            self._symbol_epoch += int(removed_symbol)
+            for name in self.columns:
+                getattr(self, name).fill_(-1 if name == 'refs' else 0)
+            self._write_count(0)
+            self.relation_order.fill_(-1)
+            self._clear_index()
+            self._order_revision = self._index_version = self._topology_revision
+            return
         selected = set(indices.tolist())
         if len(selected) != len(indices) or not all(self.contains_rows(indices)):
             raise ValueError('invalid LTM1 retention selection')
