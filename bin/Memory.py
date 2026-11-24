@@ -394,6 +394,83 @@ class ModelState(torch.nn.Module):
         self.register_buffer('when_code', encoder().encode(tick).float(), persistent=False)
         self.last_where = None
 
+        # A tick names one durable head per stream. Signed names use the
+        # same occurrence/relation convention as the sentence-close result.
+        self.register_buffer('_heads', tick.new_empty(0, 1), persistent=False)
+        self._used_ticks = 0
+        self._last_written_tick = -1
+
+    def publish_heads(self, tick, heads):
+        """Record the kept native addresses. Repeated writes share the row for t."""
+        if not heads or all(head in (0, -1) for head in heads):
+            return
+        tick = int(tick)
+        used = self._used_ticks
+        pos = used
+        if used and tick == self._last_written_tick:
+            pos = used - 1
+        elif used and tick < self._last_written_tick:
+            pos = int(torch.searchsorted(self._heads[:used, 0].contiguous(), tick))
+        new = pos == used or (tick != self._last_written_tick and int(self._heads[pos, 0]) != tick)
+        width = max(self._heads.shape[1], len(heads) + 1)
+        if used + int(new) > self._heads.shape[0] or width != self._heads.shape[1]:
+            rows = max(16, 2 * used) if used + int(new) > self._heads.shape[0] else self._heads.shape[0]
+            grown = self._heads.new_full((rows, width), -1)
+            grown[:used, :self._heads.shape[1]].copy_(self._heads[:used])
+            self._heads = grown
+        if new:
+            if pos < used:
+                self._heads[pos + 1:used + 1].copy_(self._heads[pos:used].clone())
+            self._heads[pos].fill_(-1)
+            self._heads[pos, 0] = tick
+            self._used_ticks += 1
+            self._last_written_tick = max(tick, self._last_written_tick)
+        values = self._heads.new_tensor(heads)
+        current = self._heads[pos, 1:len(heads) + 1]
+        current.copy_(torch.where((values == -1) | (values == 0), current, values))
+
+    def root_at(self, stream, tick):
+        """Look up a batch of stream/tick coordinates. Missing roots have address -1."""
+        streams, ticks = torch.broadcast_tensors(torch.as_tensor(stream, device=self._heads.device),
+                                                 torch.as_tensor(tick, device=self._heads.device))
+        rows = self._heads[:self._used_ticks]
+        if not len(rows):
+            return torch.full_like(ticks, -1, dtype=torch.long)
+        at = torch.searchsorted(rows[:, 0].contiguous(), ticks.contiguous()).clamp_max(len(rows) - 1)
+        valid = (rows[at, 0] == ticks) & (streams >= 0) & (streams < rows.shape[1] - 1)
+        value = rows[at, (streams + 1).clamp(1, rows.shape[1] - 1)]
+        return torch.where(valid, value, -1)
+
+    def forget_heads(self, kept, *, relations):
+        """Release temporal references before a forgotten seat can be reused."""
+        if not self._used_ticks:
+            return
+        rows = self._heads[:self._used_ticks]
+        heads = rows[:, 1:]
+        relevant = heads > 0 if relations else heads < -1
+        addresses = heads if relations else -heads - 2
+        heads.masked_fill_(relevant & ~torch.isin(addresses, kept.to(heads)), -1)
+        remaining = rows[(heads != -1).any(1)]
+        self._used_ticks = len(remaining)
+        self._heads[:len(remaining)].copy_(remaining)
+        self._last_written_tick = int(remaining[-1, 0]) if len(remaining) else -1
+
+    def get_extra_state(self):
+        return self._heads[:self._used_ticks].detach().clone()
+
+    def set_extra_state(self, rows):
+        if (not torch.is_tensor(rows) or rows.dtype != torch.long or rows.ndim != 2 or not rows.shape[1]
+                or (len(rows) and (rows.shape[1] < 2 or bool((rows[:, 0] < 0).any())
+                    or bool((rows[1:, 0] <= rows[:-1, 0]).any()) or bool((rows[:, 1:] == 0).any())))):
+            raise ValueError('invalid per-stream sentence root index')
+        self._heads = rows.detach().to(self.when_time.device, copy=True)
+        self._used_ticks = len(rows)
+        self._last_written_tick = int(rows[-1, 0]) if len(rows) else -1
+
+    def _load_from_state_dict(self, state, prefix, *args, **kwargs):
+        state.setdefault(prefix + '_extra_state', self._heads.new_empty(0, 1))
+        super()._load_from_state_dict(state, prefix, *args, **kwargs)
+
     def begin_looks(self, spans, present):
         empty = spans.new_full((len(spans), 2), -1)
         if self.last_where is None or self.last_where.shape != empty.shape:
@@ -2372,6 +2449,9 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         if owner is not None:
             kept = set(keep.tolist()) if keep.numel() else set()
             removed = [self.occurrence_of(row) for row in range(len(self)) if row not in kept]
+        temporal = self.__dict__.get('_temporal_owner')
+        if temporal is not None and temporal() is not None and len(keep) < len(self):
+            temporal().forget_heads(self.row_names[keep], relations=False)
         for name in self.columns:
             value = getattr(self, name)
             retained = value.index_select(0, keep) if keep.numel() else None
@@ -2818,7 +2898,12 @@ class LTM1(_CountedRows, nn.Module):
     @torch.no_grad()
     def retain(self, indices):
         indices = torch.as_tensor(indices, dtype=torch.long, device=self.refs.device)
+        source = getattr(self, '_occurrence_store', None)
+        source = None if source is None else source()
+        temporal = getattr(source, '_temporal_owner', None)
         if not indices.numel():
+            if temporal is not None and temporal() is not None:
+                temporal().forget_heads(indices, relations=True)
             # An expiring trial has no retained dependencies. Reset the
             # physical rows and publish the known empty order directly.
             if self._index_version == self._topology_revision:
@@ -2838,6 +2923,8 @@ class LTM1(_CountedRows, nn.Module):
             raise ValueError('invalid LTM1 retention selection')
         if any(kind == RELATION and child not in selected for pair in self.reference_pairs(indices).values() for kind, child in pair):
             raise ValueError('cannot discard a retained relation dependency')
+        if temporal is not None and temporal() is not None and len(indices) < len(self):
+            temporal().forget_heads(indices, relations=True)
         erase = torch.ones(self.capacity, dtype=torch.bool, device=self.refs.device)
         erase[indices] = False
         if bool((erase & self.ref_kinds[:, 1].eq(SYMBOL)).any()):

@@ -361,6 +361,10 @@ def _read(model, bank, concepts):
         credit.register(model.errors)
     durable = model.symbolSpace.ltm_store
     committed = owner.mtm.consolidate_heads(stores, heads, durable)
+    from Occurrence import operand_name
+    observation.publish_heads(model.present(), [
+        -1 if head is None else operand_name(head[1]) if head[0] == OCCURRENCE else head[1]
+        for head in committed])
     for b, head in enumerate(committed):
         if head is not None:
             owner.mtm.close(durable, stream=b)

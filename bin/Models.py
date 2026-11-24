@@ -179,7 +179,7 @@ def _open_reference_mask(meaning, registry, clause=None):
 
 
 def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stream=-1,
-                             written_rows=None, episode=None, stm_idea=None):
+                             written_rows=None, episode=None, stm_idea=None, stm_head=None):
     """Write the completed field with caller-owned provenance."""
     from ThoughtReferences import bindings, with_slots
     # Native/child addresses are installed by write_clause. Before then the
@@ -190,7 +190,7 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
     clause = replace(clause, meaning=meaning)
     result = store.write_clause(clause, trust=trust, stream=stream,
         evidence=clause.evidence, surprise=-1. if expectation is None else expectation.surprise_for(clause.meaning),
-        written_rows=written_rows, episode=episode, stm_idea=stm_idea)
+        written_rows=written_rows, episode=episode, stm_idea=stm_idea, stm_head=stm_head)
     if written_rows is not None:
         written_rows[id(source_clause)] = result
         for name in ('symbol', 'symbols', 'activations', 'occurrence'):
@@ -4673,8 +4673,13 @@ class BaseModel(Mereology, nn.Module):
         from MeaningKernels import VerbGroups
         from IntuitionLayer import IntuitionLayer
         from BasicPercepts import BasicPercepts
+        from Memory import ModelState
         component_metadata = set()
         for name, module in self.named_modules(remove_duplicate=False):
+            if isinstance(module, ModelState):
+                key = name + '._extra_state'
+                component_metadata.add(key)
+                state.setdefault(key, module.when_time.new_empty(0, 1))
             if isinstance(module, (ColumnDictionary, VerbGroups)):
                 module.prepare_checkpoint(state, name + '.')
             if isinstance(module, IntuitionLayer) and name + '._extra_state' in state:
@@ -17111,6 +17116,8 @@ class BasicModel(BaseModel):
             # 128-D WholeSpace property basis is upstream and never sizes SS.
             symbol_dim=concept_dim,
         )
+        import weakref
+        self.symbolSpace.ltm_store._temporal_owner = weakref.ref(self.conceptualSpace.stm.model_state)
         # Scheduling ownership is separate from SymbolSpace's parameter/state
         # ownership. Keep a non-registering model reference so state_dict does
         # not acquire a second LanguageLayer path.
@@ -20634,6 +20641,7 @@ class BasicModel(BaseModel):
         disc = getattr(self.symbolSpace, 'expectation', None)
         store = getattr(self.symbolSpace, 'ltm_store', None)
         row_addresses = [-1] * len(rows)
+        silent_roots = {}
         from Interpret import SilenceLayer
         silent = SilenceLayer.silent(state[1][11][:, sid], active)
         self._sentence_silence = silent
@@ -20641,7 +20649,9 @@ class BasicModel(BaseModel):
             for b in silent.nonzero().flatten().tolist():
                 partial = chosen[b]['partial'][b]
                 if partial is None:
-                    SilenceLayer.write(store, store.slots[0])
+                    from Occurrence import operand_name
+                    row = SilenceLayer.write(store, store.slots[0])
+                    silent_roots[b] = operand_name(store.row_name(row))
                     continue
                 # No concluded clause. The remaining operands still form one
                 # temporal sequence in memory, without giving the answer a role.
@@ -20681,13 +20691,9 @@ class BasicModel(BaseModel):
                         arrivals=[dict(item) for item in scored.get('arrivals', ())])
                     clause = resolver.prepare(clause, reference_plan)
                     view.get('clauses', [None]*len(view['meanings']))[b] = clause
-                from Memory import OCCURRENCE
                 kept = comprehensions[b]
-                stm_idea = None
-                if (kept is not None and kept.clause is clause and kept.root is not None
-                        and kept.root[0] == OCCURRENCE):
-                    # A resolved forward reference can replace the staged point.
-                    stm_idea = (kept.store, kept.root[1])
+                stm_head = ((kept.store, kept.root) if kept is not None and kept.clause is clause
+                            and kept.root is not None else None)
                 encoding = getattr(self, 'when_encoding', None)
                 if encoding is not None:
                     clause = replace(clause, when=encoding.encode(self._sentence_ticks[int(sid)]).to(clause.meaning.roles))
@@ -20695,7 +20701,7 @@ class BasicModel(BaseModel):
                 episode = self._sentence_episodes.get(int(sid))
                 row = _append_observed_meaning(store, clause,
                     trust=chosen[b]['incoming_trust'],
-                    expectation=comparison, stream=b, written_rows=written_clauses[b], stm_idea=stm_idea,
+                    expectation=comparison, stream=b, written_rows=written_clauses[b], stm_head=stm_head,
                     episode=None if episode is None else tuple(value[b] for value in episode))
                 from FamiliarTier import commit_read_words
                 commit_read_words(self._concept_owner(), entries[b], batch=b,
@@ -20736,6 +20742,9 @@ class BasicModel(BaseModel):
                     disc.include_occurrence(b, store.row(row)['occurrence'],
                         symbols=written_clauses[b].get(('symbols', id(clause)), ()),
                         activations=written_clauses[b].get(('activations', id(clause)), ()))
+        if store is not None:
+            roots = [silent_roots.get(b, address) for b, address in enumerate(row_addresses)]
+            self.conceptualSpace.stm.model_state.publish_heads(self._sentence_ticks[int(sid)], roots)
         # All selected links consume the geometry on which their menus were
         # scored. Move word/argument positions only after those writes finish.
         for words, occupied in placements:

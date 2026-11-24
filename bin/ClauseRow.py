@@ -413,7 +413,7 @@ class ClauseRows:
 
     @torch.no_grad()
     def write_clause(self,clause,*,trust=None,stream=-1,evidence=None,
-                     written_rows=None,episode=None,surprise=-1.,stm_idea=None):
+                     written_rows=None,episode=None,surprise=-1.,stm_idea=None,stm_head=None):
         """Keep the selected idea or declared semantic pair, never its syntax."""
         import math
         from PartClosing import PartClosing
@@ -433,7 +433,8 @@ class ClauseRows:
         if owner is None:
             raise ValueError('clause admission requires its native concept owner')
         closing = PartClosing(owner, self)
-        closing.stm_idea = stm_idea
+        if stm_head is None and stm_idea is not None:
+            stm_head = stm_idea[0], (OCCURRENCE, stm_idea[1])
         closing.episode = episode
         closing.source_trust = 1. if trust is None else min(1., abs(float(trust)))
         nodes = closing.prepare_clause(clause)
@@ -518,7 +519,8 @@ class ClauseRows:
             record = closing._planned[id(closing._terms[id(value)])]
             force = not sentence
             entry = closing.close(value,pair=pair,sentence=sentence,stream=stream,force=force,
-                from_trust=from_trust,surprise=surprise if sentence else -1.)
+                from_trust=from_trust,surprise=surprise if sentence else -1.,
+                retained=stm_head if sentence else None)
             if sentence:
                 # Record this source's assertion, never a prior source's merged pair.
                 pair = tuple(pole * closing.source_trust for pole in pair)

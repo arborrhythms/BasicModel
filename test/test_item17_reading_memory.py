@@ -44,6 +44,7 @@ def test_looks_extend_one_head_and_commit_it_once(tmp_path, monkeypatch, eager_r
         append, commit = STM1.append_occurrence, ReadingMemory.commit
         reconstruct = SentenceField.reconstruction
         arriving, retained, surfaces = {}, [], []
+        times = []
 
         def appended(parts, head, occurrence):
             result = append(parts, head, occurrence)
@@ -55,6 +56,7 @@ def test_looks_extend_one_head_and_commit_it_once(tmp_path, monkeypatch, eager_r
 
         def committed(stores, heads, target):
             before = len(target), len(target.parts)
+            times.append(model.present())
             result = commit(stores, heads, target)
             counts = []
             for store, saved, source in zip(stores, result, heads, strict=True):
@@ -96,8 +98,13 @@ def test_looks_extend_one_head_and_commit_it_once(tmp_path, monkeypatch, eager_r
                 model.runBatch(train=False, optimizer=model.getOptimizer(), batchSize=len(batch),
                     batch_override=(model.inputSpace.prepInput(batch), torch.empty(len(batch), 0)))
             assert surfaces[-len(batch):] == [text.strip() for text in batch]
-            for (_, _, names), wanted in zip(retained[-len(batch):], words, strict=True):
+            from Occurrence import operand_name
+            state = model.conceptualSpace.stm.model_state
+            assert durable._temporal_owner() is state
+            for stream, ((head, _, names), wanted) in enumerate(zip(retained[-len(batch):], words, strict=True)):
                 assert Counter(names) == Counter(wanted)
+                address = -1 if head is None else operand_name(head[1]) if head[0] == OCCURRENCE else head[1]
+                assert state.root_at(stream, times[-1]) == address
             model.End()
         for saved, leaves, names in retained:
             assert tuple(durable.parts.leaves(saved)) == leaves
@@ -334,3 +341,35 @@ def test_completed_idea_uses_the_winning_value_and_the_closing_clock():
     for column in expected.columns:
         assert torch.equal(getattr(expected, column), getattr(actual, column)), column
     assert torch.equal(working.slots[source], value)
+
+
+def test_per_stream_roots_survive_restore_and_forget_reused_handles():
+    import weakref
+    from Memory import LTM0, ModelState, SYMBOL
+    from Occurrence import operand_name
+    memory = LTM0(12, capacity=4, percept_width=8, relation_capacity=8)
+    state = ModelState()
+    memory._temporal_owner = weakref.ref(state)
+    idea = memory.append_idea(torch.zeros(12))
+    name = operand_name(memory.row_name(idea))
+    relation = memory.parts.add((SYMBOL, 4), (SYMBOL, 5))
+    state.publish_heads(16, [name, relation])
+    state.publish_heads(17, [relation])
+    state.publish_heads(14, [relation, name, relation])
+    state.publish_heads(16, [-1, relation])
+    streams = torch.tensor([0, 1, 0, 1, 2, 2, 3])
+    ticks = torch.tensor([16, 16, 17, 17, 14, 16, 20])
+    expected = torch.tensor([name, relation, relation, -1, relation, -1, -1])
+    torch.testing.assert_close(state.root_at(streams, ticks), expected)
+    restored = ModelState()
+    restored.load_state_dict(state.state_dict(), strict=True)
+    torch.testing.assert_close(torch.compile(restored.root_at, fullgraph=True, backend='eager')(streams, ticks),
+                               expected)
+    memory._temporal_owner = weakref.ref(restored)
+    memory.parts.retain([])
+    assert memory.parts.add((SYMBOL, 5), (SYMBOL, 4)) == relation
+    torch.testing.assert_close(restored.root_at(streams, ticks), torch.tensor([name] + [-1] * 6))
+    memory.compact_rows([])
+    assert restored.root_at(streams, ticks).eq(-1).all()
+    state.load_state_dict({}, strict=True)
+    assert state.root_at(0, 16) == -1

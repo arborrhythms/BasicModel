@@ -25,7 +25,6 @@ class PartClosing:
         self.content_key = None
         self.source_trust = 1.
         self.staged_points = {}
-        self.stm_idea = None
 
     def _working_reference(self, reference):
         """Import a referenced chain, without asserting it or allocating concepts."""
@@ -452,7 +451,7 @@ class PartClosing:
         finally:
             order = None  # the recursive reader would hold the clause in a cycle
 
-    def _write_occurrence(self,record,*,pair,sentence,metadata,stream,surprise):
+    def _write_occurrence(self,record,*,pair,sentence,metadata,stream,surprise,stm_idea=None):
         term=record['value']
         def pending(value):
             source = value.get('metadata')
@@ -482,7 +481,6 @@ class PartClosing:
         destination = self.store if self.working is None else self.working
         first = len(destination)
         entry = getattr(self, 'episode', None) if sentence else None
-        stm_idea = self.stm_idea if sentence else None
         if (stm_idea is not None and working is None
                 and not marks.get('_open_references')
                 and not (marks.keys() - {'_identity', '_evidence_pair', '_open_references'})
@@ -551,7 +549,7 @@ class PartClosing:
         return self.occurrence_order(clause, context=context)
 
     def _write(self,record,*,pair=(0.,0.),sentence=False,metadata=None,
-               stream=-1,surprise=-1.,force=False,from_trust=False):
+               stream=-1,surprise=-1.,force=False,from_trust=False,retained=None):
         term = record['value']
         forced_occurrence = (force or (sentence and record.get('selected_reference') is not None)) and (
             term.binding is not None or record.get('mention'))
@@ -571,10 +569,24 @@ class PartClosing:
             result = self._working_reference(record['reference'])
         elif self.entry_kind(record, sentence=sentence, force=force) == OCCURRENCE:
             pair = tuple(pole * self.source_trust for pole in pair)
+            stm_idea = None
+            if retained is not None:
+                source, (kind, name) = retained
+                if kind == OCCURRENCE and source.index_of_row(name) is not None:
+                    stm_idea = source, name
             result = self._write_occurrence(record,pair=pair,sentence=sentence,
-                metadata=metadata,stream=stream,surprise=surprise)
+                metadata=metadata,stream=stream,surprise=surprise,stm_idea=stm_idea)
         else:
-            left, right = (self._write(child, stream=stream) for child in children)
+            retained_children = (None, None)
+            if retained is not None:
+                source, (kind, name) = retained
+                if kind == RELATION:
+                    endpoints = source.parts.references(name)
+                    if term.operation == 'whole':
+                        endpoints = endpoints[::-1]
+                    retained_children = tuple((source, ref) for ref in endpoints)
+            left, right = (self._write(child, stream=stream, retained=head)
+                           for child, head in zip(children, retained_children, strict=True))
             if term.operation == 'whole':
                 left, right = right, left
             if from_trust and metadata is not None and not metadata.polarity:
@@ -620,9 +632,9 @@ class PartClosing:
         return result
 
     def close(self,clause,*,pair=(0.,0.),sentence=False,
-              stream=-1,surprise=-1.,force=False,from_trust=False):
+              stream=-1,surprise=-1.,force=False,from_trust=False,retained=None):
         record = self._planned[id(self._terms[id(clause)])]
         result = self._write(record,pair=pair,sentence=sentence,
             metadata=clause.meaning,stream=stream,surprise=surprise,
-            force=force, from_trust=from_trust)
+            force=force, from_trust=from_trust, retained=retained)
         return result

@@ -391,3 +391,28 @@ def test_lifted_sign_is_not_mistaken_for_its_open_percept(monkeypatch):
     assert len(percepts) == 1 and percepts[0][-1] != left[1]
     assert pool.entries[pool.token_of(('ltm', f.store.address_domain, left[1]))].kind != NULL_CONCEPT
     assert not getattr(f.cs, '_kept_definition_witnesses', ())
+
+
+def test_retained_pair_translates_its_selected_stm_idea(monkeypatch):
+    from dataclasses import replace
+    from Memory import STM0, OCCURRENCE, RELATION, SYMBOL
+    from ClauseRow import Composition
+
+    f = SentenceFixture(monkeypatch)
+    clause = f.clause(('part', 'a', 'b'))
+    template = f.registry._payload(('sym', f.noun('a')))
+    left = Composition(torch.zeros_like(template))
+    right = Composition(template, reference=f.noun('b'))
+    term = Composition(template, (left, right), operation='part')
+    clause = replace(clause, composition=term)
+    source = STM0(f.store.nDim, 4, relation_capacity=16)
+    value = torch.arange(f.store.nDim, dtype=template.dtype, device=template.device) / f.store.nDim
+    child = source.append_idea(value)
+    head = source.parts.add((OCCURRENCE, source.row_name(child)), (SYMBOL, f.noun('b')))
+    _, result = f.store.write_clause(clause, stm_head=(source, (RELATION, head)))
+    new, symbol = f.store.parts.references(result)
+    assert new[0] == OCCURRENCE and symbol == (SYMBOL, f.noun('b'))
+    durable_row = f.store.index_of_row(new[1])
+    torch.testing.assert_close(f.store.slots[durable_row], value)
+    source.expire()
+    torch.testing.assert_close(f.store.slots[durable_row], value)
