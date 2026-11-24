@@ -530,7 +530,7 @@ class ClauseRows:
             occurrences[id(value)] = self.occurrence_of(row)
             point = closing.event_point(value, entry[0])
             if point is not None:
-                compacted = replace(ConceptualMeaning.from_description(point),
+                compacted = ConceptualMeaning.from_description(point,
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
                     extension=getattr(value.identity.get('result_composition'), 'extension', ()))
                 event_pair = pair if sentence else tuple(pole * closing.source_trust for pole in pair)

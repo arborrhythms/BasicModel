@@ -5,7 +5,7 @@ are addresses beside semantic payloads, never numeric features of those payloads
 """
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from collections.abc import Mapping
 import math
 from typing import Any
@@ -123,7 +123,8 @@ def _role_layout(payload, depth, layout, role_mask, concept_dim=None):
         value = value.float()
     if layout == "stm":
         value = value[[1, 2, 0]] if depth == 3 else value.flip(0)
-    value = F.pad(value, (0, 0, 0, 3 - depth))
+    if depth < 3:
+        value = F.pad(value, (0, 0, 0, 3 - depth))
     if role_mask is None:
         occupied = torch.arange(3, device=value.device) < depth
     else:
@@ -251,20 +252,20 @@ class ConceptualMeaning:
         return cls(roles, occupied, **metadata)
 
     @classmethod
-    def from_description(cls, value):
+    def from_description(cls, value, **metadata):
         """Explicit legacy interface: a vector is NP1; a matrix is infix.
 
         Never flatten multiple roles or batches into an apparent unary concept.
         Callers holding physical STM must use ``from_payload(layout='stm')``.
         """
         if isinstance(value, cls):
-            return value
+            return replace(value, **metadata) if metadata else value
         payload = value if torch.is_tensor(value) else torch.as_tensor(value, dtype=torch.float32)
         if payload.ndim == 1:
             payload = payload[None]
         if payload.ndim != 2 or not 1 <= payload.shape[0] <= 3:
             raise ValueError("description must be a concept vector or 1–3 infix roles")
-        return cls.from_payload(payload, depth=payload.shape[0], layout="infix")
+        return cls.from_payload(payload, depth=payload.shape[0], layout="infix", **metadata)
 
     @property
     def has_context(self):

@@ -126,6 +126,8 @@ def test_the_stm_head_names_the_operators_and_their_operands(tmp_path, monkeypat
 
     def observed(tree, store, concepts, where, when, language):
         result = original(tree, store, concepts, where, when, language)
+        if torch.is_tensor(concepts):
+            concepts = [cid if cid > 0 else None for cid in concepts.tolist()]
         head = tree.trace.head
 
         def read_pair(ref):

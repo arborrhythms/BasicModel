@@ -102,7 +102,7 @@ def fields(model, observation, sid, *, trust):
             clause = resolver.prepare(clause, plans[row], preview=True)
         clause = semantic_clause(clause, original)
         meaning = (clause.meaning if clause.relation is not None else
-            replace(ConceptualMeaning.from_description(clause.point),
+            ConceptualMeaning.from_description(clause.point,
                     polarity=clause.meaning.polarity, sentence_kind='idea',
                     extension=clause.meaning.extension))
         program = observation['entries'][row]

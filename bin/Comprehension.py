@@ -378,15 +378,13 @@ class Evaluation:
             store.prepare(source, self.program.tree, self.composition_sites)
             # The tree into the trial's STM before the closing stages into
             # it: each word a row naming its concept, each step its edge.
-            def concept(word):
-                # The word's own concept (the word read, which a writer can
-                # spell), else the identity the comprehension resolved.
-                for cid in (-1 if self.program.word_ids is None else int(self.program.word_ids[word]),
-                            int(self.ids[word])):
-                    if cid > 0 and self.owner._concept_row_of(cid) is not None:
-                        return cid
-                return None
-            self.program.tree.write_edges(store, [concept(w) for w in range(len(self.program.leaves))],
+            # Prefer the word the writer can spell, then its resolved identity.
+            # Both must name a seated concept at this point in the trial.
+            words = self.program.word_ids
+            names = torch.stack((self.ids if words is None else words, self.ids), -1)
+            seated = (names > 0) & (self.owner._concept_allocator.layer(0).concept_rows(names) >= 0)
+            concepts = torch.where(seated[:, 0], names[:, 0], torch.where(seated[:, 1], self.ids, -1))
+            self.program.tree.write_edges(store, concepts,
                                           self.program.symbol_where, self.program.symbol_when, self.language)
             closing = PartClosing(self.owner, source, working=store)
             root, entries = closing.stage(clause, trust=self.trust)

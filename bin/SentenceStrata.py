@@ -61,12 +61,18 @@ class IdeaStack(STM0):
             raise FloatingPointError('non-finite occupied meaning role')
         # Basic word ideas have only their native referent. raw_meaning_of
         # reads it directly from this column, as it does for copied LTM0 ideas.
-        refs = [self._reference_value(None if cid is None else ('sym', cid)) for cid in concepts]
+        if torch.is_tensor(concepts):
+            named = concepts > 0
+            refs = torch.stack((torch.where(named, SYMBOL, 0), torch.where(named, concepts, -1)), -1)
+        else:
+            refs = self.referent.new_tensor([
+                self._reference_value(None if cid is None else ('sym', cid)) for cid in concepts
+            ]).reshape(count, 2)
         first_name = int(self.names_issued)
         seats = torch.arange(start, end, device=self.slots.device)
         with torch.enable_grad():
             self.slots = self.slots.index_copy(0, seats, points.to(self.slots))
-        self.referent[start:end] = self.referent.new_tensor(refs).reshape(count, 2)
+        self.referent[start:end] = refs
         self.trust[start:end] = 0.
         self.activity[start:end] = self.activity_config.default
         self.row_names[start:end] = first_name + seats - start
@@ -153,7 +159,9 @@ class Tree:
             for band, offset in ((where, start - 4), (when, start)):
                 if band is not None:
                     points[:, offset:offset + 4] = band.detach().index_select(0, words.to(band.device)).to(points)
-        names = store.append_words(points, [concepts[word] for word, _ in shifts])
+        shifted = (concepts.index_select(0, words) if torch.is_tensor(concepts)
+                   else [concepts[word] for word, _ in shifts])
+        names = store.append_words(points, shifted)
         for (_, at), name in zip(shifts, names, strict=True):
             heads[at] = OCCURRENCE, name
         from PartsOfSpeech import operation_name
@@ -164,7 +172,7 @@ class Tree:
                 operands = store.parts.sequence([heads[child] for child in index.operands[at]])
                 heads[at] = RELATION, store.parts.add((SYMBOL, operator), operands, truth_plus=1.)
         trace.head = store.parts.sequence([heads[root] for root in index.roots])
-        return sum(concept is None for concept in concepts)
+        return (concepts <= 0).sum() if torch.is_tensor(concepts) else sum(concept is None for concept in concepts)
 
     def view(self, address):
         view = self._views.get(address)
@@ -325,7 +333,7 @@ class SentenceStrata(nn.Module):
             retired = 0 if previous is None else previous
             store.compact_rows([index for index in range(len(store)) if index != retired])
         self._names += 1
-        meaning = replace(ConceptualMeaning.from_description(point.detach()), bindings={'_relations': tuple(relations)})
+        meaning = ConceptualMeaning.from_description(point.detach(), bindings={'_relations': tuple(relations)})
         row = store.append_meaning(meaning, name=self._names if address is None else address)
         if source is not None:
             selected, pending = set(), [relation for context in store.working.values()

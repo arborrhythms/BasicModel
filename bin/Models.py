@@ -20662,10 +20662,9 @@ class BasicModel(BaseModel):
                 # temporal sequence in memory, without giving the answer a role.
                 ideas = partial.tree.ideas
                 concepts = partial.word_ids if partial.word_ids is not None else partial.concept_ids
-                ids = [None if cid <= 0 else cid for cid in concepts.tolist()]
                 ideas.to(device=partial.leaves.device, dtype=partial.leaves.dtype)
                 ideas.prepare(store, partial.tree, {})
-                partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when, self.languageSpace)
+                partial.tree.write_edges(ideas, concepts, partial.symbol_where, partial.symbol_when, self.languageSpace)
                 head, = self._concept_owner().mtm.consolidate_heads([ideas], [partial.tree.trace.head], store)
                 from Memory import OCCURRENCE
                 from Occurrence import operand_name
@@ -20778,7 +20777,7 @@ class BasicModel(BaseModel):
                     refs = (-1, -1, -1)
             else:
                 meaning = (clause.meaning if clause.relation is not None else
-                           replace(ConceptualMeaning.from_description(clause.point),
+                           ConceptualMeaning.from_description(clause.point,
                                    polarity=clause.meaning.polarity,
                                    sentence_kind='idea'))
                 refs = tuple(ref if type(ref) is int and ref not in (-1, 0) else -1 for ref in clause.refs)

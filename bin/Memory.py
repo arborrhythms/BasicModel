@@ -2315,7 +2315,7 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             return self.part_row(index[1])['meaning']
         if not 0 <= int(index) < len(self):
             raise IndexError('unavailable idea')
-        meaning = replace(ConceptualMeaning.from_description(self.slots[int(index)].detach()),
+        meaning = ConceptualMeaning.from_description(self.slots[int(index)].detach(),
             role_refs=(self.referent_of(index),None,None),sentence_kind='idea')
         return meaning
 

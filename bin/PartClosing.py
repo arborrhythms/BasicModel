@@ -207,7 +207,7 @@ class PartClosing:
             record = self.prepare(value)
             point = self.event_point(value, entry[0])
             if point is not None:
-                event = replace(ConceptualMeaning.from_description(point),
+                event = ConceptualMeaning.from_description(point,
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
                     extension=getattr(value.identity.get('result_composition'), 'extension', ()))
                 self.working.append_meaning(event,
@@ -494,11 +494,9 @@ class PartClosing:
             if 'percept_value' in record or term.operation=='sign':
                 content=record.get('percept_value')
                 if content is None: content=torch.zeros_like(term.point)
-            value=replace(ConceptualMeaning.from_description(self.store._fit(content)),
-                bindings=marks,polarity=True if metadata is None else metadata.polarity)
-            extension=getattr(term,'extension',())
-            if extension:
-                value=replace(value,extension=extension)
+            value = ConceptualMeaning.from_description(self.store._fit(content),
+                bindings=marks, polarity=True if metadata is None else metadata.polarity,
+                extension=getattr(term, 'extension', ()) or ())
             if self.working is not None and entry is None and value.extension:
                 from EpisodicMemory import for_meaning
                 entry = for_meaning(self.store, value)
