@@ -844,6 +844,8 @@ def answer_word(spec, value, cast):
         return cast.data['truth_words'][int(value)]
     if kind == 'count':
         return ' '.join(cast.data['counting'][:value])
+    if kind == 'number':
+        return cast.data['counting'][value - 1]
     if 'words' in spec:
         return spec['words'][value]
     if 'form' in spec:
@@ -1126,6 +1128,7 @@ class Generator:
         self.short = {}
         self.attempts = 0
         self.said_view = View([None], cast)
+        self.counted = None
 
     # slots
 
@@ -1861,8 +1864,21 @@ class Generator:
         return made
 
     def counting(self, split, want):
+        """Category 27: each form (a statement or question of the recipe) has
+        an equal share of every split. Every split's rows of one form are drawn
+        before any of the next form's, so a form's draws do not depend on the
+        forms after it."""
+        if self.counted is None:
+            forms = self.recipe['statements'] + self.recipe.get('questions', [])
+            splits = [s for s in SPLITS if self.recipe['splits'].get(s)]
+            self.counted = {s: [] for s in splits}
+            for frame in forms:
+                for s in splits:
+                    self.counted[s] += self.count_form(frame, s, self.recipe['splits'][s] // len(forms))
+        return self.counted[split]
+
+    def count_form(self, frame, split, want):
         rng = self.rng
-        frame = self.recipe['statements'][0]
         made, failures = [], 0
         while len(made) < want and failures < 3 * want + 30:
             n = rng.randint(1, 9)

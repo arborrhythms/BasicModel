@@ -1,6 +1,6 @@
 {
  "cast": "recipes/cast.json",
- "cast_sha256": "4048cd498b2dbd43fafd7f1b466c001ce593174e33d6a6f8bc18fe15883cdd65",
+ "cast_sha256": "4467b7789dbf54aec38182d490ff17fc949b960017c10b3961901dfea1b326d8",
  "command": "python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt",
  "files": [
   {
@@ -556,16 +556,16 @@
    "name": "counting",
    "path": "category-27-counting.jsonl",
    "recipe": "recipes/category-27-counting.json",
-   "recipe_sha256": "f6791ebfd0f0db5418be4b4a20ef9ff15d856d4ac059112501511937b1627167",
+   "recipe_sha256": "14a2c1912f0260d96822d913bf7aaabc3417f29f1f9d4eb2f0a80ae76902ea9b",
    "rows": {
-    "generalization": 20,
-    "test": 20,
-    "train": 100,
-    "validation": 20
+    "generalization": 40,
+    "test": 40,
+    "train": 200,
+    "validation": 40
    },
-   "sha256": "577e5e9fe26747925724032d880136c09f06346faff315142ef048973ce8fd6c",
+   "sha256": "043c62867b2f770a46623d934aaf7ed19aab5a56af7416455c23e5928e9147f3",
    "verify": {
-    "accepted": 160,
+    "accepted": 320,
     "rejected": 0
    }
   }
@@ -963,11 +963,13 @@
   "greater",
   "has",
   "here",
+  "how",
   "if",
   "is",
   "it",
   "left",
   "less",
+  "many",
   "minus",
   "move",
   "moved",

@@ -34,6 +34,7 @@
   ],
   "plural_nouns": [
    "evens",
+   "many",
    "odds"
   ],
   "plural_verbs": [
@@ -173,11 +174,13 @@
   "greater",
   "has",
   "here",
+  "how",
   "if",
   "is",
   "it",
   "left",
   "less",
+  "many",
   "minus",
   "move",
   "moved",

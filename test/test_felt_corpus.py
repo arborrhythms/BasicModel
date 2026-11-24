@@ -538,11 +538,24 @@ def test_every_contrast_set_has_twelve_rows_that_turn_on_the_exchange():
 def test_counting_answers_are_the_first_counting_words():
     counting = cast()['counting']
     entry = next(e for e in entries() if e['category'] == 27)
+    asked = [q['text'] for q in recipe(entry)['questions']]
+    assert len(asked) == 1
+    forms = Counter()
     for row in rows(entry):
-        assert len(row['entries']) == 1 and row['entries'][0]['text'] == '' and row['question'] == 0
+        assert len(row['entries']) == 1 and row['question'] == 0
+        text = row['entries'][0]['text']
+        assert text in ('', asked[0]), row['key']
         n = len(things(row['entries'][0]['scene']))
-        assert row['answer'] == ' '.join(counting[:n])
+        if text == '':
+            # no text: the first n counting words
+            assert row['answer'] == ' '.join(counting[:n])
+        else:
+            # asked how many: the nth counting word alone
+            assert row['answer'] == counting[n - 1]
         assert all(len(p) == 1 for p in things(row['entries'][0]['scene']).values())
+        forms[(row['split'], text)] += 1
+    for split in entry['rows']:
+        assert forms[(split, '')] == forms[(split, asked[0])], split
 
 
 # 12 ------------------------------------------------------------------------

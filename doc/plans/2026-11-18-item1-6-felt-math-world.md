@@ -5926,3 +5926,149 @@ and the slow tier once at submission.
 
 28.3, points 3 and 4. Whether the Pi over values may share `held_at`
 (25.11). Nothing else: the steps go in the order of 28.2.
+
+## 27. The corpus's fourth revision: the return
+
+The work of §26.2. Frozen again with the documented command and seed
+(`freeze --seed 20261118 --recipes data/felt/recipes --out data/felt`); a
+second freeze into `/tmp/item1-6-2026-11-24/refreeze` writes the same 28
+files byte for byte. Run as step 5 says (plain pytest, `-p no:cacheprovider`):
+`test/test_felt_corpus.py`, `test/test_item16_scene.py`,
+`test/test_game_corpus.py`: **38 passed**.
+
+### 27.1 Files changed, and why
+
+| File | Change |
+|---|---|
+| `data/felt/recipes/category-27-counting.json` | Gains `questions`: one frame `q01`, text `how many are here ?`, predicate `count`, answer type `number`. `splits` doubled to 200, 40, 40, 40: the file's counts, which each form shares equally. |
+| `data/felt/recipes/cast.json` | `how` and `many` join `vocabulary`; `many` joins `english.plural_nouns` (27.5, decision 3). |
+| `bin/felt_world_corpus.py` | `answer_word`: the type `number` is the nth counting word, `counting[n - 1]`. `Generator.counting` now draws each form (the recipe's statements, then its questions) for every split, an equal share each, every split of one form before any of the next; the body that drew the rows is unchanged, moved to `count_form(frame, split, want)`. `self.counted` holds the rows between the per-split calls. No word is written in the Python. `p_count` and `verify` needed no change: `verify` already evaluates any frame's `count` record on the image and compares the answer with `answer_word` of the frame's answer type. |
+| `data/felt/category-27-counting.jsonl`, `data/felt/manifest.json` | Frozen again. |
+| `test/test_felt_corpus.py` | Check 10 as §26.1 words it: a row with no text answers the first n counting words; a row with the recipe's question answers the nth word alone; no other text; each split holds as many rows of each form. No other assertion changed. |
+
+`test/test_item16_scene.py` asserts no count this revision changes (its only
+count is 27 files); it is not changed. Its S3 now prints 5760 documents,
+28493 rows, 27812 images (22 empty), 103799 pixels.
+
+### 27.2 Category 27 by split and form
+
+| Split | `s01` the count (no text) | `q01` `how many are here ?` | All |
+|---|---|---|---|
+| train | 100 | 100 | 200 |
+| validation | 20 | 20 | 40 |
+| test | 20 | 20 | 40 |
+| generalization | 20 | 20 | 40 |
+
+The second form's images are drawn afresh: none of its 160 images is an
+image of the first form, and none repeats. Held out as before: every
+generalization row's values sum to a multiple of 4, no other row's do, and
+train holds every count 1 to 9 (check 6 passes). The second form's answers
+over all splits: three 23, five 22, nine 22, six 21, seven 18, one 16, four
+14, two 13, eight 11.
+
+### 27.3 The first form, and the other categories
+
+- **The first form's 160 rows are the same bytes as before**, key for key and
+  in the same order: filtered to `variant == "s01"`, the new file's lines equal
+  the old file's lines exactly. Each split's first-form rows come first, keys
+  `-0000` to `-0099` (train) and `-0000` to `-0019` (the others); the second
+  form follows at `-0100` to `-0199` and `-0020` to `-0039`.
+- **No other category's file changed**: the sha256 of each of the other 26
+  row files equals its hash in the manifest as it was, and their manifest
+  entries are unchanged in every field. In the manifest, only the entry of
+  category 27, `cast_sha256` and `vocabulary` differ; `longest_text` stays
+  10 words, 48 bytes.
+
+### 27.4 Hashes, before and after
+
+| File | Before | After |
+|---|---|---|
+| `category-27-counting.jsonl` | `577e5e9fe26747925724032d880136c09f06346faff315142ef048973ce8fd6c` | `043c62867b2f770a46623d934aaf7ed19aab5a56af7416455c23e5928e9147f3` |
+| `manifest.json` | `3a3b27ac1fd99e4af4995646680d48b68d2914a674cefeb2c5820493b525287a` | `13bea151138c8b09faab454bddbe521447a8147ca812d67d5c5747bf21f6eb6a` |
+| `recipes/cast.json` | `4048cd498b2dbd43fafd7f1b466c001ce593174e33d6a6f8bc18fe15883cdd65` | `4467b7789dbf54aec38182d490ff17fc949b960017c10b3961901dfea1b326d8` |
+| `recipes/category-27-counting.json` | `f6791ebfd0f0db5418be4b4a20ef9ff15d856d4ac059112501511937b1627167` | `14a2c1912f0260d96822d913bf7aaabc3417f29f1f9d4eb2f0a80ae76902ea9b` |
+| the other 26 `category-*.jsonl` | as in the manifest before | unchanged |
+
+The files before are kept in `/tmp/item1-6-2026-11-24/corpus_before/` (the
+manifest and category 27) and `/tmp/item1-6-2026-11-24/felt_full_before/`
+(all of `data/felt/`).
+
+### 27.5 Three documents of the new form, whole
+
+~~~
+{"answer":"three","category":27,"entries":[{"scene":[[0,5,0,225],[1,0,0,123],[3,7,0,101]],"text":"how many are here ?"}],"inference":null,"key":"felt-27-train-0100","meaning":[{"args":[],"cast":[],"entry":0,"frame":"q01","predicate":"count","slots":{},"truth":true,"value":3}],"name":"counting","operators":[],"probe":null,"question":0,"set":null,"split":"train","variant":"q01"}
+.5......
+........
+........
+........
+........
+9.......
+........
+...4....
+~~~
+
+~~~
+{"answer":"seven","category":27,"entries":[{"scene":[[1,0,0,102],[2,4,0,222],[4,3,0,151],[4,4,0,51],[5,2,0,175],[5,4,0,27],[6,4,0,201]],"text":"how many are here ?"}],"inference":null,"key":"felt-27-validation-0020","meaning":[{"args":[],"cast":[],"entry":0,"frame":"q01","predicate":"count","slots":{},"truth":true,"value":7}],"name":"counting","operators":[],"probe":null,"question":0,"set":null,"split":"validation","variant":"q01"}
+.4......
+........
+.....7..
+....6...
+..9.218.
+........
+........
+........
+~~~
+
+~~~
+{"answer":"four","category":27,"entries":[{"scene":[[1,1,0,123],[3,0,0,147],[3,5,0,50],[7,0,0,175]],"text":"how many are here ?"}],"inference":null,"key":"felt-27-generalization-0020","meaning":[{"args":[],"cast":[],"entry":0,"frame":"q01","predicate":"count","slots":{},"truth":true,"value":4}],"name":"counting","operators":[],"probe":null,"question":0,"set":null,"split":"generalization","variant":"q01"}
+...6...7
+.5......
+........
+........
+........
+...2....
+........
+........
+~~~
+
+(The grids are the plane, row y down, column x across, each thing shown by
+its value; the third's values sum to 20, a multiple of 4, as its split
+requires.)
+
+### 27.6 What could not be built as written, and what was decided
+
+Everything in §26.1 was built as written. Decided by the implementer:
+
+1. *How the first form stays byte for byte.* Category 27 draws from one
+   stream (the recipe's seed, `20261118 * 100 + 27`, as before). Drawing the
+   second form after the first within each split would have moved every
+   later split's first-form draws, so every split of the first form is drawn
+   before any row of the second; the second form is drawn afresh from the same
+   stream after them. No other seed is used.
+2. *The second form is a question frame* (`questions`, `q01`), with a new
+   answer type `number`, the nth counting word read from `cast.json`'s
+   `counting`. The first form stays the statement `s01` with its answer type
+   `count`. The meaning record of a `q01` row is the `count` predicate's, as
+   for `s01`, with `value` n and `truth` true.
+3. *`many` as a plural subject.* Check 5 requires `are` to have several as its
+   subject, and reads what is plural from `english.plural_nouns` in
+   `cast.json`. The subject of `are` in `how many are here ?` is `how many`,
+   so `many` (a plural pronoun here) is listed there; without it check 5
+   rejects every row of the new form. This is a word of the cast's English,
+   not a change to the test.
+4. *The recipe's `splits`* are the file's counts (200, 40, 40, 40), divided
+   equally among the forms, so that the manifest's `short` keeps comparing
+   what a split holds with what the recipe asks.
+
+Nothing removed: no file was deleted.
+
+### 27.9 Review of the fourth revision (Claude, 2026-11-24)
+
+**Accepted.** Claude read the change and ran `test_felt_corpus.py` and
+`test_item16_scene.py` (31 passed). Category 27 holds 320 rows, 160 of each
+form; the first form's rows are the bytes they were and no other
+category's file changed. One thing decided by the implementer: `many` is
+among the cast's plural nouns, so that `how many are here ?` passes the
+check that `are` has a plural subject. Accepted: the word is a recipe's
+datum and no assertion changed.
+

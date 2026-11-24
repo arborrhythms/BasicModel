@@ -40,7 +40,17 @@
  "name": "counting",
  "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
  "operators": [],
- "questions": [],
+ "questions": [
+  {
+   "answer": {
+    "type": "number"
+   },
+   "args": [],
+   "id": "q01",
+   "predicate": "count",
+   "text": "how many are here ?"
+  }
+ ],
  "schema": 1,
  "slots": {
   "a": "digit",
@@ -50,10 +60,10 @@
   "l": "kind"
  },
  "splits": {
-  "generalization": 20,
-  "test": 20,
-  "train": 100,
-  "validation": 20
+  "generalization": 40,
+  "test": 40,
+  "train": 200,
+  "validation": 40
  },
  "statements": [
   {
