@@ -6628,12 +6628,12 @@ class ConceptualAttentionLayer(SparseLayer):
         T = len(specs)
         view = SparseLayer(T + 1, size, nonlinear=False, device=device)
         members = max([1] + [len(rows) for _, rows, _ in specs])
-        seats = torch.full((T, members), -1, dtype=torch.long)
+        seats = []
         complete = []
-        for slot, (thing, rows, whole) in enumerate(specs):
+        for _, rows, whole in specs:
             seated = [lookup.get(row, -1) for row in rows]
-            if seated:
-                seats[slot, :len(seated)] = torch.tensor(seated, dtype=torch.long)
+            seats.extend(seated)
+            seats.extend([-1] * (members - len(seated)))
             complete.append(whole and all(seat >= 0 for seat in seated))
         host_rows, host_cols, missing = [], [], []
         for i in selected:
@@ -6641,20 +6641,22 @@ class ConceptualAttentionLayer(SparseLayer):
             host_rows.append(lookup[rows_host[i]])
             host_cols.append(slot)
             missing.append(slot < T and not complete[slot])
-        selected_t = torch.tensor(selected, dtype=torch.long, device=device)
-        rows_t = torch.tensor(host_rows, dtype=torch.long, device=device)
-        cols_t = torch.tensor(host_cols, dtype=torch.long, device=device)
+        # The structural writer already has these addresses. Transfer its
+        # columns together and let the bound view refer to their storage.
+        count = len(selected)
+        addresses = torch.tensor(selected + host_rows + host_cols + seats, dtype=torch.long, device=device)
+        selected_t, rows_t, cols_t, member_seats = addresses.split((count, count, count, len(seats)))
+        flags = torch.tensor(missing + complete, dtype=torch.bool, device=device)
         view._rows, view._cols = host_rows, host_cols
         view._index = {(row, col): i for i, (row, col) in enumerate(zip(host_rows, host_cols))}
         view._dev_cache = (rows_t.device, rows_t, cols_t)
         if self.values is not None:
             object.__setattr__(view, 'values', self.values.index_select(0, selected_t))
         view._inventory_edges = selected_t
-        view._missing_sources = torch.tensor(missing, dtype=torch.bool, device=device)
+        view._missing_sources, view._thing_complete = flags.split((count, T))
         view._thing_columns = True
         view._things = [thing for thing, _, _ in specs]
-        view._thing_seats = seats.to(device)
-        view._thing_complete = torch.tensor(complete, dtype=torch.bool, device=device)
+        view._thing_seats = member_seats.view(T, members)
         return view
 
     def forward(self, options):
