@@ -2055,3 +2055,228 @@ And, while the grid was being read for its text:
 *Not decided by "Ok" as Claude reads it:* questions 2 to 8 keep their
 defaults as defaults. None is needed for the grid. Question 2 is needed
 before round one's text and is put to him again with it.
+
+*Moved, the same day.* Alec: "Please do not work on iCloud Drive. Check out
+1.7 in ~/github and work there." The work is now in
+`~/GitHub/wikioracle/basicmodel`, cloned from GitHub at `ad8fafea92`, with
+the branch `item1-6` fetched from the old checkout (nothing pushed) and its
+worktree at `.worktrees/item1-6`. The Python environment is a copy of the
+one the gates were measured with (Python 3.12.13, torch 2.15.0), since
+`requirements.txt` pins no version.
+
+## 16. The grid in three dimensions: the round before round one (Claude, 2026-11-23; the text for the implementer is §16.6)
+
+Alec, 2026-11-23: "Please build the 3D grid if not built." It is not built
+(C.2). What is to be built was decided in item 1.7 and specified there as
+step f of the twelfth pass (sigma-pi §19.132 and §19.133, and the twelfth
+pass's text, f); this section is that step, written for the source as it
+is now.
+
+### 16.1 What is decided
+
+All Alec's, 2026-11-22, in sigma-pi §19.132 and §19.133:
+
+- "I would like to see .where as a 3D space for all models, it simplifies
+  things. I am not convinced that we need 4 elements per dim as opposed to
+  3, but if they are only bf16 that's not too bad." So three axes in every
+  configuration, and an axis keeps four wires until he chooses.
+- "Text will be 1D: zeros for dim 2 and 3. The perception of intensity
+  (feelings) can be 1,2, or 3D. Images will generally be intensity, so
+  zeros for dim 3."
+- "so we need an NN.param called cerebellum which is the 3D space filled
+  with sinusoids that is copied (muxed) into the basic percepts, and
+  demuxed to create the location for the associated vector in the percept
+  codebook. The spatial parameter should be fixed". And of its name:
+  "lets call it the grid."
+
+And of 2026-11-23 (C.6): the domains of two modalities do not overlap in
+the common space.
+
+### 16.2 What exists
+
+From a reading of every file that names the width (an Opus reader, at
+`ad8fafea92`).
+
+- *The width.* `WHERE_WIRES = WHEN_WIRES = 4` (`bin/BasicPercepts.py`); the
+  band of each kind of space is `(4, 4)` in `bin/architecture.py`
+  (`_CANONICAL_SHAPE`), and `(0, 0)` for the conceptual and output spaces. A
+  space's declared `nDim` is its event's width and embraces the band: its
+  `.what` is `nDim` less the band (`Models._obj_size`,
+  `EventEncoding`). A form's event is 64 + 64 + 8 = 136 wide
+  (`WordIdentity.resolve_identity_layout`). The numeric configurations
+  give the input's width as `nDim - 8`: 9 for XOR's one number at each of
+  two places, 36 for an image of 28 by 28. The schema has `nWhere` for a
+  space and no configuration sets it.
+- *A place* is one whole number, its address on one line of named ranges
+  (`WhereRegistry.slices`). Its four wires are a ladder of two rungs over
+  that number (`WhereEncoding`), whose periods come from the registry's
+  whole capacity.
+- *The grid* is `WhereRegistry.code`: one row of wires for each address,
+  made at its first reader, a parameter in no optimizer. One test makes a
+  registry of 512,808,192 addresses and never reads it.
+- *The match* on the way back is already written axis by axis
+  (`FieldReverse.where_match`: "One axis today").
+- *Where the 4 is written out* and not taken from the constant: STM's field
+  of a chunk's place, the checks of a place's shape in MTM and in a
+  conceptual field, the band's place in an LTM point (`when_start - 4`, at
+  thirteen sites), `CoordinateCheckpoint.py`, `checkpoint_migrations.py`,
+  and the tests.
+- *Not places, though they use the ladder:* the budget's counter
+  (`bin/Language.py`) and the extent of a `.what` (`Models._what_where_encoder`).
+- *Whole numbers that are keys and not wires:* a percept's `place`
+  (`BasicPercepts.reserve`, `perceive_value`, `value_coordinates`), the
+  ranges' bounds, `where_offset`, the brackets of a field
+  (`[start, end)`), `ModelState.last_where`.
+
+### 16.3 The design
+
+*Claude's, for the build, except where 16.1 gives it as Alec's.*
+
+1. *A place is three whole numbers,* (x, y, z), none below zero.
+2. *Its wires are twelve:* the four wires of today's ladder for x, then
+   the four for y, then the four for z. One ladder serves the three axes,
+   with the periods the registry's capacity gives today, so that a step
+   along any axis moves a place's wires by the same amount. `WhereEncoding`
+   stays what it is, the code of one number, and is the code of an axis.
+3. *An address stays.* Every place of every range keeps its whole-number
+   address, and everything that uses an address as a key is unchanged. The
+   registry gains the two maps between an address and its place.
+4. *A range is a box.* It has a shape on the three axes and an origin. A
+   range declared as today, by a count, is a line on the first axis that
+   begins at x = its first address, with y = z = 0: so for every range
+   that exists, x is the address, and its first four wires are the wires
+   it has today. The registry refuses a layout in which two boxes share a
+   place (C.6, "subtitle").
+5. *Text* is such a line. *The numeric input* is a box of its own shape:
+   an input of n places of one number each lies on the first axis; an
+   input of h rows of w numbers is an image, with x its column and y its
+   row, and its addresses stay row by row as they are. So XOR's two places
+   are where they were, and an image's pixel has a place on two axes.
+6. *The grid* is one parameter named `grid`, of one row of twelve wires
+   for each address, made at its first reader as today, fixed, in no
+   optimizer, taking a gradient. The name `code` goes.
+7. *The match* is `where_match` as written, over the three axes.
+8. *The width.* The number of axes is a key, `architecture.whereAxes`, 3
+   in `data/model.xml` and in the schema, in no other configuration. The
+   wires to an axis stay four, in the code, where they are today. The
+   width of the band is their product and is computed in one place.
+   **Every space's `.what` keeps its width in every configuration:** each
+   declared width that embraces the band grows by 8, and nothing else of a
+   configuration changes.
+9. *From wires to a place:* each axis's four wires are decoded to its
+   number, and the three numbers are the place; its address is the
+   registry's. Nothing decodes the first axis alone and calls it the
+   place.
+10. *What stays on a line in this round.* The brackets of a field, which
+    are addresses. The pyramid of the reconstruction and of a look's
+    forecast, which is over text's positions (an image is put back in
+    round one). The two ladders that are not places, which keep four
+    wires.
+11. *Saved models.* A model saved before this round has the old width and
+    is not read by the new source. No migration is written for it.
+
+### 16.4 What it is not
+
+No range for a felt modality, no `scene`, no reader, nothing of round one.
+No change to how a look chooses, to what a cost charges, or to the
+pyramid's axes. No change to the time's wires. Nothing learned in the
+grid. Not the measure of four wires against three as a change: it is
+measured and reported (16.5, G9), and an axis keeps four.
+
+### 16.5 Certificates
+
+In `test/test_item16_grid.py`, each printing what it measured.
+
+| | Certificate | Passes when |
+|---|---|---|
+| G1 | The width | `WHERE_WIRES` is four times `whereAxes` and is 12. For every configuration under `data/`, every space's `.what` width, its number of vectors and its number of places are what they were at `ad8fafea92`; the table of both is in the return |
+| G2 | The first axis is today's | For every address of a model's registry, the first four wires of `grid` are the wires that address had at `ad8fafea92`, and the other eight are the code of zero on y and on z |
+| G3 | There and back | For every address of every range, a box among them, the place of the address gives the address back; the twelve wires decode to the place, at the capacities the configurations use and at the greatest a test declares |
+| G4 | Boxes | An image of 28 by 28 has row r, column c at (c, r, 0) and at the address it has today; two boxes that share a place are refused |
+| G5 | The match on two axes | On a box, each place's wires match its own address best, and its four neighbours by a side are equally far: a step in x costs what a step in y costs |
+| G6 | Text reads as before | The seven tests of `test_item17_echo.py`, `test_reading_pretraining.py` and the tests of the reconstruction that passed in the baseline pass |
+| G7 | The gates | Both stopping gates pass, and their configurations differ from `ad8fafea92` in declared widths alone |
+| G8 | The great registry | The registry of 512,808,192 addresses is still made without the grid being built |
+| G9 | Four wires or three (a measure) | The least distance between the wires of two neighbouring places, with four wires to an axis and with three in the forms that fit (say which), at the model's capacities. Reported; nothing is built on it |
+
+**Measured beside them:** the time of the sixteen sentences of the
+standard lesson and of the seven echo tests, before and after, on this
+machine; the greatest memory of a worker.
+
+### 16.6 Text for the implementer
+
+~~~
+Item 1.6, the grid in three dimensions. Read §16 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md whole, then C.2, C.6 and
+H.5 of the same document, then sigma-pi §19.132 and §19.133
+(doc/plans/2026-11-14-sigma-pi-layers.md, from line 9950). §16.3 is what
+you build and §16.4 what you do not. This changes the source of the
+model in some twenty files and its tests in some ninety, so keep each
+change as small as it can be: main is being changed by another
+implementer at the same time and this branch has to take it in.
+
+Keep a file, tmp/item1-6/grid_progress.md, and bring it up to date after
+each step below: what is done, what is left, what you decided. If your
+context runs short, stop at the end of a step with that file current.
+
+0. Before you change anything: write the script that prints, for every
+   configuration under data/, each space's declared width, its band, its
+   `.what` width, its number of vectors and its number of places, and the
+   registry's ranges. Run it on the frozen copy of the unchanged source
+   (its path is in your prompt) and keep the output: it is G1's "before",
+   and G2's wires are taken from the same copy.
+1. The registry (bin/WhereRegistry.py) and the code of an axis
+   (WhereEncoding in bin/Spaces.py): points 1 to 6 and 9 of §16.3. The
+   parameter is `grid`; nothing is left named `code`.
+2. The width: point 8. One key, `architecture.whereAxes`, in
+   data/model.xml and data/model.xsd, and in no other file of data/. The
+   band's width is computed in one place and every literal that is the
+   band's width, or a place's width, or the band's place in a vector,
+   reads it. §16.2 lists the kinds; the reader's whole inventory is in
+   your prompt. A literal 4 or 8 that is not a place's width stays.
+3. The configurations: each declared width that embraces the band grows
+   by 8, so that step 0's script prints the same `.what` widths, vectors
+   and places as before for every configuration. Change nothing else in
+   them.
+4. Every producer of a place's wires takes them from the grid, and every
+   decoder goes through the registry: points 7 and 9. The two ladders
+   that are not places keep their four wires; say where they are.
+5. The numeric input as a box: point 5.
+6. test/test_item16_grid.py, the certificates G1 to G9 of §16.5.
+7. Port the tests that name the width or the grid. A test's assertion is
+   kept and given the new width; none is weakened, skipped or marked as
+   expected to fail, and no seed is chosen. A test that asserted
+   something this round makes false (an address decoded row by row from
+   four wires, say) asserts what is true now; list each such test.
+8. Run, with the bounded runner (.venv/bin/python test/test_report.py
+   <files>), RUN_TRAINED and RUN_SLOW unset: both stopping gates,
+   test/test_item17_echo.py, test/test_reading_pretraining.py,
+   test/test_item16_grid.py, every test file you changed, and every test
+   file that names WHERE_WIRES, nWhere, WhereEncoding, WhereRegistry,
+   where_registry or the grid. Compare with the baseline sweep of the
+   unchanged source (its result.json is named in your prompt): no test
+   that passes there may fail here. For one that does, find the cause
+   and repair the source, not the test. Do not run the whole sweep;
+   Claude runs it at review.
+9. Touch nothing of §16.4, no file of the corpus (bin/felt_world_corpus.py,
+   data/felt, test/test_felt_corpus.py) and no standing doc: Claude
+   writes doc/Spaces.md, doc/Glossary.md, doc/Params.md,
+   doc/FutureWork.md and the others when you return. Nothing removed is
+   deleted: a file that goes is moved to a dated folder under /tmp and
+   named in the return.
+10. Return as §17, at the end of the same document: every file changed
+    and, in a line each, why; the table of G1, before and after; each
+    certificate with what it printed; every width that changed; every
+    test ported, and apart from those every test whose assertion changed;
+    the comparison with the baseline (tests that passed there and fail
+    here, each with its cause; tests that failed there and pass here);
+    the two times and the memory; the saved models and committed fixtures
+    that the old width was written into, and what became of each;
+    whatever in §16.3 was wrong or could not be built as written, and
+    what you built in its place. You do not stop on a question of design:
+    propose, build, mark it. Stop only if a gate cannot be made to pass
+    with its assertion as it is.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
