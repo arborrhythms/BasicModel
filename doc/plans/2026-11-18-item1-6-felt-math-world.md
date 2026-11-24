@@ -8534,3 +8534,96 @@ passed.
   value's row only; it is to say "no thing is wider than this", and is
   changed at the close with the gates run after it.
 
+
+## 42. Steps F and G: intensities out; relations of place (Claude, 2026-11-24; the text for the implementer is 42.3)
+
+### 42.1 F: intensities out (§24, point 1)
+
+The model gives an image out as it gives words out. The way back that
+puts an image back at the opening (step C, step E) is asked for at the
+output, from the field the understanding ends with.
+
+1. `reconstructModalities` gives, beside the sentence and the value beside
+   the words, the image: for each row the intensities over the scene's
+   box, or nothing where the row had no image.
+2. It is read from the understanding's field by the one way back
+   (`ImagePercepts.put_back`), not from anything kept from the input.
+3. *Not built:* an image given in answer to words ("draw three"). That
+   needs the name, which is not made automatically (39.11).
+
+| | Certificate | Passes when |
+|---|---|---|
+| F1 | An image out | An image presented until it is known comes out at the output place by place, to its percepts' centroids, pixels and things alike |
+| F2 | Both out | A sentence with its image gives its words out as it does without the image, and the image beside them |
+| F3 | None | A row with no image gives no image out; an empty image gives one with nothing in it |
+| F4 | From the field | With the field's evidence at nothing, nothing comes out |
+
+### 42.2 G: relations of place (28.6; §23)
+
+An axis of place is a sorted line. The relation of two things on an axis
+is less-than between their places there, numerical parthood, and an
+arrangement is read by such relations and is no percept of its own.
+
+1. For the things of an image's bank (step E; a pixel alone is a thing of
+   one place), a reading of every ordered pair: on each axis, whether the
+   first lies wholly before the second (its greatest coordinate less than
+   the other's least); and whether the two touch by a side. Each on two
+   lanes, for and against, so that it can stand in a field.
+2. Which end of the y axis is "above" is the corpus's, read from how
+   `bin/felt_world_corpus.py` defines it, and said in the return.
+3. *Not built:* the words for relations, a look that takes two things,
+   and the certificate on category 14's questions, which waits for item
+   1.4 (22.3, question 9). Nothing reads the relations yet.
+
+| | Certificate | Passes when |
+|---|---|---|
+| G1 | Order on an axis | For two things, before on x, on y and on z each agree with their places, both ways round, and neither is before the other where their extents overlap on that axis |
+| G2 | Touching | Two things that share a side touch; two a place apart do not |
+| G3 | The corpus | For every image of the frozen corpus whose row records a meaning of above, below, left of, right of, on top of, under or next to between two things, the relation read from the image's bank agrees with the recorded truth. The count of images and of relations checked is printed |
+
+### 42.3 Text for the implementer
+
+~~~
+Item 1.6, steps F and G: intensities out; relations of place. Read §42.1
+and §42.2 of doc/plans/2026-11-18-item1-6-felt-math-world.md (what you
+build), then §33 (step C), §37 (step T2), §41 (step E), §23, §28.6 and
+H.5. Then the source: bin/ImagePercepts.py, bin/NumericPercepts.py,
+BasicPercepts.value_bank and the things of step E, reconstructModalities
+and its carriers in bin/Models.py, bin/ScalarPercepts.decode as the
+example of a second modality at the output, bin/WhereRegistry.py (place,
+address), and in bin/felt_world_corpus.py the predicates of place and how
+a row records its meaning.
+
+Keep tmp/item1-6/out_progress.md current after each step.
+
+1. F, points 1 and 2 of §42.1. Say where the image is read from at the
+   output.
+2. G, points 1 and 2 of §42.2, as a function beside the image's reader.
+   Say what it returns and its shape.
+3. test/test_item16_out.py: F1 to F4. test/test_item16_relations.py: G1
+   to G3. G3 maps a meaning's two things to the things of the image by
+   their values; say how.
+4. Port a test only where a point of §42 makes its assertion false, and
+   list each with old and new. No other assertion is weakened, skipped or
+   marked; no seed is chosen. Neither stopping gate, nor anything a gate
+   uses, is touched. The text modality's output is not to change.
+5. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_item17_echo.py,
+   test/test_item16_things.py, test/test_item16_values.py,
+   test/test_item16_scene.py, test/test_item16_scene_field.py,
+   test/test_item16_out.py, test/test_item16_relations.py,
+   test/test_item18_scalar.py, test/test_item18_recognition.py, and every
+   test file that names reconstructModalities. No test that passes in the
+   sweep may fail, apart from those known to fail by chance.
+6. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+7. Return as tmp/item1-6/section43.md, headed "## 43. Steps F and G: the
+   return": files changed and why; each certificate with what it printed,
+   G3's counts in full; every test ported; what in §42 could not be built
+   as written and what you built. You do not stop on a question of
+   design: propose, build, mark it. Stop only if a gate cannot pass with
+   its assertion as it is.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
