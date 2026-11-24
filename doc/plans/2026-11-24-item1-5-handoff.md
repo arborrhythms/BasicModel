@@ -1,5 +1,40 @@
 # Item 1.5 integration handoff
 
+## Current local checkpoint
+
+Item 1.5 is open. The training code on local `main` is `e2e2cd472374881b4d225ba7cd13e9a442963422`. Its base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains the reviewed 1.7 handoff `d38029113103ce5e9cf1223eaa55c9181010d649`. Integration with 1.6 and push remain with Alec.
+
+| Matched metric | Released 1.7 | Current |
+| --- | ---: | ---: |
+| CPU sentences/s | 6.99 | 10.09 |
+| Metal sentences/s | 0.786 | 1.448 |
+| CPU first three updates, seconds | 0.938, 0.634, 0.576 | 0.791, 0.414, 0.421 |
+| Metal first three updates, seconds | 3.352, 4.464, 4.932 | 2.332, 2.963, 3.262 |
+| Native partitioned CPU Inductor, cold first update / steady sentences/s | 3.85 s / 6.50 | 3.41 s / 9.31 |
+| Fresh lesson through restored 122/122 sampled and evaluation, seed 1505 | 97.89 s, 54 updates | 42.65 s, 36 updates |
+| Explicit CPU tensor reads in sentence / inside looks | 23,609 / 2,409 | 6,200 / 223 |
+| Repeated native percept addresses in an update, including padding | 3,696 | 629 |
+| Profiled time composing / scoring two candidate paths, CPU seconds | 0.282 / 0.115 | 0.191 / 0.072 |
+
+Both checkouts used the four-page paced reading workload, batch four, float32, one CPU thread, PyTorch 2.15 and seed 1505. All twelve updates included backward and the optimizer. The nine steady timings exclude the first three updates. Metal was synchronized. The default measurements used eager execution. The separate partitioned Inductor run captured one graph. A separate three-exploration CPU run achieved 6.16 sentences/s. Eight independent pages with one exploration achieved 12.47. Both configurations evaluate sixteen candidate paths per update. The three exploratory suffixes and their scoring callbacks together took 0.358 s in the instrumented update. None of the four candidate walks mutated the persistent growth tables. The selected rows in that update were all greedy. Mixed winners are covered separately by the trial tests.
+
+The Metal dispatch census inside the sentence fell from 21,426 to 4,332 native scalar extractions and from 3,108 to 2,024 explicit device-to-host copies. Strict capture of the complete ordinary entry failed on both CPU Dynamo and Metal Inductor at the lexical stem's conversion of learned span endpoints to Python. The tiling, ragged bounds and retained-pair translation passed separate fullgraph Metal checks.
+
+Two fresh restored readers scored **122/122 in sampled and evaluation modes**. Verbal XOR scored **4/4 into grammar and 4/4 through its inverse**. The numeric XOR convergence and raised-class tests passed in the same ten-test group. Scoped verification included 70 look, growth, memory and expectation tests and 61 overlapping retention, performance and reduction tests. The broader expectation, trust and generation group passed 121 with one skip after two compiler tests were rerun with cache access. The prior omitted-word failure and the release-reproduced diagnostics are described below. These counts do not represent a full-suite run.
+
+The performance replay against the preceding winner-only implementation matched all 86 parameters, 293 buffers, 190 optimizer tensors, the RNG state and 25 of 26 live gradients. Summing repeated reads of the same percept changed 46 elements of the WholeSpace primitive-property gradient by at most 1.86e-9. The largest absolute value of that gradient was 0.00463. The separate release-to-winner-only behavioral change is recorded below.
+
+**Remaining work and 1.6 overlap**
+
+- The agreed temporal rule is one typed idea or relation head **per stream per tick**. Four simultaneous streams share the clock advance. `ReadingMemory.commit` copies reachable STM0 ideas and interns STM1 pairs with translated addresses. The normal grammatical close still uses `PartClosing` and `Models._commit_sentence` to write the admitted clause. Its recent relation head consumes an extra occurrence name. The temporal lookup and legacy checkpoint migration are under review. Claude's grounding can meet this interface in `ClauseRow`, `MemberRead`, and the reference and event writers.
+- `ChunkJournal`, `ReadingIndex`, `SentenceStrata` and `Comprehension` still use the Python grammar record while scoring the neural chooser. The approved replacement is the operator-prefixed STM head, with the kept head copied to LTM. Bind, transpose, inverse credit and later access to pre-action operands must survive this change. The broader MTM staging review belongs to 1.4.
+- `WordIdentity` and `PartSpace._embed_ladder_word_major` use byte-keyed dictionaries during lexical admission. A newly seen form can update parts of earlier forms. Porting spelling and part lookup to the native percept inventory is under review. `BasicPercepts`, `Spaces`, `Places` and `ConceptTrust` overlap with number and felt-world work. The current implementation preserves the binary64 clock and trust calculations.
+- `ModelAttention._percept_arrivals` retains per-word diagnostics on device. The local objective reads `_percept_arrival_loss`; a repository search found no reader of the accumulated diagnostic list.
+
+Reproduce the CPU and Metal comparisons with the archive commands below and `--steps 12 --dispatch-census`. Use `--strict-sentence eager` for the failing complete-entry capture probe, `--compiled-step` with `MODEL_COMPILE=inductor` and a fresh cache for the partitioned result, and `--lesson` separately for time to accuracy. Local receipts under `output/item1-5/` include `e2e2-paired-base`, `e2e2-cpu`, `e2e2-paired-metal-base`, `e2e2-metal`, `e2e2-compiled`, `collection-lesson`, `collection-learning.log`, `e2e2-three-audit` and `collection-strict`.
+
+## Earlier performance checkpoint
+
 **CPU reading rose from 7.04 to 10.23 sentences/s (+45.2%).** The matched reader reached 122/122 in both held-out modes in 44.06 s, down from 97.89 s. It also qualified one epoch earlier, after 36 optimizer updates instead of 54.
 
 | Local main | Commit |
