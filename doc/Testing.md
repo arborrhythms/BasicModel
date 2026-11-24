@@ -861,7 +861,12 @@ these tests, run on its own source.
   stage) and `test/test_training_corpus.py` (stage hashes, part A
   disjointness, the held-out cost set, the next-word gate's documents, the
   recorded part B scan). Local part B data is checked by hash only where
-  present.
+  present. `test/test_item16_scene.py` gives every document of the felt
+  corpus to `prepInput` as rows of text and scene, on a model that declares
+  the scene's box, and has each given back exactly; it also holds that the
+  box shares no place with another range, that a configuration without one
+  has every range where it was, that a wrong scene is refused with its
+  reason, and how far the box's wires lie from text's.
 
 ## Future work: bounded fixture reuse
 

@@ -606,8 +606,12 @@ are kept back in one order and taught in the other, and four are kept back
 in both with their differences; a row's `probe` says which it asks. Rebuild the files and their manifest with
 `.venv/bin/python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt`.
 The same module's `load(category, split)` returns the documents with their
-images. No loader of the model reads these files, and they are not in the
-staged training manifest.
+images, and `rows(document)` gives a document as the rows a model takes, one
+for each entry in order, each its `text` and its `scene`, with the
+document's question and answer. A model that declares a scene's box
+(`architecture.sceneShape`) takes every such row at `prepInput` and keeps
+the scene beside the text; nothing reads it there. No loader of the model
+reads these files, and they are not in the staged training manifest.
 
 Learning is judged by four measurements, each reported per epoch: the cost
 on the held-out cost set (`data/eval/heldout-cost.json`, the union of part A's

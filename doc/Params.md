@@ -51,7 +51,8 @@ treat that as the same thing as `nOutput`.
 > registry capacity; the temporal long period covers the LTM allocation.
 > Short periods preserve one-location resolution. Integer spatial addresses
 > are decoded from the band, not saved beside it. Each input modality (text,
-> the numeric input of a numeric file, and the scalar beside the words) has a
+> the numeric input of a numeric file, the scalar beside the words, and a
+> scene where `architecture.sceneShape` declares its box) has a
 > range of its own in the registry, so the range of an address gives its
 > modality; a place on two axes, such as a pixel, is one row-major address in
 > its modality's range, decoded by the declared shape. Everything observed in one
@@ -923,6 +924,20 @@ scalar definition evidence. No scalar scale, box-learning rate or per-value
 inventory parameter exists. Scalar input is an optional `scalar` beside `text`
 in `prepInput` records; omitted and zero have distinct input representations,
 but neither asserts a perceptual negation.
+
+A record may also carry a `scene`, an image of intensities: `null` for no
+image, an empty list for an image with nothing in it, or pixels `[x, y, z,
+steps]` with steps from 1 to 255, one pixel at a place. The value of a pixel
+is its steps over 255. `architecture.sceneShape` declares the shape of the
+scene's box, up to `whereAxes` whole numbers separated by spaces (`8 8 8`);
+its default in `data/model.xml` is empty, and a model with no box refuses a
+record that carries an image. Where it is declared the registry has a range
+`scene` of that shape after every other range, on a stretch of the first
+axis of its own. `InputSpace` keeps the scenes of the last batch beside its
+texts, and a record with an image and no words is a moment of its own, as
+one with a value is. No reader reads a scene: the model's field is what it
+is without one. `data/scene/BasicModel_scene.xml` is `data/BasicModel.xml`
+with the box declared.
 
 `MM_xor.xml`, `MM_xor_fixture.xml` and `XOR_exact.xml` have two numeric
 dimensions; `XOR_exact.xml` runs 64 epochs and sets its output `lrScale` to 10

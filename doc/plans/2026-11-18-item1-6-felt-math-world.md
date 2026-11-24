@@ -4361,14 +4361,15 @@ place) and C.6 (the modalities meet at concepts).*
 
 ### 20.2 The design
 
-1. **One bank of occurrences.** A pixel that is not background is an
-   occurrence in its sentence's bank of percepts, beside the occurrences of
-   the sentence's words: its `.what` is the code of its value, its `.where`
-   the twelve wires of its place, its `.when` the moment's. This is "basic
-   percepts there, as elsewhere". What an occurrence of a word has, an
-   occurrence of a pixel then has without its being built a second time: a
-   place nominated when occurrences recur at it, the first Pi's way back,
-   a look that may take it.
+1. **An image has a bank of occurrences of its own** (reworded by 20.7;
+   as first written a pixel was an occurrence in its sentence's bank). A
+   pixel that is not background is an occurrence in its image's bank: its
+   `.what` is the code of its intensity, its `.where` the twelve wires of
+   its place, its `.when` the moment's. This is "basic percepts there, as
+   elsewhere". What an occurrence of a word has in its sentence's bank, an
+   occurrence of a pixel then has in its image's without its being built a
+   second time: a place nominated when occurrences recur at it, the first
+   Pi's way back, a look that may take it.
 2. **A value in one table.** The bins of a value's code are in order for
    every place; the row of a value is keyed by the value alone. The draw
    by place (`value_coordinates`), the place in the key (`reserve(...,
@@ -4383,10 +4384,10 @@ place) and C.6 (the modalities meet at concepts).*
    which part and whole are one cut. *To be measured, not assumed:* that
    "against a lesser value" is what the Sigma wants; the other reading is
    for on the equal bin and nothing elsewhere.
-4. **Two spaces.** A form's row reads nothing at a value's occurrence and
-   a value's row nothing at a form's, though their codes lie on the same
-   coordinates of the cube. The bank knows which of its occurrences are
-   values, as `BasicPercepts.is_value` knows which rows are.
+4. **Two spaces.** The image's bank is read by the Pi over values and the
+   sentence's by the Pi over forms, so a form's row is never read at a
+   pixel nor a value's row at a word, though their codes lie on the same
+   coordinates of the cube (reworded by 20.7).
 5. **One Not and one Sigma.** Both kinds of rows stand in the one field of
    percepts that goes to `order_zero_field`. There is one call for a pass
    of reading, and the Not sees both.
@@ -4529,3 +4530,419 @@ Keep a file, tmp/item1-6/scene_progress.md, current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+### 19.5 How a meta concept comes about naturally (Alec, 2026-11-24)
+
+> If we think about what it will take for a meta concept to be created
+> naturally, the co-presentation of both name and its object will cause both
+> to develop basic percepts. Because they occur together, a single concept
+> may form that unites them also, as MTM would assume such as a special case
+> of making a single object. And I think that would be the ...
+>
+> object event, actually.
+> The objects will have to be known at order one first, as separate and
+> independent things. but at order one the two nouns can be taken together
+> into a single first order concept (which is why symbols were necessary),
+> and that uniting concept will be the meta concept that we had been
+> creating.
+>
+> We can look for evidence of meta-concepts in the architecture by looking
+> at unitizations across modality. If they occur at order 1 or above,
+> perhaps they automatically become candidates for interpret() (and somehow
+> they are substitutable because they are both symbols). So the activation
+> of one spreads to the activation of the other, and the name begins
+> carrying the properties of its object. At some point not only will it
+> carry those properties through priming, but we will be calling interpret
+> as an operation (which is basically asking of a word, "What does this word
+> mean?", and thereby stimulating the meaning of the object).
+>
+> Does this make sense?
+
+**Claude's answer, as given.** It does, and the making is already in the
+source for concepts in general: "A conjunction of concepts is promoted as a
+new symbol, a Pi row over its members, under a new concept, a Sigma over
+that symbol" (`doc/Architecture.md`; `FamiliarTier.observe_field`, which
+offers each witnessed concept's co-present concepts as a candidate, and
+`promote_candidates`). The natural meta concept is that promotion when the
+members are of two modalities.
+
+*The stages it gives the test of naming.* (i) Each of the two is known as
+a thing of its own. (ii) A unit over both exists one order above them.
+(iii) One raises the other when it is met alone. (iv) `interpret`, asked of
+the word, gives the object. Each can be measured apart.
+
+*Points raised with him.*
+
+1. *The count of orders.* By `doc/Orders.md` a word over its occurrences
+   and an object over its own are concepts of order zero, and the concept
+   that unites their symbols is of order one. His "known at order one
+   first" is read as order zero; asked.
+2. *Never in the first Pi.* The unit is a Pi over two symbols at order one.
+   The first Pi makes no conjunction of a form's row and a value's row,
+   since the two are separate mereological spaces with a Pi each (19.4).
+3. *A Pi is silent with one member absent.* The unit's own value is nothing
+   when the word is met alone, so "the activation of one spreads to the
+   other" is the way from a member through its holder to the other member,
+   which the source has in part (a conjunction's holder at the first Pi,
+   `BasicPercepts.held`; expectation, whose test
+   `test_item18_expect::test_81_...` fails on the unchanged source). To be
+   read before round two's design.
+4. *"Always" against the corpus.* The word is met with no image and the
+   thing with no word, and a word is met with several things present. The
+   rule that nominates must go by recurrence of their being together and
+   not by their never being apart, and the consistent pair must win over
+   the accidental ones. Round two measures it with others present.
+5. *What marks a name.* Two felt things that are always together unite too,
+   as a whole of two parts, and two words as a phrase. What marks a name
+   is that its members lie in two modalities, which the ranges of their
+   percepts' places tell. That is his measure: units across modality at
+   order one or above, counted by the assessment tool.
+6. *Still owed.* What makes one object of the several steps of one value,
+   with no word to do it: the more needed now, since the object is to be
+   known as a thing of its own before it is united with its word.
+
+### 20.7 An image, not a sentence; intensities (Alec, 2026-11-24)
+
+> Just reading what you are saying about pixels.
+> "A pixel that is not background is an occurrence in its sentence's bank"
+> For pixels, lets just call those images and not sentences.
+> A better way of speaking is intensities, so that we can represent sound,
+> taste, touch, and smell using intensities, also. But for now pixels
+> within an image is a good metaphor.
+
+**Decided.**
+
+1. *A pixel belongs to an image.* An image holds its pixels as a sentence
+   holds its words; a pixel is not an occurrence of a sentence.
+2. *The modality is intensities.* Sound, taste, touch and smell are to be
+   intensities too. Pixels within an image is the case built now and the
+   way of speaking for now.
+
+**What it changes in §20.2.** Point 1 becomes: *an image has a bank of
+occurrences of its own.* Each of its pixels that is not background is an
+occurrence there, with the code of its intensity as its `.what`, its
+place's twelve wires as its `.where` and the moment as its `.when`. The
+image's bank is read by the Pi over values and the sentence's by the Pi
+over forms; the rows of both stand in the one field that goes to the Not
+(point 5). Point 4 follows from it without a test of kind in one bank: a
+form's row is never read at a pixel because the two are in different
+banks. The numeric stem's input is an image: XOR is an image of two
+places.
+
+*Names.* The row's key stays `scene`, as the frozen corpus has it: a scene
+is the image a row carries. In prose and in comments it is an image of
+intensities.
+
+### 19.6 Nouns are at order one (Alec, 2026-11-24)
+
+Asked whether a word and its object are concepts of order zero and the
+concept that unites them of order one:
+
+> You asked if word and object are order zero: no, they nouns and thus are
+> abstractions of the event, so that probably cannot occur until order 1.
+
+**Claude's reading, by the ladder of `doc/Orders.md`, put to him.**
+
+| Level | What it is | For "three" and its intensity |
+|---|---|---|
+| Basic percept | An occurrence, an event | The form at a place; an intensity at a place |
+| Concept of order zero | A Sigma over basic percepts: what is the same over the events | The word over its occurrences; the intensity over its own |
+| Symbol, the Pi of order one | A thing: a noun | The word as a thing; the object as a thing; and the two present together, his "object event" |
+| Concept of order one | A Sigma over symbols | The meta concept |
+
+So the nouns are symbols of the Pi of order one, as `doc/Orders.md` has it
+("the word as a thing is a symbol over that concept"), and they are "taken
+together into a single first order concept" by the Sigma of order one,
+"which is why symbols were necessary". Claude's question of 19.5 had the
+nouns one level too low.
+
+*What it would settle of 19.5.* The Pi over both, present together, is the
+event that nominates (his "a PI that includes both concepts in virtue of
+them being presented at the same time", 19.2). The meta concept is the
+concept over the nouns' symbols. If that Sigma reads each noun's symbol,
+either noun raises it, which is his "substitutable because they are both
+symbols" and "the activation of one spreads to the activation of the
+other", and 19.5's third point (a Pi is silent with one member absent)
+does not arise. The promotion as built puts the new concept over the
+conjunction's symbol alone; whether it also reads the two nouns' own
+symbols is asked of him.
+
+### 18.7 The order of two words: five more repeats (Claude, 2026-11-24)
+
+Five more alternating fresh starts on the two frozen copies
+(`xor_repeat2.log` in the session's scratch folder), while step A's
+implementer shared the machine:
+
+| | Passed | Failed, and how |
+|---|---|---|
+| Unchanged source | 4 of 4 | none; a fifth run ended in an error of the test's set-up, not a failure, and is not counted |
+| Grid | 3 of 5 | 2 of 4 in order, twice |
+
+With 18.2's runs: the unchanged source 10 of 12, the grid 8 of 14. If the
+two were alike, a difference this great or greater would come by chance
+about one time in six (Fisher's exact test, one side, 0.155). So the grid
+is not shown to lose the order more often, and it is not shown not to: 18.2's
+"no evidence" is too strong, and the honest state is a lean against the
+grid that these runs cannot settle. The grid's two new failures are partial,
+so 18.2's remark that the grid fails by every pair reversed does not hold
+as a rule.
+
+*What it does not change.* The grid stays as built. The order of two words
+after grammar training is item 1.7's open point on either source and bears
+on question 5 of C.5. *What would settle it:* some twenty more starts on
+each copy, on the machine alone (about seven hours), or finding what loses
+the order.
+
+## 21. Round one, step A: the return (Claude on Opus, 2026-11-24)
+
+The work of §20.6, steps 1 to 9. Nothing reads the scene: a row's scene is
+kept beside its text and the model's field is what it was (§20.5). No git
+was run; nothing is committed. Nothing was removed, so no folder under
+`/tmp` was made.
+
+### 21.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `data/model.xml` | The key `architecture.sceneShape`, beside `whereAxes`, default empty (no box). |
+| `data/model.xsd` | `sceneShape`, `xs:string`, beside `whereAxes`. |
+| `bin/Spaces.py` | `scene_shape(raw)`, the key read to a shape; `InputSpace.scene_shape` and `InputSpace._scenes`, both set in `__init__`; `InputSpace.scene_pixels`, a row's scene checked and kept; `prepInput` takes `scene` beside `text` and `scalar` and keeps the batch's scenes in `_scenes`, cleared where `_scalar_values` is cleared; `_finalize_sentence_word_layout` makes a row with an image and no words active, beside the scalar's line. |
+| `bin/ModelAttention.py` | The early return for a row with no words and no value now also waits for a row with an image (the second of the two places of step 3). |
+| `bin/WhereRegistry.py` | `install_where_registry` appends the range `scene` after `conceptual` where `inputSpace.scene_shape` is declared; otherwise the list of ranges is as it was. |
+| `bin/felt_world_corpus.py` | `rows(document)`, beside `load`: a FeltDocument's rows, one for each entry, each `text` and `scene`, in order, with its question and answer as they are. |
+| `data/scene/BasicModel_scene.xml` (new) | The configuration of step 5 (21.3). |
+| `test/test_item16_scene.py` (new) | S1 to S4. |
+| `test/fixtures/item16_scene_ranges_before.json` (new) | S1's before: every configuration's ranges on the frozen copy, each with its addresses, box and a sha256 of its wires. |
+| `tmp/item1-6/scene_ranges.py`, `scene_ranges_{before,after}.{json,log}`, `scene_progress.md`, `scene_run{1,2}.log`, `scene_pytest1.log` | The script that printed S1's before and after, its output, the progress file, the run logs. Not source. |
+
+`test/test_felt_corpus.py` is untouched. `data/BasicModel.xml` gains
+nothing; no other file of `data/` has the key but the configuration of
+step 5.
+
+### 21.2 The key
+
+- **Name:** `sceneShape`, in `<architecture>`, beside `whereAxes` in both
+  `data/model.xml` and `data/model.xsd`.
+- **Form:** up to `whereAxes` positive whole numbers separated by spaces
+  (`8 8 8`); an axis not given is 1. Anything else is refused when the
+  input space is built (`scene_shape`).
+- **Default:** empty: the model feels no scene, has no range `scene`, and
+  refuses a row that carries an image.
+
+### 21.3 The configuration, and the box's origin
+
+`data/scene/BasicModel_scene.xml` is a copy of `data/BasicModel.xml`, the
+file `test/test_item17_echo.py`'s model is built from
+(`_tiny_canonical_model` parses it and sets its widths in the test), with
+two differences: `<sceneShape>8 8 8</sceneShape>`, and `weightsPath`
+`BasicModel_scene.ckpt` in place of `BasicModel.ckpt`, so that the two
+never write one checkpoint (the file's own comment asks that the XML and
+its weights share a stem). It is a plain copy, not the echo fixture's
+widths baked in: those are set by the fixture in code, and the test builds
+the echo's model with the shape this file declares (21.4).
+
+It is in a folder of its own, `data/scene/`, and not in `data/` itself:
+G1 of `test/test_item16_grid.py` asserts that the configurations
+`data/*.xml` are exactly the 42 of its frozen record, so a 43rd at the top
+level fails it. `data/matrix/` is the precedent. *Marked: decided by the
+implementer.*
+
+| Configuration | `scene` addresses | Origin | Shape | Capacity | Long period |
+|---|---|---|---|---|---|
+| `scene/BasicModel_scene.xml` | 40978 to 41490 | (40978, 0, 0) | (8, 8, 8) | 41490 (40978 + 512) | 65536, as `BasicModel.xml`'s |
+| the echo's model with its shape (the test's) | 4370 to 4882 | (4370, 0, 0) | (8, 8, 8) | 4882 (4370 + 512) | 8192, as without it |
+
+The origin is the registry's default for a range given after the others,
+`(its first address, 0, 0)`: the box's stretch of the first axis, 40978 to
+40986, begins where every other range's ends. S4 did not ask for it to
+move.
+
+### 21.4 The certificates (`test/test_item16_scene.py`), as printed
+
+The test's models are the text model of the echo test, built by
+`test_item17_echo.echo_model` (so `_tiny_canonical_model`'s widths), once
+as it is and once with `sceneShape` set to what
+`data/scene/BasicModel_scene.xml` declares. `BasicModel.xml` at its own
+widths takes about 6.6 GB to build and `BasicModel_corpus.xml` about 16 GB,
+beyond the bounded runner's 8 GiB (my first run was stopped for memory, 21.6),
+so the full-size configurations are measured by `tmp/item1-6/scene_ranges.py`
+before and after, and the test builds three that fit.
+
+S1, the box.
+
+- `S1 sceneShape: default empty; declared by ['scene/BasicModel_scene.xml']
+  alone, as '8 8 8'; it differs from BasicModel.xml in
+  ['/architecture/sceneShape', '/architecture/weightsPath']`
+- `S1 44 configurations before; 45 now, the one added scene/BasicModel_scene.xml`
+  (the 42 of `data/*.xml` and the two of `data/matrix/`).
+- Built afresh, each in a process of its own, against the frozen copy's
+  record (`test/fixtures/item16_scene_ranges_before.json`): addresses,
+  origin, shape and the sha256 of each range's rows of the grid, the
+  capacity and the period, all equal:
+  `S1 MM_text.xml: 6 ranges, capacity 4369, period 8192`;
+  `S1 MM_xor.xml: 6 ranges, capacity 4179, period 8192`;
+  `S1 MM_image.xml: 6 ranges, capacity 4961, period 8192` (a numeric
+  box of 28 by 28).
+- `S1 the echo's text model with sceneShape '8 8 8': scene at addresses
+  4370..4882, origin (4370, 0, 0), shape (8, 8, 8); the first axis of the
+  other ranges ends at 4370; capacity 4370 -> 4882, period 8192 -> 8192;
+  text, numeric, scalar, parts, wholes, conceptual: addresses, boxes and
+  wires as without it` (wires compared row by row, exactly; the seven boxes
+  given to the registry again, which refuses two that share a place).
+- *Outside the test, every configuration at full size*
+  (`tmp/item1-6/scene_ranges_before.json` on the frozen copy,
+  `tmp/item1-6/scene_ranges_after.json` on this tree, logs beside them):
+  all 44 equal before and after, range by range with the wires' digests,
+  capacity and period. `matrix/MM_20M_grammar_reading.xml` is built
+  neither before nor after (`ValueError: marker requires declared form and
+  meaning blocks`, a fault of the unchanged source). The 45th,
+  `scene/BasicModel_scene.xml`: its six other ranges equal to
+  `BasicModel.xml`'s in every field, the scene at addresses 40978 to 41490,
+  origin (40978, 0, 0), capacity 41490, period 65536 as before.
+
+S2, the row.
+
+- `S2 kept: [((1, 2, 0, 0.7843137254901961), (7, 7, 7, 0.00392156862745098),
+  (0, 0, 0, 1.0)), (), None, None, ((3, 4, 0, 0.2),)]`: a row with an
+  image, an empty image (kept `()`, not `None`), `scene: null`, no key
+  `scene`, and an image with no words. A batch of text alone keeps no
+  scenes (`_scenes` is `None`); a row of text and a value keeps `[None]`.
+- Refused, each with its message:
+  `a row accepts text, scalar and scene only, not ['picture']`;
+  `pixel [8, 0, 0, 10] lies outside the scene's box (8, 8, 8)`;
+  `pixel [0, 0, -1, 10] lies outside the scene's box (8, 8, 8)`;
+  `pixel [0, 0, 0, 0] has steps outside 1 to 255`;
+  `pixel [0, 0, 0, 256] has steps outside 1 to 255`;
+  `two pixels at the place (2, 3, 0)`;
+  on the model with no box, `a scene was given to a model with no box for
+  one (architecture.sceneShape)` (and `scene: null` is taken there).
+- `S2 a row's sentence slot (an image, an empty image, nothing, a value):
+  [True, True, False, True]`: with no word active in any row, the
+  sentence's slot is open for the rows with an image, empty or not, as for
+  the row with a value, and not for the row with nothing.
+
+S3, the corpus.
+
+- `S3 5600 documents of 27 files, 28333 rows, 27652 images (22 empty),
+  102984 pixels: taken, and given back exactly`. Every split of every
+  file; each document's rows taken by `prepInput` on the model with the
+  box; the texts kept (`_last_sentences`) equal to its sentences, each
+  scene kept `None` where the document's is, and otherwise its pixels with
+  their steps (value times 255, rounded) equal to the document's.
+
+S4, far enough apart (a measure).
+
+- On the test's model: `S4 at capacity 4882 (period 8192), box origin
+  (4370, 0, 0): least text-to-scene 0.195090, least between neighbours
+  0.012277, ratio 15.9`.
+- On `scene/BasicModel_scene.xml` at full size (the same measure, run
+  once before the test was moved to the small model): `capacity 41490
+  (period 65536), box origin (40978, 0, 0): least text-to-scene 0.923879,
+  least between neighbours 0.012271, ratio 75.3`.
+- Euclidean distance over the twelve wires; text-to-scene over every
+  place of `text` and every place of `scene`; neighbours one step on one
+  axis, along the line of text and along each axis inside the box. The
+  first is the greater at both capacities, so **the origin did not move**;
+  the test asserts it.
+
+### 21.5 What in §20 was wrong or could not be built as written, and what was built
+
+1. *"One configuration ... under data/"* (step 5) cannot be in `data/`
+   itself while G1 of `test/test_item16_grid.py` holds the top-level set
+   of configurations to its frozen record. Built in `data/scene/` (21.3).
+2. *"no wire of an existing range moves in any configuration"* (step 2)
+   holds of every configuration under `data/`, by S1. It is not a property
+   of the registry as built: the ladder's long period is derived from the
+   registry's whole capacity (`WhereEncoding.set_capacity`,
+   `_ladder_periods`), which the box's 512 addresses join. A configuration
+   whose capacity lies within 512 (and the ladder's 1/63 margin) below a
+   power of two would have its period doubled by a box, and then every wire
+   of every range moves (and `where_origin` with it). `BasicModel.xml` is
+   far from it (40978 and 41490 both under the threshold for 65536, which
+   is about 64511). Not changed: sizing the ladder by the greatest
+   coordinate on any axis rather than by the address count is the remedy
+   if it is wanted (equal for every existing configuration, since their
+   last range is a line), and it is Claude's to choose. *Marked.*
+3. *A row with an image and no words.* A dict row still requires `text`,
+   as it did; a row with an image and no words has `text: ''`, which is
+   what the frozen corpus writes. Not changed.
+4. *S1's "every configuration under data/", in a test.* Taken
+   recursively (the two of `data/matrix/` are in it). They cannot all be
+   built under the bounded runner: `BasicModel.xml` and its copies take
+   about 6.6 GB each and `BasicModel_corpus.xml` about 16 GB, against a cap
+   of 8 GiB for the worker and its children. The test builds three that
+   fit (text, a numeric line, a numeric box), checks the key in every
+   file, and checks the box on the echo's model; all 44 at full size were
+   compared by the script, outside the runner (21.4). *Marked.*
+5. *The steps of a pixel.* Kept as the value, steps over 255, as step 3
+   says; S3 gives the steps back by rounding the value times 255, which is
+   exact for every step from 1 to 255.
+
+### 21.6 The run of step 7
+
+`env -u RUN_TRAINED -u RUN_SLOW ... test/test_report.py` with: both
+stopping gates (`test/test_mm_xor.py::TestMMXorConvergence::test_convergence`,
+from H.5, and `test/test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`),
+`test_item17_echo.py`, `test_item16_grid.py`, `test_item16_scene.py`,
+`test_felt_corpus.py`, `test_item18_scalar.py`; the files that give
+`prepInput` a dict row (`test_item18_recognition.py`,
+`test_percept_collection_binding.py`, `test_scalar_question_curriculum.py`
+through `scalar_question_curriculum.py`); `test_item16_grid.py` is the one
+that names `install_where_registry`; and, for the key,
+`test_model_defaults.py`, `test_two_mode_dispatch.py` (it reads every
+configuration under `data/`, recursively) and
+`test_chooser_architecture.py::test_xml_schema_rejects_invalid_capacity`
+(it validates `data/model.xml` against `data/model.xsd`).
+
+- First run, `output/tests/20261124-034831-c7f9ef`: stopped for memory
+  (8.14 GiB) at 22 of 126 cases, in S1's then form, which built every
+  configuration at full size four at a time. Changed as 21.4 says.
+- **Final run, `output/tests/20261124-041159-0812a4/result.json`:
+  `Result: test_failure, exit 1; 86/86 cases completed.`** 377 s, peak
+  3.4 GiB. 83 passed, 2 skipped, 1 failed. Both gates passed, the seven of
+  the echo passed, G1 to G9 passed, S1 to S4 passed (24 cases).
+  The failure is
+  `test_percept_collection_binding.py::test_bind_percept_collection_reads_membership_not_coordinate_overlap[2.0-True]`,
+  `failed` in the sweep of this source too; the two skipped
+  (`test_item18_recognition.py::test_90_*`) are `skipped` there. No test
+  that passes in the sweep fails.
+
+### 21.7 Review of step A (Claude, 2026-11-24)
+
+**Accepted.** Claude read the whole change (six files of source and
+configuration, 86 lines; the new test, its record of the ranges before,
+and the configuration) and ran, with the bounded runner, both stopping
+gates, `test_item16_scene.py`, `test_item16_grid.py`, `test_felt_corpus.py`,
+`test_item18_scalar.py`, `test_model_defaults.py`, `test_two_mode_dispatch.py`
+and `test_doc_links.py` (run `20261124-041932-b7135e`): 128 cases, 125
+passed, and the three that failed are `test_doc_links.py`'s that fail from
+any worktree (18.5).
+
+*On the four departures of 21.5.*
+
+1. *The configuration under `data/scene/`.* Accepted: G1 holds the top
+   level of `data/` to its record, and `data/matrix/` is the precedent.
+   The file is `data/BasicModel.xml` whole with two lines changed, and S1
+   asserts that it differs in those two alone, so when `main` changes
+   `data/BasicModel.xml` the copy is brought up with it or S1 fails. That
+   is wanted.
+2. *S1 builds three configurations in the test and compares all 44 by a
+   script outside the runner.* Accepted: the greatest configurations do
+   not fit the runner's memory. The script and its two records are in
+   `tmp/item1-6/` and are not source; the claim "every range equal in every
+   configuration" rests on that one run of it.
+3. *A box may double the ladder's long period.* True as he says: the
+   period is taken from the count of addresses, and a box adds its count.
+   It moves no configuration that exists. A model with a box is a model of
+   its own, with weights of its own, so nothing is carried between a
+   registry with the box and one without; the period is left as built.
+   Sizing the ladder by the greatest coordinate on any axis is kept as a
+   remedy if a configuration ever falls near a power of two.
+4. *The origin did not move.* The nearest place of text is 15.9 times as
+   far from the box as two neighbouring places are from each other on the
+   test's model, and 75 times at full size. §16.7's third point is
+   answered for the box as it lies.
+
+*Standing documents written by Claude with this step:* `doc/Params.md`,
+`doc/Spaces.md`, `doc/Training.md`, `doc/Testing.md`,
+`doc/DevelopmentHistory.md`.

@@ -533,6 +533,16 @@ for dim 3."
   | text | the first axis | positions in a sentence |
   | XOR | the first axis | two positions |
   | an image | two axes | 28 by 28; parts and wholes are boxes |
+  | a scene beside the words | three axes | 8 by 8 by 8, an image at z = 0 |
+
+- **A scene's box.** A text model that declares `architecture.sceneShape`
+  has a range `scene` of that shape, given after every other range, so
+  that its stretch of the first axis begins where theirs end and no other
+  range moves. A row of input may then carry a `scene` beside its `text`:
+  pixels `[x, y, z, steps]`, each kept as its place and its value, the
+  steps over 255. No image (`null`) and an image with nothing in it (an
+  empty list) are kept apart. Nothing reads a scene yet: it is kept
+  beside the row's text (`InputSpace._scenes`).
 
 - **A percept is a level at a place.** A pixel is a level percept at a
   place on two axes, as a letter is a byte percept at a place on one.
@@ -553,7 +563,8 @@ for dim 3."
   every muxed vector carries its place in its band. The ranges are one input range
   for each modality (text, a numeric input, the scalar beside the words,
   each sized by its configuration; the scalar's has one address), the
-  part rows, the whole rows, the symbols and the live conceptual slots. A
+  part rows, the whole rows, the symbols and the live conceptual slots,
+  and last a scene's box where one is declared. A
   symbol has two addresses, one for each lane; rows lie in their order's
   block, so the range gives the order ([Orders §12](Orders.md)). Each
   modality's input has a range of its own, so the range gives the modality
