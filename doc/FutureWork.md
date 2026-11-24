@@ -2728,3 +2728,21 @@ evidence and its gradients, peak memory and training sentences per second
 across sentence lengths and vocabulary sizes. The four-page comparison
 already favors exact windows over dense signed-bit matching. [Item 1.5
 measurements](plans/2026-11-24-item1-5-handoff.md)
+
+## Resegmenting a word using morpheme and lexeme frequency
+
+Test whether learned morpheme and lexeme frequencies can move a boundary
+inside a word. A reader that first parses `shopping` as `sho | pping`
+could later prefer `shop | ping` after encountering `shop` in other
+contexts. Each reading covers every observed byte exactly once. Concatenating
+its parts reconstructs `shopping`, including both occurrences of `p`.
+The reader can score alternative cuts from the learned parts at each byte
+position without looking up the spelling of the whole word.
+
+Vary how often the reader encounters the candidate parts while keeping its
+exposure to `shopping` fixed. Measure how often its own fixations and part
+choices move the cut. Also start with `shop` absent from the inventory and
+test whether attention discovers it across the original cut before it has a
+frequency count. In both cases check exact reconstruction, training sentences
+per second, and wall time to the same held-out reading accuracy.
+[Item 1.5 reanalysis experiment](plans/2026-11-24-item1-5-device-sentence.md#proposed-experiment-in-frequency-and-non-overlapping-parts)
