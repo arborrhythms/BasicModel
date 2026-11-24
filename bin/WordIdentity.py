@@ -533,6 +533,10 @@ class WordIdentity(nn.Module):
         self.by_parts.setdefault(parts_key, set()).add(word)
         self._parts_key[word] = parts_key
 
+    def definition_key(self, raw):
+        """The admitted form's parts-half key, maintained by collision repair and restore."""
+        return self._parts_key[raw].hex()
+
     def _reindex(self):
         """Key every stored form and pack its code, in the order of
         admission. Returns the first two forms found with one code, if any."""

@@ -331,7 +331,7 @@ class InterpretLayer(GrammarLayer):
             raw = bytes_of(form) if isinstance(form, str) else form
             parts = identity.admit(raw)
             self._sync_identity(identity)
-            identity_key = identity.key(identity.form(raw)).hex()
+            identity_key = identity.definition_key(raw)
         elif native is not None:
             parts = tuple(ps.fuse_parts(parts))
         form = form_key(form)
@@ -470,7 +470,7 @@ class InterpretLayer(GrammarLayer):
             if raw not in identity.words:
                 continue
             parts = identity.parts(raw)
-            alloc.word_descriptions[word] = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
+            alloc.word_descriptions[word] = dict(old, parts=(parts,), identity_key=identity.definition_key(raw))
             self._description_revision += 1
             for part in parts:
                 cs.add_part(word, part)
@@ -484,7 +484,7 @@ class InterpretLayer(GrammarLayer):
             if raw not in identity.words:
                 continue
             parts = identity.parts(raw)
-            value = dict(old, parts=(parts,), identity_key=identity.key(identity.form(raw)).hex())
+            value = dict(old, parts=(parts,), identity_key=identity.definition_key(raw))
             for part in parts:
                 cs.add_part(word, part)
             for obj in index.objects(word):
