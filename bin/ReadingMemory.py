@@ -37,48 +37,117 @@ def brackets(model, percepts):
     return table[..., :2], table[..., 2]
 
 
+def _name_lookup(names, values, missing):
+    """Resolve arbitrary occurrence names, with one sentinel for a missing row."""
+    keys, order = names.sort(stable=True)
+    positions = torch.searchsorted(keys, values.contiguous())
+    size = names.shape[0]
+    keys = torch.cat((keys, names.new_full((1,), -1)))
+    rows = torch.cat((order, order.new_full((1,), missing)))
+    return torch.where((positions < size) & (keys[positions] == values), rows[positions], missing)
+
+
+def retained_masks(head, handles, kinds, endpoints, names, referents):
+    """Reachable physical rows for a typed head. Handles are in dependency order."""
+    relation_live = (head[0] == RELATION) & (handles == head[1])
+    # Each local child precedes its parent. The loop bound is shape metadata;
+    # the root, both child addresses and every branch mask stay on device.
+    for i in reversed(range(handles.shape[0])):
+        child = (kinds[i, :, None] == RELATION) & (handles == endpoints[i, :, None])
+        relation_live = relation_live | (relation_live[i] & child.any(0))
+    # Map an occurrence address to its potentially non-contiguous physical seat.
+    # The final seat absorbs symbols and already-durable references.
+    n = names.shape[0]
+    targets = _name_lookup(names, torch.cat((head[1:].reshape(1), endpoints.flatten())), n)
+    selected = torch.cat(((head[:1] == OCCURRENCE),
+                          ((kinds == OCCURRENCE) & relation_live[:, None]).flatten()))
+    live = names.new_zeros(n + 1).scatter_add(0, targets, selected.long()).bool()
+    # Each idea has at most one occurrence referent. Pointer doubling covers
+    # the entire chain in logarithmic rounds and also handles shared referents.
+    following = torch.where(referents[:, 0] == OCCURRENCE, _name_lookup(names, referents[:, 1], n), n)
+    following = torch.cat((following, names.new_full((1,), n)))
+    for _ in range(n.bit_length()):
+        live = live | torch.zeros_like(following).scatter_add(0, following, live.long()).bool()
+        following = following[following]
+    return live[:n], relation_live
+
+
+def _retention_plan(store, head, durable, first_name):
+    parts = store.parts
+    parts._sort()
+    handles = parts.relation_order[:len(parts)]
+    names = store.row_names[:len(store)]
+    root = names.new_tensor(parts.reference(head))
+    keep, links = retained_masks(root, handles, parts.ref_kinds[handles], parts.refs[handles],
+                                 names, store.referent[:len(store)])
+    rows = keep.nonzero().flatten()
+    handles = handles[links]
+    source_names = names[rows]
+    new_names = first_name + torch.arange(rows.numel(), device=names.device)
+    # The same translation covers roots, operands and occurrence-to-occurrence
+    # references. A durable name is legal only in its own address domain.
+    references = torch.cat((root[None], store.referent[rows],
+                            torch.stack((parts.ref_kinds[handles], parts.refs[handles]), -1).reshape(-1, 2)))
+    kinds, values = references.unbind(-1)
+    local = _name_lookup(source_names, values, len(rows))
+    occurrence = kinds == OCCURRENCE
+    translated = torch.cat((new_names, new_names.new_zeros(1)))[local]
+    external = store.__dict__.get('_external_memory')
+    shared = external is not None and external() is durable
+    valid = ~occurrence | (local < len(rows))
+    local_link = _name_lookup(handles, values, -1) >= 0
+    valid &= (kinds != RELATION) | local_link
+    if shared:
+        valid |= occurrence & (_name_lookup(durable.row_names[:len(durable)], values, -1) >= 0)
+        address = values.clamp(0, durable.parts.capacity - 1)
+        valid |= ((kinds == RELATION) & (address == values) & (durable.parts.ref_kinds[address, 0] != 0))
+    if not bool(valid.all()):
+        raise ValueError('reading names an unavailable occurrence or relation')
+    values = torch.where(occurrence & (local < len(rows)), translated, values)
+    refs = torch.stack((kinds, values), -1)
+    idea_refs = refs[1:1 + len(rows)]
+    endpoints = refs[1 + len(rows):].reshape(-1, 2, 2)
+    return rows, new_names, idea_refs, handles, endpoints, refs[0]
+
+
 def commit(stores, heads, durable):
-    """Copy each occupied idea once and translate its ordered STM1 links into LTM1."""
-    sizes = [len(store) for store in stores]
-    pairs = sum(len(store.parts) for store in stores)
+    """Retain just the reachable idea payload and translate its ordered pairs."""
+    plans = []
+    n_ideas = n_pairs = 0
+    for store, head in zip(stores, heads, strict=True):
+        if store.nDim != durable.nDim or store.episodic_capacity != durable.episodic_capacity:
+            raise ValueError('incompatible STM and LTM reading rows')
+        if head is None:
+            plans.append(None)
+            continue
+        plan = _retention_plan(store, head, durable, durable.names_issued + (n_ideas + 1))
+        n_ideas += len(plan[0])
+        n_pairs += len(plan[3])
+        plans.append(plan)
     owner = durable.owner()
-    if len(durable) + sum(sizes) > durable.capacity or (pairs and
-            (len(durable.parts) + pairs >= durable.parts.capacity or
-             owner is not None and owner._concept_allocator.next_id + pairs > durable.parts.capacity)):
+    if len(durable) + n_ideas > durable.capacity or (n_pairs and
+            (len(durable.parts) + n_pairs >= durable.parts.capacity or
+             owner is not None and owner._concept_allocator.next_id + n_pairs > durable.parts.capacity)):
         raise OverflowError('reading exceeds remaining long-term idea or relation capacity')
     committed = []
-    for store, head in zip(stores, heads, strict=True):
+    for store, plan in zip(stores, plans, strict=True):
+        if plan is None:
+            committed.append(None)
+            continue
+        rows, names, referents, handles, endpoints, root = plan
+        durable.retain_ideas(store, rows, names, referents)
+        # LTM1 interns ordered pairs in the shared concept allocator. Keep
+        # the child's canonical handle when an equal pair already exists.
         translated = {}
-        for row in range(len(store)):
-            name = store.row_name(row)
-            target = durable.append_idea(store.slots[row], trust=float(store.trust[row]),
-                referent=store.referent_of(row),
-                entry=(store.episodic_concepts[row], store.episodic_values[row]))
-            translated[OCCURRENCE, name] = OCCURRENCE, durable.row_name(target)
-        # Handles need not be issued in tree order. Copy only relations under
-        # this reading's head, translating children before their parent.
-        pending = [] if head is None else [head]
-        while pending:
-            ref = pending[-1]
-            if ref in translated:
-                pending.pop()
-                continue
-            kind, name = ref
-            if kind == SYMBOL:
-                translated[ref] = ref
-                continue
-            if kind != RELATION:
-                raise ValueError('reading head names an unknown occurrence')
-            children = store.parts.references(name)
-            missing = [child for child in children if child not in translated]
-            if missing:
-                pending.extend(missing)
-                continue
-            left, right = children
-            translated[ref] = RELATION, durable.parts.add(
-                translated[left], translated[right], truth_plus=float(store.parts.truth_plus[name]),
-                truth_minus=float(store.parts.truth_minus[name]))
-        committed.append(translated.get(head))
+        def resolve(ref):
+            kind, value = ref
+            return (kind, translated.get(value, value)) if kind == RELATION else (kind, value)
+        addresses = torch.cat((handles[:, None], endpoints.flatten(1)), 1).tolist()
+        trust = torch.stack((store.parts.truth_plus[handles], store.parts.truth_minus[handles]), 1).tolist()
+        for (name, ka, a, kb, b), (positive, negative) in zip(addresses, trust, strict=True):
+            translated[name] = durable.parts.add(resolve((ka, a)), resolve((kb, b)),
+                                                  truth_plus=positive, truth_minus=negative)
+        committed.append(resolve(root.tolist()))
     return tuple(committed)
 
 
@@ -89,7 +158,7 @@ def read(model, bank, concepts):
     # together when returning to the parallel input that triggered the read.
     names = ('_percept_field', '_cs_last_a0', '_cs_order0_raw', '_cs_field_rows',
              '_cs_field_concept_ids', '_cs_field_caps', '_cs_field_where', '_cs_field_when',
-             '_cs_field_wires', '_cs_level_acts', '_cs_level_rows', '_cs_wave_qe')
+             '_cs_field_wires', '_cs_level_act_tensor', '_cs_level_rows', '_cs_wave_qe')
     opened = {name: vars(owner)[name] for name in names if name in vars(owner)}
     try:
         return _read(model, bank, concepts)

@@ -9100,6 +9100,7 @@ class InputSpace(Space):
             # this sync from the captured region is the job of the
             # compile-scoped-to-model architecture, not async tricks.)
             return prepared_input(self, inputBatch, host.to(TheDevice.get()))
+        self._staged_delivery = None
         self._host_input_slab = None  # no host origin -> device fallback
         if self.model_type != 'embedding' and torch.is_tensor(inputBatch):
             # Numeric datasets expose scalar pixels as [B, D, 1], while a
@@ -9324,6 +9325,26 @@ class InputSpace(Space):
         """
         return self.prepInput(list(sentences))
 
+    def stage_host_surface(self):
+        """Decode a host-origin byte slab at admission, before sentence execution."""
+        self._staged_delivery = None
+        slab = getattr(self, '_host_input_slab', None)
+        if (self.model_type != 'embedding' or slab is None or slab.device.type != 'cpu'
+                or slab.dtype not in (torch.int8, torch.uint8)):
+            return
+        rows = slab.squeeze(1) if slab.ndim == 3 else slab
+        if rows.ndim != 2:
+            return
+        if self.byte_mode:
+            rows = rows[:, :self.outputShape[0]]
+        surfaces = []
+        used = 0
+        for row in rows.detach().numpy():
+            raw = row.tobytes().rstrip(b'\0')
+            used = max(used, len(raw))
+            surfaces.append(raw.replace(b'\0', b'').decode('utf-8', errors='surrogateescape'))
+        self._staged_delivery = slab, surfaces, used
+
     def _lex_batch(self, input):
         """DELIVERY, not lexing (Alec 2026-07-12; restores the 2026-06-08
         dual-input contract): IS hands its BYTES to PartSpace (the raw
@@ -9385,15 +9406,21 @@ class InputSpace(Space):
         # carries this IS's slot count (the old token-loop truncation width).
         self.subspace._raw_surface = input           # [B, N] raw byte buffer
         self.subspace._raw_slots = nIdeas
-        self._analyse_surfaces = []
-        for b in range(batch):
-            row = input[b]
-            if row.device.type != "cpu":
-                row = row.detach().cpu()
-            raw = row.to(torch.uint8).numpy().tobytes()
-            self._analyse_surfaces.append(
-                raw.replace(b"\x00", b"").decode(
-                    "utf-8", errors="surrogateescape"))
+        delivery = getattr(self, '_staged_delivery', None)
+        self._staged_delivery = None
+        self._delivered_length = None
+        if delivery is not None and delivery[0] is host_slab:
+            self._analyse_surfaces, self._delivered_length = delivery[1:]
+        else:
+            self._analyse_surfaces = []
+            for b in range(batch):
+                row = input[b]
+                if row.device.type != "cpu":
+                    row = row.detach().cpu()
+                raw = row.to(torch.uint8).numpy().tobytes()
+                self._analyse_surfaces.append(
+                    raw.replace(b"\x00", b"").decode(
+                        "utf-8", errors="surrogateescape"))
 
         return what_buf, where_idx, when_idx, host_tokens
 
@@ -9606,6 +9633,7 @@ class InputSpace(Space):
         alongside ``<maskedPrediction>``; within-sentence training is
         purely masked-LM at the P-space_role (BERT-style IR).
         """
+        self._delivered_length = None
         if inputData is None:
             return self._empty_like_subspace(), None
         if hasattr(inputData, "is_empty") and not isinstance(inputData, torch.Tensor) and inputData.is_empty():
@@ -9640,11 +9668,15 @@ class InputSpace(Space):
                         _raw = _raw[..., 0]
                 if _raw is not None:
                     _valid_pos = (_raw.long() != 0)
-                    _any = _valid_pos.any(dim=0)
-                    self._valid_len_host = min(
-                        int(_any.nonzero().max().item()) + 1
-                        if bool(_any.any().item()) else 0,
-                        int(self.outputShape[0]))
+                    length = getattr(self, '_delivered_length', None)
+                    if length is not None:
+                        self._valid_len_host = min(length, self.outputShape[0])
+                    else:
+                        _any = _valid_pos.any(dim=0)
+                        self._valid_len_host = min(
+                            int(_any.nonzero().max().item()) + 1
+                            if bool(_any.any().item()) else 0,
+                            int(self.outputShape[0]))
                     sub.valid_mask = _valid_pos.any(dim=1).reshape(-1, 1)
                 else:
                     self._valid_len_host = 0
@@ -15092,6 +15124,12 @@ class ConceptualSpace(Space):
     def _order0_inventory_row(self, row):
         return 0 <= row < int(self.nVectors) and self._row_order(row) == 0
 
+    @property
+    def _cs_level_acts(self):
+        """Materialize the diagnostic maxima when a caller inspects them."""
+        values = self.__dict__.get('_cs_level_act_tensor')
+        return None if values is None else values.tolist()
+
     def _field_inventory_rows(self, device=None):
         rows = getattr(self, '_cs_field_rows', None)
         if rows is None:
@@ -15340,7 +15378,7 @@ class ConceptualSpace(Space):
         both = self.order_zero_both_field(perception)
         a_0 = torch.stack((both, torch.zeros_like(both)), -1).to(self.similarity_codebook.W.dtype)
         kept = {name: self.__dict__.get(name) for name in
-                ('_cs_level_acts', '_cs_level_rows', '_cs_wave_qe')}
+                ('_cs_level_act_tensor', '_cs_level_rows', '_cs_wave_qe')}
         try:
             field = self.cs_forward_content(a_0)
         finally:
@@ -15614,7 +15652,7 @@ class ConceptualSpace(Space):
         S, B, L = sum(caps), a_0.shape[1], a_0.shape[2]
         n0 = int(a_0.shape[0])
         field = torch.cat((a_0, a_0.new_zeros(S - n0, B, L, 2)))
-        level_acts = [float(a_0.detach().max())]
+        level_acts = [a_0.detach().amax()]
         sel_rows = [torch.arange(n0, device=field.device)[:, None].expand(-1, B)]
         priority = getattr(self, '_relevance_priority', None)
         p_rel = None
@@ -15634,7 +15672,7 @@ class ConceptualSpace(Space):
                 inventory_start, _ = self.order_slice(k)
                 count = min(count, int(ly._row_next.get(inventory_start, 0)))
             if count <= 0:
-                level_acts.append(0.)
+                level_acts.append(field.new_zeros(()))
                 continue
             end = start + count
             rows = torch.arange(start, end, device=field.device)
@@ -15669,9 +15707,9 @@ class ConceptualSpace(Space):
             field = field.index_copy(0, rows, candidate * mask[:, :, None, None])
             if p_rel is not None:
                 p_rel = p_rel.index_copy(0, rows, score * mask)
-            level_acts.append(float((candidate * mask[:, :, None, None]).detach().max()))
+            level_acts.append(field[start:end].detach().amax())
             sel_rows.append(rows[topi])
-        object.__setattr__(self, '_cs_level_acts', level_acts)
+        object.__setattr__(self, '_cs_level_act_tensor', torch.stack(level_acts))
         object.__setattr__(self, '_cs_level_rows', [r.detach() for r in sel_rows])
         object.__setattr__(self, '_cs_wave_qe', None)
         return field
@@ -19096,7 +19134,7 @@ _CANONICAL_PROPERTY_ROWS = (
 )
 
 
-def _analysis_property_signature(space):
+def _analysis_property_signature(space, device="cpu"):
     """Evaluate learned primitive memberships for the eager signature cut.
 
     The temporary bit signatures are derived from the live coefficients;
@@ -19107,9 +19145,9 @@ def _analysis_property_signature(space):
     primitives = getattr(cb, 'primitive_properties', None)
     if primitives is None:
         raise RuntimeError('property analysis requires learned primitive definitions')
-    membership = primitives.coefficients().detach().to('cpu').t()
+    membership = primitives.coefficients().detach().to(device=device).t()
     count = min(int(membership.shape[-1]), 63)
-    bits = 1 << torch.arange(count, dtype=torch.long, device='cpu')
+    bits = 1 << torch.arange(count, dtype=torch.long, device=membership.device)
     signature = ((membership[:, :count] > .5).long() * bits).sum(-1)
     names = getattr(space, 'well_known_atoms', {})
     discard = sum(1 << int(names[name]) for name in ('whitespace', 'pad')
@@ -19151,65 +19189,17 @@ def _digit_signature_bits(space):
     return 1 << int(row) if row is not None and 0 <= int(row) < 63 else 0
 
 
-def _analysis_type_lut(space):
-    """Return the 256-entry byte->TYPE LUT for ``space``'s analysis cut,
-    derived from the tags on the frozen TYPE subspace's ``.what`` codebook
-    (``WholeSpace.type_subspace`` -- data on the SubSpace, per the processing
-    contract) and cached on the space (rebuilt only when
-    ``Codebook._property_kind_version`` changes).
-
-    Falls back to the frozen module :data:`_LUT_ANALYSIS_TYPE` when there is no
-    type subspace to read (byte-mode configs, ``SimpleNamespace`` unit-test
-    doubles) -- byte-identical, so the cut is unchanged for those configs. Takes
-    ``space`` as a plain argument (not a bound method) so it also runs on the
-    unbound ``stage_analysis_spans`` test double whose ``self`` is a bare
-    namespace."""
-    membership = space.subspace.what.primitive_properties.coefficients().detach().to('cpu')
-    result = torch.full((256,), _TYPE_LETTER, dtype=torch.long, device='cpu')
+def _analysis_type_lut(space, device="cpu"):
+    """Read class memberships from the learned type basis, in precedence order."""
+    membership = space.subspace.what.primitive_properties.coefficients().detach().to(device)
+    result = torch.full((256,), _TYPE_LETTER, dtype=torch.long, device=device)
     for name, kind in (('digit', _TYPE_DIGIT), ('punctuation', _TYPE_PUNCT),
                        ('whitespace', _TYPE_SPACE), ('pad', _TYPE_SPACE)):
         row = space.well_known_atoms.get(name)
         if row is not None and row < len(membership):
-            result[membership[row] > .5] = kind
+            result = torch.where(membership[row] > .5, kind, result)
     result[0] = _TYPE_SPACE
     return result
-
-
-def _spans_from_run_masks(is_run, run_start, run_end):
-    """``[B, K, 2]`` spans from explicit per-position run masks (the
-    anchor / rank / scatter of :func:`_type_run_spans`, factored so the
-    learned boundary predicates can supply the masks)."""
-    B, N = int(is_run.shape[0]), int(is_run.shape[1])
-    if N == 0:
-        return torch.zeros(B, 1, 2, dtype=torch.long, device="cpu")
-    run_start = run_start & is_run
-    run_end = run_end & is_run
-    ar = torch.arange(N, device="cpu").unsqueeze(0).expand(B, N)
-    starts = torch.where(run_start, ar, torch.full_like(ar, N))
-    ends = torch.full_like(ar, -1)
-    n_re = int(run_end.long().sum(1).max().item()) if N else 0
-    if n_re > 0:
-        re_rank = torch.cumsum(run_end.long(), 1) - 1
-        rs_rank = torch.cumsum(run_start.long(), 1) - 1
-        re_end = torch.full((B, n_re), N, dtype=torch.long, device="cpu")
-        rep = run_end.nonzero(as_tuple=False)
-        if rep.numel():
-            bb, ii = rep[:, 0], rep[:, 1]
-            re_end[bb, re_rank[bb, ii]] = ii + 1
-        rsp = run_start.nonzero(as_tuple=False)
-        if rsp.numel():
-            bb, ii = rsp[:, 0], rsp[:, 1]
-            ends[bb, ii] = re_end[bb, rs_rank[bb, ii]]
-    K = int(max(1, run_start.long().sum(1).max().item()))
-    tok_rank = torch.cumsum(run_start.long(), 1) - 1
-    out = torch.zeros(B, K, 2, dtype=torch.long, device="cpu")
-    sp = run_start.nonzero(as_tuple=False)
-    if sp.numel():
-        bb, ii = sp[:, 0], sp[:, 1]
-        r = tok_rank[bb, ii]
-        out[bb, r, 0] = starts[bb, ii]
-        out[bb, r, 1] = ends[bb, ii]
-    return out
 
 
 def _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on):
@@ -19242,10 +19232,11 @@ def _predicate_unit_spans(slab, begins_on, ends_on, atom_on, discard_on):
     next_run = torch.cat([is_run[:, 1:], first], 1)
     run_start = is_run & (~prev_run | begins_here | ends_prev | atom_here | atom_prev)
     run_end = is_run & (~next_run | ends_next | begins_next | atom_here | atom_next)
-    return _spans_from_run_masks(is_run, run_start, run_end)
+    from Meronomy import span_table
+    return span_table(run_start & is_run, run_end & is_run)
 
 
-def _type_run_spans(type_ids, discard_mask=None, singleton=None):
+def _type_run_spans(type_ids, discard_mask=None, singleton=None, *, padded=False):
     """Vectorised token spans from per-position TYPE ids (``[B, N]`` long, on
     CPU). A whole is a MAXIMAL CONSTANT-TYPE RUN; runs of the SPACE type
     (``_TYPE_SPACE``, incl. the ``\\0`` pad sentinel) are discarded.
@@ -19270,9 +19261,8 @@ def _type_run_spans(type_ids, discard_mask=None, singleton=None):
         # not when it equals one distinguished class id.
         is_run = (type_ids & int(discard_mask)) == 0
     if N == 0:
-        return torch.zeros(B, 1, 2, dtype=torch.long, device="cpu")
-    # Host-island cut: pin factories to CPU (default device may be mps).
-    first = torch.zeros(B, 1, dtype=torch.bool, device="cpu")
+        return torch.zeros(B, 1, 2, dtype=torch.long, device=type_ids.device)
+    first = torch.zeros(B, 1, dtype=torch.bool, device=type_ids.device)
     prev_same = torch.cat(
         [first, type_ids[:, 1:] == type_ids[:, :-1]], 1)   # same type as prev
     nxt_same = torch.cat(
@@ -19285,101 +19275,8 @@ def _type_run_spans(type_ids, discard_mask=None, singleton=None):
         before_single = torch.cat([single[:, 1:], first], 1)   # next is single
         run_start = run_start | (is_run & (single | after_single))
         run_end = run_end | (is_run & (single | before_single))
-    ar = torch.arange(N, device="cpu").unsqueeze(0).expand(B, N)
-    starts = torch.where(run_start, ar, torch.full_like(ar, N))
-    ends = torch.full_like(ar, -1)
-    n_re = int(run_end.long().sum(1).max().item()) if N else 0
-    if n_re > 0:
-        re_rank = torch.cumsum(run_end.long(), 1) - 1
-        rs_rank = torch.cumsum(run_start.long(), 1) - 1
-        re_end = torch.full((B, n_re), N, dtype=torch.long, device="cpu")
-        rep = run_end.nonzero(as_tuple=False)
-        if rep.numel():
-            bb, ii = rep[:, 0], rep[:, 1]
-            re_end[bb, re_rank[bb, ii]] = ii + 1
-        rsp = run_start.nonzero(as_tuple=False)
-        if rsp.numel():
-            bb, ii = rsp[:, 0], rsp[:, 1]
-            ends[bb, ii] = re_end[bb, rs_rank[bb, ii]]
-    K = int(max(1, run_start.long().sum(1).max().item()))
-    tok_rank = torch.cumsum(run_start.long(), 1) - 1
-    out = torch.zeros(B, K, 2, dtype=torch.long, device="cpu")
-    sp = run_start.nonzero(as_tuple=False)
-    if sp.numel():
-        bb, ii = sp[:, 0], sp[:, 1]
-        r = tok_rank[bb, ii]
-        out[bb, r, 0] = starts[bb, ii]
-        out[bb, r, 1] = ends[bb, ii]
-    return out
-
-
-def _divide_spans_into_attested(byte_vals, spans, percept_store,
-                                standalone_bytes):
-    """T3 within-whole division at the span->concept seam
-    (doc/plans/2026-07-10-wholes-are-types-segmentation.md).
-
-    A type-run span whose byte surface is NOT itself an attested percept
-    divides by GREEDY LONGEST-MATCH tiling into attested standalone parts
-    -- the same ``RadixTrie.longest_match`` walk ``RadixLayer.spell_out``
-    uses, minus the on-demand byte seeding (division never mints). A part
-    is ATTESTED ("appears standalone", the plan's condition) when it is a
-    MULTI-byte store entry (promotion = recurrence as a standalone tile),
-    or a SINGLE byte that has occurred as its own type-run
-    (``standalone_bytes``: the <= 256-entry byte set the WS records from
-    its own staged spans) -- the ``spell_out``-seeded byte percepts alone
-    do NOT attest, or every unpromoted word would re-divide per byte. A
-    COMPLETE tiling into >= 2 attested parts replaces the span with its
-    part spans, in order; an attested span stays ONE span (whole preferred
-    over parts); an incomplete tiling keeps the span unchanged (the
-    existing unattested fallback). Host-eager (runs in the eager stem via
-    ``stage_analysis_spans``, never in a compiled body). ``byte_vals`` is
-    the ``[B, N]`` CPU byte grid the spans index; ``spans`` is the
-    zero-padded ``[B, K, 2]`` from :func:`_type_run_spans`. Returns
-    ``[B, K', 2]`` (``spans`` itself when nothing divides). No-op without
-    a trie-backed store (standalone callers may have no percept store).
-    """
-    trie = getattr(percept_store, "radix_trie", None)
-    get_id = getattr(percept_store, "get_id", None)
-    if trie is None or get_id is None or len(trie) == 0:
-        return spans
-    rows = spans.tolist()
-    vals = byte_vals.tolist()
-    out_rows = []
-    changed = False
-    for b, row in enumerate(rows):
-        out = []
-        for (s, e) in row:
-            if e <= s:
-                continue                      # zero-pad slot
-            if e - s > 1:
-                seg = bytes(vals[b][s:e])
-                if get_id(seg) is None:       # unattested whole
-                    parts, pos = [], 0
-                    while pos < len(seg):
-                        _pid, mlen = trie.longest_match(seg[pos:])
-                        if (_pid is None or mlen <= 0
-                                or (mlen == 1
-                                    and seg[pos] not in standalone_bytes)):
-                            parts = None      # gap -> no complete tiling
-                            break
-                        parts.append((s + pos, s + pos + mlen))
-                        pos += mlen
-                    if parts is not None and len(parts) > 1:
-                        out.extend(parts)     # the attested concepts, in order
-                        changed = True
-                        continue
-            out.append((s, e))
-        out_rows.append(out)
-    if not changed:
-        return spans
-    K = max(1, max(len(r) for r in out_rows))
-    # Host-island cut: pin factories to CPU (default device may be mps).
-    t = torch.zeros(len(out_rows), K, 2, dtype=spans.dtype, device="cpu")
-    for b, row in enumerate(out_rows):
-        if row:
-            t[b, :len(row)] = torch.tensor(row, dtype=spans.dtype,
-                                           device="cpu")
-    return t
+    from Meronomy import span_table
+    return span_table(run_start, run_end, padded=padded)
 
 
 def _word_punct_spans(is_word, is_punct):
@@ -19469,6 +19366,7 @@ class WholeSpace(Space):
         nonlinear = TheXMLConfig.space(section, "nonlinear")
         self._svd_orthogonal_init_cfg = True
         super().__init__(inputShape, spaceShape, outputShape, customVQ=False)
+        self.register_buffer('_standalone_bytes_seen', torch.zeros(256, dtype=torch.bool), persistent=False)
         self.perceptualSpace_ref = None
         self.nonlinear = nonlinear
         _attn = str(TheXMLConfig.space(section, "attention"))
@@ -19663,6 +19561,33 @@ class WholeSpace(Space):
             fine = _type_run_spans(unit_types, singleton=single)
         from Meronomy import pin_word_spans
         return pin_word_spans(byte_values, fine[0].tolist())
+
+    def _device_unit_tiling(self, idx, *, padded):
+        """Apply the learned begins, ends and atom predicates at every byte."""
+        from Meronomy import pin_word_table, span_table
+        props = self.subspace.what.primitive_properties.coefficients().detach().t() > .5
+        props = props[idx] & (idx != 0)[..., None]
+        begins, ends, atoms = (w.detach().sigmoid() > .5 for w in
+                               (self.begins_weight, self.ends_weight, self.atom_level))
+        cold = ~torch.cat((begins, ends, atoms)).any()
+        atomic = torch.where(cold, True, atoms[idx].logical_or((props & atoms[256:]).any(-1)))
+        live = idx != 0
+        if not self.whitespace_units:
+            for lo, hi in _CHAR_CLASS_RANGES[int(_CLS_WHITESPACE)]:
+                live = live & ((idx < lo) | (idx > hi))
+        if not idx.shape[1]:
+            return span_table(live, live, padded=padded)
+        # A cut between two bytes belongs to the run on both sides.
+        left, right = props[:, :-1], props[:, 1:]
+        changed = idx[:, :-1] != idx[:, 1:]
+        cut = changed.logical_and(begins[idx[:, 1:]].logical_or(ends[idx[:, :-1]]))
+        started = right.logical_and(left.logical_not()).logical_and(begins[256:])
+        ended = left.logical_and(right.logical_not()).logical_and(ends[256:])
+        cut = cut.logical_or(started.logical_or(ended).any(-1))
+        cut = cut.logical_or(atomic[:, 1:]).logical_or(atomic[:, :-1]).logical_or(live[:, 1:] != live[:, :-1])
+        edge = torch.ones_like(live[:, :1])
+        spans = span_table(live & torch.cat((edge, cut), 1), live & torch.cat((cut, edge), 1), padded=True)
+        return pin_word_table(idx, spans, padded=padded)
 
     def _unit_tiling_from_predicates(self, idx):
         """The unit tiling and the slab; the cold start (no column on) is
@@ -20104,6 +20029,17 @@ class WholeSpace(Space):
         return staged
 
 
+    @property
+    def _standalone_run_bytes(self):
+        """Legacy serialization format for the observed singleton-byte mask."""
+        return set(self._standalone_bytes_seen.nonzero().flatten().tolist())
+
+    @_standalone_run_bytes.setter
+    def _standalone_run_bytes(self, values):
+        mask = self._standalone_bytes_seen
+        mask.zero_()
+        mask[list(values)] = True
+
     def property_extras(self):
         """Checkpoint property names, learned membership tags and span observations."""
         _ve = {
@@ -20208,7 +20144,7 @@ class WholeSpace(Space):
         return basis
 
 
-    def stage_analysis_spans(self, IS_concepts):
+    def stage_analysis_spans(self, IS_concepts, *, padded=False):
         """Host-eager division of the unity into PARTS (Phase 4b).
 
         Runs in the eager stem (``Models._lex_embed_stem``) so the
@@ -20244,53 +20180,37 @@ class WholeSpace(Space):
             object.__setattr__(self, "_staged_unit_parent", None)
             object.__setattr__(self, "_staged_unit_clause", None)
             return None
-        spans = WholeSpace._stage_type_run_spans(self, IS_concepts)
-        u = IS_concepts
-        if u.dim() == 3:
-            u = u[:, 0, :]
-        idx = u.detach().to("cpu").long().clamp(0, 255)
-        type_ids = _analysis_type_lut(self)[idx]
+        spans = WholeSpace._stage_type_run_spans(self, IS_concepts, padded=padded)
+        u = IS_concepts[:, 0] if IS_concepts.ndim == 3 else IS_concepts
+        idx = u.detach().long().clamp(0, 255)
+        type_ids = _analysis_type_lut(self, idx.device)[idx]
         single = ((type_ids == _TYPE_DIGIT)
                   if getattr(self, "digit_wholes", False) else None)
-        unit_types = type_ids
-        bw = getattr(self, "begins_weight", None)
-        if torch.is_tensor(bw):
-            fine, slab = self._unit_tiling_from_predicates(idx)
-            if float(getattr(self, "boundary_learning_rate", 0.0) or 0.0) > 0.0:
-                self._observe_candidate_tilings(idx, slab, fine)
+        if torch.is_tensor(getattr(self, "begins_weight", None)):
+            if float(getattr(self, "boundary_learning_rate", 0.) or 0.) > 0.:
+                # Candidate teaching still consumes the full observed-column slab.
+                fine, slab = self._unit_tiling_from_predicates(idx)
+                self._observe_candidate_tilings(idx.cpu(), slab, fine.cpu())
+            else:
+                fine = self._device_unit_tiling(idx, padded=padded)
         else:
             from Meronomy import pin_word_table
-            fine = pin_word_table(idx,_type_run_spans(unit_types,singleton=single))
-        object.__setattr__(self, "_staged_unit_spans", fine.to(IS_concepts.device))
-        space_only = torch.where(unit_types == _TYPE_SPACE,
-                                 torch.full_like(unit_types, _TYPE_SPACE),
-                                 torch.full_like(unit_types, _TYPE_LETTER))
-        coarse = _type_run_spans(space_only)
-        clause_types = torch.where(
-            type_ids == _TYPE_PUNCT, torch.full_like(type_ids, _TYPE_SPACE),
-            torch.where(type_ids == _TYPE_SPACE, torch.full_like(type_ids, _TYPE_LETTER),
-                        torch.full_like(type_ids, _TYPE_LETTER)))
-        pad = (idx == 0)
-        clause_types = torch.where(pad, torch.full_like(type_ids, _TYPE_SPACE), clause_types)
-        clause = _type_run_spans(clause_types)
-        Bn, Kf = int(fine.shape[0]), int(fine.shape[1])
-        parent = torch.full((Bn, Kf), -1, dtype=torch.long)
-        clause_parent = torch.full((Bn, Kf), -1, dtype=torch.long)
-        for b in range(Bn):
-            cs = [(int(a), int(z)) for (a, z) in coarse[b].tolist() if z > a]
-            cl = [(int(a), int(z)) for (a, z) in clause[b].tolist() if z > a]
-            for k in range(Kf):
-                a, z = int(fine[b, k, 0]), int(fine[b, k, 1])
-                if z <= a:
-                    continue
-                for j, (ca, cz) in enumerate(cs):
-                    if ca <= a and z <= cz:
-                        parent[b, k] = j
-                        break
-                for j, (ca, cz) in enumerate(cl):
-                    if ca <= a and z <= cz:
-                        clause_parent[b, k] = j
-                        break
+            fine = pin_word_table(idx, _type_run_spans(type_ids, singleton=single, padded=True), padded=padded)
+        object.__setattr__(self, "_staged_unit_spans", fine)
+        space_only = torch.where(type_ids == _TYPE_SPACE, _TYPE_SPACE, torch.full_like(type_ids, _TYPE_LETTER))
+        coarse = _type_run_spans(space_only, padded=padded)
+        clause_types = torch.where((type_ids == _TYPE_PUNCT) | (idx == 0), _TYPE_SPACE, torch.full_like(type_ids, _TYPE_LETTER))
+        clause = _type_run_spans(clause_types, padded=padded)
+        def containing(spans):
+            # Spans are ordered, disjoint, and padded on the right. Only
+            # the last span starting before this unit can contain it.
+            starts, ends = spans.unbind(-1)
+            starts = torch.where(ends > starts, starts, torch.iinfo(starts.dtype).max)
+            lo, hi = fine.unbind(-1)
+            parent = torch.searchsorted(starts.contiguous(), lo.contiguous(), right=True) - 1
+            inside = (parent >= 0) & (hi > lo) & (hi <= ends.gather(1, parent.clamp_min(0)))
+            return torch.where(inside, parent, -1)
+        parent, clause_parent = containing(coarse), containing(clause)
         object.__setattr__(self, "_staged_tiling_ladder",
                            (clause.to(IS_concepts.device), coarse.to(IS_concepts.device),
                             fine.to(IS_concepts.device)))
@@ -20298,41 +20218,34 @@ class WholeSpace(Space):
         object.__setattr__(self, "_staged_unit_clause", clause_parent.to(IS_concepts.device))
         return spans
 
-    def _stage_type_run_spans(self, IS_concepts):
-        """The type-run cut over the unity (shared by the canonical
-        ``meronomy`` mode until Phase 2 and by the Legacy ``word`` /
-        ``grammatical`` cuts)."""
-        u = IS_concepts
-        if u.dim() == 3:
-            u = u[:, 0, :]
-        vals = u.detach().to("cpu").long()
-        idx = vals.clamp(0, 255)
-        _digit_wholes = bool(getattr(self, "digit_wholes", False))
-        prop_lut, discard_mask = _analysis_property_signature(self)
-        type_ids = prop_lut[idx]
-        object.__setattr__(self, "_staged_property_signatures", type_ids)
-        single = (((type_ids & _digit_signature_bits(self)) != 0)
-                  if _digit_wholes else None)
-        t = _type_run_spans(type_ids, discard_mask=discard_mask,
-                            singleton=single)
-        if getattr(self, "divide_within_whole", False):
-            seen = getattr(self, "_standalone_run_bytes", None)
-            if seen is None:
-                seen = set()
-                object.__setattr__(self, "_standalone_run_bytes", seen)
-            one = (t[..., 1] - t[..., 0]) == 1
-            if bool(one.any()):
-                bb, kk = one.nonzero(as_tuple=True)
-                seen.update(idx[bb, t[bb, kk, 0]].tolist())
-            _ps = getattr(getattr(self, "perceptualSpace_ref", None),
-                          "percept_store", None)
-            if _ps is not None:
-                t = _divide_spans_into_attested(idx, t, _ps, seen)
-        from Meronomy import pin_word_table
-        return pin_word_table(idx,t).to(IS_concepts.device)
-
-
-
+    def _stage_type_run_spans(self, IS_concepts, *, padded=False):
+        """Cut the live property signatures, then greedily tile each attested whole."""
+        from Meronomy import attested_divisions, pin_word_table
+        u = IS_concepts[:, 0] if IS_concepts.ndim == 3 else IS_concepts
+        idx = u.detach().long().clamp(0, 255)
+        lut, discard = _analysis_property_signature(self, idx.device)
+        type_ids = lut[idx]
+        object.__setattr__(self, '_staged_property_signatures', type_ids)
+        single = ((type_ids & _digit_signature_bits(self)) != 0
+                  if getattr(self, 'digit_wholes', False) else None)
+        spans = _type_run_spans(type_ids, discard_mask=discard, singleton=single, padded=True)
+        if getattr(self, 'divide_within_whole', False) and idx.shape[1]:
+            starts, ends = spans.unbind(-1)
+            observed = idx.gather(1, starts)
+            counts = idx.new_zeros(256).scatter_add(0, observed.flatten(), (ends - starts == 1).long().flatten())
+            self._standalone_bytes_seen.logical_or_(counts > 0)
+            store = getattr(getattr(self, 'perceptualSpace_ref', None), 'percept_store', None)
+            if store is not None and getattr(store, 'inverse_table', None):
+                decoder = getattr(store, 'activity_decoder', None)
+                if decoder is None:
+                    # A standalone RadixLayer has no model-constructed decoder.
+                    from FieldReverse import NativeDecode
+                    decoder = NativeDecode(len(store.inverse_table), 1, max(map(len, store.inverse_table))).to(idx.device)
+                decoder.sync(store.inverse_table)
+                occupied = len(store.inverse_table)
+                spans = attested_divisions(idx, spans, self._standalone_bytes_seen,
+                                           decoder.spellings[:occupied], decoder.lengths[:occupied], padded=True)
+        return pin_word_table(idx, spans, padded=padded)
 
     def property_spans(self, IS_concepts, class_ids):
         """Host-eager CHAR-CLASS property tiling → ``[B, K, 2]`` spans of the

@@ -1,6 +1,6 @@
 # Item 1.5 proposal for a device-resident sentence
 
-**Design under review.** The chooser writes its chosen syntax directly into each candidate’s STM. Downstream model code takes one head and follows the existing idea and relation references. This supersedes the proposed device implementation of `ReadingIndex`. MTM stages basic percepts and concepts. The STM head copies directly to LTM.
+**Approved representation.** The chooser writes its chosen syntax directly into each candidate’s STM. Downstream model code takes one head and follows the existing idea and relation references. This supersedes the proposed device implementation of `ReadingIndex`. MTM stages basic percepts and concepts. The STM head copies directly to LTM.
 
 ## Sentence boundary
 
@@ -10,7 +10,7 @@ A strict capture probe on the ordinary four-page reading update stops in `InputS
 
 ## The STM head is the parse
 
-**At any model time, STM and LTM each hold at most one idea or relation for that time.** That value is the root. For example, if the value at time t is the relation `pair(A, B)`, the entry at t is that relation. Following it reaches A and B. Neither operand acquires a separate entry at t. If the chooser reduces the whole expression to idea J, J alone occupies that position. The same rule applies during an unfinished parse and after retention.
+**At any model time, STM and LTM each hold at most one root idea or relation per stream.** Simultaneous streams have independent temporal sequences and share the existing tick. That value is the root. For example, if the value at time t is the relation `pair(A, B)`, the entry at t is that relation. Following it reaches A and B. Neither operand acquires a separate entry at t. If the chooser reduces the whole expression to idea J, J alone occupies that position. The same rule applies during an unfinished parse and after retention.
 
 Alec specified that each sequence link addresses its own idea and the next link, that reductions build STM1 over their operands or produce an STM0 idea, and that everything entering LTM has one head. The working sequence can hold up to eight things under the 1.7 specification. Respect the configured working capacity and existing behavior for longer inputs. [Item 1.7, §19.146, point 1](2026-11-14-sigma-pi-layers.md#19146-alec-the-chain-in-the-two-memories-the-single-head-the-looks-of-a-model-with-no-grammar-momentum-stays-2026-11-23)
 
@@ -47,7 +47,7 @@ Commit the winning STM root as the sole LTM value for that time. Preserve the st
 
 MTM is the implementation name for the staging area for basic percepts and concepts. STM and LTM share the idea and ordered-relation representation used to retain a sentence. The two mechanisms meet when a word occurrence refers to a concept. Copying that occurrence preserves the reference and leaves concept admission with its existing owner.
 
-Each exploration can observe its own provisional growth. Only the winning stream’s observations are eligible to persist, in the existing close order. Exercise mixed winners against isolated runs from the same opening and compare STM, LTM, clock, RNG, optimizer and gradients. The current `MediumTermMemory` class also exposes event and checkpoint interfaces used by grounding. Preserve their existing lifetimes and compatibility while changing sentence storage. The older proposal about how to implement the staging area is a separate review.
+Each exploration can observe its own provisional growth. Only the winning stream’s observations are eligible to persist, in the existing close order. Exercise mixed winners against isolated runs from the same opening and compare STM, LTM, clock, RNG, optimizer and gradients. The current `MediumTermMemory` class also exposes event and checkpoint interfaces used by grounding. Preserve their existing lifetimes and compatibility while changing sentence storage. Alec approved keeping event operands needed on later observations as ideas and ordered relations reachable from the winning LTM root. Preserve the current teaching and expiry rules. The broader staging-area review and its compile check belong to item 1.4.
 
 ## Acceptance and rollout
 

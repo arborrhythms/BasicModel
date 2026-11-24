@@ -180,3 +180,15 @@ def test_xsd_accepts_divide_within_whole():
     el.text = "false"
     assert schema.validate(doc), "\n".join(
         str(e.message) for e in schema.error_log)
+
+
+def test_fixed_width_tiling_captures_and_preserves_learned_divisions():
+    ws = _whole_space()
+    ws.perceptualSpace_ref = types.SimpleNamespace(percept_store=_radix_store('!!', '!', '?'))
+    _live_spans(ws, "x ! ?")
+    inputs = torch.tensor([list(b'x !!!?a\x00??'), list(b'!!a???b   ')])
+    compiled = torch.compile(ws.stage_analysis_spans, fullgraph=True, backend='eager')
+    got = compiled(inputs, padded=True)
+    expected = [[(0, 1), (2, 4), (4, 5), (5, 6), (6, 7)],
+                [(0, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7)]]
+    assert [[tuple(s) for s in row if s[1] > s[0]] for row in got.tolist()] == expected

@@ -288,14 +288,8 @@ class Looks:
         read = model.request_read
         V = int(owner.nVectors)
         from SentenceField import inventory
-        known_rows = {}
         def located(field, index=None):
-            # A field's concepts at their inventory rows, the rows found once
-            # for each set of the field's concept ids.
-            key = tuple(field.concept_ids.reshape(-1).tolist())
-            if key not in known_rows:
-                known_rows[key] = inventory(owner, field)
-            return at_rows(known_rows[key], field, V, B, index)
+            return at_rows(inventory(owner, field), field, V, B, index)
         held = located(opened) if opened is not None else own.new_zeros((B, V, 2))
         memory = torch.zeros_like(held)
         if model.training and torch.is_grad_enabled() and self.supplied is None:

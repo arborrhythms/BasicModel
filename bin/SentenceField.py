@@ -6,6 +6,8 @@ from Understanding import ConceptualField, InputReconstruction
 
 def inventory(owner, field):
     ids = field.concept_ids
+    if ids is getattr(owner, "_cs_field_concept_ids", None):
+        return torch.where(ids >= 0, owner._cs_field_rows, -1)
     return torch.tensor([(-1 if int(cid) < 0 else owner._concept_row_of(int(cid)))
                          for cid in ids.reshape(-1).tolist()],
                         dtype=torch.long, device=ids.device).reshape(ids.shape)
@@ -27,9 +29,7 @@ def descended(model, field):
     owner = model._concept_owner()
     addresses = inventory(owner, field)
     evidence = owner.cs_reverse_presence(field.evidence, inventory_rows=addresses)
-    zero = torch.tensor([int(row) >= 0 and owner._row_order(int(row)) == 0
-                         for row in addresses.reshape(-1).tolist()],
-                        device=addresses.device).reshape(addresses.shape)
+    zero = (addresses >= 0) & (addresses < owner._order_caps()[0])
     zero = zero[:, None, None, None] if zero.ndim == 1 else zero[..., None, None]
     return ConceptualField(field.concept_ids, evidence * zero, field.where, field.when, None, field.wires)
 

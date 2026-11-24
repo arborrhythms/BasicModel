@@ -263,13 +263,14 @@ def stage_values(owner, observed, *, percepts=None):
     graph = structure(owner, observed.device)
     V, T = graph.concepts, graph.symbols
     concepts = observed[:V].detach()
-    symbols = concepts.new_ones(T, *concepts.shape[1:])
-    held = (graph.parent >= V) & (graph.parent < V + T)
-    if T and bool(held.any()):
-        logs = torch.log(concepts.index_select(0, graph.child[held]).clamp_min(1e-30))
-        symbols = torch.exp(concepts.new_zeros(T, *concepts.shape[1:]).index_add(0, graph.parent[held] - V, logs))
-    else:
-        symbols = concepts.new_zeros(T, *concepts.shape[1:])
+    symbols = concepts.new_zeros(T, *concepts.shape[1:])
+    if T and V:
+        held = (graph.parent >= V) & (graph.parent < V + T)
+        children = torch.where(held, graph.child, 0)
+        parents = torch.where(held, graph.parent - V, 0)
+        logs = concepts.index_select(0, children).clamp_min(1e-30).log()
+        products = symbols.index_add(0, parents, torch.where(held[:, None, None], logs, 0.)).exp()
+        symbols = torch.where(held.any(), products, 0.)
     return dict(concepts=concepts, symbols=symbols)
 
 
@@ -308,7 +309,7 @@ def percept_cost(owner, before, arrived):
         return before.new_zeros(B)
     error = (expected[:R] - arrived[:, :R].transpose(0, 1).detach()).square().mean((0, 2))
     stages = dict(getattr(owner, '_expectation_stages', None) or {})
-    stages['percepts'] = float(error.detach().mean())
+    stages['percepts'] = error.detach().mean()
     owner._expectation_stages = stages
     return error
 
@@ -334,8 +335,8 @@ def look_cost(owner, before, arrived):
         expected_symbols = value[graph.concepts:graph.percept_start]
         owner._expectation_stages = dict(
             getattr(owner, '_expectation_stages', None) or {},
-            concepts=float(error.detach().mean()),
-            symbols=float((expected_symbols - symbols).square().mean()) if len(symbols) else 0.)
+            concepts=error.detach().mean(),
+            symbols=(expected_symbols - symbols).square().mean() if len(symbols) else error.new_zeros(()))
     return error
 
 

@@ -8566,6 +8566,8 @@ class BasicModel(BaseModel):
 
     def understand(self, input_data, *, executor=None):
         """One bottom-up analysis pass returning its ``Understanding``."""
+        if isinstance(self.inputSpace, InputSpace):
+            self.inputSpace.stage_host_surface()
         execution = self._execute_input_sentence(input_data, executor)
         understanding = self._capture_understanding(execution)
         self._last_understanding = understanding
@@ -10362,6 +10364,8 @@ class BasicModel(BaseModel):
                 if input_data is None:
                     raise ValueError(
                         "Model.ask needs input_data or an existing execution")
+                if isinstance(self.inputSpace, InputSpace):
+                    self.inputSpace.stage_host_surface()
                 execution = self._execute_input_sentence(input_data, executor)
         finally:
             for h, ctx, detail in saved:
@@ -13590,8 +13594,9 @@ class BasicModel(BaseModel):
         # HERE (host-eager stem, once per batch), never in routing. A None
         # offer routes the carrier body; a real unity routes universe,
         # unconditionally.
-        _u_ok = (torch.is_tensor(concepts_in)
-                 and bool((concepts_in != 0).any()))
+        delivered = getattr(self.inputSpace, '_delivered_length', None)
+        _u_ok = torch.is_tensor(concepts_in) and (
+            delivered > 0 if delivered is not None else bool((concepts_in != 0).any()))
         object.__setattr__(self, "_ws_universe",
                            concepts_in if _u_ok else None)
         # Phase 4b: host-eager analysis cut. The configured WS analysis
@@ -13602,7 +13607,13 @@ class BasicModel(BaseModel):
         # None (uniform-region pooling needs no spans).
         _ss = getattr(self, "wholeSpace", None)
         if _ss is not None:
-            _spans = (_ss.stage_analysis_spans(concepts_in)
+            analysis_input = concepts_in
+            if delivered is not None and torch.is_tensor(analysis_input):
+                # No observed byte lies beyond the admitted extent. Keep two
+                # zeros so a trailing pad run cannot become a singleton.
+                width = 1 << (delivered + 1).bit_length()
+                analysis_input = analysis_input[..., :width]
+            _spans = (_ss.stage_analysis_spans(analysis_input, padded=self.word_brackets)
                       if hasattr(_ss, "stage_analysis_spans") else None)
             _kinds = getattr(_ss, "_staged_analysis_kinds", None)
             # Preserve the complete eager cut for diagnostics. The live
@@ -13674,7 +13685,7 @@ class BasicModel(BaseModel):
             from Omission import stage as stage_omission
             stage_omission(self)
             concepts_in = self._staged_concepts_in
-            self._observe_word_units(concepts_in, _unit_rows)
+            self._observe_word_units(analysis_input if _ss is not None else concepts_in, _spans_full)
             self._record_unit_pulls(_ss)
             self._pad_staged_unit_maps(_ss)
             self._ensure_pid_byte_table()
@@ -18137,41 +18148,35 @@ class BasicModel(BaseModel):
 
     _WHITESPACE_BYTES = (9, 10, 11, 12, 13, 32)
 
-    def _observe_word_units(self, concepts_in, unit_rows):
-        """Word-unit assurance (Alec 2026-09-11): with the analysis tiling
-        learned rather than fixed, count how many whitespace-delimited
-        words of the presentation are exactly one staged unit.  Host
-        bookkeeping on the eager stem (the unit rows are already host
-        lists); reported per epoch as ``word units`` and readable through
-        :meth:`word_unit_fraction`."""
-        if unit_rows is None or not torch.is_tensor(concepts_in):
+    def _observe_word_units(self, concepts_in, unit_spans):
+        """Count exact whitespace-word and letter-word matches on the input device."""
+        if unit_spans is None or not torch.is_tensor(concepts_in):
             return
-        rows = concepts_in.reshape(int(concepts_in.shape[0]), -1)
-        rows = rows.detach().to("cpu").to(torch.long).tolist()
-        words = hits = letter_words = letter_hits = 0
-        for b, values in enumerate(rows):
-            units = set(unit_rows[b]) if b < len(unit_rows) else set()
-            start = None
-            for i, v in enumerate(values + [0]):
-                inside = v > 0 and v not in self._WHITESPACE_BYTES
-                if inside and start is None:
-                    start = i
-                elif not inside and start is not None:
-                    one_unit = int((start, i) in units)
-                    words += 1
-                    hits += one_unit
-                    # Letters-only words: the tokens the canonical tiling
-                    # must keep whole (punctuation and digits are units of
-                    # their own by design, so "word," is two units).
-                    if all(chr(c).isalpha() for c in values[start:i]):
-                        letter_words += 1
-                        letter_hits += one_unit
-                    start = None
-        stats = self.__dict__.setdefault("_word_unit_stats", [0, 0, 0, 0])
-        stats[0] += words
-        stats[1] += hits
-        stats[2] += letter_words
-        stats[3] += letter_hits
+        from Meronomy import span_table
+        values = concepts_in.reshape(concepts_in.shape[0], -1)
+        if not values.numel():
+            return
+        live = values > 0
+        for byte in self._WHITESPACE_BYTES:
+            live = live & (values != byte)
+        edge = torch.zeros_like(live[:, :1])
+        starts = live & ~torch.cat((edge, live[:, :-1]), 1)
+        ends = live & ~torch.cat((live[:, 1:], edge), 1)
+        lo, hi = span_table(starts, ends, padded=True).unbind(-1)
+        unit_lo, unit_hi = unit_spans.unbind(-1)
+        keys = torch.where(unit_hi > unit_lo, unit_lo, values.shape[1]).contiguous()
+        seat = torch.searchsorted(keys, lo.contiguous()).clamp_max(keys.shape[1] - 1)
+        valid = hi > lo
+        matched = valid & (unit_lo.gather(1, seat) == lo) & (unit_hi.gather(1, seat) == hi)
+        # Python's isalpha() over the delivered byte alphabet (Latin-1).
+        alpha = ((values >= 65) & (values <= 90)) | ((values >= 97) & (values <= 122))
+        alpha |= (values == 170) | (values == 181) | (values == 186)
+        alpha |= ((values >= 192) & (values <= 255) & (values != 215) & (values != 247))
+        nonletters = torch.nn.functional.pad((~alpha).long().cumsum(1), (1, 0))
+        letters = valid & (nonletters.gather(1, hi) == nonletters.gather(1, lo))
+        counts = (valid.sum(), matched.sum(), letters.sum(), (letters & matched).sum())
+        stats = self.__dict__.get('_word_unit_stats', (0, 0, 0, 0))
+        self.__dict__['_word_unit_stats'] = [total + count for total, count in zip(stats, counts, strict=True)]
 
     def word_unit_fraction(self):
         """Fraction of whitespace-delimited words staged as exactly one

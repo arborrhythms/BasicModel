@@ -2373,6 +2373,22 @@ class LTM0(IdeaRows):
         write_time(self,row,present_stamp(self))
         self._write_name(row, name_row(self))
 
+    @torch.no_grad()
+    def retain_ideas(self, source, rows, names, referents):
+        """Copy STM rows as they stand, including their time and graded evidence."""
+        if not rows.numel():
+            return
+        first = len(self)
+        end = first + rows.numel()
+        if end > self.capacity:
+            raise OverflowError('LTM0 construction capacity exhausted')
+        for column in ('slots', 'trust', 'activity', 'episodic_concepts', 'episodic_values'):
+            getattr(self, column)[first:end].copy_(getattr(source, column).index_select(0, rows))
+        self.referent[first:end].copy_(referents)
+        self.row_names[first:end].copy_(names)
+        self.names_issued.copy_(names[-1])
+        self._write_count(end)
+
     def raw_meaning_of(self,index):
         value=super().raw_meaning_of(index)
         owner=self.owner()

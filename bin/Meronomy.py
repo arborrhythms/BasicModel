@@ -366,14 +366,83 @@ def pin_word_spans(byte_seq, spans):
     return sorted(set(result))
 
 
-def pin_word_table(byte_ids, spans):
-    """Eager rectangular form of the shared fixed-word extent rule."""
-    rows=[pin_word_spans(raw,row) for raw,row in zip(byte_ids.cpu().tolist(),spans.cpu().tolist())]
-    width=max(1,max(map(len,rows),default=0))
-    result=spans.new_zeros(len(rows),width,2)
-    for b,row in enumerate(rows):
-        if row:result[b,:len(row)]=result.new_tensor(row)
-    return result
+def span_table(starts, ends, *, padded=False):
+    """Pack ordered, disjoint boundary masks. One byte bounds the maximum row count."""
+    batch, width = starts.shape
+    if not width or not batch:
+        return starts.new_zeros((batch, max(1, width) if padded else 1, 2), dtype=torch.long)
+    positions = torch.arange(width, device=starts.device)
+    ranks = starts.long().cumsum(1)
+    # The inspection API returns tightly packed rows. The device path uses
+    # the construction width and consumes the same zero padding as before.
+    seats = width if padded else max(1, int(ranks[:, -1].max()))
+    out = ranks.new_zeros(batch, seats)
+    columns = (ranks - 1).clamp_min(0)
+    return torch.stack((out.scatter_add(1, columns, positions * starts),
+                        out.scatter_add(1, columns, (positions + 1) * ends)), -1)
+
+
+def pin_word_table(byte_ids, spans, *, padded=False):
+    """Pin the maximal pre-NUL letter runs over an ordered, disjoint span table."""
+    batch, width = byte_ids.shape
+    if not width or not batch:
+        return spans.new_zeros(batch, max(1, width) if padded else 1, 2)
+    lo, hi = spans.unbind(-1)
+    positions = torch.arange(width, device=byte_ids.device).expand(batch, width).contiguous()
+    valid = hi > lo
+    starts = torch.where(valid, lo, width).contiguous()
+    seat = torch.searchsorted(starts, positions, right=True) - 1
+    end = hi.gather(1, seat.clamp_min(0))
+    live = (byte_ids == 0).long().cumsum(1) == 0
+    letter = live & (((byte_ids >= 65) & (byte_ids <= 90)) | ((byte_ids >= 97) & (byte_ids <= 122)))
+    # A nonword byte inherits its learned extent. Adjacent extents are
+    # distinct even when both have the same byte class.
+    labels = torch.where(letter, -2, torch.where(live & (positions < end), seat, -1))
+    absent = torch.full_like(labels[:, :1], -1)
+    start = (labels != -1) & (labels != torch.cat((absent, labels[:, :-1]), 1))
+    stop = (labels != -1) & (labels != torch.cat((labels[:, 1:], absent), 1))
+    return span_table(start, stop, padded=padded)
+
+
+def attested_divisions(raw, spans, singletons, spellings, lengths, *, padded=False):
+    """Divide a run only when greedy native spellings tile its entire extent."""
+    batch, width = raw.shape
+    if not width or not batch or not lengths.numel():
+        return spans
+    pos = torch.arange(width, device=raw.device).expand(batch, width).contiguous()
+    lo, hi = spans.unbind(-1)
+    seat = torch.searchsorted(torch.where(hi > lo, lo, width).contiguous(), pos, right=True) - 1
+    left = lo.gather(1, seat.clamp_min(0))
+    right = hi.gather(1, seat.clamp_min(0))
+    live = (seat >= 0) & (pos < right)
+    # Match every spelling at each starting position, within its parent.
+    # Accumulate per offset to avoid a batch x byte x form x offset slab.
+    matching = (lengths > 0) & (lengths <= (right - pos)[..., None])
+    matching &= (lengths != 1) | singletons[raw][..., None]
+    for offset in range(min(width, spellings.shape[1])):
+        observed = raw.gather(1, (pos + offset).clamp_max(width - 1))
+        matching = matching & ((lengths <= offset) | (spellings[:, offset] == observed[..., None]))
+    stride = torch.where(matching, lengths, 0).amax(-1)
+    next_pos = (pos + stride).clamp_max(width)
+    sentinel = pos.new_full((batch, 1), width)
+    # Follow each start to the end or first gap. A successful run must
+    # reach its own end, even when a different run immediately follows it.
+    jump = torch.cat((next_pos, sentinel), 1)
+    visited = torch.cat((live & (pos == left), sentinel < width), 1)
+    link = torch.cat((torch.where(next_pos < right, next_pos, width), sentinel), 1)
+    terminal = torch.cat((right, sentinel), 1)
+    for _ in range(width.bit_length()):
+        # Propagate the starts only within their original run.
+        visited = visited | torch.zeros_like(link).scatter_add(1, link, visited.long()).bool()
+        link = link.gather(1, link)
+        # Clamp BEFORE doubling. Otherwise a hop crossing a run boundary
+        # could hide a valid shorter path to that run's end.
+        jump = torch.minimum(jump.gather(1, jump), terminal)
+    complete = jump.gather(1, left.clamp(0, width - 1)) == right
+    start = live & ((pos == left) | (complete & visited[:, :width]))
+    next_start = torch.cat((start[:, 1:], torch.zeros_like(start[:, :1])), 1)
+    end = live & ((pos + 1 == right) | next_start)
+    return span_table(start, end, padded=padded)
 
 
 def word_bounds(byte_seq, separators=_WORD_SEPARATORS):

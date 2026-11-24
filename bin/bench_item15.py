@@ -252,8 +252,16 @@ def main():
                 current = fixed_storage()
                 record['fixed_store_resizes'].extend((update, n) for n in current if current[n] != storage[n])
                 storage = current
+            buffers = {n: p.detach().cpu().clone() for n, p in model.named_buffers()}
+            # Older readers stored this mask as a set of observed bytes.
+            # Record its actual contents so allocation changes remain comparable.
+            for name, module in model.named_modules():
+                if type(module).__name__ == 'WholeSpace' and not hasattr(module, '_standalone_bytes_seen'):
+                    seen = torch.zeros(256, dtype=torch.bool, device='cpu')
+                    seen[list(getattr(module, '_standalone_run_bytes', ()))] = True
+                    buffers[f'{name}._standalone_bytes_seen'] = seen
             torch.save(dict(parameters={n: p.detach().cpu().clone() for n, p in model.named_parameters()},
-                            buffers={n: p.detach().cpu().clone() for n, p in model.named_buffers()},
+                            buffers=buffers,
                             initialized_buffer_lengths={f'{n}.{suffix}': sum(module._priming_bridge_counts)
                                 for n, module in model.named_modules() if hasattr(module, '_priming_bridge_counts')
                                 for suffix in ('_priming_bridge_src', '_priming_bridge_dst', '_priming_bridge_bits')},
