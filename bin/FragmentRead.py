@@ -37,11 +37,8 @@ def knowing(owner, bank, words):
     ``words`` ``[B, W]`` of ``bank``: each occurrence present at its own activity
     where its word is in ``words``, and absent elsewhere. Nothing is
     published and nothing is kept."""
-    token = bank.token
-    width = words.shape[1]
-    # The extra seat represents all missing tokens, including an empty field.
-    padded = torch.nn.functional.pad(words, (0, 1))
-    held = padded.gather(1, torch.where((token >= 0) & (token < width), token, width))
+    from BasicPercepts import reading_scope
+    held = (reading_scope(bank, words.shape[1]) & words[:, :, None]).any(1)
     activity = torch.where(held[..., None], bank.activity, torch.zeros_like(bank.activity))
     with torch.no_grad():
         evidence = owner.cs_read_bank(bank, activity, publish=False)

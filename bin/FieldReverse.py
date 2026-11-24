@@ -69,38 +69,108 @@ class NativeDecode(nn.Module):
         return torch.where(valid, self.spellings[selected, offset.clamp_max(self.spellings.shape[1] - 1)], 0).long()
 
 
-def spelling(basic, row):
-    """The bytes a basic percept spells: its stored form, its run, or its
-    parts' own texts in order; ``None`` where it spells none."""
+def assemble_parts(parts, starts, width):
+    """Extend each assembly with its most-overlapping compatible next occurrence.
+
+    Parts are ordered witnesses [rows, occurrences, bytes], padded with -1.
+    Starts are relative to the predicted percept. A gap or a conflict can
+    leave an incomplete spelling. Empty bytes are never filled from the input.
+    """
+    count, occurrences, length = parts.shape
+    assembled = parts.new_full((count, width), -1)
+    if not occurrences or not width or not length:
+        return assembled
+    offset = torch.arange(length, device=parts.device)
+    position = starts[..., None] + offset
+    valid = parts >= 0
+    stop = starts + valid.sum(-1)
+    frontier = starts.new_zeros(count)
+    place = torch.arange(width, device=parts.device)
+    batch = torch.arange(count, device=parts.device)
+    for _ in range(occurrences):
+        old = assembled[batch[:, None, None], position.clamp(0, width - 1)]
+        shared = valid & (position < frontier[:, None, None])
+        agrees = (~shared | (old == parts)).all(-1)
+        grows = (starts >= 0) & (starts <= frontier[:, None]) & (stop > frontier[:, None]) & (stop <= width)
+        eligible = grows & agrees
+        overlap = torch.where(eligible, frontier[:, None] - starts, -1)
+        next_part = overlap.argmax(1)
+        end = torch.where(eligible.any(1), stop[batch, next_part], frontier)
+        inside = (place >= frontier[:, None]) & (place < end[:, None])
+        at = (place - starts[batch, next_part, None]).clamp(0, length - 1)
+        assembled = torch.where(inside, parts[batch, next_part].gather(1, at), assembled)
+        frontier = end
+    return assembled
+
+
+def _spelling_definition(basic, row):
     raw = basic.form_of(row)
-    if raw is None:
-        raw = basic.runs.get(int(row))
-    if raw is None:
+    if raw is not None:
+        identity = getattr(basic.native, 'identity', None)
+        children = () if identity is None else identity.nested.get(raw, ())
+        # The predicted form identifies its constituents. Its own occurrence
+        # cannot teach the inverse how to spell itself.
+        if not children:
+            return raw, None
+        return raw, tuple((part, lo) for part, lo, hi in children
+                          if part != raw and 0 <= lo < hi <= len(raw) and hi - lo == len(part))
+    run = basic.runs.get(int(row))
+    if run is None:
         texts = [basic._part_text(part) for part in basic.occurrences[int(row)][0]]
-        raw = None if not texts or any(text is None for text in texts) else b''.join(texts)
-    return raw
+        run = None if not texts or any(text is None for text in texts) else b''.join(texts)
+    return run, None
+
+
+def _assemble_definitions(definitions, width, device):
+    occurrences = max(map(len, definitions))
+    length = max((len(part) for group in definitions for part, _ in group), default=0)
+    parts = torch.full((len(definitions), occurrences, length), -1, dtype=torch.long, device='cpu')
+    starts = torch.full((len(definitions), occurrences), -1, dtype=torch.long, device='cpu')
+    for row, group in enumerate(definitions):
+        for i, (part, start) in enumerate(group):
+            parts[row, i, :len(part)] = torch.tensor(list(part), device='cpu')
+            starts[row, i] = start
+    return assemble_parts(parts.to(device), starts.to(device), width)
+
+
+def spelling(basic, row):
+    """Host inspection of the bytes reconstructed from a basic percept's definition."""
+    raw, children = _spelling_definition(basic, row)
+    if children is None:
+        return raw
+    result = _assemble_definitions([children], len(raw), 'cpu')[0]
+    return bytes(result[result >= 0].tolist())
 
 
 def codebook(basic):
-    """The percept codebook's spelled rows: each basic percept that spells
-    bytes (no place, no conjunction, no value), with each of its bytes
-    ``[P, L]`` (``-1`` past its length). Kept until a row is added."""
-    key = (basic.revision, len(basic.index))
+    """Each predicted percept's byte projection, shared until its definition changes."""
+    identity = getattr(basic.native, 'identity', None)
+    key = (basic.revision, len(basic.index), None if identity is None else identity.revision,
+           basic.value_codes.device)
     held = basic.__dict__.get('_reconstruction_codebook')
     if held is not None and held[0] == key:
         return held[1]
-    rows, spelled = [], []
+    rows, definitions = [], []
     for row in range(len(basic.index)):
         if row in basic.place_rows or row in basic.conjunctions or basic.is_value(row):
             continue
-        raw = spelling(basic, row)
+        raw, children = _spelling_definition(basic, row)
         if raw:
             rows.append(row)
-            spelled.append(list(raw))
-    length = max([len(raw) for raw in spelled] + [1])
-    table = torch.full((len(spelled), length), -1, dtype=torch.long)
-    for n, raw in enumerate(spelled):
-        table[n, :len(raw)] = torch.tensor(raw)
+            definitions.append((raw, children))
+    width = max((len(raw) for raw, _ in definitions), default=1)
+    table = torch.full((len(rows), width), -1, dtype=torch.long, device='cpu')
+    nested, seats = [], []
+    for n, (raw, children) in enumerate(definitions):
+        if children is not None:
+            seats.append(n)
+            nested.append(children)
+        else:
+            table[n, :len(raw)] = torch.tensor(list(raw), device='cpu')
+    device = basic.value_codes.device
+    table = table.to(device)
+    if nested:
+        table.index_copy_(0, torch.tensor(seats, device=device), _assemble_definitions(nested, width, device))
     basic.__dict__['_reconstruction_codebook'] = (key, (rows, table))
     return rows, table
 

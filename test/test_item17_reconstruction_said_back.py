@@ -206,3 +206,34 @@ def test_open_reconstruction_is_independent_of_generate_rules(tmp_path, monkeypa
         assert reached and all(value['reached'] == 0 for value in reached.values()), reached
     finally:
         model.End()
+
+
+def test_reconstruction_extends_only_with_agreeing_proper_occurrences():
+    from types import SimpleNamespace
+    from FieldReverse import assemble_parts, codebook, spelling
+
+    # The name alone spells a different sequence. The inverse can only get
+    # hello by following proper witnesses. At frontier 3 the larger overlap
+    # wins even over an earlier-listed competing extension ("lxx").
+    name = b'xxxxx'
+    children = ((name, 0, 5), (b'hel', 0, 3), (b'lxx', 2, 5),
+                (b'llo', 2, 5), (b'ello', 1, 5))
+    identity = SimpleNamespace(nested={name: children}, revision=0)
+    basic = SimpleNamespace(index=[0], native=SimpleNamespace(identity=identity), revision=0,
+                            value_codes=torch.zeros(1), form_of=lambda _: name,
+                            place_rows={}, conjunctions={}, is_value=lambda _: False)
+    rows, table = codebook(basic)
+    assert rows == [0] and bytes(table[0].tolist()) == spelling(basic, 0) == b'hello'
+    for parts, expected in (
+            (((name, 0, 5),), b''),
+            (((b'hel', 0, 3), (b'llo', 2, 5)), b'hello'),
+            (((b'hel', 0, 3), (b'bad', 2, 5)), b'hel'),
+            (((b'ha', 0, 2), (b'ha', 2, 4)), b'haha')):
+        identity.nested[name] = parts
+        identity.revision += 1
+        assert spelling(basic, 0) == expected
+        projected = codebook(basic)[1][0]
+        assert bytes(projected[projected >= 0].tolist()) == expected
+    parts = torch.tensor([[[104, 101, 108], [108, 108, 111]]])
+    actual = torch.compile(assemble_parts, fullgraph=True, backend='eager')(parts, torch.tensor([[0, 2]]), 5)
+    assert bytes(actual[0].tolist()) == b'hello'

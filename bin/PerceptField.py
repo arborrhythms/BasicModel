@@ -25,24 +25,37 @@ class PerceptField:
     reading: torch.Tensor | None = None        # [batch, attended] the reading that holds each, or -1
     index: torch.Tensor | None = None          # [batch, attended] each one's occurrence in the bank
 
+    narrowed: bool = False
+
+    def membership(self, batch=slice(None), readings=slice(None)):
+        """Which attended occurrences each requested aperture can read."""
+        if self.narrowed:
+            from BasicPercepts import extent_members
+            inside, around = extent_members(self.spans[batch], self.where[batch, readings])
+            return inside | around
+        slots = torch.arange(self.where.shape[1], device=self.where.device)[readings]
+        return self.reading[batch, None] == slots[None, :, None]
+
     def clone(self):
         return type(self)(self.keys, *(None if getattr(self, name) is None else
             getattr(self, name).clone() for name in
             ('values', 'events', 'spans', 'where', 'when', 'percept_where', 'when_band', 'boundaries')),
             self.parts, None if self.reading is None else self.reading.clone(),
-            None if self.index is None else self.index.clone())
+            None if self.index is None else self.index.clone(),
+            self.narrowed)
 
     def select(self, batch, reading):
         """One stream's one reading: its attended percepts are those the
         reading holds, renumbered as reading 0."""
         b, e = slice(batch, batch + 1), slice(reading, reading + 1)
-        held = self.reading[b] == reading
+        held = self.membership(b, e)[:, 0]
         return type(self)(self.keys, self.values[:, b, e], self.events[:, b] * held[None, ..., None],
                           self.spans[b], self.where[b, e], self.when[b, e],
                           self.percept_where,
                           None if self.when_band is None else self.when_band[b, e],
                           None if self.boundaries is None else self.boundaries[:, :, b, e],
-                          None, torch.where(held, 0, -1), None if self.index is None else self.index[b])
+                          None, torch.where(held, 0, -1), None if self.index is None else self.index[b],
+                          self.narrowed)
 
     def selected(self, keys):
         lookup = {key: i for i, key in enumerate(self.keys)}
@@ -60,6 +73,5 @@ class PerceptField:
                                dtype=torch.long, device=self.events.device)
         padded = torch.cat((self.events, self.events.new_zeros(1, *self.events.shape[1:])))
         chosen = padded.index_select(0, indices)                                # [k, B, A, 2]
-        slots = torch.arange(self.values.shape[2], device=chosen.device)
-        held = (self.reading[:, None, :] == slots[None, :, None]).to(chosen)    # [B, K, A]
+        held = self.membership()
         return chosen[:, :, None] * held[None, ..., None]

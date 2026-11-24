@@ -260,20 +260,31 @@ class WordIdentity(nn.Module):
                 self._catalog['occurrence_bank'] = stamp, None
                 return None
             groups.setdefault(len(raw), []).append((raw, row, atom))
-        spellings, rows, catalogs = [], [], []
+        spellings, rows, catalogs, ranks = [], [], [], []
+        added_rank = self._added_rank()
         for size in sorted(groups):
             entries = groups[size]
             spellings.append(torch.tensor([list(raw) for raw, _, _ in entries],
                                           dtype=torch.uint8, device=device))
             rows.extend(row for _, row, _ in entries)
+            ranks.extend(-1 if len(atom[1]) == 1 else added_rank[atom[1]] for _, _, atom in entries)
             if self.property_width:
                 catalogs.extend(self.catalog_code(atom) for _, _, atom in entries)
         addresses = torch.tensor(rows, dtype=torch.long, device=device)
         catalog = (torch.stack(catalogs).to(device) if catalogs else
                    torch.empty(len(rows), self.property_width, device=device))
-        bank = tuple(spellings), addresses, catalog
+        bank = tuple(spellings), addresses, catalog, addresses.new_tensor(ranks)
         self._catalog['occurrence_bank'] = stamp, bank
         return bank
+
+    def located_parts(self, surface, spans, padding):
+        """The parts of each unit found directly in the surface, using its learned inventory."""
+        from BasicPercepts import parts_for_units
+        bank = self.occurrence_bank(surface.device)
+        if bank is None:
+            return None
+        spellings, rows, _, ranks = bank
+        return parts_for_units(surface, spans, spellings, rows, ranks, padding)
 
     def _link(self, raw):
         """Link a new stored form to the stored forms it holds as a run (its

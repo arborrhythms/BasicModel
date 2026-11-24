@@ -218,9 +218,14 @@ class OccurrenceCredit:
     def observe(self, anticipated, index):
         from Layers import Error
         bank = self.bank
-        seen = (index[:, None] >= 0) & (bank.token == index[:, None]) & (bank.activity[..., 0] > 0)
+        from BasicPercepts import reading_scope
+        if not bank.where.shape[1] or not anticipated.shape[-1]:
+            return
+        batch = torch.arange(len(index), device=index.device)
+        scoped = reading_scope(bank, bank.where.shape[1])[batch, index.clamp_min(0)]
+        seen = (index[:, None] >= 0) & scoped & (bank.activity[..., 0] > 0)
         live = seen.any(1)
-        if not bool(live.any()) or not anticipated.shape[-1]:
+        if not bool(live.any()):
             return
         # The fixation limits *both* sides. Its action probability is absent
         # from this cost. Overlapping events at a byte share the same place.

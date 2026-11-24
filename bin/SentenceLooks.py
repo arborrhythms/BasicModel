@@ -14,6 +14,7 @@ from dataclasses import fields
 import torch
 from torch.nn import functional as F
 
+from BasicPercepts import reading_scope
 from RequestRead import at_rows, spread_once
 
 
@@ -35,9 +36,7 @@ def where_match(bank, band_share, activity, readings):
     """Each reading's where match ``[B, readings]``: the share on the where
     wires of the occurrences it holds, each weighted by its presence in the
     look, referred to the most salient reading through the exponential."""
-    token = bank.token
-    slots = torch.arange(readings, device=token.device)
-    held = token[:, None, :] == slots[None, :, None]                      # [B, readings, occurrences]
+    held = reading_scope(bank, readings)
     presence = activity[..., 0]
     share = torch.where(held, (band_share * presence)[:, None, :], 0.).sum(-1)
     live = held.any(-1)
@@ -74,10 +73,8 @@ def look(model, bank, request, own):
 def extent_of(bank, activity, readings):
     """The readings a look holds, ``[B, readings]``: those with an
     occurrence active in it."""
-    token = bank.token
-    lit = (activity.amax(-1) > 0) & (token >= 0)
-    slots = torch.arange(readings, device=token.device)
-    return ((token[:, None, :] == slots[None, :, None]) & lit[:, None, :]).any(-1)
+    lit = activity.amax(-1) > 0
+    return (reading_scope(bank, readings) & lit[:, None]).any(-1)
 
 
 def word_activity(field, concepts, known, extent, own, bank, general=False):
@@ -94,10 +91,7 @@ def word_activity(field, concepts, known, extent, own, bank, general=False):
     value = (evidence[..., 0] - evidence[..., 1])                         # [S, B, W]
     match = (ids[:, :, None] == concepts[None]) & (concepts[None] >= 0)    # [S, B, W]
     concept = torch.where(match, value.to(torch.float32), -torch.inf).amax(0)
-    token = bank.token
-    slots = torch.arange(W, device=token.device)
-    presence = torch.where(token[:, None, :] == slots[None, :, None],
-                           own[..., 0][:, None, :], 0.).amax(-1)
+    presence = torch.where(reading_scope(bank, W), own[..., 0][:, None], 0.).amax(-1)
     width = min(W, extent.shape[1])
     inside = F.pad(extent[:, :width], (0, W - width))
     word = torch.where(known & inside & (concept > 0), concept, -torch.inf)

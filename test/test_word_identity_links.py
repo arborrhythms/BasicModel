@@ -109,3 +109,28 @@ def test_ordinary_spelling_observations_preserve_the_order_and_counts_of_learnin
         assert getattr(serial, name) == getattr(batched, name), name
     for raw in forms:
         assert serial.form(raw).equal(batched.form(raw))
+
+
+def test_input_ladder_finds_learned_parts_even_when_the_whole_has_no_word_row(monkeypatch):
+    import torch
+    from BasicPercepts import parts_for_units
+
+    identity, *_ = coded((b'ell', b'll', b'he', b'!'))
+    raw = torch.tensor([list(b'hell!'), list(b' hell')])
+    spans = torch.tensor([[[0, 4], [1, 4], [2, 4], [0, 0]], [[1, 5], [2, 5], [3, 5], [0, 0]]])
+    assert b'hell' not in identity.words
+    expected = [[identity.atoms[atom] for atom in identity.atoms_of(word)]
+                for word in (b'hell', b'ell', b'll', b'')]
+    def word_lookup(*args):
+        raise AssertionError('the input part read asked for a whole word')
+    monkeypatch.setattr(identity, 'parts', word_lookup)
+    monkeypatch.setattr(identity, 'atoms_of', word_lookup)
+    spellings, rows, _, ranks = identity.occurrence_bank(raw.device)
+    compiled = torch.compile(parts_for_units, fullgraph=True, backend='eager')
+    for result in (identity.located_parts(raw, spans, -1), compiled(raw, spans, spellings, rows, ranks, -1)):
+        addresses, counts = result
+        for batch in range(2):
+            for unit, parts in enumerate(expected):
+                assert addresses[batch, unit, :len(parts)].tolist() == parts
+                assert counts[batch, unit] == len(parts)
+                assert addresses[batch, unit, len(parts):].eq(-1).all()

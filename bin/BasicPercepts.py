@@ -16,6 +16,43 @@ def attended_capacity():
     return int(TheXMLConfig.get('architecture.attendedPercepts', default=256))
 
 
+def extent_members(spans, apertures):
+    """Located parts within each aperture and wholes containing it, both [B, K, O]."""
+    start, end = spans[:, None].unbind(-1)
+    lo, hi = apertures.unbind(-1)
+    lo, hi = lo[..., None], hi[..., None]
+    live = (end > start) & (hi > lo)
+    return live & (start >= lo) & (end <= hi), live & (start <= lo) & (end >= hi)
+
+
+def scoped_max(values, scope):
+    """Pool located values [R,B,O,2] over each aperture without an R×B×K×O allocation."""
+    if not scope.shape[1]:
+        return values[:, :, :0]
+    # Keep the row-by-occurrence Pi table independent of the reading axis.
+    # The extra zero is the initial value of the original scatter reduction,
+    # including its share of the gradient when its lane ties at zero.
+    maxima = []
+    for mask in scope.unbind(1):
+        visible = values.masked_fill(~mask[None, ..., None], -torch.inf)
+        maxima.append(F.pad(visible, (0, 0, 0, 1)).amax(2))
+    return torch.stack(maxima, dim=2)
+
+
+def reading_scope(bank, width):
+    """Occurrences in each reading's aperture, with each matching extent counted once."""
+    scope = getattr(bank, 'scope', None)
+    if scope is None:
+        if getattr(bank, 'where', None) is None or getattr(bank, 'span', None) is None:
+            slots = torch.arange(width, device=bank.token.device)
+            return bank.token[:, None] == slots[None, :, None]
+        inside, around = extent_members(bank.span, bank.where)
+        scope = inside | around
+    if width > scope.shape[1]:
+        return F.pad(scope, (0, 0, 0, width - scope.shape[1]))
+    return scope[:, :width]
+
+
 @dataclass(frozen=True)
 class PerceptBank:
     """The location-bound percepts of a sentence, made once by its one
@@ -44,6 +81,8 @@ class PerceptBank:
     # holds: a part's event, a stored form, or a run of a row's parts.
     # ``None``: every occurrence can.
     holder: torch.Tensor = None
+    # Derived from this table’s spans. Replacing its geometry starts a fresh scope.
+    scope: torch.Tensor = field(default=None, init=False, repr=False, compare=False)
     # Request-independent Pi reads, scoped to this sentence's opening:
     # part, whole, added, outside, live location factor, stored location factor.
     # replace(bank, ...) deliberately drops these: another table is another read.
@@ -205,36 +244,52 @@ def spelling_occurrences(surface, spellings, groups, nominations, known, first_p
     return torch.where(learned[..., None], 0, spans), torch.where(learned[..., None], spans, 0), keys.sort(1).values
 
 
-def occurrence_parts(raw, spans, spellings, part_codes, catalog):
-    """Join the native parts contained in each byte extent, including learned runs.
+def part_starts(raw, spans, spellings):
+    """First occurrence of each learned part within each span, or the surface width."""
+    raw = raw.to(torch.uint8)
+    batch, width = raw.shape
+    lo, hi = spans.clamp(0, width).unbind(-1)
+    starts = []
+    for group in spellings:
+        size = group.shape[1]
+        if size > width:
+            starts.append(lo.new_full((*lo.shape, len(group)), width))
+            continue
+        windows = raw.unfold(1, size, 1)
+        count = windows.shape[1]
+        pos = torch.arange(count, device=raw.device)
+        step = max(1, (1 << 22) // max(1, batch * count * size))
+        for keys in group.split(step):
+            hit = (windows[:, :, None] == keys).all(-1).transpose(1, 2)
+            # The nearest hit at or after each byte. A span may start anywhere,
+            # including inside another hit, and a match must end inside it.
+            positions = torch.where(hit, pos, width)
+            following = positions.flip(-1).cummin(-1).values.flip(-1)
+            following = F.pad(following, (0, 1), value=width)
+            first = following.gather(2, lo.clamp_max(count)[:, None].expand(-1, len(keys), -1))
+            first = first.transpose(1, 2)
+            starts.append(torch.where(first + size <= hi[..., None], first, width))
+    return torch.cat(starts, -1) if starts else lo.new_empty((*lo.shape, 0))
 
-    Each distinct part votes once per occurrence. Keeping a single maximum
-    over the selected parts preserves the native basis gradient at ties.
-    """
+
+def parts_for_units(raw, spans, spellings, rows, added_rank, padding):
+    """Native addresses for the observed parts, in the ladder's constituent order."""
+    first = part_starts(raw, spans, spellings)
+    width = raw.shape[1]
+    present = first < width
+    # Characters follow surface order. Learned runs follow admission order.
+    rank = torch.where(added_rank < 0, first, width + added_rank)
+    order = torch.where(present, rank, torch.iinfo(rank.dtype).max).argsort(-1)
+    return torch.where(present.gather(-1, order), rows[order], padding), present.sum(-1)
+
+
+def occurrence_parts(raw, spans, spellings, part_codes, catalog):
+    """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
     if not spellings:
         return (part_codes.new_zeros(batch, occurrences, part_codes.shape[-1]),
                 catalog.new_ones(batch, occurrences, catalog.shape[-1]))
-    raw = raw.to(torch.uint8)
-    lo, hi = spans.clamp(0, raw.shape[1]).unbind(-1)
-    masks = []
-    for group in spellings:
-        size = group.shape[1]
-        if size > raw.shape[1]:
-            masks.append(lo.new_zeros(batch, occurrences, len(group), dtype=torch.bool))
-            continue
-        windows = raw.unfold(1, size, 1)
-        count = windows.shape[1]
-        # Prefix counts distinguish a hit inside the extent from the same
-        # spelling immediately outside it, including overlapping matches.
-        step = max(1, (1 << 22) // max(1, batch * count * size))
-        for keys in group.split(step):
-            found = (windows[:, :, None] == keys).all(-1)
-            prefix = F.pad(found.transpose(1, 2).contiguous().long().cumsum(-1), (1, 0))
-            start = lo.clamp_max(count)[:, None].expand(-1, len(keys), -1)
-            stop = (hi - size + 1).clamp(0, count)[:, None].expand_as(start)
-            masks.append((prefix.gather(2, stop) > prefix.gather(2, start)).transpose(1, 2))
-    found = torch.cat(masks, -1)
+    found = part_starts(raw, spans, spellings) < raw.shape[1]
     coordinates = torch.cat((part_codes, catalog.to(part_codes)), -1)
     step = max(1, (1 << 22) // max(1, batch * coordinates.numel()))
     joined = torch.cat([coordinates.masked_fill(~mask[..., None], -torch.inf).amax(-2)
@@ -1031,7 +1086,7 @@ class BasicPercepts(nn.Module):
         identity = getattr(self.native, 'identity', None)
         bank = identity.occurrence_bank(device) if identity is not None and O else None
         if bank is not None:
-            spellings, rows, catalog = bank
+            spellings, rows, catalog, _ = bank
             basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
             parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog)
             codes[..., :self.identity_width] = parts
@@ -1258,8 +1313,7 @@ class BasicPercepts(nn.Module):
             at = torch.searchsorted(known, key.contiguous()).clamp_max(known.shape[1] - 1)
             holder = holder | ((hi > lo) & (hi <= width) & (known.gather(1, at) == key))
         real = spans[..., 1] > spans[..., 0]
-        holds = ((spans[:, None, :, 0] >= brackets[..., :1]) & (spans[:, None, :, 1] <= brackets[..., 1:])
-                 & real[:, None])
+        holds, containing = extent_members(spans, brackets)
         token = (torch.where(holds.any(1), holds.int().argmax(1), -1) if holds.shape[1]
                  else torch.full_like(spans[..., 0], -1))
         when = options.get('when')
@@ -1295,9 +1349,11 @@ class BasicPercepts(nn.Module):
         observed = (seen.gather(1, ends[..., 1]) - seen.gather(1, ends[..., 0])) == spans[..., 1] - spans[..., 0]
         activity = (real & observed)[..., None].expand(-1, -1, 2).to(dtype)
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
-        return PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
+        bank = PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
                            when_band, registry, holder)
+        object.__setattr__(bank, 'scope', holds | containing)
+        return bank
 
     def prepare(self, bank):
         """Read the fixed opening once for all looks and candidate paths.
@@ -1348,9 +1404,16 @@ class BasicPercepts(nn.Module):
         rows = bank.rows
         K = bank.where.shape[1]
         slot = torch.where(look.token >= 0, look.token, K)
+        # The wide-open reading and its reconstruction use the original
+        # placements. A narrowed look can also see wholes around its aperture.
+        scope = None if activity is None else reading_scope(bank, K)
+        if scope is not None:
+            scope = scope.gather(2, look.index[:, None].expand(-1, K, -1)) & look.filled[:, None]
 
         def by_reading(x):
             """``[n, B, A, 2]`` joined over each reading's attended percepts."""
+            if scope is not None:
+                return scoped_max(x, scope)
             out = x.new_zeros(x.shape[0], x.shape[1], K + 1, 2)
             return out.scatter_reduce(2, slot[None, ..., None].expand_as(x), x, 'amax')[:, :, :K]
         B, A = presence.shape
@@ -1384,7 +1447,7 @@ class BasicPercepts(nn.Module):
             values = look.table.new_zeros(0, B, K, 2)
             boundaries = values.new_zeros(2, *values.shape)
         return PerceptField(tuple(('bp', row) for row in rows), values, events, look.span,
-            bank.where, bank.when, None, bank.when_band, boundaries, None, look.token, look.index)
+            bank.where, bank.when, None, bank.when_band, boundaries, None, look.token, look.index, scope is not None)
 
     def outside(self, table, rows, width):
         """How far each row's own wholes are witnessed outside over each

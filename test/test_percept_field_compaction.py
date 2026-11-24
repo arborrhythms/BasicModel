@@ -121,3 +121,53 @@ def test_compiled_overlapping_spellings_preserve_nomination_order_and_locations(
         assert widths[b] == len(expected)
         assert [tuple(extent) for extent in spans[b, :widths[b]].tolist()] == expected
         assert from_whole[b].sum() == (4, 2)[b]
+
+
+def test_look_reads_strictly_inside_parts_and_enclosing_wholes():
+    from BasicPercepts import extent_members, reading_scope
+    from SentenceLooks import extent_of
+    from types import SimpleNamespace
+
+    # The look is "ell" in "hello". "ll" begins later, the whole "hello"
+    # starts earlier, and neither of the partial overlaps belongs to the look.
+    spans = torch.tensor([[[2, 4], [0, 5], [0, 2], [3, 5], [4, 5], [1, 4], [0, 0]]])
+    windows = torch.tensor([[[1, 4], [0, 0]]])
+    parts, wholes = extent_members(spans, windows)
+    assert parts[0, 0].tolist() == [True, False, False, False, False, True, False]
+    assert wholes[0, 0].tolist() == [False, True, False, False, False, True, False]
+    bank = SimpleNamespace(span=spans, where=windows)
+    scope = reading_scope(bank, 2)
+    assert torch.equal(scope, parts | wholes)
+    for index in range(spans.shape[1]):
+        activity = torch.zeros(1, spans.shape[1], 2)
+        activity[:, index] = 1
+        assert torch.equal(extent_of(bank, activity, 2), scope[:, :, index])
+
+
+def test_narrow_read_selects_located_occurrences_without_changing_open_placement():
+    basic = BasicPercepts(NS(_basis=parts_book(5, 5)), 5, 0, 8)
+    row = basic.reserve((2,), ())
+    # The two l bytes have the same content and distinct addresses.
+    raw = torch.tensor([list(b'hello')])
+    atoms = torch.tensor([[0, 1, 2, 2, 3]])
+    starts = torch.arange(5)
+    parts = torch.stack((starts, starts + 1), -1)[None]
+    wholes = torch.tensor([[[2, 4], [0, 5], [0, 2], [3, 5]]])
+    window = torch.tensor([[[1, 4]]])
+    bank = basic.lookup((atoms, parts, None, raw, wholes), window, (row,))
+    opened = basic.read_bank(bank)
+    assert not opened.narrowed
+    narrow = basic.read_bank(bank, bank.activity)
+    assert narrow.narrowed
+    scope = narrow.membership()[0, 0]
+    assert {tuple(span) for span in narrow.spans[0, scope].tolist()} == {
+        (1, 2), (2, 3), (3, 4), (1, 4), (2, 4), (0, 5)}
+    selected = narrow.select(0, 0)
+    torch.testing.assert_close(selected.events, narrow.events * scope[None, None, :, None])
+    # The Pi reads each eligible percept at its own location. The same
+    # membership governs the upward reading and its gradient at tied maxima.
+    reference = torch.nn.functional.pad(narrow.events[:, :, scope], (0, 0, 0, 1)).amax(2)
+    torch.testing.assert_close(narrow.values[:, :, 0], reference)
+    (actual,) = torch.autograd.grad(narrow.values.sum(), narrow.events, retain_graph=True)
+    (expected,) = torch.autograd.grad(reference.sum(), narrow.events)
+    torch.testing.assert_close(actual, expected)

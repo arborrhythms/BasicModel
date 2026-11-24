@@ -11326,21 +11326,30 @@ class PartSpace(Space):
 
         import Meronomy
         byte_slab = getattr(self, '_staged_unit_bytes', None)
-        layout = None
+        identity = getattr(ps, 'identity', None)
+        simple_parts = identity is not None and not identity.nested and identity._marker_pattern is None
+        layout = prepared_parts = prepared_counts = None
         if torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab):
             compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
             layout = Meronomy.sentence_unit_spans(
                 compact, unit_spans_rows,
                 include_gaps=not self._serial_object_meta)
-            # WordIdentity currently accepts variable-length Python byte strings.
-            # Materialize the batch once at that consumer. Positional consumers
-            # below use the original device layout.
-            # Each real unit covers at least one delivered byte. Padding
-            # after this bound cannot hold another interval of the surface.
-            unit_spans_rows = layout[:, :byte_count].detach().tolist()
+            # Legacy reporting and omission still consume host intervals. When
+            # the alphabet is known, gather their counts in the same transfer.
+            delivered_layout = layout[:, :byte_count]
+            if simple_parts and identity.atoms:
+                prepared_parts = identity.located_parts(compact[:, :byte_count],
+                                                        delivered_layout[:, :word_capacity], -1)
+            if prepared_parts is None:
+                unit_spans_rows = delivered_layout.detach().tolist()
+            else:
+                counts_device = prepared_parts[1]
+                all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
+                records = torch.cat((delivered_layout, all_counts[..., None]), -1).tolist()
+                unit_spans_rows = [[(lo, hi) for lo, hi, _ in row] for row in records]
+                prepared_counts = [[n for _, _, n in row[:word_capacity]] for row in records]
         staged_rows, nested_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
-        identity = getattr(ps, 'identity', None)
         part_capacity = 3
         # Rung-0 admission by recurrence (fold-ladder plan, contract 4,
         # step D-0): a unit seen ``chunk_promotion_threshold`` times gets a
@@ -11398,6 +11407,28 @@ class PartSpace(Space):
                 for w, (lo, hi) in enumerate(spans[:word_capacity]):
                     if changed is None or not changed[b][w]:
                         identity.observe_nested(raw[lo:hi])
+        located_parts = None
+        if layout is not None and simple_parts and not hiding:
+            # Register only observed characters. Cuts can split UTF-8, so decode
+            # each actual unit with the same surrogate handling as WordIdentity.
+            from WordIdentity import text_of
+            alphabet = dict.fromkeys(char for raw, spans in units
+                                     for lo, hi in spans[:word_capacity] for char in text_of(raw[lo:hi]))
+            missing_atoms = [('part', char) for char in alphabet if ('part', char) not in identity.atoms]
+            for atom in missing_atoms:
+                identity._atom(atom)
+            if missing_atoms or prepared_parts is None:
+                prepared_parts = identity.located_parts(compact[:, :byte_count],
+                                                        layout[:, :min(byte_count, word_capacity)], -1)
+                prepared_counts = None
+            if prepared_parts is not None:
+                located_parts, lengths = prepared_parts
+                counts = lengths.tolist() if prepared_counts is None else prepared_counts
+                missing = word_capacity - lengths.shape[1]
+                counts = [row + [0] * missing for row in counts]
+                lengths = F.pad(lengths, (0, missing))
+                located_parts = F.pad(located_parts, (0, 0, 0, missing), value=-1)
+                part_capacity = max(3, max((max(row) for row in counts), default=0))
         observed_forms = []
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
@@ -11406,6 +11437,10 @@ class PartSpace(Space):
                 native_rows.append([(-1 if hidden_rows is not None and hidden_rows[b][i]
                                      else int(ps.get_id(bytes([value])))) for i, value in enumerate(visible)])
                 native_spans.append([(i, i+1) for i in range(len(raw))])
+            if located_parts is not None:
+                if admit:
+                    observed_forms.extend(raw[lo:hi] for lo, hi in spans[:word_capacity])
+                continue
             staged_words = []
             for word_index in range(word_capacity):
                 if word_index < len(spans):
@@ -11456,11 +11491,17 @@ class PartSpace(Space):
 
         # Only native addresses and their occupancy cross into the fold. The
         # sentence layout supplies the offsets and extents of every member.
-        counts = [[len(pids) for pids in row] for row in staged_rows]
-        pid_grid = torch.tensor([[pids + [null_pid] * (part_capacity - len(pids)) for pids in row]
-                                 for row in staged_rows], dtype=torch.long, device=dev)
+        if located_parts is None:
+            counts = [[len(pids) for pids in row] for row in staged_rows]
+            pid_grid = torch.tensor([[pids + [null_pid] * (part_capacity - len(pids)) for pids in row]
+                                     for row in staged_rows], dtype=torch.long, device=dev)
+            lengths = torch.tensor(counts, dtype=torch.long, device=dev)
+        else:
+            members = located_parts[:, :, :part_capacity]
+            pid_grid = members.masked_fill(members < 0, null_pid)
+            pid_grid = F.pad(pid_grid, (0, part_capacity - pid_grid.shape[-1]), value=null_pid)
         positions = torch.arange(part_capacity, device=dev)
-        part_mask = positions < torch.tensor(counts, dtype=torch.long, device=dev)[..., None]
+        part_mask = positions < lengths[..., None]
         if layout is None:
             slots = pid_grid.new_tensor([spans[:word_capacity] + [(0, 0)] * max(0, word_capacity - len(spans))
                                          for _, spans in units])
