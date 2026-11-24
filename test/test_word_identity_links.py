@@ -477,3 +477,19 @@ def test_preexisting_part_becomes_a_holder_only_on_the_observing_page():
     versions = revisions(basic, [rows[b'b']], block).at(torch.zeros(2, 1, dtype=torch.long))[0, :, 0]
     torch.testing.assert_close(versions[0], before, rtol=0, atol=0)
     torch.testing.assert_close(versions[1], after, rtol=0, atol=0)
+
+
+def test_tensor_repair_selects_private_coordinates_and_reports_exhausted_holders():
+    from WordIdentity import distinguishing_coordinates
+    import torch
+
+    # Both pages must distinguish the first two outers. Their local usage
+    # differs, and the final outer on page one has no available coordinate.
+    lacking = torch.tensor([[[1, 1, 0], [0, 0, 1], [0, 0, 0]]] * 2, dtype=torch.bool)
+    kept = torch.ones(2, 3, dtype=torch.bool)
+    opposed = torch.zeros_like(kept)
+    usage = torch.tensor([[0, 1, 0], [1, 0, 0]])
+    pending = torch.tensor([[1, 1, 0], [1, 1, 1]], dtype=torch.bool)
+    given, remaining = distinguishing_coordinates(lacking, kept, opposed, torch.zeros_like(usage), usage, pending)
+    assert given.tolist() == [[True, False, True], [False, True, True]]
+    assert remaining.tolist() == [[False, False, False], [False, False, True]]

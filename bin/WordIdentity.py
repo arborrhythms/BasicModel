@@ -91,6 +91,32 @@ def pack_coordinates(codes, word_bits):
     return (groups.long() << shifts).sum(-1)
 
 
+def distinguishing_coordinates(lacking, kept, opposed, added, usage, pending):
+    """Rule 61 on device, for each independent inventory's outstanding holders.
+
+    Each eligible coordinate covers at least one pending outer. After at most
+    min(outers, coordinates) choices, all remaining outers are inseparable.
+    """
+    width = lacking.shape[-1]
+    coordinates = torch.arange(width, device=lacking.device)
+    given = torch.zeros_like(kept)
+    for _ in range(min(lacking.shape[-2], width)):
+        eligible = lacking & pending[..., None] & ~given[..., None, :]
+        preferred = (eligible & kept[..., None, :]).sum(-2)
+        covers = torch.where(preferred.any(-1, keepdim=True), preferred, eligible.sum(-2))
+        choice = (covers > 0) & (covers == covers.amax(-1, keepdim=True))
+        unopposed = choice & ~opposed
+        choice = torch.where(unopposed.any(-1, keepdim=True), unopposed, choice)
+        for cost in (added, usage):
+            least = torch.where(choice, cost, torch.iinfo(cost.dtype).max).amin(-1, keepdim=True)
+            choice = choice & (cost == least)
+        best = choice.long().argmax(-1, keepdim=True)
+        selected = choice & (coordinates == best)
+        given = given | selected
+        pending = pending & ~(lacking & selected[..., None, :]).any(-1)
+    return given, pending
+
+
 def base_atoms(raw):
     """A form's characters, each once, in order; the space is one of them."""
     return tuple(dict.fromkeys(('part', ch) for ch in text_of(raw)))
@@ -919,24 +945,11 @@ class WordIdentity(nn.Module):
         if against:
             opposed[:self.width] = torch.stack([self.atom_code(atom) for atom in against]).amax(0).eq(1)
         kept = self._kept(inner)
-        given = torch.zeros(self.total, dtype=torch.bool, device='cpu')
-        pending = torch.ones(len(outers), dtype=torch.bool, device='cpu')
-        while bool(pending.any()):
-            open_ = lacking[pending] & ~given
-            covers = (open_ & kept).sum(0)
-            if not bool(covers.any()):
-                covers = open_.sum(0)
-            if not bool(covers.any()):
-                self.failures.append((inner, tuple(o for o, p in zip(outers, pending.tolist()) if p)))
-                return None
-            choice = covers == covers.max()
-            if bool((choice & ~opposed).any()):
-                choice &= ~opposed
-            choice &= added == added[choice].min()
-            choice &= self.usage == self.usage[choice].min()
-            best = int(choice.nonzero()[0])
-            given[best] = True
-            pending &= ~lacking[:, best]
+        pending = torch.ones(len(outers), dtype=torch.bool, device=own.device)
+        given, pending = distinguishing_coordinates(lacking, kept, opposed, added, self.usage, pending)
+        if bool(pending.any()):
+            self.failures.append((inner, tuple(o for o, p in zip(outers, pending.tolist()) if p)))
+            return None
         text = text_of(inner)
         atom = ('part', text)
         touched = sorted(self.holders[inner] | {inner}, key=order)
