@@ -254,3 +254,43 @@ def test_full_unit_matches_count_exposures_without_becoming_spelling_operands():
     before[shopping] += 2
     before[x] += 1
     torch.testing.assert_close(identity._witness_counts, before, atol=0, rtol=0)
+
+
+def test_new_reading_part_is_local_until_the_next_packed_block(monkeypatch, eager_reading):
+    from BasicPercepts import BasicPercepts
+    from Models import BaseModel
+    from What import What
+    from data import Data
+
+    seen = []
+    original = BasicPercepts._occurrence_what
+    def capture(self, percepts, spans, wholes, **options):
+        result = original(self, percepts, spans, wholes, **options)
+        if not seen[-1]:
+            seen[-1].update(spans=spans.detach().clone(), lanes=result[0].detach().clone())
+        return result
+    monkeypatch.setattr(BasicPercepts, '_occurrence_what', capture)
+    model, _ = BaseModel.from_config('data/XOR_grammar.xml', data=Data())
+    data = model.inputSpace.data
+    optimizer = model.getOptimizer()
+    try:
+        for _ in range(2):
+            seen.append({})
+            with data.runtime_batch(['abc', 'ab']):
+                data.has_supervised_outputs = False
+                source = model.inputSpace.prepInput(['abc', 'ab'])
+                model.runBatch(train=True, optimizer=optimizer, batchSize=2, split='runtime',
+                               questions=tuple(What.present(i, split='runtime') for i in range(2)),
+                               batch_override=(source, source.new_empty(2, 0)))
+            model.End()
+            model.dispatch_per_row_reset([True, True])
+        first, next_block = seen
+        assert [0, 2] not in first['spans'][0].tolist()
+        assert [0, 2] in first['spans'][1].tolist()
+        assert [0, 2] in next_block['spans'][0].tolist()
+        left = first['spans'][0].tolist().index([0, 3])
+        right = next_block['spans'][0].tolist().index([0, 3])
+        width = model.perceptualSpace.percept_store.identity.width
+        assert (first['lanes'][0, left, :width] < next_block['lanes'][0, right, :width]).any()
+    finally:
+        model.End()

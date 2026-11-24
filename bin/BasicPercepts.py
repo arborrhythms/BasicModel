@@ -215,7 +215,7 @@ def merge_occurrences(own, context):
     return torch.where(live[..., None], extents, 0), live & (order < own.shape[1]), first.sum(1)
 
 
-def spelling_occurrences(surface, spellings, groups, nominations, known, first_part):
+def spelling_occurrences(surface, spellings, groups, nominations, known, first_part, *, visible=None):
     """Exact overlapping matches, the nominated extents and all known extent keys."""
     from FieldReverse import _window_hits
     batch, width = surface.shape
@@ -223,6 +223,8 @@ def spelling_occurrences(surface, spellings, groups, nominations, known, first_p
     extent_keys, priorities, lengths = [], [], []
     matches = _window_hits(surface, torch.ones_like(surface, dtype=torch.bool), spellings, groups)
     for size, rows, match in matches:
+        if visible is not None:
+            match = match & visible.gather(1, rows)
         start = torch.arange(rows.shape[1], device=surface.device)
         key = start * (width + 1) + start + size
         extent_keys.append(torch.where(match & known[rows], key, -1))
@@ -420,7 +422,14 @@ def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
     return parts, counts, locations
 
 
-def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False):
+def visible_parts(rows, block_parts):
+    """Rows present on entry are shared. A new run belongs to its observing streams."""
+    born, owners = block_parts
+    at = torch.searchsorted(born, rows.contiguous()).clamp_max(len(born) - 1)
+    return (born[at] != rows)[None] | owners[:, at]
+
+
+def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False, visible=None):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
     if not spellings:
@@ -428,6 +437,8 @@ def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elem
                 catalog.new_ones(batch, occurrences, catalog.shape[-1]))
     starts = (escaped_part_starts if escaped_elements else part_starts)(raw, spans, spellings)
     found = starts < raw.shape[1]
+    if visible is not None:
+        found = found & visible[:, None, :]
     coordinates = torch.cat((part_codes, catalog.to(part_codes)), -1)
     step = max(1, (1 << 22) // max(1, batch * coordinates.numel()))
     joined = torch.cat([coordinates.masked_fill(~mask[..., None], -torch.inf).amax(-2)
@@ -1217,7 +1228,7 @@ class BasicPercepts(nn.Module):
         """Tie both towers live, with the complementary pole from properties."""
         return self.read_bank(self.lookup(percepts, brackets, rows, **options))
 
-    def _occurrence_what(self, percepts, spans, wholes):
+    def _occurrence_what(self, percepts, spans, wholes, *, block_parts=None):
         """Each occurrence's code ``[B, O, width]``, as a row's code is made
         (:meth:`subspace_bounds`). The parts half: the greatest of the codes
         of the identity atoms of the bytes it spans (of the part leaves it
@@ -1242,7 +1253,8 @@ class BasicPercepts(nn.Module):
             spellings, rows, catalog, _ = bank
             basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
             parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog,
-                                            escaped_elements=identity.escaped_elements(device))
+                                            escaped_elements=identity.escaped_elements(device),
+                                            visible=None if block_parts is None else visible_parts(rows, block_parts))
             codes[..., :self.identity_width] = parts
             held = torch.minimum(held, tight)
         elif identity is not None and O:
@@ -1360,7 +1372,7 @@ class BasicPercepts(nn.Module):
         spans = self._run_extents(part_ids, part_spans, keys)
         return [[tuple(span) for span in row if span[0] >= 0] for row in spans.tolist()]
 
-    def _spelling_geometry(self, text, rows, identity, delivered):
+    def _spelling_geometry(self, text, rows, identity, delivered, block_parts=None):
         from FieldReverse import index_spellings
         nominated = {form for form in (self.form_of(row) for row in rows
                                        if row not in self.place_rows and row not in self.conjunctions)
@@ -1381,7 +1393,13 @@ class BasicPercepts(nn.Module):
         rank = surface.new_tensor([ranks.get(form, -1) for form in forms])
         known_forms = set(learned).union(words)
         known = torch.tensor([form in known_forms for form in forms], device=text.device, dtype=torch.bool)
-        spelled, learned, keys = spelling_occurrences(surface, spellings, groups, rank, known, len(nominated))
+        visible = None
+        if block_parts is not None:
+            from WordIdentity import text_of
+            addresses = rank.new_tensor([identity.atoms.get(('part', text_of(form)), -1) for form in forms])
+            visible = visible_parts(addresses, block_parts)
+        spelled, learned, keys = spelling_occurrences(surface, spellings, groups, rank, known, len(nominated),
+                                                     visible=visible)
         return spelled, learned, keys, text.shape[1]
 
     def lookup(self, percepts, brackets, rows, **options):
@@ -1444,7 +1462,8 @@ class BasicPercepts(nn.Module):
         text = raw[:, 0] if raw.ndim == 3 else raw
         identity = getattr(self.native, 'identity', None)
         if not raw.is_floating_point():
-            spelled, learned, known, width = self._spelling_geometry(text, rows, identity, options.get('delivered'))
+            spelled, learned, known, width = self._spelling_geometry(
+                text, rows, identity, options.get('delivered'), options.get('block_parts'))
         else:
             spelled = learned = parts[:, :0]
             known, width = None, text.shape[1]
@@ -1481,7 +1500,8 @@ class BasicPercepts(nn.Module):
         # intervals. Preserve legacy negative slice semantics for unusual
         # external intervals, and leave the original source geometry intact.
         surface = raw[..., :limit]
-        what, outside = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans), spans, wholes)
+        what, outside = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans),
+                                              spans, wholes, block_parts=options.get('block_parts'))
         dtype = options.get('dtype') or what.dtype
         # The against lane: nothing on the parts half; on the wholes half, the
         # degree to which each whole is witnessed outside over the occurrence.

@@ -311,6 +311,29 @@ class WordIdentity(nn.Module):
         return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding,
                                     escaped_elements=escapes, form_rows=forms if identify else None)
 
+    def block_part_visibility(self, prior_count, observed, streams, device):
+        """Which independent pages witnessed each new part before block consolidation."""
+        from itertools import islice
+        all_streams = set(range(streams))
+        born = []
+        for run in islice(reversed(self.added), len(self.added) - prior_count):
+            between = self.added[run]
+            if run in observed:
+                owners = observed[run]
+            elif between is not None:
+                # A repair requires the two confusable forms. A pre-existing
+                # form is available to every page; a new form only to its readers.
+                left, right = between
+                owners = observed.get(left, all_streams) & observed.get(right, all_streams)
+            else:
+                # Explicit suffix teaching can introduce the part from its holder.
+                owners = {b for word, seen in observed.items() if run in word for b in seen}
+            born.append((self.atoms[('part', run)], owners))
+        born.sort()
+        return (torch.tensor([part for part, _ in born], dtype=torch.long, device=device),
+                torch.tensor([[b in owners for _, owners in born] for b in range(streams)],
+                             dtype=torch.bool, device=device))
+
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""
         nested = self.nested.get(raw, ())

@@ -11388,12 +11388,21 @@ class PartSpace(Space):
             null_pid = ps.insert(b"\x00")
         # An explicit suffix lesson teaches the marker against this presentation.
         # Ordinary openings read the part inventory available on entry.
+        prior_parts = len(identity.added) if identity is not None else 0
+        new_forms = {}
+        def observe_new_form(unit, stream):
+            if batch > 1:
+                from WordIdentity import text_of
+                new_forms.setdefault(text_of(unit), set()).add(stream)
+
         teaching_marker = identity is not None and identity._marker_pattern is not None
         if teaching_marker and admit:
             for b, (raw, spans) in enumerate(units):
                 for w, (lo, hi) in enumerate(spans[:word_capacity]):
                     if changed is None or not changed[b][w]:
-                        identity.observe_nested(raw[lo:hi])
+                        unit = raw[lo:hi]
+                        observe_new_form(unit, b)
+                        identity.observe_nested(unit)
         located_parts = None
         if layout is not None and simple_parts and not hiding:
             # Register only observed characters. Cuts can split UTF-8, so decode
@@ -11435,8 +11444,11 @@ class PartSpace(Space):
                 native_spans.append([(i, i+1) for i in range(len(raw))])
             if located_parts is not None:
                 if admit:
-                    observed_forms.extend(raw[lo:hi] for (lo, hi), form in
-                                          zip(spans[:word_capacity], recognized_units[b]) if form < 0)
+                    for (lo, hi), form in zip(spans[:word_capacity], recognized_units[b]):
+                        if form < 0:
+                            unit = raw[lo:hi]
+                            observed_forms.append(unit)
+                            observe_new_form(unit, b)
                 continue
             staged_words = []
             for word_index in range(word_capacity):
@@ -11446,7 +11458,10 @@ class PartSpace(Space):
                     hidden = changed is not None and changed[b][word_index]
                     unit = raw[start:stop]
                     if identity is not None and admit and not teaching_marker and not hidden:
-                        observed_forms.append(identity.word_rows.get(unit, unit))
+                        form = identity.word_rows.get(unit, unit)
+                        observed_forms.append(form)
+                        if isinstance(form, bytes):
+                            observe_new_form(form, b)
                     if identity is not None:
                         cover = (omission['plans'][b][word_index]['cover'] if hidden
                                  else identity.ordered_cover(unit))
@@ -11559,6 +11574,9 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
+        if batch > 1 and identity is not None and len(identity.added) > prior_parts:
+            self._forward_input['block_parts'] = identity.block_part_visibility(
+                prior_parts, new_forms, batch, dev)
         if layout is not None:
             from FieldReverse import byte_rows
             width = byte_count
@@ -15330,6 +15348,8 @@ class ConceptualSpace(Space):
         source = getattr(getattr(model, 'perceptualSpace', None), '_forward_input', None) or {}
         bank = basic.lookup(percepts, extents, rows,
             element_input=source.get('element_input', False) and percepts[0] is source.get('native_indices'),
+            block_parts=(source.get('block_parts') if (percepts[0] is source.get('native_indices')
+                         or percepts[3] is getattr(model, '_staged_concepts_in', None)) else None),
             dtype=self.similarity_codebook.W.dtype, when=when,
             delivered=(getattr(model.inputSpace, '_delivered_length', None)
                        if getattr(model, '_staged_concepts_in', None) is percepts[3] else None),
