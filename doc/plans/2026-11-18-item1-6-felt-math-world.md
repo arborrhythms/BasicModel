@@ -3896,3 +3896,71 @@ every action, object, operator frame, role, relation and extension node that ite
 reproduced by today's comprehension with the grid in three dimensions, which is strong evidence that
 the grid left comprehension's numbers alone. The originals are kept as
 `tmp/item1-6/item18-comprehension-first-document.original.{pt.gz,json}`.
+
+### 17.12 The third round of ports (Claude on Opus, 2026-11-24)
+
+Third implementer, on the 48 tests of `tmp/item1-6/remaining_after_sweep.txt`. Only test files changed;
+`bin/`, `data/`, the four excluded test files and the gate's function, helpers and fixtures are
+untouched. The record is `tmp/item1-6/port3_progress.md`. "band" is `WHERE_WIRES + WHEN_WIRES` (16),
+read from `architecture`.
+
+*The ports* (file, tests of the list, what it needed):
+
+- `test_forgetting` (14): `BAND` and `WIDTH = BAND + 4`; `LTM0(12, percept_width=8)` -> `LTM0(WIDTH, percept_width=BAND)`
+  at its six sites; the hook test's content slice `slots[:8, 8:]` -> `[:8, BAND:]` (the gradient stays 8); the taxonomy
+  test's `LTM0(8)`, `ones(3, 8)`, `ones(8)` -> `cs.nDim` (`_operator`'s space, 16).
+- `test_episodic_concepts` (3), `test_item20_round7_episodes` (1), `test_item18_memory_trust` (1): stores of four wires
+  of what and the band (12 -> 20), their rows at that width.
+- `test_item18_parts_round_c` (1): `LTM0(owner.nWhat + 4)` and its padding of 4 -> `owner.nWhat + WHERE_WIRES` (+8).
+- `test_operators_round4a0` (4): `LTM0(12, n, percept_width=8)` -> `LTM0(WIDTH, n, percept_width=BAND)` (seven sites),
+  the fixture meaning `full((12,))` -> `(WIDTH,)`.
+- `test_item18_round_a` (2): stores of `band + 4`; the exclusion pair at the first two wires past the band, `C = band`:
+  points `[0, 8]`, `[1, 9]` -> `[0, C]`, `[1, C + 1]`, `coordinate_exclusions(8)` -> `(C)`, `((8, 9),)` -> `((C, C + 1),)`.
+- `test_stm_chunk_repairs` (1): percept `4 + band`, its `.when` `[percept - WHEN_WIRES, percept)`, width `percept + 4`
+  (16 -> 24); the `.when` slices `[8:12]` take that slice.
+- `test_taxonomy_unknown` (2): `LTM0(8)`, `eye(8)` -> the band.
+- `test_stm_chunks` (3): `PERCEPT = 4 + band` (12 -> 20); `percept_band` `(4, 12, 12)` -> `(4, PERCEPT, PERCEPT)`; the
+  four-wire places are the same four wires on each axis (`repeat(WHERE_WIRES // AXIS_WIRES)`), for STM and MTM.
+- `test_item4_native` (1): `SymbolExpectation(8, 8, 8, concept_dim=8)` and the host STM's `concept_dim` -> the
+  fixture's `cs.nDim`. Its two `[omitted]` cases (failures in the baseline) now fail as there (line 53, one element).
+- `test_item25_completion` (3): `_optional_reading`'s `symbol_where` `arange(4)` -> `arange(WHERE_WIRES)`. The gate
+  does not use this helper.
+- `test_thought_operation_catalog` (4): concept-wide values at `_D` (16, imported beside `_cs`); the word stream
+  `ones(1, 8)` stays.
+- `test_packed_reconstruction_parity` (shared `measure_layout`; the 3 of `test_one_backward_standing`): the root's
+  stamp `[when_start - 4, + 8)` -> `[when_start - WHERE_WIRES, + band)`.
+- `test_operators_round3a` (1), `test_config_scoping` (1), `test_dimensional_governance` (2),
+  `test_word_loop_buckets_and_orders` (1): declared widths and geometry, below. `test_config_scoping`'s inline
+  configuration declares `nDim` 9 -> `1 + band` (17) for the input, part, conceptual and whole spaces (the conceptual
+  space's embraces the form's event, and its `LTM0` needs the band); the output space keeps 1.
+  `test_dimensional_governance` replaces the configuration's text `1032` (was `1024`, as the data file now declares).
+
+*Assertions whose value changed* (each a width that embraces the band, +8):
+
+- `test_operators_round3a::test_numeric_mm_keeps_its_original_geometry`: `muxedSize == 64 + 64 + 4 + 4` ->
+  `64 + 64 + WHERE_WIRES + WHEN_WIRES` (136 -> 144).
+- `test_dimensional_governance::test_cs_ws_recurrent_input_mismatch_raises`: the message names `144` (was `136`).
+- `test_dimensional_governance::test_cs_os_direct_handoff_mismatch_raises`: `8x144` and `7x144` (were `8x136`, `7x136`),
+  as `128 + band`.
+- `test_word_loop_buckets_and_orders::test_basicmodel_declares_one_dynamic_capacity_and_independent_inventories`:
+  `BasicModel.xml`'s part and whole `nDim`/`nOutputDim` 104 -> `96 + band` (112); the conceptual
+  `nInputDim`/`nDim`/`nOutputDim` 1000 -> `992 + band` (1008).
+- `test_thought_operation_catalog::test_model_boundary_builds_the_common_thought_context_without_a_reasoner`:
+  `conceptual_space.width == 8` -> `== _D` (16).
+
+No other assertion changed; none was weakened, skipped or marked; no seed chosen.
+
+*Suspected defects in `bin/`.* None. Every failure was a fixture's or an expectation's width.
+
+*The gate.* `test_item25_completion.py::test_a_previously_named_shared_concept_denotes_its_raised_class`: passed
+before any change (pytest, alone) and after (the file whole under pytest, 24 passed, and in the final run).
+
+*The final run.* The bounded runner over the 18 files touched, every test file that imports one of them, and the two
+test files that import `attention_thinking_certificate` (which imports the gate's file): 34 files,
+`tmp/item1-6/port3_final_files.txt`, run `20261124-003258-e6f48d`:
+`Result: test_failure, exit 1; 357/357 cases completed.` (345 passed, 4 failed, 7 skipped, 1 xpassed). All 48 of
+the list pass. The four failures fail in the baseline too: `test_hash_order_producers::test_collision_queue_follows_admission_order`,
+`test_item4_native::test_observed_cat_survives_native_answer_and_store[False]` and `[True]`, and
+`test_operators_round4a0::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers`; the xpass
+(`test_forgetting::test_unforced_grammar_turnover_reports_its_retained_occurrences`) is an xpass in the baseline.
+No test that passes in the baseline fails here.

@@ -8,9 +8,12 @@ def test_episode_query_uses_signed_references_and_survives_compaction():
     from Memory import LTM0
     from EpisodicMemory import write,query
     from Understanding import ConceptualField
-    store = LTM0(12,capacity=8,episodic_concepts=3)
+    from architecture import WHERE_WIRES,WHEN_WIRES
+    # Four wires of what and the percept band.
+    width=4+WHERE_WIRES+WHEN_WIRES
+    store = LTM0(width,capacity=8,episodic_concepts=3)
     for i,(ids,values) in enumerate([([10,20,-1],[1.,.5,0.]),([10,20,-1],[.5,-1.,0.]),([30,-1,-1],[1.,0.,0.])]):
-        row=store.append_idea(torch.ones(12))
+        row=store.append_idea(torch.ones(width))
         write(store,row,(torch.tensor(ids),torch.tensor(values)))
     def cue(pairs):
         return ConceptualField(torch.tensor([10,20]),torch.tensor(pairs)[:,None,None,:],None,None,None)

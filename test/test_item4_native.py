@@ -25,7 +25,8 @@ def case(omitted=False, relation=False):
             clause = fixture.clause(('part', 'cat', 'dog'))
             bank = clause.meaning.roles
             ids = torch.tensor([value if type(value) is int else value.identity for value in clause.refs])
-        head = SymbolExpectation(8, 8, 8, concept_dim=8)
+        width = fixture.cs.nDim
+        head = SymbolExpectation(8, 8, width, concept_dim=width)
         head.set_symbol_bank(bank, identities=ids, orders=torch.ones(len(ids), dtype=torch.long))
         with torch.no_grad():
             for parameter in head._inter_predictor.parameters():
@@ -42,7 +43,7 @@ def case(omitted=False, relation=False):
         for sid in (0, 1):
             commit_reading(fixture.language, fixture.registry, entry, fixture.store,
                            discourse=head, sid=sid, document='cat-stream', owner=host)
-        host.conceptualSpace.stm = SimpleNamespace(concept_dim=8)
+        host.conceptualSpace.stm = SimpleNamespace(concept_dim=width)
         patch.setattr(host, '_what_grammar_context', lambda *a, **kw: (None, ()))
         host.eval()
         field, image = host._sentence_fields[1][0], captured[-1][0]

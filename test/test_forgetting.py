@@ -10,6 +10,11 @@ from Forgetting import ForgettingConfig, forget, model_boundary
 from Memory import LTM0, STM0
 from Meaning import ConceptualMeaning
 from nomination_fixtures import recurrent_word
+from architecture import WHERE_WIRES, WHEN_WIRES
+
+#: The percept band (.where and .when) of these stores, and their width: the band and four wires of content.
+BAND = WHERE_WIRES + WHEN_WIRES
+WIDTH = BAND + 4
 
 
 def config(**kwargs):
@@ -22,7 +27,7 @@ def append(store, index, *, trust=.5, surprise=-1., evidence=None):
 
 
 def full_store():
-    store = LTM0(12, capacity=10, percept_width=8)
+    store = LTM0(WIDTH, capacity=10, percept_width=BAND)
     for i in range(8):
         append(store, i)
     return store
@@ -124,7 +129,7 @@ def test_wording_is_one_stage_and_checkpoint_preserves_the_result():
     store = full_store()
     old = store.row_name(0)
     assert forget(store, config(), document_boundary=True)['after'] == 5
-    restored = LTM0(12, capacity=10, percept_width=8)
+    restored = LTM0(WIDTH, capacity=10, percept_width=BAND)
     restored.load_state_dict(store.state_dict())
     assert int(restored.forget_passes) == 1
     append(restored, 20)
@@ -160,7 +165,7 @@ def test_partial_checkpoint_cannot_infer_missing_trust_or_forgetting_state():
     del state['trust']
     for name in ('forget_passes', 'forget_sentences', 'forget_last_sentence'):
         del state[name]
-    restored = LTM0(12, capacity=10, percept_width=8)
+    restored = LTM0(WIDTH, capacity=10, percept_width=BAND)
     with pytest.raises(ValueError, match='checkpoint column'):
         restored.load_state_dict(state)
     assert len(restored) == 0
@@ -187,13 +192,13 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     cs, interpret = _operator()
     left = interpret.forward(recurrent_word(interpret, [7], [1], form='cat'))
     right = interpret.forward(recurrent_word(interpret, [8], [1], form='animal'))
-    store = LTM0(8, capacity=4)
+    store = LTM0(cs.nDim, capacity=4)
     attach_clause_index(SimpleNamespace(), store, cs)
     with torch.no_grad():
         cs.similarity_codebook.W[cs._concept_row_of(left)].fill_(.25)
         cs.similarity_codebook.W[cs._concept_row_of(right)].fill_(.5)
     store._predicate_kind = lambda ref: 'part'
-    clause = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
+    clause = Clause(ConceptualMeaning(torch.ones(3, cs.nDim), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(left, left, right))
     row = store.write_clause(clause, trust=0.)
     assert store.write_clause(clause, trust=0.) == row  # dedup keeps its support
@@ -201,7 +206,7 @@ def test_taxonomy_and_definitions_share_part_retention_not_ltm1_row_ownership():
     edge = store.parts.find(left, right)
     assert row == ('sym', edge)
     for i in range(1, 4):
-        store.append_idea(torch.ones(8), trust=1.)
+        store.append_idea(torch.ones(cs.nDim), trust=1.)
     forget(store, config(),
            document_boundary=True)
     assert store.parts.contains(edge)
@@ -214,7 +219,7 @@ def test_automatic_hook_runs_after_backward_and_honors_serving_mode(monkeypatch,
     from Models import BasicModel
     store = full_store()
     leaf = torch.tensor(2., requires_grad=True)
-    loss = (store.slots[:8, 8:].clone() * leaf).sum()
+    loss = (store.slots[:8, BAND:].clone() * leaf).sum()
     calls = []
     model = SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=store, what_memory=None,
         expectation=None, truth_layer=SimpleNamespace(sync_from_ltm=lambda: calls.append(len(store)), compact=True)),
@@ -371,7 +376,7 @@ def test_invalid_configuration_fails_before_a_pass(kwargs):
 def test_packed_and_single_presentations_keep_the_same_stream_history():
     snapshots = []
     for packing in (1, 4):
-        store = LTM0(12, capacity=10, percept_width=8)
+        store = LTM0(WIDTH, capacity=10, percept_width=BAND)
         for first in range(0, 8, packing):
             for sentence in range(first, min(8, first + packing)):
                 append(store, sentence, surprise=sentence / 8)
@@ -385,7 +390,7 @@ def test_packed_and_single_presentations_keep_the_same_stream_history():
 
 def test_checkpoint_cannot_resize_the_constructed_inventory():
     store = full_store()
-    restored = LTM0(12, capacity=20, percept_width=8)
+    restored = LTM0(WIDTH, capacity=20, percept_width=BAND)
     with pytest.raises(ValueError, match='capacity/width'):
         restored.load_state_dict(store.state_dict())
     assert len(restored) == 0 and restored.capacity == 20
@@ -428,6 +433,6 @@ def test_compaction_preserves_protected_row_columns_and_optional_metadata():
     assert len(store) < 8 and row is not None
     for name, value in before.items():
         torch.testing.assert_close(getattr(store, name)[row], value, msg=name)
-    restored = LTM0(12, capacity=10, percept_width=8)
+    restored = LTM0(WIDTH, capacity=10, percept_width=BAND)
     restored.load_state_dict(store.state_dict())
     assert all(restored.meaning_of(i) is not None for i in range(len(restored)))

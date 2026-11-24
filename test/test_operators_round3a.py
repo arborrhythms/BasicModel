@@ -160,9 +160,10 @@ def test_numeric_mm_keeps_its_original_geometry():
     the where and the when."""
     from test_mm_xor import _fresh_model
     from WordIdentity import WordIdentity
+    from architecture import WHERE_WIRES, WHEN_WIRES
     model, _, _ = _fresh_model('data/MM_text.xml')
     try:
-        assert model.perceptualSpace.subspace.muxedSize == 64 + 64 + 4 + 4
+        assert model.perceptualSpace.subspace.muxedSize == 64 + 64 + WHERE_WIRES + WHEN_WIRES
         assert isinstance(getattr(model.perceptualSpace.percept_store, 'identity', None), WordIdentity)
     finally:
         model.End(); model.symbolSpace.soft_reset()

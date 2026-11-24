@@ -3,6 +3,10 @@ import pytest
 import torch
 
 from Memory import STMChunks as chunks
+from architecture import AXIS_WIRES, WHERE_WIRES, WHEN_WIRES
+
+#: A percept of four wires of what and the band: its band is [4, PERCEPT).
+PERCEPT = 4 + WHERE_WIRES + WHEN_WIRES
 
 
 def put(state, scalar, *, stack=False, identity=-1):
@@ -94,13 +98,15 @@ def test_identity_pool_is_fixed_releases_at_promotion_and_rejects_old_layout():
     from Memory import MediumTermMemory
     pool = MediumTermMemory(2, n_vectors=90)
     value = torch.tensor([.1,.3,.5,.7])
+    # A place: the same four wires on every axis.
+    place = value.repeat(WHERE_WIRES // AXIS_WIRES)
     first, second, third = [('ltm','fixture',i) for i in (1,2,3)]
     pointer = pool.transient_ids.data_ptr()
-    pool.open(first, kind=7, when=1, value=value, where=value)
-    pool.bind(first, second, kind=7, when=2, value=value, where=value.flip(0))
+    pool.open(first, kind=7, when=1, value=value, where=place)
+    pool.bind(first, second, kind=7, when=2, value=value, where=place.flip(0))
     assert pool.entries[first].transient == 90
     assert pool.token_of(90) == first
-    torch.testing.assert_close(pool.entries[first].where, value.flip(0))
+    torch.testing.assert_close(pool.entries[first].where, place.flip(0))
     pool.promote(first, 22)
     assert pool.entries[first].transient is None
     assert not pool.transient_used.any()
@@ -119,18 +125,18 @@ def test_identity_pool_is_fixed_releases_at_promotion_and_rejects_old_layout():
 
 def test_published_identity_inherits_stamp_and_refresh_preserves_it():
     from ChunkJournal import ChunkJournal
-    journal = ChunkJournal((),(),pool_capacity=2,percept_band=(4,12,12))
+    journal = ChunkJournal((),(),pool_capacity=2,percept_band=(4,PERCEPT,PERCEPT))
     gate = torch.tensor([True])
-    where,when = torch.tensor([[.2,.4,.6,.8]]),torch.tensor([[.1,.3,.5,.7]])
-    state,_ = chunks.deposit(chunks.empty(1,8,12),torch.zeros(1,12),gate,
+    where,when = torch.tensor([[.2,.4,.6,.8]]).repeat(1,WHERE_WIRES // AXIS_WIRES),torch.tensor([[.1,.3,.5,.7]])
+    state,_ = chunks.deposit(chunks.empty(1,8,PERCEPT),torch.zeros(1,PERCEPT),gate,
         stack=True,where=where,when=when)
     identity,timeline = torch.tensor([80]),torch.tensor([0])
-    state = journal.publish(state,identity,timeline,torch.full((1,12),.25),gate)
+    state = journal.publish(state,identity,timeline,torch.full((1,PERCEPT),.25),gate)
     index = int((state[chunks.IDENTITY][0] == 80).nonzero()[0])
     torch.testing.assert_close(state[0][0,index,4:],torch.cat((where,when),-1)[0])
     torch.testing.assert_close(state[chunks.WHEN][0,index],when[0])
     age = state[chunks.READ][0,index].clone()
-    state = journal.publish(state,identity,timeline,torch.full((1,12),.75),gate)
+    state = journal.publish(state,identity,timeline,torch.full((1,PERCEPT),.75),gate)
     assert state[chunks.READ][0,index] > age
     torch.testing.assert_close(state[0][0,index,:4],torch.full((4,),.75))
     torch.testing.assert_close(state[0][0,index,4:],torch.cat((where,when),-1)[0])
@@ -174,20 +180,20 @@ def test_reduce_retains_the_head_percept_in_buffer_and_sidecars():
     from types import SimpleNamespace
     from chunk_fixtures import Walk,choice
     walk = Walk((SimpleNamespace(method_name='product',head_role=1),),())
-    walk.journal.percept_band = (4,12,12)
-    state = walk.empty(torch.zeros(2,12),1)
-    state = walk.shift(state,torch.full((2,12),.2),word=1,index=0)
-    state = walk.shift(state,torch.full((2,12),.4),word=2,index=1)
+    walk.journal.percept_band = (4,PERCEPT,PERCEPT)
+    state = walk.empty(torch.zeros(2,PERCEPT),1)
+    state = walk.shift(state,torch.full((2,PERCEPT),.2),word=1,index=0)
+    state = walk.shift(state,torch.full((2,PERCEPT),.4),word=2,index=1)
     stm = list(state[0])
     head = chunks.stack_indices(stm)[:,1]
-    where = torch.tensor([[.1,.2,.3,.4]]).expand(2,-1)
+    where = torch.tensor([[.1,.2,.3,.4]]).repeat(1,WHERE_WIRES // AXIS_WIRES).expand(2,-1)
     when = torch.tensor([[.5,.6,.7,.8]]).expand(2,-1)
     stm[chunks.WHERE] = chunks.write(stm[chunks.WHERE],head,where,torch.ones(2,dtype=torch.bool))
     stm[chunks.WHEN] = chunks.write(stm[chunks.WHEN],head,when,torch.ones(2,dtype=torch.bool))
     stm = chunks.clear(tuple(stm),torch.tensor([[True]*8,[False]*8]))
     state = (stm,*state[1:])
-    selected = choice(torch.full((2,12),.3),head=1)._replace(applied=torch.tensor([False,True]))
-    state = walk.apply(state,selected,torch.zeros(2,2,12),0)
+    selected = choice(torch.full((2,PERCEPT),.3),head=1)._replace(applied=torch.tensor([False,True]))
+    state = walk.apply(state,selected,torch.zeros(2,2,PERCEPT),0)
     actual = state[0]
     index = int(chunks.at(actual)[1])
     torch.testing.assert_close(actual[0][1,index,4:],torch.cat((where,when),-1)[1])

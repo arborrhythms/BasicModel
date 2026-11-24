@@ -156,20 +156,23 @@ def test_temporary_config_preserves_validated_source(monkeypatch):
 
 def test_cs_ws_recurrent_input_mismatch_raises():
     # Break WS's recurrent conceptual input: MM_20M has CS.nOutputDim=104 and
-    # WS.nInputDim=1024. Force WS.nInputDim to mismatch while leaving its
-    # native peer output alone.
+    # WS.nInputDim=1032 (1024 with the band of 8). Force WS.nInputDim to
+    # mismatch while leaving its native peer output alone.
     src = _ref_text("MM_20M_xor.xml")
     broken = src.replace(
-        "<nInputDim>1024</nInputDim>\n    <nVectors>65536</nVectors>\n"
-        "    <nDim>1024</nDim>\n    <nOutput>8</nOutput>",
+        "<nInputDim>1032</nInputDim>\n    <nVectors>65536</nVectors>\n"
+        "    <nDim>1032</nDim>\n    <nOutput>8</nOutput>",
         "<nInputDim>999</nInputDim>\n    <nVectors>65536</nVectors>\n"
-        "    <nDim>1024</nDim>\n    <nOutput>8</nOutput>")
+        "    <nDim>1032</nDim>\n    <nOutput>8</nOutput>")
     assert broken != src, "fixture edit did not apply (SS block changed?)"
     with pytest.raises(ValueError) as ei:
         _build_from_text(broken, "cs_ws_mismatch")
     msg = str(ei.value)
     assert "CS->WS recurrent input" in msg, msg
-    assert "999" in msg and "136" in msg, msg
+    # The conceptual event: 128 wires and the band (136 with the band of 8).
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    event = 128 + WHERE_WIRES + WHEN_WIRES
+    assert "999" in msg and str(event) in msg, msg
 
 
 def test_cs_os_direct_handoff_mismatch_raises():
@@ -184,7 +187,10 @@ def test_cs_os_direct_handoff_mismatch_raises():
         _build_from_text(broken, "ws_os_mismatch")
     msg = str(ei.value)
     assert "CS->OS handoff" in msg, msg
-    assert "8x136" in msg and "7x136" in msg, msg
+    # The conceptual event: 128 wires and the band (136 with the band of 8).
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    event = 128 + WHERE_WIRES + WHEN_WIRES
+    assert f"8x{event}" in msg and f"7x{event}" in msg, msg
 
 
 @pytest.mark.slow

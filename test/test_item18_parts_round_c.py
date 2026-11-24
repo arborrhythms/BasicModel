@@ -196,15 +196,17 @@ def test_argument_field_entry_and_placements_round_trip_without_a_word_argument_
     for name,value in (('activations',result.evidence),('ids',result.concept_ids),
                        ('where',result.where),('when',result.when)):
         object.__setattr__(owner.subspace,'_concept_'+name,value)
-    store = LTM0(owner.nWhat+4,capacity=4,episodic_concepts=16)
-    row = store.append_idea(torch.nn.functional.pad(owner.similarity_codebook.lookup_rows(owner._concept_row_of(words[0])),(0,4)))
+    # The concept's row and a padding of the place's wires, so that the store holds the percept band.
+    from architecture import WHERE_WIRES
+    store = LTM0(owner.nWhat+WHERE_WIRES,capacity=4,episodic_concepts=16)
+    row = store.append_idea(torch.nn.functional.pad(owner.similarity_codebook.lookup_rows(owner._concept_row_of(words[0])),(0,WHERE_WIRES)))
     entry = select(result,store.episodic_capacity,torch.tensor([True]),unkept=())
     write(store,row,tuple(value[0] for value in entry))
     checkpoint = tmp_path/'parts.pt'
     structural = BaseModel._collect_structural_extras(NS(conceptualSpaces=[owner],conceptualSpace=owner))
     torch.save(dict(owner=owner.state_dict(),parts=speech.state_dict(),store=store.state_dict(),structural=structural),checkpoint)
     fresh, fresh_parts, _ = argument_inventory(formal_arguments(binary))
-    restored = LTM0(owner.nWhat+4,capacity=4,episodic_concepts=16)
+    restored = LTM0(owner.nWhat+WHERE_WIRES,capacity=4,episodic_concepts=16)
     state = torch.load(checkpoint,weights_only=False)
     wrapper = NS(conceptualSpaces=[fresh],conceptualSpace=fresh,named_modules=lambda: ())
     wrapper._restore_allocator_extras = MethodType(BaseModel._restore_allocator_extras,wrapper)

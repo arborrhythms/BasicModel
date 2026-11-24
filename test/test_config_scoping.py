@@ -106,24 +106,28 @@ class TestCreateFromConfig(unittest.TestCase):
         # so the validator doesn't fire on the deliberately-mismatched
         # per-space nOutput values (the point of this test is that
         # nOutput is read per-space, not architectural correctness).
-        xml = self._write_xml("""<?xml version="1.0" ?>
+        # Each nDim is one wire of .what and the band (9 when the band was 8);
+        # the ConceptualSpace's embraces the form's event, which holds the band.
+        from architecture import WHERE_WIRES, WHEN_WIRES
+        banded = 1 + WHERE_WIRES + WHEN_WIRES
+        xml = self._write_xml(f"""<?xml version="1.0" ?>
 <model>
   <architecture>
     <data><dataType>numeric</dataType><dataset>xor</dataset></data>
     <training><autoload>false</autoload></training>
   </architecture>
-  <InputSpace><nOutput>2</nOutput><nDim>9</nDim></InputSpace>
+  <InputSpace><nOutput>2</nOutput><nDim>{banded}</nDim></InputSpace>
   <PartSpace>
-    <nOutput>4</nOutput><nDim>9</nDim>
+    <nOutput>4</nOutput><nDim>{banded}</nDim>
 
     <hasAttention>false</hasAttention>
   </PartSpace>
   <ConceptualSpace>
-    <nOutput>3</nOutput><nDim>9</nDim>
+    <nOutput>3</nOutput><nDim>{banded}</nDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
-    <nOutput>3</nOutput><nDim>9</nDim><nVectors>3</nVectors>
+    <nOutput>3</nOutput><nDim>{banded}</nDim><nVectors>3</nVectors>
 
   </WholeSpace>
   <OutputSpace><nOutput>1</nOutput><nDim>1</nDim></OutputSpace>

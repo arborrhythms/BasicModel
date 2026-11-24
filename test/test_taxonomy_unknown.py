@@ -3,13 +3,16 @@ import pytest
 import torch
 
 from Memory import LTM0
+from architecture import WHERE_WIRES, WHEN_WIRES
 from reasoning import QuerySpec, TruthGroundedReasoner
 
 
 @pytest.mark.parametrize("predicate", ["exist", "isPart"])
 def test_no_support_remains_unknown_even_at_zero_threshold(predicate):
-    reasoner = TruthGroundedReasoner(store=LTM0(8))
-    first, second = torch.eye(8)[:2]
+    # A store of the percept band alone.
+    band = WHERE_WIRES + WHEN_WIRES
+    reasoner = TruthGroundedReasoner(store=LTM0(band))
+    first, second = torch.eye(band)[:2]
     query = QuerySpec.from_surface(predicate, first, second)
     result = reasoner.evaluate(query, tau=0.)
     assert result["support_true"] == result["support_false"] == 0
