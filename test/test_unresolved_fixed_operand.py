@@ -18,7 +18,7 @@ def test_query_requires_the_address_of_an_unresolved_fixed_operand(monkeypatch,s
         cid = cs.new_concept()
         force_order(cs, cid, 0)
         row = cs._csw_concept_row(0, cid)
-        cs.similarity_codebook.W.data[row] = torch.eye(8)[index]
+        cs.similarity_codebook.W.data[row] = torch.eye(cs.nDim)[index]
     name,unresolved,other=('sym',1),('ltm','test',2),('sym',4)
     operator = UnionLayer()
     def tree(opened):

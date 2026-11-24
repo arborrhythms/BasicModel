@@ -20,7 +20,7 @@ def _world():
     grammar.load_from_grammar_file("complete.grammar")
     registry = GrammaticalThoughtRegistry.install(cs, grammar)
     memory = WhatInteractionMemory(batch=2, capacity=32, detach_mode="episode")
-    source = torch.randn(3, 8, requires_grad=True)
+    source = torch.randn(3, cs.nDim, requires_grad=True)
     question = ConceptualMeaning(
         source,
         torch.ones(3, dtype=torch.bool),

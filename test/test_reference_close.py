@@ -19,8 +19,13 @@ from nomination_fixtures import recurrent_word
 def fixture(*, percept=False):
     from test_cs_sparse_weights import _cs
     from IdentityRows import point
-    owner = _cs(nS=512, order=3, dim=12)
-    store = LTM0(12, capacity=512, percept_width=8) if percept else STM0(12, capacity=512, relation_capacity=8192)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # A percept store holds the band (.where and .when) and 4 wires beyond
+    # it: 12 = 8 + 4 -> 20 = 16 + 4. A working store keeps its 12.
+    width = WHERE_WIRES + WHEN_WIRES + 4 if percept else 12
+    owner = _cs(nS=512, order=3, dim=width)
+    store = (LTM0(width, capacity=512, percept_width=WHERE_WIRES + WHEN_WIRES) if percept
+             else STM0(width, capacity=512, relation_capacity=8192))
     import weakref
     object.__setattr__(owner, "_clause_store_ref", weakref.ref(store))
     resolver = owner.components.reference_close
@@ -30,7 +35,7 @@ def fixture(*, percept=False):
     clock = install(SimpleNamespace(), 0)
     attach_clause_index(clock, store, owner)
     object.__setattr__(store, '_fixture_clock', clock)
-    return resolver, store, torch.eye(12)
+    return resolver, store, torch.eye(width)
 
 
 def next_sentence(store):

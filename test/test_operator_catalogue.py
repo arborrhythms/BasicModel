@@ -171,8 +171,9 @@ def test_retired_operator_declarations_fail_loudly(name):
 def test_equality_returns_conceptual_content_with_its_evidence():
     from test_query_vp_boundaries import _context, _signature
     from test_cs_symbol_table import _cs
-    idea = torch.arange(8, dtype=torch.float32) / 10
-    result = _signature('equal', 'argin1', 'argin2').invoke(_context(_cs()), idea, idea)
+    cs = _cs()
+    idea = torch.arange(cs.nDim, dtype=torch.float32) / 10
+    result = _signature('equal', 'argin1', 'argin2').invoke(_context(cs), idea, idea)
     assert result['result_kind'] == 'concept'
     torch.testing.assert_close(result['value'], idea)
     assert result['support_true'] == pytest.approx(1.)

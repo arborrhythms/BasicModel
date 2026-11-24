@@ -6,6 +6,7 @@ import torch
 
 from Memory import MemoryStore, ShortTermMemory, MediumTermMemory, LTM0, LTM1, STMChunks as chunks
 from Meaning import ConceptualMeaning
+from architecture import WHERE_WIRES
 from ThoughtChunks import put, read, release
 from ThoughtReferences import bindings, with_slots
 
@@ -21,7 +22,7 @@ def test_thought_deposits_advance_when_with_empty_where_on_one_model_clock():
     model = for_stm(stm, tick=1)
     sentence_when = encoder().encode(1)
     state, sentence = chunks.deposit(stm.state, torch.ones(1, 8), torch.tensor([True]),
-        where=(.1,.2,.3,.4), when=sentence_when)
+        where=(.1,.2,.3,.4) * (WHERE_WIRES // 4), when=sentence_when)  # four wires an axis
     stm.set_state(state)
     first, second = (put(stm, idea(), row=0) for _ in range(2))
     a, b = (bindings(value)['_chunk_when'] for value in (first, second))
@@ -29,7 +30,7 @@ def test_thought_deposits_advance_when_with_empty_where_on_one_model_clock():
     for when in (a, b):
         index = int(chunks.locate(stm.state, when, band=chunks.WHEN)[0])
         assert index >= 0 and index != int(sentence[0])
-        assert stm.state[chunks.WHERE][0, index].tolist() == [-1.] * 4
+        assert stm.state[chunks.WHERE][0, index].tolist() == [-1.] * WHERE_WIRES
         assert torch.equal(stm.state[chunks.WHEN][0, index], torch.tensor(when))
         assert int(encoder().decode_index(torch.tensor(when))) in (2, 3)
         torch.testing.assert_close(read(stm, when, 0).roles, idea().roles)

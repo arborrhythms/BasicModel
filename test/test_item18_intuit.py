@@ -48,7 +48,7 @@ def test_85_infer_keeps_the_old_three_rule_supports():
     assert (result.support_true, result.support_false) == pytest.approx((.8, .4))
     torch.testing.assert_close(torch.tensor(result.evidence['firings']),
                                torch.tensor([[.8, .2], [.6, .3], [.5, .4]]))
-    expected = torch.zeros(8, 2)
+    expected = torch.zeros(owner.nDim, 2)  # the world's concept width (_D)
     expected[:2] = torch.tensor([[.4, .4], [.7, .4]])
     torch.testing.assert_close(torch.tensor(bindings(result.evidence['meaning'])['_intuition_field']), expected)
     from Intuition import replay

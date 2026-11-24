@@ -24,7 +24,7 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
     from ReferenceContext import SituationAddress
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    action = action_with_basis(8, capacity=2)
+    action = action_with_basis(f.cs.nDim, capacity=2)  # the fixture concept width (_D)
     for word, value in (('subject', .2), ('move', .3), ('property', .4)):
         symbol = f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
@@ -50,7 +50,7 @@ def test_two_kept_sentences_join_the_copular_observation_and_teach_once(monkeypa
     close(('part', ('bind', 'subject'), 'property'), (frame,), position=1)
     assert len(resolver.last_verb_observation) == 1
     assert resolver.last_verb_observation[0]['token'] == token
-    torch.testing.assert_close(f.cs.mtm.value_of(token), torch.full((8,), .4))
+    torch.testing.assert_close(f.cs.mtm.value_of(token), torch.full((f.cs.nDim,), .4))
     assert sum(event.taught for event in f.cs.mtm.entries[token].events) == 1
     assert errors.total(objective='reconstruction') is None
     assert action.readout.grad is None
@@ -97,7 +97,7 @@ def test_copular_join_is_kept_and_fires_the_previous_verb_teacher(monkeypatch):
     from ClauseRow import Clause, ClausePredicate
     from Meaning import ConceptualMeaning
     f = SentenceFixture(monkeypatch)
-    action = action_with_basis(8, capacity=2)
+    action = action_with_basis(f.cs.nDim, capacity=2)  # the fixture concept width (_D)
     for word, value in (('subject', .2), ('move', .3), ('property', .4)):
         symbol = f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():

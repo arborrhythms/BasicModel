@@ -149,15 +149,17 @@ def test_model_time_is_independent_of_source_position_and_covers_the_run_horizon
     from types import SimpleNamespace
     from clock_fixtures import install
     from RowTime import encoder,HORIZON
-    store=LTM0(12,capacity=8,percept_width=8)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    band=WHERE_WIRES+WHEN_WIRES  # the percept band, then 4 wires past it (12 -> 20)
+    store=LTM0(band+4,capacity=8,percept_width=band)
     tick=[731]
     object.__setattr__(store,'_model_present',lambda:tick[0])
-    row=store.append_idea(torch.ones(12),)
+    row=store.append_idea(torch.ones(band+4),)
     assert int(encoder().decode_index(store.entry_time(row))) == 731
     tick[0]+=1
-    other=store.append_idea(torch.ones(12),)
+    other=store.append_idea(torch.ones(band+4),)
     assert int(encoder().decode_index(store.entry_time(other))) == 732
-    torch.testing.assert_close(store.slots[row,8:],store.slots[other,8:],rtol=0,atol=0)
+    torch.testing.assert_close(store.slots[row,band:],store.slots[other,band:],rtol=0,atol=0)
     trials=torch.tensor([0,731,1000000,HORIZON-1,HORIZON])
     torch.testing.assert_close(encoder().decode_index(encoder().encode(trials)),trials,rtol=0,atol=0)
     with pytest.raises(OverflowError,match='horizon'):
@@ -184,10 +186,12 @@ def test_old_checkpoint_migrates_identity_parameters_once_and_marks_unknown_row_
         host.load_state_dict(state,strict=False)
     stable={};migrate_checkpoint(host,state,host.state_dict(),stable,{})
     assert not stable
-    durable=LTM0(12,capacity=512,percept_width=8)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    band=WHERE_WIRES+WHEN_WIRES  # a durable store of the band and 4 wires (12 -> 20)
+    durable=LTM0(band+4,capacity=512,percept_width=band)
     durable.append_idea(a[0])
     saved=durable.state_dict();saved['truth_schema']=torch.tensor(10)
-    target=LTM0(12,capacity=512,percept_width=8)
+    target=LTM0(band+4,capacity=512,percept_width=band)
     with pytest.raises(ValueError, match='checkpoint layout'):
         target.load_state_dict(saved)
     assert len(target) == 0

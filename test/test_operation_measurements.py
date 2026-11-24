@@ -42,7 +42,9 @@ def operation_fixture(monkeypatch):
     language=SimpleNamespace(parts_of_speech=PartsOfSpeech(formal_arguments(grammar.rules_upward)),
         _compose_binary_rules=binary, _compose_unary_rules=unary,
         _tree_layer=lambda arity: SimpleNamespace(ops=tuple(map(operation,binary)), unary_ops=tuple(map(operation,unary))))
-    store=LTM0(owner.nDim,capacity=64)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # A long-term store holds at least a percept's band (8 -> 16).
+    store=LTM0(max(owner.nDim, WHERE_WIRES + WHEN_WIRES),capacity=64)
     attach_clause_index(SimpleNamespace(languageSpace=language),store,owner)
     return SimpleNamespace(cs=owner,store=store,language=language)
 

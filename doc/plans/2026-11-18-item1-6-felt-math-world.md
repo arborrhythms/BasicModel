@@ -3758,3 +3758,141 @@ phase questions), `test_item20_round5_memory` 3 (`LTM0(12)`, `operation_fixture`
 `test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader` (`assert calls`;
 deterministic; not diagnosed, and the only one whose message names no width). The list is in
 `tmp/item1-6/port_progress.md`. They are not ported here.
+
+### 17.10 The further ports (Claude on Opus, 2026-11-23)
+
+Second implementer, on the coordinator's extension to the 32 tests of 17.9. Only test files changed;
+`bin/`, `data/`, the gates and the three excluded test files are untouched. The record is
+`tmp/item1-6/port_progress.md`. "band" is `WHERE_WIRES + WHEN_WIRES`, read from `architecture`.
+
+*The ports.* 31 of the 32 pass. Two shared fixtures were ported once, in their own files, and every
+user was run: `test_reference_close.fixture` (39 users) and `test_operation_measurements.operation_fixture`.
+
+- `test_reference_close`: `fixture(percept=True)` is the band and 4 wires past it (12 -> 20), its
+  `percept_width` the band; the working store (`percept=False`) keeps its 12.
+- `test_item18_reduction`: `C` = band, the first wire past the percept band; the content atoms 8..11
+  are C..C+3, the exclusion pair (8, 9) is (C, C+1); `SentenceStrata` at the store's width with
+  `percept_width=C`; the legacy centred bands span C in groups of four; `test_63`'s store is C + 4.
+- `test_operation_measurements`: the fixture's `LTM0` holds at least the band (`max(owner.nDim, band)`).
+- `test_item20_round5_memory`: a link's `.where` is `zeros(WHERE_WIRES)`; the 12-wide idea is kept in an
+  `LTM0` of `max(12, band)` and read back at its own width.
+- `test_verb_learning`: the sentence fixture's actions and values at `f.cs.nDim`; the standalone test keeps 8.
+- `test_case_views`: staged codes at `f.cs.nDim`; phase contents are two lanes of `nDim/2` (the first two
+  wires of each, the first wire of each); case values at wire 1 of each lane.
+- `test_item6_2_thinking`, `test_live_query_occurrences`, `test_unresolved_fixed_operand`,
+  `test_operator_catalogue`, `test_item18_intuit`, `test_selected_relation_meaning`: concept-wide
+  values, stores and banks at the world's `cs.nDim`.
+- `test_form_subspaces`: declared widths 9 and 137 -> `1 + band` and `129 + band`; the event `64 + 64 + band`.
+- `test_item18_completion` (stimulation): `_cs(dim=8)`. Its rows are a percept event of 4 and two lanes
+  of 2, with no band, so the concept keeps its own width.
+
+Further regressions found in the users of the touched files, and ported: `test_selected_nested_meaning`
+(5; stores at the world's width), `test_identity_rows` (2; `LTM0(band + 4, percept_width=band)`),
+`test_item20_round1` (1; a place of four wires an axis, the empty `.where` `[-1] * WHERE_WIRES`),
+`test_item18_tree_first::test_1_word_deposit_keeps_its_value_row_and_order` (the place's slice
+`start - WHERE_WIRES`).
+
+*Assertions changed.* `test_item20_round1::test_thought_deposits_advance_when_with_empty_where_on_one_model_clock`
+asserts an empty `.where` of `WHERE_WIRES` wires (was four). No other assertion changed in meaning.
+
+*`test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`.* `calls` counts
+the calls of `owner.basic_percepts.read_collection` during `model.understand(['alpha'])`. When the test
+passes, the call is reached from `Models._run_sentence_word_bricks` -> `score` -> `WholePaths.finish`
+(`bin/WholePaths.py:306`) -> `WholePaths.output` (`:153`) -> `reverseOutput` -> `generate` ->
+`OutputOccurrences.generated` (`bin/OutputOccurrences.py:99`) -> `FieldProjection.stimulate`
+(`bin/FieldProjection.py:111`) -> `PerceptCollections.read` -> `read_collection`. `WholePaths.output`
+returns at once when `model.inputSpace.data.has_supervised_outputs` is false (`bin/WholePaths.py:137`,
+gated at `:267`). That data object is the process-wide `data.TheData`. The fixture `named_scalar_model`
+does not set the flag; it is true only when an earlier test in the same process left it true. Run alone,
+the test fails on the frozen copy of the unchanged source (scratch copy, plain pytest and the bounded
+runner) and on this source, with `calls` empty in both. Run after
+`test_item18_paths.py::test_numeric_understanding_owns_evidence_across_next_forward` (an MM_xor model,
+supervised), as it was in the baseline sweep's worker 29, it passes in both (6 calls). So it is an
+order dependence present before this change, not a regression of it, and not a width. It is not
+changed here: making it independent means declaring supervised outputs in its fixture, a choice of
+what the test covers, left to the reviewer. No defect in `bin/` is claimed; the shared, unreset
+`has_supervised_outputs` is the mechanism.
+
+*Not ported.* `test_item18_tree_first::test_2_first_document_matches_recorded_object_readings` replays a
+committed recorded fixture (`test/fixtures/item18-comprehension-first-document.pt.gz`, hash-checked,
+recorded with four-wire symbol bands) and fails on `symbol occurrence bands must align to program
+leaves`. Porting it means re-recording or converting that fixture (§16.3.11: no migration); left for a
+decision.
+
+*Suspected defects in `bin/`.* None.
+
+*The final run.* The bounded runner over the 13 files, the two fixture files, and every test file that
+imports one of them (71 files, `tmp/item1-6/port_final_files2.txt`), run `20261123-231424-968fdf`:
+`Result: test_failure, exit 1; 975/975 cases completed.` (962 passed, 2 failed, 11 skipped). Both
+failures pass in the baseline: `test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`
+(order dependence, above) and `test_item18_tree_first::test_2_first_document_matches_recorded_object_readings`
+(committed fixture, above). Every other test of these files that passes in the baseline passes here.
+
+### 17.11 The recorded first document, converted (Claude on Opus, 2026-11-23)
+
+The recording `test/fixtures/item18-comprehension-first-document.pt.gz` (item 1.8, `source_snapshot`
+`7768411a...`) was converted, not re-recorded, and replayed by
+`test_item18_tree_first.py::test_2_first_document_matches_recorded_object_readings` with its
+assertions and tolerances unchanged. The test was not changed: nothing in it reads a band's width.
+
+*Where the bands were.* The recorded concept is 392 wires: form 352, `.where` [352, 356), `.when`
+[356, 360), meaning [360, 392). Four-wire `.where` bands: `program.symbol_where` (4 x 4) and
+`program.held_initial.where` (8 x 4). Vectors that embrace the band (392 wide): `leaves`,
+`end_state`, `operation_values`, `identity_values`, `timeline_values`, `case_values`, `case_bank[1]`,
+`held_initial.values`, every `bank.lookup_rows` read, and the expected `frames`, `roles` and `point`;
+`action_records` is the 392 and three flags (395). Layout integers: `percept_width` 360, `when_start`
+356, `percept_band` (352, 360, 392), the strata's `width` 392 and `percept_width` 360, and in each
+pickled grammar operator `nInput`/`nOutput` 392, `percept_band` (352, 360, 392) and `meaning_layout`
+(360, 392). Not band: `form_wholes` and `form_whole_presence` (352, form only), the conceptual
+field's bracket addresses, the 16-wide lane kernels, the `.when` bands, every id and action.
+
+*The capacity.* The recorded bands are in the snapshot's centred convention (each pair a unit
+vector, sin and cos raw), so they were decoded through `unsigned_phase`. Over every power-of-two
+long period from 2^8 to 2^31 (`tmp/item1-6/rec_capacity.py`), only the periods (2^15, 256), a
+capacity in [16255, 32254], re-encode every recorded symbol and held band to itself within one
+float32 ulp (5.96e-8) and decode them to the addresses 0, 5 and 8, the recording's word starts;
+longer periods are off by 2e-7 or more and decode to meaningless addresses. Every band embedded in
+a recorded vector re-encodes at these periods too, except the expected role 1 (below).
+
+*The script.* `tmp/item1-6/convert_first_document.py` (not committed) keeps each band's four
+recorded wires as x, and appends the code of zero on y and on z: `2 * encode(0) - 1` at capacity
+32254, in the recording's centred convention (it equals the recording's own band for address 0);
+an all-zero band widens with zeros (149 bands coded, 541 empty). Each vector that embraces the
+band gains eight wires at [356, 364) (606 vectors, 49 action records). The layout integers move by
+8: 368, 364, (352, 368, 400), 400 and 368; each operator's 392 -> 400, (352, 368, 400), (368, 400)
+(13 operators). Nothing else changed. The converted file is
+`tmp/item1-6/item18-comprehension-first-document.converted.pt.gz` (102,765 bytes, sha256
+`9669b7ab...c90a3`), its manifest beside it with the `conversion` key.
+
+*The result.* The test does not pass. Every action, object and native id, every operator frame
+(operands and result) of every action of all seven paths, roles 0 and 2, the point, the relation and
+every extension node match exactly (greatest difference 0). The first differing tensor is
+`clause.meaning.roles` at sentence 1, path 0 (the clause closing after action 6, `part`), row 1,
+the predicate's role: at index (1, 0) the recording has 0.070700 and the replay 0.070136; 399 of its
+400 wires differ (387 outside the band's place, 12 within), greatest difference 0.989 at (1, 359).
+The same row differs in the six relative clauses; the seventh path (no relation) passes whole. Row 1
+is not read from the recording: it is `ClauseRow.predicate_point('part', ...)`
+(`bin/ClauseRow.py:35`), `References.symbol_code` of the predicate's identity at the concept's width
+with no band. At 400 wires it is a different code: its first 352 wires are the old ones times
+0.99201 (the same code spread over eight more wires), and the wires at [352, 364) are code values,
+not a place. So the difference is in a width-dependent identity code, not in comprehension's
+numbers and not in a place's wires; the conversion's rule (a place's code of zero) does not apply
+to it, and nothing was adjusted to make it pass. The original recording and manifest are back in
+`test/fixtures/` unchanged (byte-identical to the frozen copy); the test still fails as in 17.10.
+
+*What was done in the end* (the reviewer's decision: the predicate's identity code is a constant the
+source generates for the concept's width, not a recorded result, so the conversion regenerates it).
+The script first checks, before changing anything, every expected `roles` row of every record against
+`symbol_code(predicate_identity(name), 392, n_where=0, n_when=0)` for `part` and `implies`. Six rows
+match, row 1 of the six clauses whose relation is `part`, each with greatest difference 0.0 (exact),
+and the name always agrees with the clause's relation; no clause with a relation lacks one. A scan of
+every 392-wide float tensor of every record finds that constant nowhere else. Only those six rows were
+replaced, by the same call at 400. The converted recording (102,964 bytes, sha256
+`85fc988b69a739fa6e3b15d3c0057c32c74fe78218f3a05673b0b9d6fa715d1c`) and its manifest (new `sha256` and
+`bytes`, a `conversion` key, `source_snapshot` unchanged) are installed in `test/fixtures/`; the test is
+unchanged. `test/test_item18_tree_first.py` whole, bounded runner, run `20261123-233212-dfd78b`:
+`Result: passed, exit 0; 15/15 cases completed.` So `test_2` passes with its tolerances as they were:
+every action, object, operator frame, role, relation and extension node that item 1.8 recorded is
+reproduced by today's comprehension with the grid in three dimensions, which is strong evidence that
+the grid left comprehension's numbers alone. The originals are kept as
+`tmp/item1-6/item18-comprehension-first-document.original.{pt.gz,json}`.
