@@ -1,0 +1,4649 @@
+{
+ "BasicModel.xml": {
+  "capacity": 40978,
+  "period": 65536,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     40970,
+     40978
+    ],
+    "origin": [
+     40970,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "4d0cb9bd52d653cf9a9507b023b3ca1fc9775ffa95c0b14fa586a6efca691868"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     40961
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     32768,
+     1,
+     1
+    ],
+    "wires": "c90862a68ce9c6c8735bfdbf3994cb62a3a8eb278069f1dcc0a8f60fa7f5e024"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "584e12e39b97529d8e2e24511683674a5e54c95b2eaacedd21c3316664fb73ac"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "38164ba4cacd304456abfc64e1eed8cb88619dfc98a4eada1b9d5e31516aff55"
+   },
+   "wholes": {
+    "addresses": [
+     40961,
+     40970
+    ],
+    "origin": [
+     40961,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "949b3b4a2da18bccf705ca949e81354d4673be6a97e897239db8bc58c91c163c"
+   }
+  }
+ },
+ "BasicModel_answers_tied_benchmark.xml": {
+  "capacity": 40978,
+  "period": 65536,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     40970,
+     40978
+    ],
+    "origin": [
+     40970,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "4d0cb9bd52d653cf9a9507b023b3ca1fc9775ffa95c0b14fa586a6efca691868"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     40961
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     32768,
+     1,
+     1
+    ],
+    "wires": "c90862a68ce9c6c8735bfdbf3994cb62a3a8eb278069f1dcc0a8f60fa7f5e024"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "584e12e39b97529d8e2e24511683674a5e54c95b2eaacedd21c3316664fb73ac"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "38164ba4cacd304456abfc64e1eed8cb88619dfc98a4eada1b9d5e31516aff55"
+   },
+   "wholes": {
+    "addresses": [
+     40961,
+     40970
+    ],
+    "origin": [
+     40961,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "949b3b4a2da18bccf705ca949e81354d4673be6a97e897239db8bc58c91c163c"
+   }
+  }
+ },
+ "BasicModel_corpus.xml": {
+  "capacity": 270354,
+  "period": 524288,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     270346,
+     270354
+    ],
+    "origin": [
+     270346,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6b21b7071625ada15b8b0b994c6feb573350f1e36f470ab9bb920dcb51cbd1ca"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     270337
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     262144,
+     1,
+     1
+    ],
+    "wires": "888ef6aeb0ffb48b0a0ff0fc9d5cd1082a660e79b77089c6272e0010996e2930"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "0085a7ec045460f9d5405892a67d4b87122e5e1a57e5a537436f89a4bf1fb9a7"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "2772fc34058a5bb099ffae382e8994d0d188812b69145ff235aa61acb5d23465"
+   },
+   "wholes": {
+    "addresses": [
+     270337,
+     270346
+    ],
+    "origin": [
+     270337,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "75e35f08e6fc0ee254d73cc95b5e6fdfbefedd9242c27272c1f7987baabc827b"
+   }
+  }
+ },
+ "MM_20M_xor.xml": {
+  "capacity": 139273,
+  "period": 262144,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     139265,
+     139273
+    ],
+    "origin": [
+     139265,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "0682505096ce46becf78f9d44984a4ae0a483d023d6faff577c9002b4273e690"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     73729
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "9c1fc29e499f62791d737be8be3ee78266ae9e19f9c6377b7bf8f2043879ad89"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "62012d924115d97eb9f438e4deef9c2177e36bcc4c2e468aea65e7024e7cfe93"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "510bd242ca65b3d82040fc77235249ba8af773bf536a42d89550688c357b94d3"
+   },
+   "wholes": {
+    "addresses": [
+     73729,
+     139265
+    ],
+    "origin": [
+     73729,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "305ef8ab15c254a9f92f5ce953cae5b33a8411d6a1d7d7193810874d4c1d0902"
+   }
+  }
+ },
+ "MM_add.xml": {
+  "capacity": 12297,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     12289,
+     12297
+    ],
+    "origin": [
+     12289,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "62a765c96d212c3da8cc1dc253f960d8b2e884d11dd7dc9510cc0a1faa996706"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     8193
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0d48e94ffcc4f17045a3dc5f24871daff67cf7fbedd90ece735e1bec252587aa"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "69a2dcaf588c4892f25bf67c519f19492eb87fee20bb3840658bcad4fb3b4411"
+   },
+   "wholes": {
+    "addresses": [
+     8193,
+     12289
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0b61fe12b6ec11f9860020d807aec09a57bb5a653dfc99d7bc1642e8ae461e5b"
+   }
+  }
+ },
+ "MM_add_verb.xml": {
+  "capacity": 12297,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     12289,
+     12297
+    ],
+    "origin": [
+     12289,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "62a765c96d212c3da8cc1dc253f960d8b2e884d11dd7dc9510cc0a1faa996706"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     8193
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0d48e94ffcc4f17045a3dc5f24871daff67cf7fbedd90ece735e1bec252587aa"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "69a2dcaf588c4892f25bf67c519f19492eb87fee20bb3840658bcad4fb3b4411"
+   },
+   "wholes": {
+    "addresses": [
+     8193,
+     12289
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0b61fe12b6ec11f9860020d807aec09a57bb5a653dfc99d7bc1642e8ae461e5b"
+   }
+  }
+ },
+ "MM_corpus_explore_fixture.xml": {
+  "capacity": 8210,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     8202,
+     8210
+    ],
+    "origin": [
+     8202,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "cb6fa41303489946079cf326bcd359597e93c77bc058d47d9dc043fcdc94c540"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     8193
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0d48e94ffcc4f17045a3dc5f24871daff67cf7fbedd90ece735e1bec252587aa"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "69a2dcaf588c4892f25bf67c519f19492eb87fee20bb3840658bcad4fb3b4411"
+   },
+   "wholes": {
+    "addresses": [
+     8193,
+     8202
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "99f29ab41aabc9c5e4f924ca35eb2eb8bea2000a84596e93dde9bb994cf0cdb1"
+   }
+  }
+ },
+ "MM_corpus_lessons.xml": {
+  "capacity": 8210,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     8202,
+     8210
+    ],
+    "origin": [
+     8202,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "cb6fa41303489946079cf326bcd359597e93c77bc058d47d9dc043fcdc94c540"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     8193
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0d48e94ffcc4f17045a3dc5f24871daff67cf7fbedd90ece735e1bec252587aa"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "69a2dcaf588c4892f25bf67c519f19492eb87fee20bb3840658bcad4fb3b4411"
+   },
+   "wholes": {
+    "addresses": [
+     8193,
+     8202
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "99f29ab41aabc9c5e4f924ca35eb2eb8bea2000a84596e93dde9bb994cf0cdb1"
+   }
+  }
+ },
+ "MM_corpus_orders.xml": {
+  "capacity": 8210,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     8202,
+     8210
+    ],
+    "origin": [
+     8202,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "cb6fa41303489946079cf326bcd359597e93c77bc058d47d9dc043fcdc94c540"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     8193
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0d48e94ffcc4f17045a3dc5f24871daff67cf7fbedd90ece735e1bec252587aa"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "69a2dcaf588c4892f25bf67c519f19492eb87fee20bb3840658bcad4fb3b4411"
+   },
+   "wholes": {
+    "addresses": [
+     8193,
+     8202
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "99f29ab41aabc9c5e4f924ca35eb2eb8bea2000a84596e93dde9bb994cf0cdb1"
+   }
+  }
+ },
+ "MM_global.xml": {
+  "capacity": 139273,
+  "period": 262144,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     139265,
+     139273
+    ],
+    "origin": [
+     139265,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "0682505096ce46becf78f9d44984a4ae0a483d023d6faff577c9002b4273e690"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     73729
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "9c1fc29e499f62791d737be8be3ee78266ae9e19f9c6377b7bf8f2043879ad89"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "62012d924115d97eb9f438e4deef9c2177e36bcc4c2e468aea65e7024e7cfe93"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "510bd242ca65b3d82040fc77235249ba8af773bf536a42d89550688c357b94d3"
+   },
+   "wholes": {
+    "addresses": [
+     73729,
+     139265
+    ],
+    "origin": [
+     73729,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "305ef8ab15c254a9f92f5ce953cae5b33a8411d6a1d7d7193810874d4c1d0902"
+   }
+  }
+ },
+ "MM_grammar.xml": {
+  "capacity": 4370,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4362,
+     4370
+    ],
+    "origin": [
+     4362,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6155abf7be904508161fca4d6ff27aa6df2e01ab791a7f17ddb31142cf4eb44b"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4362
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "519e059cdf48bf685fcf27521d925337eb31b32b392dc4b693a5332776f79f3c"
+   }
+  }
+ },
+ "MM_grammar_wording.xml": {
+  "capacity": 4370,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4362,
+     4370
+    ],
+    "origin": [
+     4362,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6155abf7be904508161fca4d6ff27aa6df2e01ab791a7f17ddb31142cf4eb44b"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4362
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "519e059cdf48bf685fcf27521d925337eb31b32b392dc4b693a5332776f79f3c"
+   }
+  }
+ },
+ "MM_image.xml": {
+  "capacity": 4961,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4953,
+     4961
+    ],
+    "origin": [
+     4953,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "91852ff32007f9c1fa83a4b19e9bd05bff7cb58ca73a422a9ef9804149415880"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4880
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     28,
+     28,
+     1
+    ],
+    "wires": "76e0ff7eb7db7cc94cc1dd4511e8b074e80fd64dc172346f214da78f161b13a3"
+   },
+   "parts": {
+    "addresses": [
+     4881,
+     4889
+    ],
+    "origin": [
+     4881,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6b8b63716e0c9e501fc6239e8c99cc28aee04ac1db4beb370c564a2d51022b8f"
+   },
+   "scalar": {
+    "addresses": [
+     4880,
+     4881
+    ],
+    "origin": [
+     4880,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "2ab0a403c81e236dadbe7473a295fcd2b052bce880a1ea4f75659e2c2193102e"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4889,
+     4953
+    ],
+    "origin": [
+     4889,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "21232595a964b6a730655ba082d91ba8be408d660f0e5d89818f959fe9017e58"
+   }
+  }
+ },
+ "MM_ladder.xml": {
+  "capacity": 16393,
+  "period": 32768,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     16385,
+     16393
+    ],
+    "origin": [
+     16385,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "73fed145ef03c6d69e3e6a03d7e213c9bcb54224bfbf0fa606da7baa430121ff"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     12289
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "8d6b5c455bbaa130fce62738fd765ff28e674d37d83ae1d813e8cab0a7f47428"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "9b07fd5d4365a0be411bce2fa2b22d289eaf3437da25fa64a3697aab57dbf1c3"
+   },
+   "wholes": {
+    "addresses": [
+     12289,
+     16385
+    ],
+    "origin": [
+     12289,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "3c6ec92ca84ec300b1b5584234480ede37799740eda4b9692cef67d7fa5ba1a8"
+   }
+  }
+ },
+ "MM_ladder_idiom.xml": {
+  "capacity": 16393,
+  "period": 32768,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     16385,
+     16393
+    ],
+    "origin": [
+     16385,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "73fed145ef03c6d69e3e6a03d7e213c9bcb54224bfbf0fa606da7baa430121ff"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     12289
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "8d6b5c455bbaa130fce62738fd765ff28e674d37d83ae1d813e8cab0a7f47428"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "9b07fd5d4365a0be411bce2fa2b22d289eaf3437da25fa64a3697aab57dbf1c3"
+   },
+   "wholes": {
+    "addresses": [
+     12289,
+     16385
+    ],
+    "origin": [
+     12289,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "3c6ec92ca84ec300b1b5584234480ede37799740eda4b9692cef67d7fa5ba1a8"
+   }
+  }
+ },
+ "MM_ltm_consolidation_fixture.xml": {
+  "capacity": 4425,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4417,
+     4425
+    ],
+    "origin": [
+     4417,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6ac0faa25e60404ccc6bb93b79b9dec1204cad3aaf064263b8beb992237fa77c"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4417
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "f8def235a35c2e7a8546a41be0fc099d0391a846d1a2e6ef4562e5aedc7fd4ae"
+   }
+  }
+ },
+ "MM_ltm_consolidation_serial_fixture.xml": {
+  "capacity": 4425,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4417,
+     4425
+    ],
+    "origin": [
+     4417,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6ac0faa25e60404ccc6bb93b79b9dec1204cad3aaf064263b8beb992237fa77c"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4417
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "f8def235a35c2e7a8546a41be0fc099d0391a846d1a2e6ef4562e5aedc7fd4ae"
+   }
+  }
+ },
+ "MM_math.xml": {
+  "capacity": 4433,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4425,
+     4433
+    ],
+    "origin": [
+     4425,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "e2544b545142c8beec196fb74964c6b125ecaf58437e9278f46610060f38fcca"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4297
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     200,
+     1,
+     1
+    ],
+    "wires": "a78c4021a13c22b0cf19a7d143b671ead037b14a414855403398ff9c432e64f8"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4297,
+     4425
+    ],
+    "origin": [
+     4297,
+     0,
+     0
+    ],
+    "shape": [
+     128,
+     1,
+     1
+    ],
+    "wires": "566920ed4aef43902ebc62af5f814342a7ea1f60b35c9669e2256f57d11b2c37"
+   }
+  }
+ },
+ "MM_math_chain.xml": {
+  "capacity": 12297,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     12289,
+     12297
+    ],
+    "origin": [
+     12289,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "62a765c96d212c3da8cc1dc253f960d8b2e884d11dd7dc9510cc0a1faa996706"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     8193
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0d48e94ffcc4f17045a3dc5f24871daff67cf7fbedd90ece735e1bec252587aa"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "9c8ee5fba5afb96f7b18cfcf75923ad23ea21e69a05dc473c1ecd21f4741fdff"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "69a2dcaf588c4892f25bf67c519f19492eb87fee20bb3840658bcad4fb3b4411"
+   },
+   "wholes": {
+    "addresses": [
+     8193,
+     12289
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "0b61fe12b6ec11f9860020d807aec09a57bb5a653dfc99d7bc1642e8ae461e5b"
+   }
+  }
+ },
+ "MM_qa.xml": {
+  "capacity": 139273,
+  "period": 262144,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     139265,
+     139273
+    ],
+    "origin": [
+     139265,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "0682505096ce46becf78f9d44984a4ae0a483d023d6faff577c9002b4273e690"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     73729
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "9c1fc29e499f62791d737be8be3ee78266ae9e19f9c6377b7bf8f2043879ad89"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "62012d924115d97eb9f438e4deef9c2177e36bcc4c2e468aea65e7024e7cfe93"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "510bd242ca65b3d82040fc77235249ba8af773bf536a42d89550688c357b94d3"
+   },
+   "wholes": {
+    "addresses": [
+     73729,
+     139265
+    ],
+    "origin": [
+     73729,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "305ef8ab15c254a9f92f5ce953cae5b33a8411d6a1d7d7193810874d4c1d0902"
+   }
+  }
+ },
+ "MM_query_reasoning.xml": {
+  "capacity": 9225,
+  "period": 16384,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     9217,
+     9225
+    ],
+    "origin": [
+     9217,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "683e1b821287626a8b03993e7eb61ad2eb4bb03edcc5f41aba9f53af42661adb"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     8705
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     512,
+     1,
+     1
+    ],
+    "wires": "ccbc0c58ad7294f76bbcb437fd416fcb8a509787e57f45d00becbbb0bab99632"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "35ff1c36944ad0b6414ec78d28c1328bec6af5c2980b52acea73721e13d303d5"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "b17a32b5c84b5e071e0e5a9f929059b96266a606e9a67f13eab7b8695ae7fb87"
+   },
+   "wholes": {
+    "addresses": [
+     8705,
+     9217
+    ],
+    "origin": [
+     8705,
+     0,
+     0
+    ],
+    "shape": [
+     512,
+     1,
+     1
+    ],
+    "wires": "c5632389b0521d67347848da5ba474eead9b1d344d8992250dab8cc6cd258931"
+   }
+  }
+ },
+ "MM_reading.xml": {
+  "capacity": 139273,
+  "period": 262144,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     139265,
+     139273
+    ],
+    "origin": [
+     139265,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "0682505096ce46becf78f9d44984a4ae0a483d023d6faff577c9002b4273e690"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     73729
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "9c1fc29e499f62791d737be8be3ee78266ae9e19f9c6377b7bf8f2043879ad89"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "62012d924115d97eb9f438e4deef9c2177e36bcc4c2e468aea65e7024e7cfe93"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "510bd242ca65b3d82040fc77235249ba8af773bf536a42d89550688c357b94d3"
+   },
+   "wholes": {
+    "addresses": [
+     73729,
+     139265
+    ],
+    "origin": [
+     73729,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "305ef8ab15c254a9f92f5ce953cae5b33a8411d6a1d7d7193810874d4c1d0902"
+   }
+  }
+ },
+ "MM_sequence_predict.xml": {
+  "capacity": 21513,
+  "period": 32768,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     21505,
+     21513
+    ],
+    "origin": [
+     21505,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "61a29d23740803aa921477e57bf9e91b205a14d0f0453a76e3cacc155672afdc"
+   },
+   "numeric": {
+    "addresses": [
+     16384,
+     16384
+    ],
+    "origin": [
+     16384,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     16385,
+     20481
+    ],
+    "origin": [
+     16385,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "d9fc1e6f6ded31357c527ceed15377b6365a12e2756ffdb9bf4a08fcb741830c"
+   },
+   "scalar": {
+    "addresses": [
+     16384,
+     16385
+    ],
+    "origin": [
+     16384,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "35ff1c36944ad0b6414ec78d28c1328bec6af5c2980b52acea73721e13d303d5"
+   },
+   "text": {
+    "addresses": [
+     0,
+     16384
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     16384,
+     1,
+     1
+    ],
+    "wires": "c14158b9b78bb32a87d129df9d3ef7077843539ff8cc44f03a938b9c0f0830ae"
+   },
+   "wholes": {
+    "addresses": [
+     20481,
+     21505
+    ],
+    "origin": [
+     20481,
+     0,
+     0
+    ],
+    "shape": [
+     1024,
+     1,
+     1
+    ],
+    "wires": "deb8deafb6f48cef60dc42428df162bf525a4d4a785fe10470b28f710e71aa66"
+   }
+  }
+ },
+ "MM_shamatha.xml": {
+  "capacity": 4370,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4362,
+     4370
+    ],
+    "origin": [
+     4362,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6155abf7be904508161fca4d6ff27aa6df2e01ab791a7f17ddb31142cf4eb44b"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4362
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "519e059cdf48bf685fcf27521d925337eb31b32b392dc4b693a5332776f79f3c"
+   }
+  }
+ },
+ "MM_text.xml": {
+  "capacity": 4369,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4361,
+     4369
+    ],
+    "origin": [
+     4361,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "054d7311f6c7baeaba87a6a43fdcf7071bb22d13cd1a33af837161e615ac16ad"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4297
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     200,
+     1,
+     1
+    ],
+    "wires": "a78c4021a13c22b0cf19a7d143b671ead037b14a414855403398ff9c432e64f8"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4297,
+     4361
+    ],
+    "origin": [
+     4297,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "dc35b920c4f492c41ecf79e9245ec4045ae3f2520283fca84cab643b1825cf40"
+   }
+  }
+ },
+ "MM_text_fixture.xml": {
+  "capacity": 4425,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4417,
+     4425
+    ],
+    "origin": [
+     4417,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6ac0faa25e60404ccc6bb93b79b9dec1204cad3aaf064263b8beb992237fa77c"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4417
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "f8def235a35c2e7a8546a41be0fc099d0391a846d1a2e6ef4562e5aedc7fd4ae"
+   }
+  }
+ },
+ "MM_xor.xml": {
+  "capacity": 4179,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4171,
+     4179
+    ],
+    "origin": [
+     4171,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "e83ae45d743c0af10285c0f0271e2324c1aa6b9565c6854c9b231efef0ceb827"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4098
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     2,
+     1,
+     1
+    ],
+    "wires": "1f47dbeff9e971d49fb3ccae5010aa428c63eaf1c1e3d2d44912f7497d667595"
+   },
+   "parts": {
+    "addresses": [
+     4099,
+     4107
+    ],
+    "origin": [
+     4099,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "c99c67fff8fc398c07e6fdd56f5ae07d0e4cdbeaddba9e74f31c35841e44528e"
+   },
+   "scalar": {
+    "addresses": [
+     4098,
+     4099
+    ],
+    "origin": [
+     4098,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "46738cce71208c4451bfc288b58637a61dd1891089b055511f33974d32bb64d5"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4107,
+     4171
+    ],
+    "origin": [
+     4107,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "1b5266c309eff1dcf0155b97886a05c9a22053cd37fe1ce0fe61b30a6b605c33"
+   }
+  }
+ },
+ "MM_xor_fixture.xml": {
+  "capacity": 4179,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4171,
+     4179
+    ],
+    "origin": [
+     4171,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "e83ae45d743c0af10285c0f0271e2324c1aa6b9565c6854c9b231efef0ceb827"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4098
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     2,
+     1,
+     1
+    ],
+    "wires": "1f47dbeff9e971d49fb3ccae5010aa428c63eaf1c1e3d2d44912f7497d667595"
+   },
+   "parts": {
+    "addresses": [
+     4099,
+     4107
+    ],
+    "origin": [
+     4099,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "c99c67fff8fc398c07e6fdd56f5ae07d0e4cdbeaddba9e74f31c35841e44528e"
+   },
+   "scalar": {
+    "addresses": [
+     4098,
+     4099
+    ],
+    "origin": [
+     4098,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "46738cce71208c4451bfc288b58637a61dd1891089b055511f33974d32bb64d5"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4107,
+     4171
+    ],
+    "origin": [
+     4107,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "1b5266c309eff1dcf0155b97886a05c9a22053cd37fe1ce0fe61b30a6b605c33"
+   }
+  }
+ },
+ "MM_xor_loopback.xml": {
+  "capacity": 4425,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4417,
+     4425
+    ],
+    "origin": [
+     4417,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6ac0faa25e60404ccc6bb93b79b9dec1204cad3aaf064263b8beb992237fa77c"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4417
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     64,
+     1,
+     1
+    ],
+    "wires": "f8def235a35c2e7a8546a41be0fc099d0391a846d1a2e6ef4562e5aedc7fd4ae"
+   }
+  }
+ },
+ "MentalModel.xml": {
+  "capacity": 4489,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4481,
+     4489
+    ],
+    "origin": [
+     4481,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "daf3f98a154c651ea01b78a005d433c2b55967a2cf9c00dc991cd7a14479e524"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4481
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     128,
+     1,
+     1
+    ],
+    "wires": "43a2b087ebb557591bcc779459afa8e9ed9504ba6be680e5c69aece32f608da5"
+   }
+  }
+ },
+ "POS_smoke.xml": {
+  "capacity": 4489,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4481,
+     4489
+    ],
+    "origin": [
+     4481,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "daf3f98a154c651ea01b78a005d433c2b55967a2cf9c00dc991cd7a14479e524"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4481
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     128,
+     1,
+     1
+    ],
+    "wires": "43a2b087ebb557591bcc779459afa8e9ed9504ba6be680e5c69aece32f608da5"
+   }
+  }
+ },
+ "RamsifiedModel.xml": {
+  "capacity": 4489,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4481,
+     4489
+    ],
+    "origin": [
+     4481,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "daf3f98a154c651ea01b78a005d433c2b55967a2cf9c00dc991cd7a14479e524"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4481
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     128,
+     1,
+     1
+    ],
+    "wires": "43a2b087ebb557591bcc779459afa8e9ed9504ba6be680e5c69aece32f608da5"
+   }
+  }
+ },
+ "XOR_exact.xml": {
+  "capacity": 4139,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4131,
+     4139
+    ],
+    "origin": [
+     4131,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "260ab99b359979e2b1ca7c03f72dca56d5a35928910155ce1eedf5f01dcd5e76"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4098
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     2,
+     1,
+     1
+    ],
+    "wires": "1f47dbeff9e971d49fb3ccae5010aa428c63eaf1c1e3d2d44912f7497d667595"
+   },
+   "parts": {
+    "addresses": [
+     4099,
+     4115
+    ],
+    "origin": [
+     4099,
+     0,
+     0
+    ],
+    "shape": [
+     16,
+     1,
+     1
+    ],
+    "wires": "d3ed279f2fb8399457497c6c6d6340fe7c48b0de9f15aab94fedfef0d2ba8d18"
+   },
+   "scalar": {
+    "addresses": [
+     4098,
+     4099
+    ],
+    "origin": [
+     4098,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "46738cce71208c4451bfc288b58637a61dd1891089b055511f33974d32bb64d5"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4115,
+     4131
+    ],
+    "origin": [
+     4115,
+     0,
+     0
+    ],
+    "shape": [
+     16,
+     1,
+     1
+    ],
+    "wires": "0192912f43956ec13cf07b51511a40e720f992a3e00948556873276bd18c8bf2"
+   }
+  }
+ },
+ "XOR_grammar.xml": {
+  "capacity": 4370,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4362,
+     4370
+    ],
+    "origin": [
+     4362,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6155abf7be904508161fca4d6ff27aa6df2e01ab791a7f17ddb31142cf4eb44b"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4362
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "519e059cdf48bf685fcf27521d925337eb31b32b392dc4b693a5332776f79f3c"
+   }
+  }
+ },
+ "XOR_pos.xml": {
+  "capacity": 4370,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4362,
+     4370
+    ],
+    "origin": [
+     4362,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6155abf7be904508161fca4d6ff27aa6df2e01ab791a7f17ddb31142cf4eb44b"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4362
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "519e059cdf48bf685fcf27521d925337eb31b32b392dc4b693a5332776f79f3c"
+   }
+  }
+ },
+ "XOR_symbols.xml": {
+  "capacity": 4377,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4369,
+     4377
+    ],
+    "origin": [
+     4369,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "a155ef46cc1c9292c3e494779adc7f7451ab5a6a16baec27828846d463dd110d"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4369
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     16,
+     1,
+     1
+    ],
+    "wires": "874ff41e0379845f96431c4c65e6084c19f07062ebdb9684847568610e311c33"
+   }
+  }
+ },
+ "ergodic-only.xml": {
+  "capacity": 5693,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     5685,
+     5693
+    ],
+    "origin": [
+     5685,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "edfd8405c30746d3f6094ec6c7efc1df987d8a7c117ed629340a5203b78c68c7"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4880
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     784,
+     1,
+     1
+    ],
+    "wires": "59ed426461adf59c4dbd57b917b2bcba31b7b68dbfa546f84db87c869ea129ca"
+   },
+   "parts": {
+    "addresses": [
+     4881,
+     5665
+    ],
+    "origin": [
+     4881,
+     0,
+     0
+    ],
+    "shape": [
+     784,
+     1,
+     1
+    ],
+    "wires": "7daab8984d60caab3fbd4c8a84ff792004ca0b44b20bc1df05ae439339f6955e"
+   },
+   "scalar": {
+    "addresses": [
+     4880,
+     4881
+    ],
+    "origin": [
+     4880,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "2ab0a403c81e236dadbe7473a295fcd2b052bce880a1ea4f75659e2c2193102e"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     5665,
+     5685
+    ],
+    "origin": [
+     5665,
+     0,
+     0
+    ],
+    "shape": [
+     20,
+     1,
+     1
+    ],
+    "wires": "286ce7b4552478f47c979b3c6297c980bebf04a4992d06c769d45e2acd5b364e"
+   }
+  }
+ },
+ "ergodic.xml": {
+  "capacity": 5693,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     5685,
+     5693
+    ],
+    "origin": [
+     5685,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "edfd8405c30746d3f6094ec6c7efc1df987d8a7c117ed629340a5203b78c68c7"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4880
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     784,
+     1,
+     1
+    ],
+    "wires": "59ed426461adf59c4dbd57b917b2bcba31b7b68dbfa546f84db87c869ea129ca"
+   },
+   "parts": {
+    "addresses": [
+     4881,
+     5665
+    ],
+    "origin": [
+     4881,
+     0,
+     0
+    ],
+    "shape": [
+     784,
+     1,
+     1
+    ],
+    "wires": "7daab8984d60caab3fbd4c8a84ff792004ca0b44b20bc1df05ae439339f6955e"
+   },
+   "scalar": {
+    "addresses": [
+     4880,
+     4881
+    ],
+    "origin": [
+     4880,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "2ab0a403c81e236dadbe7473a295fcd2b052bce880a1ea4f75659e2c2193102e"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     5665,
+     5685
+    ],
+    "origin": [
+     5665,
+     0,
+     0
+    ],
+    "shape": [
+     20,
+     1,
+     1
+    ],
+    "wires": "286ce7b4552478f47c979b3c6297c980bebf04a4992d06c769d45e2acd5b364e"
+   }
+  }
+ },
+ "idempotent.xml": {
+  "capacity": 4560,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4553,
+     4560
+    ],
+    "origin": [
+     4553,
+     0,
+     0
+    ],
+    "shape": [
+     7,
+     1,
+     1
+    ],
+    "wires": "aeeca7c3618752b6795f1d45f75556134beb7874fff61ad6dce8007466048b6a"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4553
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     200,
+     1,
+     1
+    ],
+    "wires": "18a049ceeb370f2129f9cc0521612989a1f6db9f7bd091c80894acfc566272ec"
+   }
+  }
+ },
+ "matrix/MM_20M_grammar_reading.xml": {
+  "error": "ValueError: marker requires declared form and meaning blocks"
+ },
+ "matrix/MM_20M_xor_noraise.xml": {
+  "capacity": 139273,
+  "period": 262144,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     139265,
+     139273
+    ],
+    "origin": [
+     139265,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "0682505096ce46becf78f9d44984a4ae0a483d023d6faff577c9002b4273e690"
+   },
+   "numeric": {
+    "addresses": [
+     8192,
+     8192
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     8193,
+     73729
+    ],
+    "origin": [
+     8193,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "9c1fc29e499f62791d737be8be3ee78266ae9e19f9c6377b7bf8f2043879ad89"
+   },
+   "scalar": {
+    "addresses": [
+     8192,
+     8193
+    ],
+    "origin": [
+     8192,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "62012d924115d97eb9f438e4deef9c2177e36bcc4c2e468aea65e7024e7cfe93"
+   },
+   "text": {
+    "addresses": [
+     0,
+     8192
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     8192,
+     1,
+     1
+    ],
+    "wires": "510bd242ca65b3d82040fc77235249ba8af773bf536a42d89550688c357b94d3"
+   },
+   "wholes": {
+    "addresses": [
+     73729,
+     139265
+    ],
+    "origin": [
+     73729,
+     0,
+     0
+    ],
+    "shape": [
+     65536,
+     1,
+     1
+    ],
+    "wires": "305ef8ab15c254a9f92f5ce953cae5b33a8411d6a1d7d7193810874d4c1d0902"
+   }
+  }
+ },
+ "mnist.xml": {
+  "capacity": 4123,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4115,
+     4123
+    ],
+    "origin": [
+     4115,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "1165c37a00fff3bb28e651bfee14945ca3055348d14f26e54db9be32b267428d"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "parts": {
+    "addresses": [
+     4098,
+     4106
+    ],
+    "origin": [
+     4098,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "861383ea4941d2b4150695ff0aebac48e6b96ddb92ae8994ad4105e0c591b694"
+   },
+   "scalar": {
+    "addresses": [
+     4097,
+     4098
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "b908b617b2eb09372728cc8ab2b741d0dcf95e41e212ba9b99bc07151dc89706"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4106,
+     4115
+    ],
+    "origin": [
+     4106,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "8764479581040161fc066da13107cc550d77cac814157a38f194ae2c8255bf78"
+   }
+  }
+ },
+ "stream_smoke.xml": {
+  "capacity": 4489,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4481,
+     4489
+    ],
+    "origin": [
+     4481,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "daf3f98a154c651ea01b78a005d433c2b55967a2cf9c00dc991cd7a14479e524"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4481
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     128,
+     1,
+     1
+    ],
+    "wires": "43a2b087ebb557591bcc779459afa8e9ed9504ba6be680e5c69aece32f608da5"
+   }
+  }
+ },
+ "xor.xml": {
+  "capacity": 4370,
+  "period": 8192,
+  "ranges": {
+   "conceptual": {
+    "addresses": [
+     4362,
+     4370
+    ],
+    "origin": [
+     4362,
+     0,
+     0
+    ],
+    "shape": [
+     8,
+     1,
+     1
+    ],
+    "wires": "6155abf7be904508161fca4d6ff27aa6df2e01ab791a7f17ddb31142cf4eb44b"
+   },
+   "numeric": {
+    "addresses": [
+     4096,
+     4096
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     0,
+     1,
+     1
+    ],
+    "wires": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+   },
+   "parts": {
+    "addresses": [
+     4097,
+     4353
+    ],
+    "origin": [
+     4097,
+     0,
+     0
+    ],
+    "shape": [
+     256,
+     1,
+     1
+    ],
+    "wires": "1c6c284d1fa0908e4d40a5d08b49f3e93e1fa3b0d3694fcbbf7edd1f281acd31"
+   },
+   "scalar": {
+    "addresses": [
+     4096,
+     4097
+    ],
+    "origin": [
+     4096,
+     0,
+     0
+    ],
+    "shape": [
+     1,
+     1,
+     1
+    ],
+    "wires": "8288fea63e836d8c287d37de7ba807741755ea8ccfd6f90e31ac14ae5dd698eb"
+   },
+   "text": {
+    "addresses": [
+     0,
+     4096
+    ],
+    "origin": [
+     0,
+     0,
+     0
+    ],
+    "shape": [
+     4096,
+     1,
+     1
+    ],
+    "wires": "ad71b5d8c2367913a8082b83ed960bf2f56d909c20e0ceaa567b877947b8f796"
+   },
+   "wholes": {
+    "addresses": [
+     4353,
+     4362
+    ],
+    "origin": [
+     4353,
+     0,
+     0
+    ],
+    "shape": [
+     9,
+     1,
+     1
+    ],
+    "wires": "519e059cdf48bf685fcf27521d925337eb31b32b392dc4b693a5332776f79f3c"
+   }
+  }
+ }
+}

@@ -185,7 +185,7 @@ def install_where_registry(model):
         rows, *columns = (int(n) for n in model.inputSpace.inputShape)
         width = columns[0] if columns else 1
         numeric_extent = (width, rows) if width > 1 else rows
-    registry = WhereRegistry((
+    ranges = [
         ('text', input_extent),
         ('numeric', numeric_extent),
         ('scalar', 1),
@@ -195,7 +195,13 @@ def install_where_registry(model):
         # The C stages use the same slot geometry, independently of which
         # codebook rows or composed ideas currently occupy those slots.
         ('conceptual', max(int(space.stm.capacity) for space in model.conceptualSpaces)),
-    ))
+    ]
+    # A scene's box, where the model declares one, comes after every other
+    # range: its addresses follow theirs and its stretch of the first axis
+    # begins at its first address, so no other range moves.
+    if model.inputSpace.scene_shape:
+        ranges.append(('scene', model.inputSpace.scene_shape))
+    registry = WhereRegistry(ranges)
     parts.where_offset = registry.slices['parts'][0]
     whole.where_offset = registry.slices['wholes'][0]
     # A symbol has no dimensions and no address: it has no slice here.

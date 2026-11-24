@@ -2267,6 +2267,16 @@ def load(category, split, *, felt_dir=None):
     return tuple(out)
 
 
+def rows(document):
+    """A document as the rows a model takes, one for each entry in order,
+    each its ``text`` and its ``scene`` (``None`` for no image, otherwise its
+    pixels ``[x, y, z, steps]``); and the document's question (the index of
+    the row that asks it, or ``None``) and answer, as they are."""
+    out = [dict(text=text, scene=None if scene is None else [list(pixel) for pixel in scene])
+           for text, scene in zip(document.sentences, document.scenes)]
+    return out, document.question, document.answer
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Freeze the felt-world corpus.')
     parser.add_argument('command', choices=['freeze'])

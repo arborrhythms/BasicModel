@@ -170,8 +170,9 @@ def stage_input(model):
     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
     texts=fi.get('word_texts') or ()
     if not any(row for row in texts) and not any(
-            value is not None for value in (getattr(isp, '_scalar_values', None) or ())):
-        return  # An absent text/scalar field has no bracket to examine.
+            value is not None for value in (getattr(isp, '_scalar_values', None) or ())) and not any(
+            scene is not None for scene in (isp._scenes or ())):
+        return  # An absent text/scalar/scene field has no bracket to examine.
     intervals=fi.get('word_intervals') or ()
     owner=model._concept_owner()
     definitions=owner.definitions

@@ -160,6 +160,9 @@
       <xs:element name="whereRungRatio" type="xs:positiveInteger" minOccurs="0"/>
       <!-- The axes of the .where; each axis is four wires. -->
       <xs:element name="whereAxes" type="xs:positiveInteger" minOccurs="0"/>
+      <!-- The shape of a scene's box, whole numbers separated by spaces;
+           empty for none. -->
+      <xs:element name="sceneShape" type="xs:string" minOccurs="0"/>
       <xs:element name="mereologyRefinePatience" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Radial STM idea folds (Alec 2026-07-13): the bounded reducer's
            conjunction/disjunction hosts use radmin/radmax and the radial

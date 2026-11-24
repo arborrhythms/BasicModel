@@ -8825,6 +8825,22 @@ class SentenceTooLong(ValueError):
     """The presented sentence does not fit any configured word bucket."""
 
 
+def scene_shape(raw):
+    """The shape of a scene's box from ``architecture.sceneShape``: one whole
+    number for each axis of the ``.where`` (an axis not given is 1), or
+    ``()`` where the key declares none."""
+    from architecture import WHERE_AXES
+    if raw is None or not str(raw).strip():
+        return ()
+    try:
+        shape = tuple(int(n) for n in str(raw).split())
+    except ValueError:
+        raise ValueError(f'sceneShape is whole numbers separated by spaces, not {raw!r}') from None
+    if len(shape) > WHERE_AXES or min(shape) < 1:
+        raise ValueError(f'sceneShape is at most {WHERE_AXES} positive whole numbers, not {raw!r}')
+    return shape + (1,) * (WHERE_AXES - len(shape))
+
+
 class InputSpace(Space):
     """Receives the source buffer from Data() and encodes it as vectors.
 
@@ -9003,6 +9019,14 @@ class InputSpace(Space):
         # to compute the outer-loop iteration count N without rethreading
         # inp_items through runBatch's call signature.
         self._last_sentences = None
+        # The shape of a scene's box (``architecture.sceneShape``), one whole
+        # number for each axis of the ``.where``; empty where the model has no
+        # box. The registry sets the box on a stretch of the first axis.
+        self.scene_shape = scene_shape(TheXMLConfig.get("architecture.sceneShape"))
+        # The scenes of the last batch of rows, one for each row: ``None``
+        # for a row with no image, otherwise its pixels ``(x, y, z, value)``
+        # with the value its steps over 255 (an empty image is empty).
+        self._scenes = None
         # Optional whole-sentence packing metadata. ``prepPackedInput`` joins
         # several consecutive corpus sentences into one surface row while
         # retaining their word boundaries as fixed [B,W] tensors.  The
@@ -9099,12 +9123,16 @@ class InputSpace(Space):
         See class docstring for the operation contract.
         """
         self._scalar_values = None
+        self._scenes = None
         if isinstance(inputBatch,list) and inputBatch and isinstance(inputBatch[0],dict):
-            if any(set(item)-{'text','scalar'} for item in inputBatch):
-                raise ValueError('a scalar moment accepts text and scalar only')
+            unknown = sorted({key for item in inputBatch for key in item} - {'text', 'scalar', 'scene'})
+            if unknown:
+                raise ValueError(f'a row accepts text, scalar and scene only, not {unknown}')
             values = [item.get('scalar') for item in inputBatch]
+            scenes = [self.scene_pixels(item.get('scene')) for item in inputBatch]
             result = self.prepInput([item['text'] for item in inputBatch])
             self._scalar_values = values
+            self._scenes = scenes
             return result
         from Occurrence import prepared_input
         self._clear_sentence_pack()
@@ -9144,6 +9172,30 @@ class InputSpace(Space):
             # Respect the declared layout without changing their order.
             return prepared_input(self, inputBatch, inputBatch.reshape(inputBatch.shape[0], *self.inputShape))
         return prepared_input(self, inputBatch, inputBatch)
+
+    def scene_pixels(self, scene):
+        """A row's scene as its pixels: ``None`` for no image, otherwise a
+        tuple of ``(x, y, z, value)``, the value a pixel's steps over 255.
+        A pixel is ``[x, y, z, steps]`` with its place inside the box and
+        its steps from 1 to 255, one pixel at a place."""
+        if scene is None:
+            return None
+        if not self.scene_shape:
+            raise ValueError('a scene was given to a model with no box for one (architecture.sceneShape)')
+        pixels, seen = [], set()
+        for pixel in scene:
+            if len(pixel) != 4 or not all(isinstance(n, int) and not isinstance(n, bool) for n in pixel):
+                raise ValueError(f'a pixel is four whole numbers [x, y, z, steps], not {pixel!r}')
+            *place, steps = pixel
+            if not all(0 <= n < side for n, side in zip(place, self.scene_shape)):
+                raise ValueError(f'pixel {list(pixel)} lies outside the scene\'s box {self.scene_shape}')
+            if not 1 <= steps <= 255:
+                raise ValueError(f'pixel {list(pixel)} has steps outside 1 to 255')
+            if tuple(place) in seen:
+                raise ValueError(f'two pixels at the place {tuple(place)}')
+            seen.add(tuple(place))
+            pixels.append((*place, steps / 255))
+        return tuple(pixels)
 
     def _clear_sentence_pack(self):
         """Drop request-scoped packed-sentence metadata."""
@@ -9905,6 +9957,10 @@ class InputSpace(Space):
         if scalar is not None:
             # A presented scalar is a real moment even when no word is present.
             any_active = any_active | torch.tensor([value is not None for value in scalar],
+                device=dev, dtype=torch.bool)[:, None]
+        if self._scenes is not None:
+            # So is a presented image, empty or not.
+            any_active = any_active | torch.tensor([scene is not None for scene in self._scenes],
                 device=dev, dtype=torch.bool)[:, None]
 
         self._packed_sentence_start_mask = start
