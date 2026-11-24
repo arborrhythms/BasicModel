@@ -259,8 +259,10 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
         from types import MethodType
         language.program_meaning = MethodType(LanguageSpace.program_meaning, language)
     from SentenceStrata import SentenceStrata
-    from Memory import ShortTermMemory
+    from Memory import ModelState, ShortTermMemory
+    previous = getattr(getattr(owner, 'conceptualSpace', None), 'stm', None)
     short_term = ShortTermMemory(batch=1, capacity=8, concept_dim=width)
+    short_term.model_state = getattr(previous, 'model_state', None) or ModelState()
     short_term.strata = SentenceStrata(1, len(entry.leaves), 8, width)
     owner.conceptualSpace = SimpleNamespace(_ltm_consolidation=store is not None,
         _incoming_trust_multiplier=lambda: trust, stm=short_term, subspace=SimpleNamespace())
@@ -270,6 +272,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     from clock_fixtures import install
     if not hasattr(owner, 'when_time'):
         install(owner)
+    short_term.model_state.when_time = owner.when_time
+    short_term.model_state.when_code = owner.when_code
     owner._sentence_ticks[sid] = owner._advance_when_time() if active else owner.present()
     owner.__dict__.setdefault('_sentence_episodes', {})
     if discourse is not None:

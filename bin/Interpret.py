@@ -261,6 +261,28 @@ class InterpretLayer(GrammarLayer):
         derived = getattr(owner.similarity_codebook, 'mereology', None)
         if derived is None:
             return atoms
+        def form_row(row, observed):
+            if row < 0 or owner._row_order(row) <= 0:
+                return None
+            if observed is None:
+                identity = owner.concept_id_at_row(row)
+                candidates = () if identity is None else owner.definitions.words(identity)
+                if len(candidates) != 1:
+                    return None
+                observed = candidates[0]
+            return owner._concept_row_of(observed) if observed > 0 else None
+
+        width = derived.percept_event_width
+        if isinstance(rows, int) and (word_ids is None or isinstance(word_ids, int)):
+            # The grammar has already resolved both references for this leaf.
+            if atoms.ndim != 1:
+                raise ValueError('lexical rows must align with their atom bank')
+            row = form_row(rows, word_ids)
+            if row is None:
+                return atoms
+            address = torch.as_tensor(row, dtype=torch.long, device=atoms.device)
+            form = owner.similarity_codebook.lookup_rows(address, stream=0 if stream is None else stream)
+            return torch.cat((form[:width], atoms[width:]))
         rows = torch.as_tensor(rows, device=atoms.device, dtype=torch.long)
         if tuple(rows.shape) != tuple(atoms.shape[:-1]):
             raise ValueError('lexical rows must align with their atom bank')
@@ -269,13 +291,7 @@ class InterpretLayer(GrammarLayer):
         words = None if word_ids is None else word_ids.detach().reshape(-1).tolist()
         mapped = []
         for index, row in enumerate(rows.detach().reshape(-1).tolist()):
-            word_row = None
-            if row >= 0 and owner._row_order(row) > 0:
-                identity = owner.concept_id_at_row(row)
-                candidates = (self.owner.definitions.words(identity) if words is None and identity is not None
-                              else () if words is None else (words[index],))
-                if len(candidates) == 1 and candidates[0] > 0:
-                    word_row = owner._concept_row_of(candidates[0])
+            word_row = form_row(row, None if words is None else words[index])
             mapped.append(-1 if word_row is None else word_row)
         mapped = rows.new_tensor(mapped).reshape(rows.shape)
         if not bool((mapped >= 0).any()):
@@ -283,7 +299,6 @@ class InterpretLayer(GrammarLayer):
         options = (dict(streams=True) if rows.ndim > 1 and stream is None else
                    {} if stream is None else dict(stream=stream))
         forms = owner.similarity_codebook.lookup_rows(mapped.clamp_min(0), **options)
-        width = derived.percept_event_width
         form = torch.where((mapped >= 0)[..., None], forms[..., :width], atoms[..., :width])
         return torch.cat((form, atoms[..., width:]), -1)
 

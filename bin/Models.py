@@ -14116,11 +14116,8 @@ class BasicModel(BaseModel):
         row = owner._concept_row_of(identity)
         if row is None:
             raise ValueError("grammar target word has no live conceptual row")
-        reference = owner.similarity_codebook.W
-        rows = torch.tensor(row, device=reference.device)
-        atoms = owner.similarity_codebook.lookup_rows(rows,stream=stream)
-        return owner.interpret.lexical_atoms(rows, atoms,
-            word_ids=rows.new_tensor(word_id), stream=stream).detach()
+        atoms = owner.similarity_codebook.lookup_rows(row, stream=stream)
+        return owner.interpret.lexical_atoms(row, atoms, word_ids=word_id, stream=stream).detach()
 
     def _grammar_lesson_objectives(self, programs, *, split, source_rows, source_positions=None,
                                    student_states=None, streams=None):
@@ -15566,15 +15563,11 @@ class BasicModel(BaseModel):
         reset.
         """
         isp = getattr(self, "inputSpace", None)
-        counts = tuple(getattr(
-            isp, "_packed_sentence_counts_host", ()) or ())
-        if not bool(getattr(isp, "_sentence_pack_enabled", False)) or not counts:
+        if not getattr(isp, "_sentence_pack_enabled", False):
             return
-        hard = list(hard_eos or [False] * len(counts))
-        if len(hard) < len(counts):
-            hard.extend([False] * (len(counts) - len(hard)))
-        for b, count in enumerate(counts):
-            if int(count) < 1 or bool(hard[b]):
+        packed = isp._packed_sentence_rows
+        for b, sentences in enumerate(packed):
+            if not sentences or (hard_eos is not None and b < len(hard_eos) and hard_eos[b]):
                 continue
             for space in self.spaces:
                 if hasattr(space, "Reset"):

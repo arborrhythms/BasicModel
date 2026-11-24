@@ -175,8 +175,7 @@ class Evaluation:
             if row is None or row < 0:
                 raise ValueError('comprehension referent has no staged conceptual row')
             atoms = owner.similarity_codebook.lookup_rows(self.ids.new_tensor(row), stream=self.stream)
-            atoms = owner.interpret.lexical_atoms(self.ids.new_tensor(row), atoms,
-                word_ids=self.ids.new_tensor(lexical), stream=self.stream)
+            atoms = owner.interpret.lexical_atoms(row, atoms, word_ids=lexical, stream=self.stream)
             evidence = (program.leaf_evidence[word] if program.leaf_evidence is not None else
                         value.new_tensor((float(program.activations[word]), 0.)))
             value = owner.interpret.forward(value, object_atoms=atoms,

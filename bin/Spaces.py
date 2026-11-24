@@ -8973,8 +8973,6 @@ class InputSpace(Space):
         # sentence list enters the captured word loop.
         self._sentence_pack_enabled = False
         self._packed_sentence_rows = None
-        self._packed_sentence_counts_host = None
-        self._packed_sentence_max_count = 0
         self._packed_sentence_start_mask = None
         self._packed_sentence_end_mask = None
         self._packed_sentence_intermediate_end_mask = None
@@ -9113,8 +9111,6 @@ class InputSpace(Space):
         """Drop request-scoped packed-sentence metadata."""
         self._sentence_pack_enabled = False
         self._packed_sentence_rows = None
-        self._packed_sentence_counts_host = None
-        self._packed_sentence_max_count = 0
         self._packed_sentence_start_mask = None
         self._packed_sentence_end_mask = None
         self._packed_sentence_intermediate_end_mask = None
@@ -9289,9 +9285,6 @@ class InputSpace(Space):
         dev = TheDevice.get()
         self._sentence_pack_enabled = True
         self._packed_sentence_rows = tuple(normalized)
-        self._packed_sentence_counts_host = tuple(
-            len(row) for row in normalized)
-        self._packed_sentence_max_count = int(max_sentences)
         self._packed_sentence_start_mask = starts.to(dev)
         self._packed_sentence_end_mask = ends.to(dev)
         self._packed_sentence_intermediate_end_mask = (
@@ -9879,9 +9872,7 @@ class InputSpace(Space):
                     "packed sentence metadata is missing or shape-misaligned "
                     f"with staged words {(B, W)}")
             expected_active = self._packed_sentence_ids >= 0
-            if not torch.equal(
-                    expected_active.detach().to("cpu"),
-                    active.detach().to("cpu")):
+            if not torch.equal(expected_active.to(dev), active):
                 raise RuntimeError(
                     "packed surface word layout differs from the staged "
                     "sentence boundaries; refusing to train misaligned roots")
@@ -9926,10 +9917,6 @@ class InputSpace(Space):
         slot_mask[:, :1] = any_active
         self._packed_sentence_slot_end_positions = slot_end
         self._packed_sentence_slot_mask = slot_mask
-        self._packed_sentence_counts_host = tuple(
-            1 if bool(value) else 0
-            for value in any_active.detach().to("cpu").reshape(-1).tolist())
-        self._packed_sentence_max_count = 1
 
     def finalize_stem(self, sub, ps):
         """Model-orchestrated stem bookkeeping for TEXT mode (2026-06-07).

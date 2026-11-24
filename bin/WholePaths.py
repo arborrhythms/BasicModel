@@ -69,8 +69,7 @@ def fields(model, observation, sid, *, trust):
         children = tuple(semantic_clause(child,
             original.children[i] if i < len(original.children) else child)
             for i, child in enumerate(clause.children))
-        value = replace(clause.meaning, roles=original.meaning.roles,
-                        role_mask=original.meaning.role_mask)
+        roles = original.meaning.roles
         refs = []
         for reference in clause.refs:
             if isinstance(reference, ClausePredicate):
@@ -80,17 +79,17 @@ def fields(model, observation, sid, *, trust):
             else:
                 refs.append(None if reference == -1 else store.semantic_reference(reference))
         if clause.relation in ('part', 'equal', 'implies'):
-            roles = value.roles.clone()
+            roles = roles.clone()
             roles[1] = predicate_point(clause.relation, roles[1])
             refs[1] = ('sym', predicate_identity(clause.relation))
-            value = replace(value, roles=roles)
         # Completed journal children can include unreferenced side clauses.
         # Only semantic operands belong to this thought's working structure.
         used = sorted({ref[1] for ref in refs if ref is not None and ref[0] == 'constituent'})
         positions = {old: new for new, old in enumerate(used)}
         refs = tuple(('constituent', positions[ref[1]]) if ref is not None and ref[0] == 'constituent'
                      else ref for ref in refs)
-        value = replace(value, role_refs=refs, constituents=tuple(children[i].meaning for i in used))
+        value = replace(clause.meaning, roles=roles, role_mask=original.meaning.role_mask,
+                        role_refs=refs, constituents=tuple(children[i].meaning for i in used))
         return replace(clause, meaning=value, point=original.point, children=children)
     result = []
     for row, clause in enumerate(observation['clauses']):
@@ -104,8 +103,8 @@ def fields(model, observation, sid, *, trust):
         clause = semantic_clause(clause, original)
         meaning = (clause.meaning if clause.relation is not None else
             replace(ConceptualMeaning.from_description(clause.point),
-                    polarity=clause.meaning.polarity, sentence_kind='idea'))
-        meaning = replace(meaning,extension=clause.meaning.extension)
+                    polarity=clause.meaning.polarity, sentence_kind='idea',
+                    extension=clause.meaning.extension))
         program = observation['entries'][row]
         query = closing_question(meaning, clause, meaning, program, store=store)
         # No current occurrence exists to exclude. Retained event origins
