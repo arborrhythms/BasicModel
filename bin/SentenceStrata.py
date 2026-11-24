@@ -49,6 +49,33 @@ class IdeaStack(STM0):
             role_refs=(reference, *meaning.role_refs[1:]),
             sentence_kind=meaning.sentence_kind or 'idea').metadata()
 
+    def append_words(self, points, concepts):
+        """Write located lexical ideas in shift order, preserving the live graph."""
+        count = len(concepts)
+        start, end = len(self), len(self) + count
+        if end > self.capacity:
+            raise OverflowError('STM0 construction capacity exhausted')
+        if points.shape != (count, self.nDim):
+            raise ValueError('word ideas must have the width of their STM store')
+        if not bool(points.isfinite().all()):
+            raise FloatingPointError('non-finite occupied meaning role')
+        # Basic word ideas have only their native referent. raw_meaning_of
+        # reads it directly from this column, as it does for copied LTM0 ideas.
+        refs = [self._reference_value(None if cid is None else ('sym', cid)) for cid in concepts]
+        first_name = int(self.names_issued)
+        seats = torch.arange(start, end, device=self.slots.device)
+        with torch.enable_grad():
+            self.slots = self.slots.index_copy(0, seats, points.to(self.slots))
+        self.referent[start:end] = self.referent.new_tensor(refs).reshape(count, 2)
+        self.trust[start:end] = 0.
+        self.activity[start:end] = self.activity_config.default
+        self.row_names[start:end] = first_name + seats - start
+        self.names_issued.fill_(first_name + count)
+        self._write_count(end)
+        from MemoryActivity import written_complete
+        written_complete(self, range(start, end))
+        return range(first_name, first_name + count)
+
     def expire(self):
         # Expiring a private bank cannot withdraw same-numbered live tokens.
         owner = self.__dict__.pop('_concept_owner', None)
@@ -115,20 +142,20 @@ class Tree:
         """Write the located leaves and reduce ordered operands to a single typed head."""
         trace = self.trace
         index = trace.index
-        heads, unnamed = {}, 0
+        heads = {}
         start = store.when_start
-        for word, at in sorted(index.word_actions.items(), key=lambda item: item[1]):
-            point = store._fit(trace.leaves[word]).clone()
-            if start is not None and start >= 4:
-                for band, offset in ((where, start - 4), (when, start)):
-                    if band is not None:
-                        point[offset:offset + 4] = band[word].detach().to(point)
-            concept = concepts[word]
-            unnamed += concept is None
-            meaning = replace(ConceptualMeaning.from_description(point),
-                              role_refs=(None if concept is None else ('sym', int(concept)), None, None))
-            row = store.append_meaning(meaning)
-            heads[at] = OCCURRENCE, store.row_name(row)
+        shifts = sorted(index.word_actions.items(), key=lambda item: item[1])
+        words = torch.tensor([word for word, _ in shifts], device=trace.leaves.device, dtype=torch.long)
+        points = trace.leaves.index_select(0, words).to(store.slots)
+        if points.shape[-1] != store.nDim:
+            points = torch.nn.functional.pad(points, (0, store.nDim - points.shape[-1]))
+        if start is not None and start >= 4:
+            for band, offset in ((where, start - 4), (when, start)):
+                if band is not None:
+                    points[:, offset:offset + 4] = band.detach().index_select(0, words.to(band.device)).to(points)
+        names = store.append_words(points, [concepts[word] for word, _ in shifts])
+        for (_, at), name in zip(shifts, names, strict=True):
+            heads[at] = OCCURRENCE, name
         from PartsOfSpeech import operation_name
         for at, (kind, local, _) in enumerate(index.steps):
             if kind in (1, 2):
@@ -137,7 +164,7 @@ class Tree:
                 operands = store.parts.sequence([heads[child] for child in index.operands[at]])
                 heads[at] = RELATION, store.parts.add((SYMBOL, operator), operands, truth_plus=1.)
         trace.head = store.parts.sequence([heads[root] for root in index.roots])
-        return unnamed
+        return sum(concept is None for concept in concepts)
 
     def view(self, address):
         view = self._views.get(address)

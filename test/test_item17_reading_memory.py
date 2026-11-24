@@ -7,6 +7,30 @@ from test_item17_one_reconstruction import _grammar_free_text_model
 from test_item17_places import nominate
 
 
+def test_batch_word_write_matches_individual_ideas_and_their_gradients():
+    from dataclasses import replace
+    from Meaning import ConceptualMeaning
+    from SentenceStrata import IdeaStack
+    stores = [IdeaStack(12, capacity=6, relation_capacity=8) for _ in range(2)]
+    for store in stores:
+        store.append_idea(torch.zeros(12), referent=('sym', 4))
+    points = torch.randn(3, 12, requires_grad=True)
+    repeated = points.detach().clone().requires_grad_()
+    ids = [None, 7, 7]
+    names = stores[0].append_words(points, ids)
+    for row, cid in zip(repeated, ids, strict=True):
+        refs = (None if cid is None else ('sym', cid), None, None)
+        stores[1].append_meaning(replace(ConceptualMeaning.from_description(row), role_refs=refs))
+    assert list(names) == [stores[1].row_name(i) for i in (1, 2, 3)]
+    for column in stores[0].columns:
+        assert torch.equal(getattr(stores[0], column), getattr(stores[1], column))
+    for i in (1, 2, 3):
+        assert stores[0].raw_meaning_of(i).metadata() == stores[1].raw_meaning_of(i).metadata()
+    weights = torch.randn_like(stores[0].slots)
+    gradients = torch.autograd.grad(sum((store.slots * weights).sum() for store in stores), (points, repeated))
+    assert torch.equal(*gradients)
+
+
 def test_looks_extend_one_head_and_commit_it_once(tmp_path, monkeypatch, eager_reading):
     from Memory import STM1, OCCURRENCE, RELATION
     import ReadingMemory
@@ -244,3 +268,35 @@ def test_bad_head_in_later_stream_cannot_partly_commit_batch():
     with pytest.raises(ValueError, match="unavailable"):
         commit([source, source], [(OCCURRENCE, source.row_name(row)), (OCCURRENCE, 999)], target)
     assert len(target) == 0 and int(target.names_issued) == 0
+
+
+def test_retaining_shared_relation_reuses_last_seat_across_streams():
+    from Memory import LTM0, STM0, RELATION, SYMBOL
+    from ReadingMemory import commit
+    first = STM0(12, capacity=1, relation_capacity=8)
+    second = STM0(12, capacity=1, relation_capacity=8)
+    target = LTM0(12, capacity=1, relation_capacity=3)
+    roots = []
+    for source, handle in ((first, 2), (second, 4)):
+        child = source.parts.add((SYMBOL, 20), (SYMBOL, 30), symbol=handle, surprise=.75)
+        root = source.parts.add((RELATION, child), (SYMBOL, 40), symbol=handle+1)
+        roots.append((RELATION, root))
+    a, b = commit((first, second), roots, target)
+    assert a == b and len(target.parts) == 2
+    child, _ = target.parts.references(a[1])
+    assert child[0] == RELATION and target.parts.activity[child[1]] >= .75
+    assert commit((second,), (roots[1],), target) == (a,)
+
+
+def test_reserved_relation_handle_overflow_leaves_earlier_stream_untouched():
+    import pytest
+    from Memory import LTM0, STM0, OCCURRENCE, RELATION, SYMBOL
+    from ReadingMemory import commit
+    source = STM0(12, capacity=1, relation_capacity=8)
+    idea = source.append_idea(torch.ones(12))
+    link = source.parts.add((SYMBOL, 7), (SYMBOL, 8))
+    target = LTM0(12, capacity=2, relation_capacity=3)
+    target.parts.add((SYMBOL, 2), (SYMBOL, 4), symbol=1)
+    with pytest.raises(OverflowError, match='relation capacity'):
+        commit((source, source), ((OCCURRENCE, source.row_name(idea)), (RELATION, link)), target)
+    assert len(target) == 0 and len(target.parts) == 1 and int(target.names_issued) == 0

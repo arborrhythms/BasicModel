@@ -54,18 +54,25 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
     if deferred() or store.__dict__.get('_promoting', False):
         return ()
     alloc = _concept_alloc_of(owner)
-    selected = range(len(store)) if rows is None else rows
+    if rows is None:
+        selected = torch.arange(len(store), device=store.activity.device)
+    else:
+        selected = torch.as_tensor(rows if torch.is_tensor(rows) else list(rows),
+                                   device=store.activity.device, dtype=torch.long)
+    activity = store.activity[selected]
+    eligible = activity >= store.activity_config.promotion
+    # An unwritten row at activity one has already been promoted.
+    if not written_now:
+        eligible &= activity != 1.
+    # Compare only hits at the host admission boundary. The final comparison
+    # retains the configured binary64 threshold even on a float32 chart.
+    selected = selected[eligible]
+    strengths = store.activity[selected].tolist()
     plans, sources = [], []
-    for index in selected:
-        index = int(index)
-        activity = float(store.activity[index])
-        if activity < store.activity_config.promotion:
+    for index, strength in zip(selected.tolist(), strengths, strict=True):
+        if strength < store.activity_config.promotion:
             continue
         reference = store.referent_of(index)
-        # A promoted row has activity one and refers to its minted concept.
-        # A just-written one is considered before its activity is made permanent.
-        if activity == 1. and not written_now:
-            continue
         if reference is not None:
             order = store.order_of_row(index)
         else:

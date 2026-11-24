@@ -221,18 +221,29 @@ def target(model):
     return getattr(model, '_omission_targets', None)
 
 
+def correct_spans(raw, decoded, spans):
+    """Exact equality of each observed byte interval using one prefix of mismatches."""
+    common = min(raw.shape[1], decoded.shape[1])
+    prefix = torch.nn.functional.pad((raw[:, :common] != decoded[:, :common]).long().cumsum(1), (1, 0))
+    lo, hi = spans.flatten(1, 2).unbind(-1)
+    mismatch = prefix.gather(1, hi.clamp(0, common)) != prefix.gather(1, lo.clamp(0, common))
+    # A decoded interval past the supplied surface cannot equal a shorter
+    # original slice. Empty brackets compare equal within the decoded extent.
+    raw_length = (hi.clamp(0, raw.shape[1]) - lo.clamp(0, raw.shape[1])).clamp_min(0)
+    decoded_length = (hi.clamp(0, decoded.shape[1]) - lo.clamp(0, decoded.shape[1])).clamp_min(0)
+    equal = (hi <= decoded.shape[1]) & (raw_length == decoded_length) & (~mismatch | (hi <= lo))
+    return equal.reshape(spans.shape[:-1])
+
+
 def observe(model, sid, reverse, *, active=None):
     targets = target(model)
     if targets is None or not model.training:
         return
     raw = targets['raw'][:, 0]
     decoded = reverse.materialize()[:, 0]
-    correct = torch.zeros_like(targets['valid'])
     valid = targets['valid'] & (targets['sentences'] == sid)[..., None]
     if active is not None:
         valid = valid & active[:, None, None]
-    for row, word, part in valid.nonzero().tolist():
-        lo, hi = targets['spans'][row, word, part].tolist()
-        correct[row, word, part] = hi <= decoded.shape[1] and torch.equal(decoded[row, lo:hi], raw[row, lo:hi])
+    correct = valid & correct_spans(raw, decoded, targets['spans'])
     draw = targets['draw']
     model.omission.observe(correct, valid, Draw(draw.words, draw.forms, draw.protected[sid]))

@@ -100,6 +100,15 @@ def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_di
     ``role_mask`` is already in canonical order, not physical STM order.
     Only unoccupied padding may be non-finite; it has no semantic value.
     """
+    value, occupied = _role_layout(payload, depth, layout, role_mask, concept_dim)
+    value = torch.where(occupied[:, None], value, torch.zeros_like(value))
+    if not bool(torch.isfinite(value).all()):
+        raise FloatingPointError("non-finite occupied meaning role")
+    return value, occupied
+
+
+def _role_layout(payload, depth, layout, role_mask, concept_dim=None):
+    """Reorder and pad the supplied roles before validating their occupied values."""
     if layout not in ("stm", "infix"):
         raise ValueError("meaning layout must be stm or infix")
     if not torch.is_tensor(payload) or payload.ndim != 2 or payload.shape[-1] < 1:
@@ -123,9 +132,6 @@ def canonical_role_payload(payload, depth, layout, role_mask=None, *, concept_di
             raise ValueError("canonical role mask must have shape [3]")
         if depth < 3 and bool(occupied[depth:].any()):
             raise ValueError("occupied role has no supplied payload")
-    value = torch.where(occupied[:, None], value, torch.zeros_like(value))
-    if not bool(torch.isfinite(value).all()):
-        raise FloatingPointError("non-finite occupied meaning role")
     return value, occupied
 
 
@@ -212,9 +218,11 @@ class ConceptualMeaning:
     def __post_init__(self):
         if not torch.is_tensor(self.roles) or self.roles.ndim != 2 or self.roles.shape[0] != 3:
             raise ValueError("canonical meaning roles must have shape [3, concept_dim]")
-        roles, mask = canonical_role_payload(
-            self.roles, 3, "infix", self.role_mask)
-        occupied = mask.tolist()
+        roles, mask = _role_layout(self.roles, 3, "infix", self.role_mask)
+        roles = torch.where(mask[:, None], roles, torch.zeros_like(roles))
+        *occupied, finite = torch.cat((mask, torch.isfinite(roles).all().reshape(1))).tolist()
+        if not finite:
+            raise FloatingPointError("non-finite occupied meaning role")
         if not any(occupied):
             raise ValueError("a conceptual meaning requires an occupied role")
         if self.sentence_kind not in (None, 'idea', 'relation'):
@@ -225,7 +233,7 @@ class ConceptualMeaning:
         for present, ref in zip(occupied, refs):
             if ref is not None and not present:
                 raise ValueError("an absent role cannot carry a semantic reference")
-        object.__setattr__(self, "roles", roles)  # canonical_role_payload allocated independent storage
+        object.__setattr__(self, "roles", roles)
         object.__setattr__(self, "role_mask", mask)
         object.__setattr__(self, "polarity", bool(self.polarity))
         object.__setattr__(self, "role_refs", refs)
@@ -239,7 +247,7 @@ class ConceptualMeaning:
 
     @classmethod
     def from_payload(cls, payload, *, depth, layout, role_mask=None, **metadata):
-        roles, occupied = canonical_role_payload(payload, depth, layout, role_mask)
+        roles, occupied = _role_layout(payload, depth, layout, role_mask)
         return cls(roles, occupied, **metadata)
 
     @classmethod

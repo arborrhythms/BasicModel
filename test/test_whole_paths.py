@@ -4,6 +4,19 @@ import torch
 from nomination_fixtures import recurrent_word
 
 
+@pytest.mark.parametrize("decoded_length", [0, 3, 5, 8])
+def test_omission_compares_only_complete_observed_byte_spans(decoded_length):
+    from Omission import correct_spans
+    raw = torch.tensor([[0, 1, 2, 3, 4], [9, 8, 7, 6, 5]])
+    decoded = torch.nn.functional.pad(raw, (0, 3))[:, :decoded_length].clone()
+    if decoded_length > 1:
+        decoded[1, 1] = 0
+    spans = torch.tensor([[[0, 0], [0, 2], [1, 2]], [[0, 5], [4, 7], [6, 6]]]).expand(2, -1, -1, -1)
+    expected = torch.tensor([[[hi <= decoded_length and torch.equal(raw[b, lo:hi], decoded[b, lo:hi])
+                               for lo, hi in word] for word in spans[b].tolist()] for b in range(2)])
+    assert torch.equal(correct_spans(raw, decoded, spans), expected)
+
+
 def test_thought_content_growth_preserves_structure_and_trial_rollback():
     from dataclasses import replace
     from Meaning import ConceptualMeaning

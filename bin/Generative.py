@@ -516,19 +516,22 @@ class LiveConstituents:
         eligible = occupied & rows[:, None]
         if support is not None:
             eligible = eligible & (support.count_nonzero(-1) >= 2)
-        batch, slot = eligible.nonzero(as_tuple=True)
-        source_slot = indices[batch, slot]
-        candidates = state[STMChunks.BUFFER][batch, source_slot]
+        candidates = STMChunks.gather(state[STMChunks.BUFFER], indices.clamp_min(0))
         novel = candidates.ne(0).any(-1) & candidates.isfinite().all(-1)
-        known = (self.word_valid[batch] & self.words[batch].eq(candidates[:, None]).all(-1)).any(-1)
+        known = (self.word_valid[:, None] &
+                 self.words[:, None].eq(candidates[:, :, None]).all(-1)).any(-1)
+        offer = eligible & novel & ~known
         # Keep admission sequential within a stream. An earlier admission
         # can evict an older duplicate before its next appearance.
-        for b, k in torch.stack((batch, source_slot), -1)[novel & ~known].tolist():
-            value = state[STMChunks.BUFFER][b, k]
-            if bool((self.valid[b] & self.codes[b].eq(value).all(-1)).any()):
-                continue
-            self.codes[b] = torch.cat((self.codes[b, 1:], value[None]), 0)
-            self.valid[b] = torch.cat((self.valid[b, 1:], self.valid.new_ones(1)), 0)
+        codes, valid = self.codes, self.valid
+        for slot in range(candidates.shape[1]):
+            value = candidates[:, slot:slot+1]
+            add = offer[:, slot] & ~(valid & codes.eq(value).all(-1)).any(-1)
+            shifted = torch.cat((codes[:, 1:], value), 1)
+            codes = torch.where(add[:, None, None], shifted, codes)
+            valid = torch.where(add[:, None], torch.cat((valid[:, 1:], torch.ones_like(valid[:, :1])), 1), valid)
+        self.codes.copy_(codes)
+        self.valid.copy_(valid)
 
 
 @torch.no_grad()

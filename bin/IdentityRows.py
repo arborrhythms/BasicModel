@@ -34,7 +34,8 @@ def carrier(owner, point, *, region=None):
         region = derived is not None and derived.meaning_pairs > 0
     if derived is not None:
         value[..., derived.percept_width:derived.percept_event_width] = 0
-    if not bool(torch.isfinite(value).all()) or (region and bool(((value < 0) | (value > 1)).any())):
+    valid = ((value >= 0) & (value <= 1)) if region else torch.isfinite(value)
+    if not bool(valid.all()):
         raise ValueError('identity content requires native concept coordinates in [0, 1]')
     return value
 

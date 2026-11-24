@@ -214,18 +214,14 @@ def observe(owner, identity, content=None, *, region=None):
     trust.remember(identity, content, region=region)
     row = owner._concept_row_of(identity)
     value = carrier(owner, content, region=region)
-    if not bool(trust.content[row].any()):
-        coverage = 1.
-        if bool(value.any()):
-            trust.content[row].copy_(value)
-    else:
-        candidate = trust.content[row]
-        if not region:
-            # Signed extension and whole-value charts have distinct positive and negative
-            # coordinates for coverage; ordinary rows on them remain untracked.
-            value = torch.cat((value.clamp_min(0), (-value).clamp_min(0)))
-            candidate = torch.cat((candidate.clamp_min(0), (-candidate).clamp_min(0)))
-        coverage = meet_ratios(value, candidate)[1]
+    candidate = trust.content[row]
+    occupied = candidate.ne(0).any()
+    trust.content[row].copy_(torch.where(occupied, candidate, value))
+    if not region:
+        # Positive and negative coordinates of a signed chart contribute separately.
+        value = torch.cat((value.clamp_min(0), (-value).clamp_min(0)))
+        candidate = torch.cat((candidate.clamp_min(0), (-candidate).clamp_min(0)))
+    coverage = torch.where(occupied, meet_ratios(value, candidate)[1], 1.)
     trust.views[row] += 1
     trust.agreement[row] += coverage
     trust.refresh(identity)

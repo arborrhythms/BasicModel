@@ -25,13 +25,15 @@ def _close(owner, rows, evidence):
     store = visible_store(owner._concept_allocator.layer(0))
     positions = {int(row): i for i, row in enumerate(rows)}
     values = store.values
-    definitions = {}
-    for row in positions:
-        # An entry reads a symbol, the rows of the concepts it holds, or
-        # the bias (None).
-        definitions[row] = [(None if store.thing_of_column(column) is None else store.column_rows(column), index)
-                            for (target, column), index in store._index.items()
-                            if target == row and values is not None and float(values[index].detach()) != 0]
+    definitions = {row: [] for row in positions}
+    entries = [(row, column, index) for (row, column), index in store._index.items() if row in positions]
+    if values is not None and entries:
+        indices = torch.tensor([entry[2] for entry in entries], device=values.device)
+        active = values.detach().index_select(0, indices).ne(0).tolist()
+        for (row, column, index), enabled in zip(entries, active, strict=True):
+            if enabled:
+                sources = None if store.thing_of_column(column) is None else store.column_rows(column)
+                definitions[row].append((sources, index))
     done, pending = {}, set(positions)
     while pending:
         ready = [row for row in sorted(pending) if all(

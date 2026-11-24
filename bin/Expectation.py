@@ -569,11 +569,12 @@ class PerceptExpectation(nn.Module):
             probability = probability * self.known[rows].to(probability)[None]
             total = total + torch.einsum('bn,bnd->bd', probability, keys)
             mass = mass + probability.sum(-1, keepdim=True)
-            admitted.extend(rows.tolist())
-        if not admitted:
+            admitted.append(rows)
+        admitted = torch.cat(admitted) if admitted else self.updates.new_empty(0, dtype=torch.long)
+        if not admitted.numel():
             # Keep the empty-domain local objective differentiable and zero.
             total = total + sum(p.sum()*0 for p in self.predictor.parameters())
-        return total/mass.clamp_min(1.), tuple(admitted)
+        return total/mass.clamp_min(1.), admitted
 
     def arrive(self, forecast, observed, active, *, native=None, training=False):
         expected, admitted = forecast
@@ -581,7 +582,7 @@ class PerceptExpectation(nn.Module):
             raise ValueError('percept arrival requires a batched native form and domain')
         frozen = expected.detach().clone()
         value = recombine_percept(observed, frozen)
-        before = int(self.updates)
+        before = self.updates.clone()
         B = len(active)
         current = (self.context_mean[:B], self.context_recent[:B],
                    self.context_count[:B], self.last_expected[:B],
@@ -601,14 +602,13 @@ class PerceptExpectation(nn.Module):
             for destination, source in zip(current, updated[:-1]):
                 destination.copy_(source)
             self.updates.add_(active.any().to(self.updates))
-            if admitted:
-                self.known[list(admitted)] = True
+            self.known.index_fill_(0, torch.as_tensor(admitted, device=self.known.device, dtype=torch.long), True)
         difference = (value.arithmetic.detach()-observed.detach()).abs()
         self.last_arrival = dict(expected=frozen, observed=observed.detach().clone(),
             residual=value.residual.detach(), local_loss=local, active=active.detach().clone(),
-            updates_before=before, updates_after=int(self.updates),
-            unequal=int(((value.arithmetic.detach()!=observed.detach()) & active[:,None]).sum()),
-            max_difference=float(torch.where(active[:,None],difference,0.).max()))
+            updates_before=before, updates_after=self.updates.clone(),
+            unequal=((value.arithmetic.detach()!=observed.detach()) & active[:,None]).sum(),
+            max_difference=torch.where(active[:,None],difference,0.).max())
         return value
 
     def attention_residual(self, native):

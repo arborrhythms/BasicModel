@@ -20458,9 +20458,12 @@ class BasicModel(BaseModel):
                     point[b,store.when_start-4:store.when_start] = values[chunks.WHERE][b,top]
             gate = torch.arange(len(clauses),device=point.device) == b
             values = chunks.keep_close(values,gate,refs=references,value=point,when=stamps)
+            relations = written[b].get('relations', ())
+            if field is None and isinstance(location, tuple):
+                relations = (location[1],)
             self.conceptualSpace.stm.strata.keep_close(b, point[b], stamps[b],
                 address=store.row_name(location) if isinstance(location, int) else None,
-                relations=(row_addresses[b],) if field is None else written[b].get('relations', ()),
+                relations=relations,
                 source=None if store is None else store.parts)
             if field is None:
                 continue
@@ -20609,7 +20612,9 @@ class BasicModel(BaseModel):
                 ideas.prepare(store, partial.tree, {})
                 partial.tree.write_edges(ideas, ids, partial.symbol_where, partial.symbol_when, self.languageSpace)
                 head, = commit([ideas], [partial.tree.trace.head], store)
-                row_addresses[b] = head[1]
+                from Memory import OCCURRENCE
+                from Occurrence import operand_name
+                row_addresses[b] = operand_name(head[1]) if head[0] == OCCURRENCE else head[1]
                 self._concept_owner().mtm.close(store, stream=b)
         observe_sides = getattr(self, '_observe_lesson_sides', False)
         written_clauses = [dict(observe_sides=True) if observe_sides else {} for _ in rows]
@@ -21026,7 +21031,7 @@ class BasicModel(BaseModel):
                     forecast = forecast_percept(self, gate)
                     payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
                     payload, sym = symbolize(payload, empty_feedback, index, None, sym)
-                    payload = observe_percept(self,forecast,payload,sub,index,gate)
+                    payload = observe_percept(self,forecast,payload,sub,w,gate)
                     cache[w] = (index, payload, sub[3:9] if native_support else (), gate)
             self._open_sentence_slot = sid
             from PrependedSymbols import stage as prepend_symbols
@@ -21248,7 +21253,7 @@ class BasicModel(BaseModel):
                         forecast = forecast_percept(self,fresh)
                         payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
                         payload, sym = symbolize(payload,empty_feedback,index,None,sym)
-                        payload = observe_percept(self,forecast,payload,sub,index,fresh)
+                        payload = observe_percept(self,forecast,payload,sub,word,fresh)
                         native = sub[3:9] if native_support else ()
                         if old is not None:
                             payload = select_rows(old[1],payload,fresh)
