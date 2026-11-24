@@ -1631,12 +1631,15 @@ What changed under this document since §2.5 was written:
   wide open* (sigma-pi §19.149). Thought, intuition and action are optional
   after it. "Reading without comprehension" (the section added 2026-11-19)
   is now this pass, and is what the item starts from.
-- *Reading in order is taught by a lesson with a label on the look's
-  choice* (`bin/pretrain_reading.py`, `data/lessons/reading-order.json`, the
-  key `architecture.data.readingOrderLesson`; sigma-pi §23.9). Whether it
-  stays the teacher, or the order is learned from the outcome, is Alec's and
-  was open when this was written. Ask before a lesson of this item leans on
-  it.
+- *Reading in order is taught by a paced lesson*
+  (`bin/pretrain_reading.py`, `data/lessons/reading-order.json`, the key
+  `architecture.data.readingOrderLesson`; sigma-pi §23.10). Each training
+  page comes with the word due at each look, as text; the look's expected
+  spelling is compared with it after the walk. No occurrence is named.
+  Outside the lesson the same cost points at the look's own choice, which
+  sharpens what the look already prefers; whether that holds or spoils an
+  order was not measured when this was written. Measure it before a lesson
+  of this item leans on it.
 - *Two collections are the same only at full cover both ways*
   (`conceptMatchPart` = 1.0, sigma-pi §23.7). The tie of a word to its
   object must not rest on a near match.
