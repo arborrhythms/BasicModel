@@ -121,27 +121,35 @@ class Reading:
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
+        # Validate shapes before indexing, then collect the independent
+        # value predicates in a single transfer per input device.
+        checks = {}
+
+        def require(valid, message):
+            checks.setdefault(valid.device, []).append((valid, message))
+
+        def in_range(values, low, high):
+            return ((values >= low) & (values <= high)).all()
+
         ids = self.concept_ids
         if ids is None:
             ids = self.rows.new_full(self.rows.shape, -1)
-        if (not torch.is_tensor(ids) or ids.dtype != torch.long
-                or ids.shape != self.rows.shape
-                or bool((ids == 0).any())):
-            raise ValueError("program concept IDs must be native addresses or -1, aligned to leaves")
-        object.__setattr__(self, "concept_ids", ids)
-        words = self.word_ids
-        if words is not None and (not torch.is_tensor(words) or words.dtype != torch.long
-                                  or words.shape != ids.shape or bool(((words <= 0) & (words != -1)).any())):
-            raise ValueError('program word IDs must be positive identities or -1, aligned to leaves')
-        # Unresolved programs retain no second identity vector. Structural
-        # edits can then change their leaves without carrying stale aliases.
-        refs, orders = self.reference_ids, self.reference_orders
-        if refs is not None and (not torch.is_tensor(refs) or refs.dtype != torch.long
-                or refs.shape != ids.shape or bool((refs == 0).any())):
-            raise ValueError("program reference IDs must be native addresses or -1, aligned to leaves")
-        if orders is not None and (not torch.is_tensor(orders) or orders.dtype != torch.long
-                or orders.shape != ids.shape or bool((orders < -1).any())):
-            raise ValueError("program reference orders must be nonnegative or -1, aligned to leaves")
+        def check_indices(value, valid, message):
+            if value is None:
+                return
+            if not torch.is_tensor(value) or value.dtype != torch.long or value.shape != self.rows.shape:
+                raise ValueError(message)
+            require(valid(value).all(), message)
+
+        check_indices(ids, lambda value: value != 0,
+                      'program concept IDs must be native addresses or -1, aligned to leaves')
+        object.__setattr__(self, 'concept_ids', ids)
+        check_indices(self.word_ids, lambda value: (value > 0) | (value == -1),
+                      'program word IDs must be positive identities or -1, aligned to leaves')
+        check_indices(self.reference_ids, lambda value: value != 0,
+                      'program reference IDs must be native addresses or -1, aligned to leaves')
+        check_indices(self.reference_orders, lambda value: value >= -1,
+                      'program reference orders must be nonnegative or -1, aligned to leaves')
         for name in ('symbol_where', 'symbol_when'):
             value = getattr(self, name)
             if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, 4)
@@ -161,21 +169,21 @@ class Reading:
         if self.operation_refs is not None and (self.operation_refs.shape != (self.actions.shape[0], 2)
                 or self.operation_refs.dtype != torch.long):
             raise ValueError('operation references must hold two operand addresses per action')
-        if self.operation_probabilities is not None and (
-                self.operation_probabilities.shape != (self.actions.shape[0],)
-                or not bool(torch.isfinite(self.operation_probabilities).all())
-                or bool(((self.operation_probabilities < 0) | (self.operation_probabilities > 1)).any())):
-            raise ValueError('formation probabilities must align to the selected actions')
+        def check_probability(value, shape, message):
+            if value is None:
+                return
+            if value.shape != shape:
+                raise ValueError(message)
+            require(in_range(value, 0, 1), message)
+
+        check_probability(self.operation_probabilities, (self.actions.shape[0],),
+                          'formation probabilities must align to the selected actions')
         if self.operation_relations is not None and (self.operation_relations.shape != (self.actions.shape[0],2)
                 or self.operation_relations.dtype != torch.bool):
             raise ValueError('operation reference kinds must align to operand addresses')
-        if self.leaf_orders is not None and (self.leaf_orders.shape != ids.shape
-                or self.leaf_orders.dtype != torch.long or bool((self.leaf_orders < -1).any())):
-            raise ValueError('leaf orders must align with the open reading')
-        if self.leaf_evidence is not None and (self.leaf_evidence.shape != (*ids.shape, 2)
-                or not bool(torch.isfinite(self.leaf_evidence).all())
-                or bool(((self.leaf_evidence < 0) | (self.leaf_evidence > 1)).any())):
-            raise ValueError('leaf evidence requires two finite poles in [0, 1]')
+        check_indices(self.leaf_orders, lambda value: value >= -1,
+                      'leaf orders must align with the open reading')
+        check_probability(self.leaf_evidence, (*ids.shape, 2), 'leaf evidence requires two finite poles in [0, 1]')
         identity = (self.identity_origins, self.identity_actions,
                     self.identity_values, self.identity_leaves)
         if any(value is not None for value in identity):
@@ -184,38 +192,42 @@ class Reading:
             origins, events, values, handles = identity
             count = values.shape[0] if values.ndim == 2 else 0
             if (values.shape != (count, self.leaves.shape[-1]) or
-                    not values.is_floating_point() or not bool(torch.isfinite(values).all()) or
+                    not values.is_floating_point() or
                     origins.shape != (count, 3) or origins.dtype != torch.long or
                     events.shape != (self.actions.shape[0], 6) or events.dtype != torch.long or
                     handles.shape != ids.shape or handles.dtype != torch.long):
                 raise ValueError('identity correspondence must align with values, actions and leaves')
-            if (bool(((origins[:, 0] < 0) | (origins[:, 0] > 6)).any()) or
-                    bool(((origins[:, 2] < 0) | (origins[:, 2] > 1)).any()) or
-                    bool(((handles < 0) | (handles > count)).any()) or
-                    bool(((events[:, :3] < 0) | (events[:, :3] > count)).any()) or
-                    bool(((events[:, 4] < -1) | (events[:, 4] > count)).any()) or
-                    bool(((events[:, 5] < 0) | (events[:, 5] > 1)).any())):
-                raise ValueError('identity correspondence contains an invalid location or event')
+            require(torch.isfinite(values).all(), 'identity correspondence must align with values, actions and leaves')
+            message = 'identity correspondence contains an invalid location or event'
+            require(in_range(origins[:, 0], 0, 6) & in_range(origins[:, 2], 0, 1), message)
+            require(in_range(handles, 0, count), message)
+            require(in_range(events[:, :3], 0, count) & in_range(events[:, 4], -1, count)
+                    & in_range(events[:, 5], 0, 1), message)
         if self.timeline_actions is not None or self.timeline_values is not None:
             actions, values = self.timeline_actions, self.timeline_values
             if (self.identity_actions is None or not torch.is_tensor(actions) or
                     actions.shape != (self.actions.shape[0],4) or actions.dtype != torch.long or
                     not torch.is_tensor(values) or values.shape != self.identity_values.shape or
-                    not values.is_floating_point() or not bool(torch.isfinite(values).all()) or
-                    bool((actions[:,0] < -1).any()) or
-                    bool(((actions[:,1] < 0) | (actions[:,1] > 1)).any()) or
-                    bool(((actions[:,2] < 0) | (actions[:,2] > torch.arange(
-                        1,len(self.actions)+1,device=actions.device))).any()) or
-                    bool(((actions[:,3] < 0) | (actions[:,3] > 1)).any())):
+                    not values.is_floating_point()):
                 raise ValueError('timeline correspondence must align with identities and selected actions')
+            message = 'timeline correspondence must align with identities and selected actions'
+            limit = torch.arange(1, len(self.actions) + 1, device=actions.device)
+            require(torch.isfinite(values).all(), message)
+            require((actions[:, 0] >= -1).all() & in_range(actions[:, 1], 0, 1)
+                    & in_range(actions[:, 2], 0, limit) & in_range(actions[:, 3], 0, 1), message)
         if self.case_values is not None or self.case_selected is not None:
             tests, selected = self.case_values, self.case_selected
             if (not torch.is_tensor(tests) or tests.shape != (len(self.actions), self.leaves.shape[-1])
-                    or not tests.is_floating_point() or not bool(torch.isfinite(tests).all())
-                    or bool(((tests < 0) | (tests > 1)).any())
+                    or not tests.is_floating_point()
                     or not torch.is_tensor(selected) or selected.shape != (len(self.actions),)
                     or selected.dtype != torch.bool):
                 raise ValueError('case selections must align to the open reading actions')
+            require(in_range(tests, 0, 1), 'case selections must align to the open reading actions')
+        for group in checks.values():
+            verdicts = torch.stack([valid for valid, _ in group]).tolist()
+            for ok, (_, message) in zip(verdicts, group, strict=True):
+                if not ok:
+                    raise ValueError(message)
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())
