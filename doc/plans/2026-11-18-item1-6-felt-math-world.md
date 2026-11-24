@@ -4266,7 +4266,7 @@ and `data/MM_image.xml` are read, and measures them before and after.
    the architecture supports learning them and a test introduces names
    reliably.
 
-**Claude's reading of 4, to be confirmed.** The key governs the direct
+**Claude's reading of 4, which he confirmed (19.4).** The key governs the direct
 making: where `createMetaConcepts` is true, `interpret` makes meta concepts
 as it does today; where it is false, none is made directly and a name is
 learned or not at all. Its default in `data/model.xml` is true, so that
@@ -4298,8 +4298,43 @@ C.4's table, with these answers:
 | Round | Builds | Measured from input to output | Waits on |
 |---|---|---|---|
 | One: the image is perceived | A value is a percept whatever its place, in one table of values, for every reader of numbers; an image's box beside its sentence's line; the `scene` of a row loaded, `null` told from `[]`; the opening pass puts the image back and is charged for it | An image alone is put back, at varied steps and at places not met; a sentence with its image puts both back; a sentence with no image is charged nothing for one; the numeric proofs and both gates hold | nothing |
-| Two: objects, words and naming | The felt thing's concept made from its own occurrences, as a word's is; `createMetaConcepts`; the name learned as a Pi over both concepts from their being present together; the test "naming" | Categories 1 and 2: with the key false, a word raises its object and an object its word, at the reserved step and the reserved places; with others present | his word on the reading of `createMetaConcepts`; Claude's proposal for what gathers the steps of one value |
+| Two: objects, words and naming | The felt thing's concept made from its own occurrences, as a word's is; `createMetaConcepts`; the name learned as a Pi over both concepts from their being present together; the test "naming" | Categories 1 and 2: with the key false, a word raises its object and an object its word, at the reserved step and the reserved places; with others present | Claude's proposal for what gathers the steps of one value |
 | Areas | Percepts that grow on the two pyramids | The categories about size | Claude's proposal for the rule on the part tower, and his choice |
 | Three: the first milestone | What reads an arrangement | Category 14's contrast sets, per answer, on pairs held out | questions 4 and 5 of C.5 |
 
 Questions 4 to 8 of C.5 keep their defaults as defaults.
+
+### 19.4 A Pi for each mereological space, one Not, and the default (Alec, 2026-11-24)
+
+Shown 19.1 to 19.3:
+
+> And I think, because it is a separate mereological space, that we will
+> want to have a different PI operation on that space. But the two
+> modalities can be combined before negation.
+>
+> And yes, createMetaConcepts should default to true until the assessment
+> tool and testing harness can be brought up to speed.
+
+**Decided.**
+
+1. *A Pi of its own.* The values are a mereological space of their own, a
+   sorted line on which parthood is less-than-or-equal, where a form's
+   parts are a set. The first Pi over values is therefore another
+   operation than the first Pi over forms, and not a second instance of
+   it.
+2. *One Not.* The two modalities are combined before negation: each has
+   its Pi, and one Not follows both. This stands over C.6, point 3, where
+   Claude read "a separate Pi and not" as a Pi and a Not for each
+   modality. What was kept from there: nothing joins the two modalities
+   below the Not, and concepts tie them together.
+3. *`createMetaConcepts` is true by default* in `data/model.xml`, until the
+   assessment tool and the testing harness can carry the test of naming.
+   The felt world's configurations set it false when round two builds the
+   learned name.
+
+*Against the source, for round one's design.* A different reading for
+values is partly there: a collection of values is read by its two bounds,
+each 0 or 1 (`BasicPercepts.read_points`, `read_collection`), "and not
+through the Sigma" (`doc/Spaces.md`), while a form is read by the share of
+its parts. Round one says which operation is the Pi over values and where
+the two modalities' rows meet before the Not.
