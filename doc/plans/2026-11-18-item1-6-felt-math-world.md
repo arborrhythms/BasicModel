@@ -6549,8 +6549,8 @@ In `test/test_item16_scene_field.py`, each printing what it measured:
 | C1 | Text as it was | A row of text with `scene: null`, and the same text given as a string, have the same opened field, the same put-back sentence and the same opening errors, exactly. Both stopping gates and the seven echo tests pass |
 | C2 | One Not | At an opening with a scene, `order_zero_field` is called once and its rows hold forms' rows and values' rows |
 | C3 | In the field | After an image has recurred as often as nominates, its readings in the opened field read for its values' and its places' concepts, at addresses of the `scene` range; `null` adds no reading; `[]` adds none that reads |
-| C4 | Put back (F1, F2 of §7 as they bear on one image) | Images of category 1 alone, each presented until its values and places are known: every pixel comes back at its place with its value exactly, at each of the varied steps, and nothing comes back elsewhere in the box. A sentence with its image (category 2) puts both back |
-| C5 | Charged (F11, F12) | The opening's errors hold the image's term where a row has an image and none where it has not; the term is nothing when the image comes back exactly, and above nothing for an empty image when something is put back; a gradient of it reaches the Sigma of order zero |
+| C4 | Put back | Images of category 1 alone, each presented until its values and places are known: every pixel comes back at its place with its value exactly, at each of the varied steps, and nothing comes back elsewhere in the box. A sentence with its image (category 2) puts both back |
+| C5 | Charged | The opening's errors hold the image's term where a row has an image and none where it has not; the term is nothing when the image comes back exactly, and above nothing for an empty image when something is put back; a gradient of it reaches the Sigma of order zero |
 
 ### 32.2 Text for the implementer
 
@@ -6558,7 +6558,8 @@ In `test/test_item16_scene_field.py`, each printing what it measured:
 Item 1.6, step C: the image read with its sentence, put back and charged.
 Read §32.1 of doc/plans/2026-11-18-item1-6-felt-math-world.md (what you
 build), then §20 (20.1's table of what exists, 20.7), §21 (step A as
-built), §30 and §31 (step T as built), §7 for F1, F2, F11 and F12, §29.5,
+built), §30 and §31 (step T as built), §7 (its F2, F11 and F12 are to hold as
+they stand: places, no table resized, what stands), §29.5,
 and H.5. Then the source: bin/SentenceField.py (open_field,
 reconstruction, charge, reconstruct), bin/ScalarPercepts.py (join, as the
 example of a second modality joined at the opening), bin/FamiliarTier.py
