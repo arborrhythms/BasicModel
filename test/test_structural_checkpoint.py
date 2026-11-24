@@ -158,6 +158,7 @@ def test_wall_clock_cap_returns_through_normal_trial_tail(monkeypatch):
     """A partial epoch still returns the fixed trial shape used by run()."""
     model = Models.BasicModel()
     model.name = "DeadlineTest"
+    model.cfg = model.load_config(os.path.join(_ROOT, "data", "model.xml"))
     model.symbolSpace = None
     model.reversible = False
 
