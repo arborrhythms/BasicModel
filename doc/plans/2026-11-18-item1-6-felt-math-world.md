@@ -6865,3 +6865,114 @@ and the new reader's entry, and ran both stopping gates,
   run through the test's model, which takes one stream; the mask is
   checked on the charge directly.
 
+
+## 34. Step D2: nouns, the name, `createMetaConcepts` (Claude, 2026-11-24; the text for the implementer is 34.2)
+
+### 34.1 What it builds, and its certificates
+
+*Rests on 19.2, 19.4 (the key, true by default), 19.5 (the four stages),
+22.0 (nouns are symbols of order one), 22.1 question 1 (the meta concept is
+a Sigma of order one, made by MTM as any concept), 28.4.*
+
+*Its bound.* It names an exact intensity: a word with a pixel of one
+value. What makes one object of the several steps of one value (29.1) is
+not built here and is the open point of the step after it; so the corpus's
+naming at a reserved step is reported and not asserted.
+
+1. *The key.* `createMetaConcepts` in `data/model.xml` and
+   `data/model.xsd`, true. True: `interpret` makes a word's meta concept,
+   and a blank object where the word has none, as it does today. False:
+   it makes neither. `data/scene/BasicModel_scene.xml` sets it false.
+2. *Nouns.* The concept of a word and the concept of a value, each known
+   from its own occurrences, each have a symbol of order one.
+3. *The meta concept is learned.* Where a concept whose percepts lie in
+   the `text` range and one whose percepts lie in the `scene` range are
+   present together in an opened field, on the count that nominates, MTM
+   nominates a concept of order one that is a Sigma over the two nouns'
+   symbols: a list of two, not a Pi's row. Each pair present together is
+   counted for itself, so of several things present with a word the pair
+   that recurs is the one made. Within one modality today's promotion
+   stands.
+4. *One raises the other.* Met alone, either noun raises the unit, being
+   a sufficient part of a Sigma, and through the unit the other member is
+   raised in the field, by the way down that the source has between a
+   concept of a higher order and its members. If the source has none that
+   serves, the implementer says so, builds the least that does, and marks
+   it.
+5. *`interpret`,* where the key is false: of a word, the other member of a
+   unit across modality that holds the word's symbol; the word itself
+   where there is none.
+6. *The count.* The assessment tool reports the units across modality, by
+   order.
+
+In `test/test_item16_naming.py`, on the text model with the scene's box
+and the key false, each printing what it measured:
+
+| | Certificate | Passes when |
+|---|---|---|
+| N1 | The key | With the key true a text model makes meta concepts and blank objects as before: both stopping gates and the tests of `interpret` that pass in the sweep pass. With it false no meta concept and no blank object is made by `interpret` |
+| N2 | Each known alone (stage i) | After a word alone and a pixel alone have each recurred, each has its concept and its symbol of order one, and there is no unit across modality |
+| N3 | The unit (stage ii) | After the word and the pixel have been present together as often as nominates, there is one concept of order one whose members are the two nouns' symbols, read as a Sigma; the count of units across modality is one |
+| N4 | The pair that recurs | A word present with its own pixel every time and with another pixel some of the times is united with its own |
+| N5 | One raises the other (stage iii) | After N3, the word alone raises the unit and the object's concept in the field above what it read before the unit was made, and the pixel alone raises the unit and the word's concept likewise |
+| N6 | `interpret` (stage iv) | After N3, `interpret` of the word gives the object; of a word with no unit, the word |
+| N7 | The corpus (a measure) | Categories 1 and 2 taught in order: the count of units by order, and for each value's word how many of its steps it is united with. Reported; nothing is asserted on it |
+
+### 34.2 Text for the implementer
+
+~~~
+Item 1.6, step D2: nouns, the name, createMetaConcepts. Read §34.1 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md (what you build), then
+§19.2, §19.4, §19.5, §19.6, §22.0, §22.1 (question 1), §28.4, §33 (step C
+as built) and H.5. Then the standing documents on what you will touch:
+doc/Orders.md ("What makes what", "Where a noun begins", "A meta concept
+and the blank object"), doc/Architecture.md ("Above order zero", "What
+co-occurs is a necessary part"), doc/Language.md on interpret. Then the
+source: bin/Interpret.py (interpret, blank, define, denotations),
+bin/FamiliarTier.py (observe_field, observe_candidate,
+promote_candidates, maybe_raise_order's caller), how a symbol of order
+one and a Sigma of order one are made and read (bin/Symbols.py and the
+conceptual space in bin/Spaces.py), bin/ImagePercepts.py, and
+bin/Assessment.py.
+
+Keep tmp/item1-6/naming_progress.md current after each step.
+
+1. Point 1: the key, beside whereAxes; false in
+   data/scene/BasicModel_scene.xml and nowhere else; no default in code;
+   data/BasicModel.xml gains nothing.
+2. Points 2 and 3. Say exactly where the unit is nominated, what counts
+   the pair, and how a Sigma of order one over two symbols is stored and
+   read. Text models with the key true are not to change.
+3. Point 4, then point 5, then point 6.
+4. test/test_item16_naming.py: N1 to N7. Its rows are made in the test (a
+   word and a pixel of one value at a place, so that the value is exact);
+   N7 uses felt_world_corpus.rows on categories 1 and 2. Give the test's
+   model the room it needs at order zero and order one by its
+   configuration in the test, and say what you set.
+5. Port a test only where a point of §34.1 makes its assertion false, and
+   list each with old and new. No other assertion is weakened, skipped or
+   marked; no seed is chosen. Neither stopping gate, nor anything a gate
+   uses, is touched.
+6. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_item17_echo.py,
+   test/test_item16_scene.py, test/test_item16_scene_field.py,
+   test/test_item16_values.py, test/test_item16_naming.py,
+   test/test_concept_output.py, and every test file that names interpret,
+   Interpret, blank, define, observe_field, promote_candidates or
+   DefinitionIndex. No test that passes in the sweep (its outcomes are
+   named in your prompt) may fail, apart from those known to fail by
+   chance.
+7. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+8. Return as tmp/item1-6/section35.md, headed "## 35. Step D2: the
+   return": files changed and why; where and how the unit is made, stored
+   and read; the way down you used or built; each certificate with what
+   it printed, N7's numbers in full; every test ported; what in §34.1
+   could not be built as written and what you built. You do not stop on a
+   question of design: propose, build, mark it. Stop only if a gate
+   cannot pass with its assertion as it is, and then say exactly where it
+   fails.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
