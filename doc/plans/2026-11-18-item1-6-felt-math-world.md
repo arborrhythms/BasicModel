@@ -4338,3 +4338,194 @@ each 0 or 1 (`BasicPercepts.read_points`, `read_collection`), "and not
 through the Sigma" (`doc/Spaces.md`), while a form is read by the share of
 its parts. Round one says which operation is the Pi over values and where
 the two modalities' rows meet before the Not.
+
+## 20. Round one: the image is perceived (Claude, 2026-11-24; the text for step A's implementer is §20.6)
+
+*Design, after two Opus readers that changed nothing and Claude's reading
+of what they named. It rests on 19.1 (the percept of a pixel is its value),
+19.4 (a Pi for each mereological space, one Not), 16.7 (boxes that share no
+place) and C.6 (the modalities meet at concepts).*
+
+### 20.1 What exists
+
+| | As built |
+|---|---|
+| *The first Pi over forms* | `BasicPercepts.read_bank`: over a sentence's bank of occurrences, each a `.what` on two lanes with its `.where` and `.when` wires. A row reads an occurrence for where the occurrence holds the row's parts and the row's wholes hold the occurrence, and against where it holds the parts and lies outside a whole (`held_at`), times the row's entries on the wires (`place_factor`). A conjunction is the product over its members (`SparsePiLayer3`, `bin/OrderZero.py`). |
+| *A value in the first Pi* | Nothing: a value's row of the Pi is empty (`member_keys` and `against_keys` return none for it). |
+| *The numeric stem* | `NumericPercepts.read` sets a value's two lanes by hand, 1 and 0 where its row is the reading's, and sends them through `order_zero_field` (the Not, then the Sigma) in a call of their own. It keeps a concept for each input place (`NumericPercepts.rows`). |
+| *The value beside the words* | No Not and no Sigma: read by its two bounds, each 0 or 1 (`read_points`, `read_collection`), and joined to the sentence's field as one more column after the Sigma (`ScalarPercepts.join`). |
+| *The one Not* | `ConceptualSpace.order_zero_not`, applied in `order_zero_field`, which `cs_read_percept_field` calls for text. Text's lanes and a number's never meet before it. |
+| *A place told by its wires* | For text, yes: a place's row of the first Pi has its entries on the where wires and may keep a what (`reserve_place`), and is nominated when occurrences recur at it (`Places.meet`). For a number, no: the place is in the percept's key. |
+| *A row of input* | `text` and at most `scalar`; any other key is refused (`InputSpace.prepInput`). A text model's registry has no box for an image; the numeric box is a numeric model's alone. Nothing carries a frozen corpus's document to `InputSpace`. |
+| *The opening reconstruction* | `FieldReverse.reverse` matches places in the `text` range only and skips a value's row; `SentenceField.charge` compares bytes. Nothing is charged for a value. |
+
+### 20.2 The design
+
+1. **One bank of occurrences.** A pixel that is not background is an
+   occurrence in its sentence's bank of percepts, beside the occurrences of
+   the sentence's words: its `.what` is the code of its value, its `.where`
+   the twelve wires of its place, its `.when` the moment's. This is "basic
+   percepts there, as elsewhere". What an occurrence of a word has, an
+   occurrence of a pixel then has without its being built a second time: a
+   place nominated when occurrences recur at it, the first Pi's way back,
+   a look that may take it.
+2. **A value in one table.** The bins of a value's code are in order for
+   every place; the row of a value is keyed by the value alone. The draw
+   by place (`value_coordinates`), the place in the key (`reserve(...,
+   place=)`) and `BasicPercepts.places` go.
+3. **The Pi over values.** A value's row reads a value's occurrence by its
+   two bounds on the sorted line, as a form's row reads by its parts and
+   its wholes: *for* where the occurrence holds the row's value and the
+   row's bound holds the occurrence (the same bin); *against* where the
+   occurrence holds the row's value and lies above its bound (a greater
+   value). An occurrence below the row's value does not hold it, and the
+   row is absent there. It is the rule of `held_at` carried to a line, on
+   which part and whole are one cut. *To be measured, not assumed:* that
+   "against a lesser value" is what the Sigma wants; the other reading is
+   for on the equal bin and nothing elsewhere.
+4. **Two spaces.** A form's row reads nothing at a value's occurrence and
+   a value's row nothing at a form's, though their codes lie on the same
+   coordinates of the cube. The bank knows which of its occurrences are
+   values, as `BasicPercepts.is_value` knows which rows are.
+5. **One Not and one Sigma.** Both kinds of rows stand in the one field of
+   percepts that goes to `order_zero_field`. There is one call for a pass
+   of reading, and the Not sees both.
+6. **A place is told by its wires.** "The value 1 at the first place" is a
+   place's row of the first Pi that keeps that what, nominated on
+   recurrence as a place's row is for text. XOR's conjunction is over two
+   such rows. The numeric stem's concept for each input place goes, since
+   a generalization holds no place.
+7. **One reader.** The numeric stem makes a bank of its input (each place
+   of its box whose number is above zero is an occurrence) and reads it by
+   the functions of points 1 to 6; the lanes set by hand go. *Named
+   exception:* the value beside the words takes point 2 now, and keeps its
+   own reading and its join until round two replaces the tie that reads
+   them (19.2).
+8. **The scene of a row.** A row may carry `scene`: `null` for no image,
+   an empty list for an image with nothing in it, or pixels `[x, y, z,
+   steps]` with steps from 1 to 255. The value of a pixel is its steps
+   over 255. A text model that is to feel a scene declares its box, 8 by 8
+   by 8, and the registry sets it on a stretch of the first axis of its
+   own (16.7).
+9. **Put back and charged.** At the opening the image is put back as the
+   sentence is: from the concepts of order zero through the Sigma and the
+   first Pi's kept percept to a value, read exactly from the table of
+   values, at the place its wires match within the scene's box (16.7,
+   point 1). The cost compares, place by place over the box, what was put
+   back with what was felt. A row with no image is charged nothing for
+   one; an empty image is charged for whatever is put back.
+
+**Not built in this round.** A look that takes a felt thing (round three).
+Objects, names and `createMetaConcepts` (round two). Percepts that grow on
+the two towers. The value beside the words through the one reader (with
+round two).
+
+### 20.3 The steps
+
+| Step | Builds | Measured |
+|---|---|---|
+| A: the scene reaches the model | Point 8 and the bridge from a frozen document to rows | 20.4, S1 to S4 |
+| B: values in the bank | Points 1 to 7, on the numeric stem, which has certificates from input to output already | 20.4, V1 to V6 |
+| C: the scene in the sentence's field | Points 1, 5 and 9 for a row of text and a scene | F1, F2, F11 and F12 of §7 |
+
+Step A is needed whatever step B becomes and waits on nothing. **Step B is
+put to Alec before its text is written:** it makes a number an occurrence
+in the same bank as a word, which reworks the numeric stem and changes what
+the numeric XOR certificate asserts of its rows (a conjunction over two
+places' rows, where it now names a concept for each axis).
+
+### 20.4 Certificates
+
+Step A, in `test/test_item16_scene.py`, each printing what it measured:
+
+| | Certificate | Passes when |
+|---|---|---|
+| S1 | The box | A model whose configuration declares the scene's shape has a range `scene` of 512 addresses, 8 by 8 by 8, that shares no place with another range. A configuration that does not declare it has no such range, and every range it has is where it was: the addresses and the wires of `text`, `numeric`, `scalar`, `parts`, `wholes` and `conceptual` are equal, before and after, for every configuration under `data/` |
+| S2 | The row | `prepInput` takes rows of `text` and `scene`, tells `null` from an empty list in what it keeps, and keeps each pixel's place and value. It refuses, each with its own message: a key it does not know, a pixel outside the box, steps outside 1 to 255, two pixels at one place, and a scene on a model with no box. A row with an image and no words is active |
+| S3 | The corpus | Every document of the 27 frozen files becomes rows that `prepInput` takes on a model with the box, and the rows give back the document's sentences and scenes exactly |
+| S4 | Far enough apart (a measure) | The least distance between the wires of any place of `text` and any place of `scene`, beside the least distance between two neighbouring places, at the capacities of the configuration used. If the first is less than the second the box is given another origin and the measure is taken again. Reported |
+
+Step B (for its text, when it is written): V1, the same value at two
+places is one row and part-of on two values is less-than-or-equal; V2, a
+form's row reads nothing at a value's occurrence and a value's nothing at a
+form's, on one bank that holds both; V3, one call of `order_zero_field`
+holds both kinds of rows; V4, the numeric XOR certificate from input to
+output, its error, its answers and its exact reconstruction as they are;
+V5, the image configurations' tests that pass in the baseline, with time
+and memory before and after; V6, both gates, the echo tests and the
+reading lesson.
+
+### 20.5 What step A does not do
+
+Nothing reads the scene yet: a row's scene is kept beside its text and the
+model's field is what it was. No training loop, no loader in `bin/data.py`,
+no change to the corpus or to the reconstruction. The value beside the
+words is as it is.
+
+### 20.6 Text for step A's implementer
+
+~~~
+Item 1.6, round one, step A: the scene reaches the model. Read §20 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md whole, then §19, §16.7,
+§18.4 and H.5 of the same document, and doc/Spaces.md, "Modalities: One
+Space of Places". §20.2's point 8 and §20.4's S1 to S4 are what you build;
+§20.5 is what you do not. main is being changed by another implementer at
+the same time, so keep each change as small as it can be.
+
+Keep a file, tmp/item1-6/scene_progress.md, current after each step.
+
+1. The key. One key in data/model.xml and data/model.xsd that declares
+   the shape of a scene's box, with a default that declares none; no other
+   file of data/ gains it except the one configuration of step 5, and
+   data/BasicModel.xml gains nothing. No default lives in code. Name it
+   beside `whereAxes` and say in the return what you named it.
+2. The registry (bin/WhereRegistry.py, install_where_registry): where the
+   key declares a shape, a range `scene` of that shape, on a stretch of
+   the first axis of its own, after the ranges that exist, so that no
+   address and no wire of an existing range moves in any configuration.
+   Where it declares none, the registry is what it was.
+3. The row (InputSpace.prepInput in bin/Spaces.py): `scene` beside `text`
+   and `scalar`. Keep the scenes of a batch as `_scalar_values` keeps the
+   values, cleared as it is cleared: for each row `None` where the row has
+   no image, and otherwise its pixels, an empty image being empty and not
+   `None`. A pixel is [x, y, z, steps]; its value is steps / 255. Refuse
+   what S2 lists, each with a message that says what was wrong. A row
+   with an image and no words gets its sentence's slot, as a row with a
+   value and no words does (the two places that test the scalar for that:
+   bin/Spaces.py near 9904 and bin/ModelAttention.py near 173).
+4. The bridge: a function beside `load` in bin/felt_world_corpus.py that
+   gives a FeltDocument's rows, one for each entry, each `text` and
+   `scene`, in order, and its question and answer as they are. No model is
+   involved in it and it changes nothing of what is frozen:
+   test/test_felt_corpus.py passes untouched.
+5. One configuration for the tests, a copy of the text model that
+   test/test_item17_echo.py uses with the scene's shape declared (8, 8,
+   8), under data/. Say which you copied.
+6. test/test_item16_scene.py: S1 to S4 of §20.4. For S1's "before", print
+   every configuration's ranges on the frozen copy of the source as it is
+   now (its path is in your prompt) before you change anything, and keep
+   the output.
+7. Run, with the bounded runner (.venv/bin/python test/test_report.py
+   <files>), RUN_TRAINED and RUN_SLOW unset: both stopping gates,
+   test/test_item17_echo.py, test/test_item16_grid.py,
+   test/test_item16_scene.py, test/test_felt_corpus.py,
+   test/test_item18_scalar.py, and every test file that names prepInput
+   with a dict row or install_where_registry. No test that passes in the
+   sweep of this source (its outcomes are named in your prompt) may fail.
+   Do not run the whole sweep.
+8. No assertion is weakened, skipped or marked; no seed is chosen; the
+   gates are not touched. No standing doc: Claude writes them at review.
+   Nothing removed is deleted but moved to a dated folder under /tmp and
+   named.
+9. Return as §21, at the end of the same document: every file changed and
+   why in a line each; the key's name and default; the box's origin in
+   each configuration that declares it; each certificate with what it
+   printed; S4's two distances and whether the origin moved; whatever in
+   §20 was wrong or could not be built as written, and what you built in
+   its place. You do not stop on a question of design: propose, build,
+   mark it. Stop only if a gate cannot be made to pass with its assertion
+   as it is.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
