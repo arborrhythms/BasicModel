@@ -428,6 +428,37 @@ def sentence_unit_spans(compact, learned, *, include_gaps):
                       torch.where(use_learned, ends, fallback_end), padded=True)
 
 
+def word_property_runs(surface, spans, active, offsets, signatures, discard, digit_bits, slots, *, dtype):
+    """Count observed bytes in each word's contiguous primitive-property runs."""
+    batch, width = active.shape
+    length = surface.shape[1]
+    counts = surface.new_zeros(batch, width * slots * 256, dtype=dtype)
+    edges = surface.new_zeros(batch, width * slots, dtype=torch.long)
+    if not width or not slots or not length:
+        return counts.reshape(batch, width, slots, 256), edges.reshape(batch, width, slots, 1).expand(-1, -1, -1, 2)
+    lo, hi = spans.unbind(-1)
+    positions = torch.arange(length, device=surface.device).expand(batch, -1).contiguous()
+    starts = torch.where(hi > lo, lo, length).contiguous()
+    word = torch.searchsorted(starts, positions, right=True) - 1
+    seat = word.clamp_min(0)
+    sig = signatures[surface.long()]
+    live = ((word >= 0) & (positions < hi.gather(1, seat)) & active.gather(1, seat)
+            & (sig != 0) & ((sig & discard) == 0))
+    separate = ((word[:, 1:] != word[:, :-1]) | (sig[:, 1:] != sig[:, :-1])
+                | ((sig[:, 1:] & digit_bits) != 0))
+    start = live & torch.nn.functional.pad(separate, (1, 0), value=True)
+    rank = start.long().cumsum(1)
+    before = torch.nn.functional.pad(rank, (1, 0))
+    slot = rank - before.gather(1, lo.gather(1, seat)) - 1
+    keep = live & (slot >= 0) & (slot < slots)
+    target = seat * slots + slot.clamp(0, slots - 1)
+    counts = counts.scatter_add(1, 256 * target + surface.long(), keep.to(dtype))
+    at = positions - lo.gather(1, seat) + offsets.clamp_min(0).gather(1, seat)
+    first = edges.scatter_reduce(1, target, torch.where(keep & start, at, 0), reduce='amax')
+    last = edges.scatter_reduce(1, target, torch.where(keep, at + 1, 0), reduce='amax')
+    return counts.reshape(batch, width, slots, 256), torch.stack((first, last), -1).reshape(batch, width, slots, 2)
+
+
 def pin_word_table(byte_ids, spans, *, padded=False):
     """Pin the maximal pre-NUL letter runs over an ordered, disjoint span table."""
     batch, width = byte_ids.shape

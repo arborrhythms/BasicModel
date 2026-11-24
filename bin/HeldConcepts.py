@@ -60,12 +60,13 @@ class Evaluation:
         return self.arrivals
 
     def read(self, witness, *, relative=False):
-        index, identity, timeline = map(int, witness)
+        index = int(witness[0])
         if index < 0:
             return None
+        identity, timeline = witness[1:]
         concepts = self.concepts
         if (concepts is None or index >= len(concepts.values) or not bool(concepts.valid[index])
-                or int(concepts.identities[index]) != identity or int(concepts.timelines[index]) != timeline):
+                or not bool((concepts.identities[index] == identity) & (concepts.timelines[index] == timeline))):
             raise ValueError(f'held-concept refresh reads outside the initial/published concepts: seat {index}, identity {identity}, timeline {timeline}')
         value = concepts.values[index]
         if relative:
@@ -75,9 +76,11 @@ class Evaluation:
 
     def publish(self, witness, operands, result, frames, head):
         from ChunkJournal import publication_value
-        index, identity, timeline, found, kind, earlier = map(int, witness)
+        index = int(witness[0])
         if index < 0:
             return
+        identity, timeline, found, kind, earlier = (witness[1:].tolist() if torch.is_tensor(witness)
+                                                   else witness[1:])
         concepts = self.concepts
         if concepts is None or index >= len(concepts.values):
             raise ValueError('held-concept publication has no constructed initial field')
@@ -103,13 +106,15 @@ class Evaluation:
     def identity_values(self, identities, timelines, original):
         if self.concepts is None or identities is None:
             return original
-        values = original.clone()
-        for row,(identity,timeline) in enumerate(zip(identities.tolist(),timelines)):
-            match = (self.concepts.valid & (self.concepts.identities == identity)
-                     & (self.concepts.timelines == timeline))
-            if bool(match.any()):
-                values[row] = self.concepts.values[int(match.long().argmax())]
-        return values
+        concepts = self.concepts
+        if not len(concepts.values):
+            return original.clone()
+        if not isinstance(timelines, int):
+            timelines = torch.as_tensor(timelines, device=concepts.timelines.device).reshape(-1, 1)
+        match = (concepts.valid & (identities[:, None] == concepts.identities)
+                 & (timelines == concepts.timelines))
+        seats = match.long().argmax(1)
+        return torch.where(match.any(1)[:, None], concepts.values[seats].to(original), original)
 
 
 def install(state, programs):
@@ -120,9 +125,13 @@ def install(state, programs):
         concepts = None if program is None else program.held_final
         if concepts is None:
             continue
-        for seat in concepts.written.nonzero().flatten().tolist():
-            match = ((state[C.STACK][stream] < 0)
-                & (state[C.IDENTITY][stream] == concepts.identities[seat])
-                & (state[C.TIMELINE][stream] == concepts.timelines[seat]))
-            values[stream] = torch.where(match[:,None],concepts.values[seat].to(values),values[stream])
+        if len(concepts.written):
+            match = ((state[C.STACK][stream, :, None] < 0) & concepts.written
+                     & (state[C.IDENTITY][stream, :, None] == concepts.identities)
+                     & (state[C.TIMELINE][stream, :, None] == concepts.timelines))
+            # In publication order a later written seat supersedes an earlier match.
+            seats = torch.arange(len(concepts.written), device=match.device)
+            last = torch.where(match, seats, -1).amax(1)
+            values[stream] = torch.where(last[:, None] >= 0,
+                concepts.values[last.clamp_min(0)].to(values), values[stream])
     return (values,*state[1:])

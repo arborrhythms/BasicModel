@@ -359,9 +359,9 @@ class Evaluation:
         self.end_state = end
         identities = self.program.identity_ids
         self.identity_values = (None if self.program.identity_values is None else
-            self.held.identity_values(identities, [0]*len(identities), self.program.identity_values))
+            self.held.identity_values(identities, 0, self.program.identity_values))
         self.timeline_values = (None if self.program.timeline_values is None else
-            self.held.identity_values(identities, [1]*len(identities), self.program.timeline_values))
+            self.held.identity_values(identities, 1, self.program.timeline_values))
         clause = None if self.closing is None else self.closing.finish()
         self.result = Result(self.program, clause, self.held.concepts,
                              self.native_ids.clone(), end, tuple(self.equality_terms))

@@ -11410,7 +11410,8 @@ class BasicModel(BaseModel):
                     and tuple(part_offsets.shape) == tuple(part_ids.shape)):
                 word_offsets = part_offsets[:, :, 0]
             stage_word_properties(
-                word_texts, active, word_offsets=word_offsets)
+                word_texts, active, word_offsets=word_offsets,
+                surface=ps_fwd.get("sentence_bytes"), unit_spans=ps_fwd.get("unit_spans"))
         pid_host = part_ids.detach().to("cpu").reshape(B, W, P).tolist()
         mask_host = part_mask.detach().to("cpu").reshape(B, W, P).tolist()
         attention = getattr(self, "_attention_words", None)

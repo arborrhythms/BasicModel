@@ -469,3 +469,34 @@ def test_reading_forms_use_ordered_bytes_and_only_this_page():
                 expected = (lo + len(run) - len(run.lstrip()), lo + len(run.rstrip())) if spelling else (0, 0)
                 assert bounds[b, w].tolist() == list(expected)
                 assert int(keys[b, w]) == (prior.setdefault(spelling, w) if spelling else -1)
+
+
+def test_word_property_runs_fullgraph_matches_observed_bytes():
+    from Meronomy import word_property_runs
+    lut = torch.arange(256) % 7
+    surface = torch.tensor([[11, 11, 9, 9, 8, 7, 15, 15, 16, 16, 16, 0],
+                            [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]])
+    spans = torch.tensor([[[0, 8], [8, 11], [0, 0]], [[1, 3], [5, 8], [8, 12]]])
+    active = torch.tensor([[True, True, False], [True, False, True]])
+    offsets = torch.tensor([[0, 8, -1], [7, 19, 22]])
+    capture = torch.compile(word_property_runs, backend='eager', fullgraph=True)
+    for slots, digit in ((1, 0), (4, 2)):
+        counts, edges = capture(surface, spans, active, offsets, lut, 4, digit, slots, dtype=torch.float32)
+        expected = torch.zeros_like(counts)
+        expected_edges = torch.zeros_like(edges)
+        for b, row in enumerate(surface.tolist()):
+            for w, (lo, hi) in enumerate(spans[b].tolist()):
+                i, slot = lo, 0
+                while active[b,w] and i < hi and slot < slots:
+                    signature = int(lut[row[i]])
+                    j = i + 1
+                    while j < hi and int(lut[row[j]]) == signature and not signature & digit:
+                        j += 1
+                    if signature and not signature & 4:
+                        for byte in row[i:j]:
+                            expected[b,w,slot,byte] += 1
+                        expected_edges[b,w,slot] = offsets[b,w] + torch.tensor([i-lo, j-lo])
+                        slot += 1
+                    i = j
+        torch.testing.assert_close(counts, expected, rtol=0, atol=0)
+        assert torch.equal(edges, expected_edges)

@@ -19972,7 +19972,7 @@ class WholeSpace(Space):
             if signature & (1 << row))
 
     def stage_word_primitives(
-            self, word_texts, active_b_w, *, word_offsets=None):
+            self, word_texts, active_b_w, *, word_offsets=None, surface=None, unit_spans=None):
         """Stage word-local primitive-property evidence for the CSSub loop.
 
         ``word_texts`` is the host lexical stem's rectangular batch of
@@ -20000,6 +20000,16 @@ class WholeSpace(Space):
 
         B, width = int(active_b_w.shape[0]), int(active_b_w.shape[1])
         N, P = int(self.inputShape[0]), int(rows.shape[0])
+        if surface is not None and unit_spans is not None:
+            from Meronomy import word_property_runs
+            lut, discard = _analysis_property_signature(self, device=surface.device)
+            digit = _digit_signature_bits(self) if getattr(self, 'digit_wholes', False) else 0
+            offsets = word_offsets if word_offsets is not None else torch.zeros_like(unit_spans[..., 0])
+            counts, spans = word_property_runs(surface, unit_spans, active_b_w, offsets, lut,
+                discard, digit, N, dtype=rows.dtype)
+            self._staged_word_primitive_counts = counts
+            self._staged_word_property_spans = spans
+            return counts
         active = active_b_w.detach().to("cpu", dtype=torch.bool).tolist()
         offsets = None
         if torch.is_tensor(word_offsets):
