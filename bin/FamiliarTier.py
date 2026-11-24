@@ -64,7 +64,8 @@ def shared_part(owner, value, other):
 
 def _clock(owner, batch):
     model = owner._model
-    return model._sentence_ticks.get(model._open_sentence_slot, model.present())
+    from Occurrence import sentence_tick
+    return sentence_tick(model, model._open_sentence_slot)
 
 
 def witnessed_support(owner, cid):

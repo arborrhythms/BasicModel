@@ -136,24 +136,33 @@ def address_at(model, batch, slot):
     return ('direct-model', batch), slot + 1
 
 
+def sentence_tick(model, slot):
+    """Return a closed or active sentence's tick, or the current clock before opening."""
+    ticks = model._sentence_ticks
+    return ticks[slot] if slot in ticks else model.present()
+
+
 def source_at(model, batch, slot):
     """Document and the model tick of its current sentence presentation."""
-    return address_at(model, batch, slot)[0], model._sentence_ticks.get(int(slot), model.present())
+    return address_at(model, batch, slot)[0], sentence_tick(model, int(slot))
 
 
 def relative_positions(model, sentence_ids):
-    positions = torch.zeros_like(sentence_ids)
-    for b in range(sentence_ids.shape[0]):
-        for slot in range(max(1, int(sentence_ids[b].max()) + 1)):
-            positions[b] = torch.where(sentence_ids[b] == slot,
-                source_at(model, b, slot)[1], positions[b])
+    """Stamp every occupied word, including packed slots that have yet to open."""
+    now = model.when_time.to(sentence_ids)
+    positions = torch.where(sentence_ids >= 0, now, 0)
+    for slot, tick in model._sentence_ticks.items():
+        positions = torch.where(sentence_ids == slot, tick, positions)
     return positions
 
 
 def stage_position(model, slot, batch, *, device):
     """Stage the current sentence tick before its word perception begins."""
-    position = torch.tensor([source_at(model, b, slot)[1] for b in range(batch)],
-                            dtype=torch.long, device=device)
+    tick = model._sentence_ticks.get(slot)
+    if tick is None:
+        position = model.when_time.to(device=device).expand(batch).clone()
+    else:
+        position = torch.full((batch,), tick, dtype=torch.long, device=device)
     for space in (getattr(model, 'inputSpace', None), getattr(model, 'perceptualSpace', None),
                   *([getattr(model, "wholeSpace")] if getattr(model, "wholeSpace", None) is not None else []), getattr(model, 'symbolSpace', None),
                   *getattr(model, 'conceptualSpaces', ())):

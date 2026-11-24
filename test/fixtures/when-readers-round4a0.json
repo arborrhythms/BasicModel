@@ -17,18 +17,6 @@
   ],
   "readers": [
     {
-      "file": "bin/AttentionContext.py",
-      "function": "context",
-      "attributes": [
-        "nWhen"
-      ],
-      "role": "attention context reader",
-      "previous_absolute_time": false,
-      "now": "Learned inputs use age, computed from the present tick and the observation band or interval; the stamped when of the percept keys is replaced by its age band.",
-      "line": 77,
-      "reads": "age"
-    },
-    {
       "file": "bin/Comprehension.py",
       "function": "Evaluation.leaf",
       "attributes": [
@@ -48,6 +36,17 @@
       "role": "comprehension occurrence transport",
       "previous_absolute_time": false,
       "now": "Restores the physical head time after the content operator.",
+      "reads": "absolute"
+    },
+    {
+      "file": "bin/Comprehension.py",
+      "function": "Evaluation.finish",
+      "attributes": [
+        "symbol_when"
+      ],
+      "role": "retained occurrence transport",
+      "previous_absolute_time": false,
+      "now": "Writes the original word time bands beside the located leaves in STM.",
       "reads": "absolute"
     },
     {
@@ -412,6 +411,17 @@
       "now": "Reads current model time for a new STM stamp; candidate recency compares event-minus-present differences, never absolute phases.",
       "line": 150,
       "reads": "difference"
+    },
+    {
+      "file": "bin/ReadingMemory.py",
+      "function": "_read",
+      "attributes": [
+        "when_band"
+      ],
+      "role": "retained occurrence transport",
+      "previous_absolute_time": false,
+      "now": "Copies the selected occurrence time band into its STM idea.",
+      "reads": "absolute"
     },
     {
       "file": "bin/ReferenceClose.py",
