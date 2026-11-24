@@ -157,11 +157,12 @@ def word_request(model, concepts, index):
     owner = model._concept_owner()
     V = int(owner.nVectors)
     request = owner.similarity_codebook.W.new_zeros(V, len(index), 2)
-    for b, word in enumerate(index.tolist()):
-        cid = int(concepts[b, word]) if word >= 0 else -1
-        row = owner._concept_row_of(cid) if cid >= 0 else None
-        if row is not None:
-            request[row, b, 0] = 1.
+    if not V or not concepts.shape[1]:
+        return request
+    words = concepts.gather(1, index.clamp_min(0)[:, None]).flatten()
+    rows = owner._concept_allocator.layer(0).concept_rows(torch.where(index >= 0, words, -1))
+    stream = torch.arange(len(index), device=request.device)
+    request[rows.clamp_min(0), stream, 0] = (rows >= 0).to(request)
     return request
 
 
@@ -444,11 +445,12 @@ class Looks:
             own = lower(own, bank, index, interpreted)
             if fragment is not None and fragment['idea'] is not None:
                 others = fragment['run'] & (word_slots != index[:, None])
-                for value in others.any(0).nonzero().flatten().tolist():
-                    with_it = others[:, value]
-                    at = torch.full_like(index, value)
-                    state.record(at, with_it)
-                    own = lower(own, bank, at, with_it)
+                state.accepted = state.accepted | others
+                state.values = torch.where(others[..., None], state.keys, state.values)
+                extra = F.pad(others, (0, 1))
+                token = bank.token
+                taken_occurrences = extra.gather(1, torch.where((token >= 0) & (token < W), token, W))
+                own = torch.where(taken_occurrences[..., None], 0., own)
                 model._fragment_leaf = dict(index=index, taking=fragment['taking'],
                                             idea=fragment['idea'], classes=fragment['classes'])
             # What the next look reads: this look's field spread once.

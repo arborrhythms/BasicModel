@@ -1213,7 +1213,13 @@ class BasicPercepts(nn.Module):
         wholes = tuple(dict.fromkeys(whole for row in rows if row not in self.place_rows
                                      and row not in self.conjunctions for whole in self.occurrences[row][1]
                                      if whole >= -self.identity_width))
-        what, outside = self._occurrence_what(percepts, spans, wholes)
+        # The occurrence fold reads only the bytes inside nominated
+        # intervals. Preserve legacy negative slice semantics for unusual
+        # external intervals, and leave the original source geometry intact.
+        limit = max((end if start >= 0 else raw.shape[-1]
+                     for row in found for start, end in row), default=0)
+        surface = raw[..., :limit]
+        what, outside = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans), spans, wholes)
         dtype = options.get('dtype') or what.dtype
         # The against lane: nothing on the parts half; on the wholes half, the
         # degree to which each whole is witnessed outside over the occurrence.

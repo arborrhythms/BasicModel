@@ -38,11 +38,10 @@ def knowing(owner, bank, words):
     where its word is in ``words``, and absent elsewhere. Nothing is
     published and nothing is kept."""
     token = bank.token
-    held = torch.zeros_like(token, dtype=torch.bool)
-    slots = token.clamp_min(0)
     width = words.shape[1]
-    inside = (token >= 0) & (slots < width)
-    held[inside] = words.gather(1, slots.clamp_max(width - 1))[inside]
+    # The extra seat represents all missing tokens, including an empty field.
+    padded = torch.nn.functional.pad(words, (0, 1))
+    held = padded.gather(1, torch.where((token >= 0) & (token < width), token, width))
     activity = torch.where(held[..., None], bank.activity, torch.zeros_like(bank.activity))
     with torch.no_grad():
         evidence = owner.cs_read_bank(bank, activity, publish=False)
@@ -156,17 +155,15 @@ def run_at(state, extent, index, rows, length=LENGTH):
     width = min(W, extent.shape[1])
     extent = extent[:, :width]
     open_ = extent & ~state.accepted[:, :width] & state.known[:, :width]
-    run = torch.zeros(B, W, dtype=torch.bool, device=index.device)
-    for b in rows.nonzero().flatten().tolist():
-        start = int(index[b])
-        if start < 0 or start >= width:
-            continue
-        stop = start
-        while stop + 1 < width and stop + 1 - start < length and bool(open_[b, stop + 1]):
-            stop += 1
-        if stop > start:
-            run[b, start:stop + 1] = True
-    return run
+    if width < 2 or length < 2:
+        return torch.zeros_like(state.known)
+    slots = torch.arange(width, device=index.device)
+    start = index[:, None]
+    blocked = (slots > start) & ~open_
+    end = torch.where(blocked, slots, width).amin(-1, keepdim=True).minimum(start + length)
+    eligible = rows[:, None] & (start >= 0) & (end > start + 1)
+    run = eligible & (slots >= start) & (slots < end)
+    return torch.nn.functional.pad(run, (0, W - width))
 
 
 def take(model, state, bank, extent, index, rows, *, prior=None):

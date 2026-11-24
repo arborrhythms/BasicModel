@@ -2414,11 +2414,11 @@ class Codebook(Tensor):
         if getattr(self, 'mereology', None) is not None:
             if isinstance(idx, slice):
                 idx = torch.arange(len(self.W), device=self.W.device)[idx]
-            idx = torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
             value = self.mereology.derive(idx, b=stream)
             if not streams and stream == 0:
                 with torch.no_grad():
-                    self.W[idx] = value.detach()
+                    address = idx if type(idx) is int else torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
+                    self.W[address] = value.detach()
             return value
         if self.W is None:
             return None
