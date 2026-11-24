@@ -359,11 +359,10 @@ class Looks:
                 write_look(forecasts.owner, forecasts.inventory_rows(), prediction)
                 surprise = forecasts.observe(look_field, extent, prediction, rows)
                 if model.training:
-                    looks = model.__dict__.setdefault('_expectation_looks', [])
-                    looks.append((forecasts.stage_cost(look_field, extent, rows), rows.clone()))
-                    percepts = model.__dict__.setdefault('_expectation_percept_looks', [])
                     perceived = getattr(owner, '_percept_field', None)
-                    percepts.append((forecasts.percept_stage_cost(perceived, extent, rows), rows.clone()))
+                    concept_cost, percept_cost = forecasts.stage_costs(look_field, perceived, extent, rows)
+                    model.__dict__.setdefault('_expectation_looks', []).append((concept_cost, rows.clone()))
+                    model.__dict__.setdefault('_expectation_percept_looks', []).append((percept_cost, rows.clone()))
             at_look(model, look_field, extent, rows)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
                                     surprise=surprise))

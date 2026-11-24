@@ -103,45 +103,34 @@ class LookForecast:
         """The inventory row of each forecast position."""
         return self.forecast_rows
 
-    def stage_cost(self, field, extent, looked=None):
-        """The concepts' stage at a look, ``[B]``: what each concept expected
-        from the readings outside the look's extent, with the gradient of
-        its own entries alone, against what the look brought."""
+    def stage_costs(self, field, perception, extent, looked=None):
+        """Score both teaching stages against the same observations outside this look."""
         live, inputs = self._outside(extent, looked)
-        error = self.observations.new_zeros(live.shape[0])
+        empty = self.observations.new_zeros(live.shape[0])
         if not len(inputs):
-            return error
+            return empty, empty
+        batch = live.nonzero()[:, 0]
         evidence = self._located(field)
-        actual = self.read(evidence, extent)[live]
+        actual = self.read(evidence, extent).index_select(0, batch)
         arrived = actual.new_zeros(len(actual), int(self.owner.nVectors), 2)
         arrived[:, self.inventory_rows()] = actual
         cost = read_streams(self.owner, lambda: ConceptSpread.look_cost(self.owner, inputs, arrived),
                             axis=0, live=live)
-        batch = live.nonzero()[:, 0]
-        return error.index_add(0, batch, cost)
+        concepts = empty.index_add(0, batch, cost)
 
-    def percept_stage_cost(self, perception, extent, looked=None):
-        """The basic percepts' stage at a look, ``[B]``: what each basic
-        percept expected from the readings outside the look's extent, with
-        the gradient of its own entries of the first Pi alone, against the
-        basic percepts the look brought (``perception``, the look's read)."""
-        live, inputs = self._outside(extent, looked)
-        error = self.observations.new_zeros(live.shape[0])
-        if perception is None or not len(inputs):
-            return error
-        held = [(i, key[1]) for i, key in enumerate(perception.keys) if key[0] == 'bp']
+        # The final occurrence supplies a repeated percept address, as in the
+        # sequential assignment. Stage the two index arrays in one transfer.
+        held = {} if perception is None else {
+            key[1]: i for i, key in enumerate(perception.keys) if key[0] == 'bp'}
         if not held:
-            return error
-        width = max(row for _, row in held) + 1
+            return concepts, empty
         values = perception.values.detach().amax(2)
-        arrived = values.new_zeros(values.shape[1], width, 2)
-        for i, row in held:
-            arrived[:, row] = values[i]
-        batch = live.nonzero()[:, 0]
-        observed = arrived.index_select(0, batch)
+        rows, sources = torch.tensor(list(held.items()), device=values.device, dtype=torch.long).T
+        observed = values.new_zeros(len(batch), max(held) + 1, 2)
+        observed[:, rows] = values.index_select(0, sources).index_select(1, batch).transpose(0, 1)
         cost = read_streams(self.owner, lambda: ConceptSpread.percept_cost(self.owner, inputs, observed),
                             axis=0, live=live)
-        return error.index_add(0, batch, cost)
+        return concepts, empty.index_add(0, batch, cost)
 
     def read(self, evidence, extent):
         """Both lanes over the readings of each stream's ``extent``, at the
