@@ -398,8 +398,12 @@ def observe_percept(model, forecast, payload, sub, index, active):
     training = bool(getattr(model,'_sentence_training',False) and torch.is_grad_enabled()
         and not getattr(discourse,'_external_observations_suspended',False))
     arrival = expectation.arrive(forecast,observed,active,native=native,training=training)
-    model._percept_expected[:,int(index)] = arrival.expected
-    model._percept_arrival_loss[:,int(index)] = expectation.last_arrival['local_loss']
+    # Different pages can reach one source word on different looks. A
+    # later arrival updates only the streams that actually observed it.
+    prior = model._percept_expected[:, index]
+    loss = model._percept_arrival_loss[:, index]
+    model._percept_expected[:, index] = torch.where(active[:, None], arrival.expected, prior)
+    model._percept_arrival_loss[:, index] = torch.where(active, expectation.last_arrival['local_loss'], loss)
     # Identity-valued forward chart, retaining the ordinary source pullback.
     # The two poles of conceptual evidence are unchanged by this P interface.
     from Expectation import recombine_percept

@@ -249,3 +249,28 @@ def test_native_sentence_local_boundary_ownership_loss_identity_and_compiled_wor
     finally:
         model.End()
         torch._dynamo.reset()
+
+
+def test_disjoint_arrivals_at_same_word_keep_both_forecasts_and_gradients(monkeypatch):
+    from types import SimpleNamespace
+    from ModelAttention import observe_percept, stage_percept_expectation
+    import util
+    monkeypatch.setattr(util, 'TheCompileBackend', 'none')
+    owner = PerceptExpectation(2, streams=2, capacity=2)
+    model = SimpleNamespace(percept_expectation=owner, symbolSpace=SimpleNamespace())
+    observed = torch.tensor([[[1., 0.]], [[0., 1.]]])
+    stage_percept_expectation(model, torch.ones(2, 1, dtype=torch.bool))
+    payload = (observed, None, None, None, None, None, observed[:, 0])
+    first = torch.tensor([[.1, .2], [.3, .4]], requires_grad=True)
+    later = torch.tensor([[.5, .6], [.7, .8]], requires_grad=True)
+    for prediction, active in ((first, [True, False]), (later, [False, True])):
+        observe_percept(model, (prediction, torch.arange(2)), payload, (None, observed),
+                        0, torch.tensor(active))
+    chosen = torch.stack((first[0], later[1]))
+    torch.testing.assert_close(model._percept_expected[:, 0], chosen)
+    target = .5 * (chosen - observed[:, 0]).square().mean(-1)
+    torch.testing.assert_close(model._percept_arrival_loss[:, 0], target)
+    actual = torch.autograd.grad(model._percept_arrival_loss.sum(), (first, later))
+    wanted = torch.autograd.grad(target.sum(), (first, later))
+    for lhs, rhs in zip(actual, wanted, strict=True):
+        torch.testing.assert_close(lhs, rhs, rtol=0, atol=0)
