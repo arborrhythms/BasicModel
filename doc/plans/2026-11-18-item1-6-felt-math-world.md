@@ -2245,6 +2245,13 @@ In `test/test_item16_grid.py`, each printing what it measured.
 | G8 | The great registry | The registry of 512,808,192 addresses is still made without the grid being built |
 | G9 | Four wires or three (a measure) | The least distance between the wires of two neighbouring places, with four wires to an axis and with three in the forms that fit (say which), at the model's capacities. Reported; nothing is built on it |
 
+*G1 and G2 as they are held (Claude, 2026-11-24, after the return; §18.4).*
+G1: every space's `.what` width is what it was, except the conceptual
+space's: its whole width is a concept, a concept embraces the percept's
+band, and it grew by 8 with the band. G2: holds for every address of a
+range that is a line; in an image's box the addresses run row by row and
+the first four wires are the column's code.
+
 **Measured beside them:** the time of the sixteen sentences of the
 standard lesson and of the seven echo tests, before and after, on this
 machine; the greatest memory of a worker.
@@ -3964,3 +3971,183 @@ the list pass. The four failures fail in the baseline too: `test_hash_order_prod
 `test_operators_round4a0::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers`; the xpass
 (`test_forgetting::test_unforced_grammar_turnover_reports_its_retained_occurrences`) is an xpass in the baseline.
 No test that passes in the baseline fails here.
+
+## 18. The grid in three dimensions: the review (Claude, 2026-11-24)
+
+*Review of §17 as it stands at `20a31b10ea` (source, configurations and
+tests) and `35e704840f` (the standing documents). Every number here was
+measured on this machine with `RUN_TRAINED` and `RUN_SLOW` unset.*
+
+**The grid is accepted.** No test that passes on the unchanged source fails
+on the grid for a reason that is the grid's. Two things are left open and
+are named in 18.2 and 18.6.
+
+### 18.1 The sweep against the baseline
+
+Both sweeps ran from a frozen plain copy of their source, so that nothing
+could change under them: the unchanged source at `ad8fafea92` (run
+`20261123-190752-028c4d`) and the grid at `20a31b10ea` (run
+`20261124-003722-d69da8`).
+
+| | Unchanged | Grid |
+|---|---|---|
+| Cases | 7,462 | 7,488 |
+| Passed | 7,053 | 7,080 |
+| Skipped | 338 | 338 |
+| Failed | 69 | 68 |
+| xpassed, xfailed | 1, 1 | 1, 1 |
+| Seconds | 6,173 (the machine was shared) | 4,887 (alone) |
+| Greatest memory at once | 9.54 GiB | 9.68 GiB |
+
+The 26 cases added are the corpus's 14 (`test_felt_corpus.py`) and the
+grid's 12 (`test_item16_grid.py`); all pass. No case of the baseline is
+absent.
+
+*Fail in both, 66.* Fifty need the repository's history, which a plain copy
+has not (`test_attention_host_work.py`, 44; `test_item17_layers.py`, 6).
+Three are `test_doc_links.py`'s (`doc/Params.md`, `doc/Philosophy.md`, the
+sigma-pi plan), which do not resolve from a copy or a linked worktree.
+Thirteen fail on the unchanged source for reasons of its own:
+`test_compose_observer::test_observer_counts_detached_compose_calls`,
+`test_concept_memberships::test_definition_boundary_preserves_gradient_owned_codes`,
+`test_hash_order_producers::test_collision_queue_follows_admission_order`,
+`test_item17_fragments::test_50d_...`, `test_item17_sparse_growth::test_58_...`,
+`test_item17_symbols::test_54bd_...`, `test_item17_word_said_back::test_the_answer_depends_on_the_spoken_request`,
+`test_item18_expect::test_81_...`, `test_item4_native::test_observed_cat_survives_native_answer_and_store`
+(both cases), `test_operators_round4a0::test_when_reader_inventory_covers_current_attribute_and_dynamic_readers`,
+`test_percept_collection_binding::test_bind_percept_collection_reads_membership_not_coordinate_overlap[2.0-True]`,
+`test_performance_leaves::...[where_decode_2]`.
+
+*Fail on the unchanged source, pass on the grid, 3.*
+`test_item55_mechanisms::test_clock_independence` and
+`test_reasoning::TestWriteMask::test_partition_isolation` pass on the grid
+in both of its sweeps. The third,
+`test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`,
+is not mended: run alone it fails on both sources, twice of twice on each
+(the four rows come back in another order), and it passed in the grid's
+sweep by what ran before it in its worker. It is a fault of the unchanged
+source that depends on the order of the tests.
+
+*Pass on the unchanged source, fail on the grid, 2.* Neither is the
+grid's, by what follows.
+
+- `test_item17_stacks::test_seconds_against_an_mlp_layer[mps]`: the
+  graphics processor reported a hang
+  (`kIOGPUCommandBufferCallbackErrorHang`) while the test timed a layer. Run
+  again, the file alone, twice on each source: it failed once of twice on
+  the unchanged source and once of twice on the grid, with the same
+  message. It is the machine's.
+- `test_explicit_dimensions::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`:
+  18.2.
+
+### 18.2 The order of two words after grammar training
+
+The test trains verbal XOR from a fresh start and asks that the two words
+of each of four sentences come back in the order they were read. It is
+C.3's third point and item 1.7's open one. Counted over every fresh start
+on this machine:
+
+| | Passed | Failed, and how |
+|---|---|---|
+| Unchanged source | 6 of 8 | 2 of 4 in order; 3 of 4 in order |
+| Grid | 5 of 9 | 0 of 4 in order, four times |
+
+(Unchanged: the baseline sweep, five alternating repeats, two side by
+side. Grid: two sweeps, five alternating repeats, two side by side.)
+
+Nine runs and eight cannot tell five of nine from six of eight, so there is
+no evidence that the grid loses the order more often. One thing is seen and
+not explained: each of the grid's four failures is every pair reversed,
+and the unchanged source's two failures here are partial. Every pair
+reversed is also what Codex's landing sweep of item 1.7 recorded on the
+unchanged source, so the grid did not bring it. Five more alternating
+repeats on the two frozen copies were started after this was written; their
+count is added below when they return.
+
+It bears on question 5 of C.5 and on nothing of the grid's design: the
+first milestone turns on the order of two words, and a model that keeps the
+order in a little over half of its fresh starts cannot be measured on it
+with one run.
+
+### 18.3 Times and memory
+
+One source after the other on the machine alone, the bounded runner, the
+file whole:
+
+| | Unchanged | Grid |
+|---|---|---|
+| The reading lesson, six tests (`test_reading_pretraining.py`) | 125 s | 129 s |
+| of which the certificate (122 sampled readings) | 114.3 s | 117.0 s |
+| Greatest memory of its worker | 3.54 GiB | 3.56 GiB |
+| The seven echo tests (`test_item17_echo.py`) | 243 s | 225 s |
+| Greatest memory of its worker | 0.91 GiB | 0.95 GiB |
+
+Both files passed whole on both sources. The 228 s against 147 s of 17.5
+was the shared machine and not the grid: the band's eight more wires cost
+the reading lesson about three seconds in two minutes. The greatest memory
+of one case in the sweeps is the same test on both
+(`test_item20_round2_memory::test_one_whole_inventory_on_every_configuration[BasicModel.xml]`,
+6.17 GiB and 6.20 GiB). The sixteen sentences of the standard lesson were
+not timed apart from their tests, which §16.5 asked; the certificate above
+trains on them and is the nearest measure.
+
+### 18.4 Where the build departs from §16.3, and what is accepted
+
+- *The conceptual space grew by 8.* G1 asked that every space's `.what`
+  stay as it was. A concept embraces the percept's band, and the conceptual
+  space's whole width is a concept, so it could not. Accepted; G1 is
+  reworded in §16.5. It is "a concept 144 wide for 136".
+- *The place match is a product over the axes.* §16.3 said "the match over
+  the three axes" and did not say how. Summed over twelve wires, the two
+  axes a line of text does not use diluted the match, and the reading
+  certificate fell to 116 of 122. Axis by axis and multiplied
+  (`BasicPercepts.place_factor_by_axis`), an axis on which two places agree
+  gives one and the certificate is 122 of 122. Accepted, and it is the
+  better reading of "one space": two places are near when they are near on
+  every axis.
+- *G2 holds for lines.* In a box the addresses run row by row and x is the
+  column, so a pixel's first four wires are its column's code. Accepted; G2
+  is reworded in §16.5.
+- *No saved model of the older width loads.* None is committed, and no
+  migration was written (§16.3, point 11). A model trained before the grid
+  is trained again.
+- *The recorded first document was converted, not recorded again* (17.11).
+  Accepted on its proof: only rows equal to the old constant, with a
+  greatest difference of 0.0, were made again, and the test's assertions
+  are unchanged.
+- *The scripted rewrite of 8 to 16 in 47 test files* was audited by the
+  second implementer; four literals it had wrongly changed were restored
+  and one it had missed was corrected (17.9).
+
+No assertion was weakened, skipped or marked in any round; no seed was
+chosen; both stopping gates are as they were, and their configurations
+differ in declared widths alone.
+
+### 18.5 Found on the way, and not this item's
+
+For Codex and Alec, each a fault of the unchanged source:
+
+1. `test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`
+   passes or fails by the order of the tests: an earlier test leaves
+   `TheData.has_supervised_outputs` set on the process-wide data (17.10).
+2. `test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`
+   fails alone and can pass after other tests (18.1).
+3. `test_item17_stacks::test_seconds_against_an_mlp_layer[mps]` fails about
+   one run in two on this machine with a hang of the graphics processor
+   (18.1).
+4. The three of `test_doc_links.py` fail from a linked worktree of the
+   submodule and from a plain copy.
+5. The order of two words, 18.2.
+
+### 18.6 What the grid leaves to round one
+
+§16.7's three, unchanged: a modality's place match stays inside its own
+range; a look's request for a place is centred and scaled for one modality;
+and the least distance between the wires of any place of text and any place
+of an image is measured at the model's capacities, the image's box being
+given another origin if it is small. Where the box of an image lies beside
+the line of its sentence is round one's to say (C.6, point 4). The choice of
+four wires to an axis or three is in `doc/FutureWork.md` with G9's measure.
+
+`origin/main` stands at `ad8fafea92`, where this branch was cut; there is
+nothing of item 1.5 to take in yet.
