@@ -1119,31 +1119,61 @@ frozen rows and the test of their validity touch no source of the model.
 Their text for Codex can be written before item 1.7 lands, for the
 categories marked "nothing" and, as data only, for all of them.
 
-## 14. The corpus's generator and its frozen examples (Claude, 2026-11-18; the text for Codex is §14.8)
+## 14. The corpus's generator and its frozen examples (Claude, 2026-11-18; amended 2026-11-23; the text for the implementer is §14.8)
 
 Alec, 2026-11-18, asked whether to write the text for the generator and
 its frozen examples now: "Yes, write it". §14.1 to §14.7 are what the
 text builds; every choice in them is *Claude's default* unless a section
 above gives it as Alec's.
 
+*Amended 2026-11-23 (Claude), before anything of the corpus was built, by
+the sections added to this document after §14 was written (hand-over,
+H.4, step 1). The frames as first written are in this file at
+`ad8fafea92`.*
+
+| What changed | Where | From |
+|---|---|---|
+| An image is pixel values at places; a digit's word names a band of values, and a number has no percept | §14.1, §14.4 | "What is felt and what a number is" (Alec, 2026-11-22) |
+| No image (`null`) is told from an image with nothing in it (`[]`) | §14.1, §14.3, §14.6 | suggestion 2; Alec, 2026-11-21 |
+| One step and eight places are reserved for each value | §14.1, §14.5, §14.6 | suggestion 3 |
+| Frames 16 and 20 describe a scene; "walked" and "ran" are gone | §14.2, §14.4 | Alec, 2026-11-20 |
+| Frame 20 has both answers; frame 24 has both answers and a case in which nothing follows | §14.4, §14.5 | suggestion 4 |
+| Contrast sets on "above" and "below" | §14.3, §14.5, §14.6 | suggestion 1, the first milestone |
+| Category 27, counting | §14.3 to §14.6 | Alec, 2026-11-22 |
+| The text is for an Opus implementer and returns to Claude | §14.8 | H.1 |
+
 ### 14.1 The world
 
 - *Space.* 8 by 8 by 8 places, written (x, y, z): x is the column, 0 at
   the left; y is the row, 0 at the top; z is the depth. An image is the
   plane z = 0 (Alec, §12.1), and in this first set every thing is in it.
-- *A thing* is named by a digit from 1 to 9 and is a set of places, each
-  touching another by a side. A scene has at most one thing of each
-  digit. Things do not overlap. A thing is one place unless its category
-  is about size.
-- *Levels.* The intensity of each place of the thing $d$ is a whole
-  number of steps from $25d - 3$ to $25d + 3$, drawn for each place of
-  each image; the felt value is the steps over 255 (Alec, §12.2: "a
-  level is a 0-1 float always"). A row stores the steps.
+- *A value.* What an image holds is pixel values (Alec, 2026-11-22: "we
+  are referring to image data"). There are nine values, 1 to 9. The
+  value $d$ is a band of intensities: a whole number of steps from
+  $25d - 3$ to $25d + 3$; the felt intensity is the steps over 255
+  (Alec, §12.2: "a level is a 0-1 float always"). A row stores the
+  steps. Every other place of the plane is 0, the background, where
+  nothing is felt. A digit's word names a value: "three is above four."
+  says that the pixel value 3, at its place, is above the pixel value 4,
+  at its place. A number itself is a symbol and has no percept.
+- *A thing* is a level set: a set of places, each touching another by a
+  side, whose intensities all lie in one value's band. A scene has at
+  most one thing of each value. Things do not overlap. A thing is one
+  place unless its category is about size.
+- *Levels.* The steps are drawn for each place of each image, from the
+  six steps of the band that are not the value's reserved step (§14.5).
 - *Time.* A document is a list of entries. An entry is a text, which may
   be empty, and one image. Successive entries are successive moments.
-  "Now" for a sentence is the image it is read with.
-- *A scene with nothing in it* is an empty list, which is how a sentence
-  with nothing felt is written.
+  "Now" for a sentence is the image it is read with. Item 1.4 will
+  observe the change between successive images (H.3); they are kept as
+  designed here.
+- *No image, and an image with nothing in it.* An entry's scene is a
+  list or `null`. `[]` is an image that was seen and holds nothing: it
+  is evidence against anything's being here. `null` is no image: the
+  sentence is heard with nothing seen, which is evidence of nothing
+  either way. Alec, 2026-11-21: "The missing scene does not affect
+  reconstruction cost." Where §14.4 and §14.5 say "no image", the scene
+  is `null`.
 
 ### 14.2 What can be true of the world
 
@@ -1162,30 +1192,38 @@ one of them; the generator's code holds no word (as
 | `between(a, b, c)` | a, b and c lie on one row or one column, a strictly between the other two |
 | `distance(a, b)` | the greater of the row and column gaps between their nearest places; "near" is at most 2, "far" at least 5 |
 | `size(a)` | the number of a's places; "big" is 4 or more, "small" is 1 |
+| `count(i)` | the number of things in image i |
 | `displaced(a, i, j)` | a's places differ between images i and j |
 | `event(a, i, j, n, dir)` | from image i to image j, a moves n places at every step, all in the direction dir (up, down, left, right); n is 1 or 2 |
 | `approaches(a, b, i, j)` | b is not displaced, and a's distance to b falls at every step |
 | `recedes(a, b, i, j)` | b is not displaced, and a's distance to b rises at every step |
 | `at_rest(a, i)` | a is not displaced over images i - 1, i and i + 1 |
 | `precedes(e, f)` | event e's last image is before event f's first |
+| `faster(e, f)` | event e's n is greater than event f's |
 
-A step of 1 is what "walked" and "slowly" say, a step of 2 what "ran"
-and "quickly" say. A graded word is used only where its bound holds: no
-training scene has a distance of 3 or 4 under "near" or "far", nor a
-size of 2 or 3 under "big" or "small".
+A step of 1 is what "slowly" says, a step of 2 what "quickly" says. A
+graded word is used only where its bound holds: no training scene has a
+distance of 3 or 4 under "near" or "far", nor a size of 2 or 3 under
+"big" or "small".
+
+*From a side.* An approach of a to b throughout which
+`column_before(a, b)` holds is from the left; with
+`column_before(b, a)`, from the right; with `row_before(a, b)`, from
+above; with `row_before(b, a)`, from below.
 
 ### 14.3 Files and a row
 
 - `bin/felt_world_corpus.py`: the world, the predicates, the expansion
   of recipes, `verify`, `freeze`, and `load(category, split)`, which
-  returns documents and needs no model.
-- `data/felt/recipes/`: `cast.json` (the nine digits with their forms,
-  the two kinds with theirs and their members, the vocabulary) and one
-  recipe for each category.
+  returns documents and needs no model (as `bin/image_corpus.py`'s
+  `load(name, split)` does).
+- `data/felt/recipes/`: `cast.json` (the nine values with the forms of
+  their words, the two kinds with theirs and their members, the counting
+  words, the vocabulary) and one recipe for each category.
 - `data/felt/category-NN-<name>.jsonl` and `data/felt/manifest.json`
   (seed, command, each file's hash and counts by split, each recipe's
-  hash, the vocabulary, and a `never_direct` line as
-  `data/math/manifest.json` has).
+  hash, the vocabulary, each value's reserved step and places, and a
+  `never_direct` line as `data/math/manifest.json` has).
 - `test/test_felt_corpus.py`.
 
 A row, one JSON object to a line:
@@ -1194,29 +1232,35 @@ A row, one JSON object to a line:
 |---|---|
 | `key`, `category`, `name`, `variant`, `split` | which row it is |
 | `operators` | the labels of §13.5, for reading results only |
-| `entries` | a list of `{"text": ..., "scene": [[x, y, z, steps], ...]}` |
+| `entries` | a list of `{"text": ..., "scene": ...}`; a scene is `[[x, y, z, steps], ...]`, or `null` where there is no image |
 | `meaning` | for each statement and the question: its entry, its predicate, its arguments, and whether it is true |
-| `question`, `answer` | the entry that asks, and one word |
-| `inference` | null, or one of `converse`, `kind`, `chain`, `time`, `rule` |
+| `question`, `answer` | the entry that asks, and what is to be said: one word; in category 27 the counting words in order, a space between; the empty text where nothing follows (§14.5, category 24) |
+| `inference` | null, or one of `converse`, `kind`, `chain`, `time`, `rule`, `open` |
+| `set` | null, or the key that the rows of one contrast set share (§14.5) |
 
 `load` gives a document with `sentences`, `question` and `answer` named
-as `math_chain_corpus.ChainDocument` names them, with `scenes` beside
-them.
+as `math_chain_corpus.ChainDocument` names them (its `question` is the
+index of the sentence that asks), with `scenes` beside them. It is a
+record of its own: `ChainDocument` is frozen and has fields this corpus
+has no use for.
 
 ### 14.4 The frames
 
-`{a}`, `{b}`, `{c}` are digits' names ("three"); `{k}` is a kind as an
-adjective ("even"), `{K}` as a noun ("even"), `{Ks}` its plural
+`{a}`, `{b}`, `{c}` are the words of values ("three"); `{k}` is a kind
+as an adjective ("even"), `{K}` as a noun ("even"), `{Ks}` its plural
 ("evens"), `{aK}` with its article ("an even"). Lower case; a statement
 ends with a full stop joined to its last word; a question ends with a
-space and a question mark, as the math corpus writes them. An answer is
-one word. Where a frame is of the past, the images of what it tells come
-before it as entries with no text. A comma is joined to the word before
-it. Where these frames differ from §13.5's examples, these stand.
+space and a question mark, as the math corpus writes its questions; a
+comma is joined to the word before it, as the games write theirs. (The
+model's reader makes each mark a word of its own either way,
+`util.parse`.) An answer is one word, except in category 27. Where a
+frame is of the past, the images of what it tells come before it as
+entries with no text. Where these frames differ from §13.5's examples,
+these stand.
 
 | # | Statements | Questions and their answers |
 |---|---|---|
-| 1 | `{a}.` with nothing felt; an image of a with no text | none |
+| 1 | `{a}.` with no image; an image of a with no text | none |
 | 2 | `this is {a}.` `that is {a}.` | `what is this ?` {a} |
 | 3 | `{a} is here.` `{a} is not here.` | `is {a} here ?` yes, no. `what is here ?` {a} |
 | 4 | `{a} is {k}.` `{a} is not {k}.` `{a} is {aK}.` `the evens are two, four, six and eight.` `the odds are one, three, five, seven and nine.` | `is {a} {k} ?` yes, no. `what is {a} ?` {k} |
@@ -1231,22 +1275,25 @@ it. Where these frames differ from §13.5's examples, these stand.
 | 13 | `{a} moved slowly.` `{a} moved quickly.` `{a} moved up.` `{a} moved down.` `{a} moved to the left.` `{a} moved to the right.` | `which moved slowly, {a} or {b} ?` {a}. `did {a} move up ?` yes, no |
 | 14 | `{a} is above {b}.` `{b} is below {a}.` `{a} is to the left of {b}.` `{b} is to the right of {a}.` `{a} is on top of {b}.` `{b} is under {a}.` `{a} is next to {b}.` `{a} is near {b}.` `{a} is far from {b}.` | `what is above {b} ?` {a}. `what is {a} above ?` {b}. `is {a} above {b} ?` yes, no; and the same three for each relation, by the same pattern |
 | 15 | `{a} is between {b} and {c}.` | `what is between {b} and {c} ?` {a} |
-| 16 | `{a} walked toward {b}.` `{a} ran toward {b}.` `{a} walked away from {b}.` `{a} ran away from {b}.` | `what did {a} walk toward ?` {b}. `what ran toward {b} ?` {a} |
+| 16 | `{a} is moving toward {b}.` `{a} moved toward {b} slowly.` `{a} moved toward {b} quickly.` `{a} moved away from {b}.` `{a} is moving toward {b} from the left.`, and the same `from the right.`, `from above.` and `from below.` | `what did {a} move toward ?` {b}. `what moved toward {b} quickly ?` {a} |
 | 17 | `{a} was above {b}.` `{a} is above {b}.` `{a} moved.` `{a} will move.` | `what was above {b} ?` {a}. `is {a} above {b} ?` yes, no |
 | 18 | `{a} is moving.` `{a} was moving.` `{a} has moved.` `{a} has stopped.` | `is {a} moving ?` yes, no. `has {a} moved ?` yes, no |
 | 19 | `{a} moved, then {b} moved.` `{a} moved before {b} moved.` `{b} moved after {a} moved.` `before {b} moved, {a} stopped.` | `which moved first, {a} or {b} ?` {a} |
-| 20 | `{a} walked toward {b}.` then `it ran toward {c}.`, and the same with the run first | `which was faster, the walk or the run ?` run. `which was slower, the walk or the run ?` walk |
+| 20 | `{a} moved toward {b} slowly.` then `it moved toward {c} quickly.`, and the same with the quick move first | `which move was faster, the first or the second ?` second, first. `which move was slower, the first or the second ?` first, second |
 | 21 | `{a} moved.` then `it stopped.` `{a} is here.` then `it is {k}.` `the {Ks} moved.` then `they stopped.` | `what stopped ?` {a}. `what is {k} ?` {a} |
 | 22 | `the {K} that is above {b} moved.` `the {K} that moved is {a}.` `the {K} that is next to {b} is {a}.` | `what moved ?` {a}. `which {K} is above {b} ?` {a} |
 | 23 | `{a} moved and {b} stopped.` `{a} moved but {b} did not.` `{a} moved and {b} moved.` | `did {b} move ?` yes, no |
-| 24 | `if {a} is above {b}, {b} is below {a}.` `if {a} moves, {b} moves.` | none in train. In the inference split, after `{a} moved.` with nothing felt: `did {b} move ?` yes |
+| 24 | `if {a} is above {b}, {b} is below {a}.` `if {a} moves, {b} moves.` `if {a} moves, {b} stays still.` | none in train. In the inference split, after a rule of motion and `{a} moved.`, all with no image: `did {b} move ?` yes, no. With `{a} moved.` left out: the same question, and nothing follows |
 | 25 | `every {K} is above {b}.` `every {K} is below {b}.` `no {K} is next to {b}.` | `is {a} above {b} ?` yes, no: in train, of a thing in the image; in the inference split, said only, of a digit whose kind category 4 states |
-| 26 | `{a} plus one is {b}.` `{b} minus one is {a}.` `{a} plus {b} is {c}.` `{c} minus {b} is {a}.`, sums to nine, with nothing felt | `what is {a} plus {b} ?` {c}. `what is {c} minus {b} ?` {a} |
+| 26 | `{a} plus one is {b}.` `{b} minus one is {a}.` `{a} plus {b} is {c}.` `{c} minus {b} is {a}.`, sums to nine, with no image | `what is {a} plus {b} ?` {c}. `what is {c} minus {b} ?` {a} |
+| 27 | an image of one to nine things, with no text | no question is written. The answer is the counting words, one for each thing, in order: `one two three` for three things |
 
 What a frame's words require of its images, where the word alone does
 not say it.
 
 - *`or`:* exactly one of the two is present.
+- *`{a} is not here.`, and a `no` to `is {a} here ?`:* an image is seen,
+  so the scene is a list, which may be empty; it is never `null`.
 - *The determiners of 12:* at least two of the kind are present, and
   something of the other kind moves where the sentence denies. `{aK}
   moved`: exactly one of them moved. `the {Ks}`, `every`, `all the`: all
@@ -1258,20 +1305,35 @@ not say it.
   at the end and not before. *`left`:* adjacent, and then a recedes.
 - *`on top of`, `under`:* above or below, and adjacent. *`next to`:*
   adjacent in one row.
+- *`is moving toward`:* its image is inside an approach. *`moved
+  toward`, `moved away from`:* the approach or the recession is complete
+  and a is at rest now. *From a side:* §14.2.
+- *`what moved toward {b} quickly ?`:* something else moved toward b
+  slowly in the same document.
 - *`was`:* true at an earlier image and not now. *`will move`:* the
   entries after it show the event. *`is moving`:* its image is inside
   an event. *`has moved`, `has stopped`:* an event of a, and a at rest
   now. *`was moving`:* inside an event at an earlier image, at rest now.
 - *The frames of 20:* the two events are one thing's, one of step 1 and
-  one of step 2, each toward a thing that does not move.
+  one of step 2, each toward a thing that does not move. Which comes
+  first is drawn, with the question and the order of telling fixed, so
+  that the answer follows from what was seen and not from the wording.
 - *A relative clause of 22:* at least two of the kind are present and
   exactly one satisfies the clause.
 - *`if {a} moves, {b} moves`:* its document's images show at least
   three steps; a is displaced in at least two of them, and b is
   displaced in every step in which a is.
+- *`if {a} moves, {b} stays still`:* at least three steps; a is
+  displaced in at least two of them; b is displaced in none of those and
+  in at least one other.
+- *Category 27:* the things are of any values, at any places, and
+  nothing else is in the image. The counting words are the cast's, "one"
+  to "nine": the words that name the values, here in a second sense
+  (the question of it is in "Completing the item", below).
 
 Things the sentence does not name may be in an image, up to two of
-them, except where they would change whether a statement is true.
+them, except where they would change whether a statement is true, and
+except in category 27.
 
 ### 14.5 The splits
 
@@ -1283,31 +1345,59 @@ For each category, as far as its frames allow:
 | `validation`, `test` | 20 each | the constructions and casts of train, with other images |
 | `generalization` | 20 | a cast held out of this category: never in its train, validation or test |
 | `witness` | 20 | one statement that is false of its image, marked so; only in categories with images |
-| `inference` | 20 | said only, with nothing felt: the answer is not among the statements and follows from them |
+| `inference` | 20 | said only, with no image: the answer is not among the statements and follows from them |
+| `contrast` | 20 sets of 12 | category 14 only: the first milestone's sets, below |
 
 - *Held out of a category with two things:* the four pairs of
   `math_chain_corpus.HELD_OUT_PAIRS`, (2, 7), (4, 8), (7, 3) and (9, 6),
   in either order. *With one thing:* each pair of frame and digit for
   which the frame's index and the digit sum to a multiple of 4. *Of
-  category 26:* the sums 2 and 7, 3 and 5, 6 and 2, 1 and 4. Every digit
-  and every frame is in train.
+  category 26:* the sums 2 and 7, 3 and 5, 6 and 2, 1 and 4. *Of
+  category 27:* each set of values whose sum is a multiple of 4. Every
+  digit, every frame and every count is in train.
+- *Reserved for each value* (suggestion 3): one step of its band,
+  $25d + 1$ where $d$ is odd and $25d - 1$ where it is even, and eight
+  places of the plane, those with $x + y + d$ a multiple of 8. In no
+  image of any category does a thing of the value $d$ have its reserved
+  step at any place, or lie on any of its reserved places, with one
+  exception: category 2's generalization split, which is this and not
+  the pairs above. Each of its documents is one image of one thing at
+  its reserved step on one of its reserved places, asked `what is
+  this ?`. Category 1's images with no text are the object alone, before
+  its word: by this rule they show the six other steps at the other
+  fifty-six places.
 - *Kinds are never held out.* Category 4's train states the kind of
   all nine. Its generalization split asks of a digit in a frame it was
   not stated in.
+- *Contrast sets* (suggestion 1, "Three is above four"). A set takes two
+  values a and b, a column, and two rows of it. Its two scenes hold a
+  above b at those places, and b above a at the same places. Each scene
+  is asked `is {a} above {b} ?`, `is {b} above {a} ?` and `is {b} below
+  {a} ?`, each a document of one entry, the question with its image.
+  The same six are made again with both things moved by one offset.
+  Steps are drawn afresh for every document. The twelve share a `set`
+  key. Ten sets are of pairs that train holds and ten of the held-out
+  pairs.
 - *Inference, by category:* 6, 11 and 14, the other way round and a
-  chain of two; 19, a chain through time; 24, the rule applied; 25,
-  through the kind; the others have none.
+  chain of two; 19, a chain through time; 24, the rule applied, eight
+  that follow as yes and eight as no, and four with the premise left
+  out, marked `open`, whose answer is the empty text; 25, through the
+  kind; the others have none.
 - Answers of yes and no are each between 40 and 60 in a hundred, in
-  every split of a category that has them.
+  every split of a category that has them; so are `first` and `second`
+  in category 20.
 
 ### 14.6 What the test checks
 
-`test/test_felt_corpus.py` reads the frozen files and never generates.
+`test/test_felt_corpus.py` reads the frozen files, never generates, and
+imports no module of the model.
 
 1. Every file's hash and counts are the manifest's.
-2. Every scene: places in range, z = 0, steps within 3 of a digit's 25,
-   one thing for each digit, every thing's places touching, no place
-   used twice.
+2. Every scene that is not `null`: places in range, z = 0, steps within
+   3 of a value's 25d, one thing for each value, every thing's places
+   touching, no place used twice. No thing has its value's reserved step
+   or lies on one of its reserved places outside category 2's
+   generalization split, and every thing in that split has both.
 3. `verify`: every row is one its recipe produces, and every `meaning`
    record, evaluated again on the row's images, has the truth recorded.
    Outside `witness` every statement is true. Every answer is the
@@ -1319,70 +1409,86 @@ For each category, as far as its frames allow:
    subject and `are` with several; `an` before "even" and "odd" and `a`
    elsewhere; no doubled word; one terminal mark.
 6. The held-out casts are in no train, validation, test or witness row
-   of their category; every digit and every frame is in train.
-7. An `inference` row has no image, and its question's meaning is not
-   the meaning of any of its statements.
-8. The balance of yes and no.
-9. `load` returns the documents with no model built.
+   of their category; every digit, every frame and every count is in
+   train.
+7. A scene is `null` in every entry of an `inference` row, in frame 1's
+   word alone and in category 26, and nowhere else. An `inference`
+   row's question has not the meaning of any of its statements. An
+   `open` row's answer is empty, and its record says that neither yes
+   nor no follows.
+8. The balance of yes and no, and of `first` and `second`.
+9. Every contrast set has its twelve rows. Its two scenes differ only by
+   the exchange of the two things, and its second six only by one
+   offset. Exchanging the things turns every answer, and `is {b} below
+   {a} ?` has the answer of `is {a} above {b} ?`.
+10. In category 27 every answer is the first n counting words, for the
+    n things of its image.
+11. `load` returns the documents with no model built.
 
 ### 14.7 What it does not touch
 
 No source of the model, no existing file under `data/`, and not
-`data/training-corpus.json`. Nothing reads the new files yet: the
-loader of `bin/data.py` and the scene beside a sentence (§3) are the
-model's part, after item 1.7.
+`data/training-corpus.json`. Nothing reads the new files yet: a loader
+for them and the scene beside a sentence (§3) are the model's part of
+this item.
 
-### 14.8 Codex text
+### 14.8 Text for the implementer
 
-Written 2026-11-18. It can be taken beside item 1.8's rounds: it shares
-no file with them.
+Written 2026-11-18 for Codex; amended 2026-11-23 for an Opus implementer
+that Claude starts and reviews (H.1). It shares no file with item 1.5.
 
 ~~~
 Item 1.6, the corpus only. Read §12 to §14 of
-doc/plans/2026-11-18-item1-6-felt-math-world.md; §14 is what you build.
-It shares no file with item 1.8, so take it when it suits your round.
-It changes no source of the model. If you find that it must, stop and
-say which file and why.
+doc/plans/2026-11-18-item1-6-felt-math-world.md, and the sections added
+after §14; §14 is what you build, and where it differs from an earlier
+section, §14 stands. It changes no source of the model and no existing
+file under data/. If you find that it must, stop and say which file and
+why.
 
-1. bin/felt_world_corpus.py, in the manner of bin/game_corpus.py: the
-   world of §14.1, the predicates of §14.2, the expansion of recipes
-   into documents, verify, freeze and load(category, split). It holds
-   no word of any language: a word reaches a sentence only from a
-   recipe. A document is made by drawing a world, and for the frames of
-   motion a short script of events, until every statement's meaning is
-   true of the images; verify evaluates the same predicates on the
-   frozen row.
-2. data/felt/recipes/: cast.json and one recipe for each of the 26
-   categories of §13.5, with the frames of §14.4 exactly as written
-   there and the conditions under its table. Add no frame and change no
-   wording. If a frame cannot be made valid, or its English looks wrong
-   to you, leave it out and list it in the return; Claude and Alec read
-   the frames before the files are final.
+1. bin/felt_world_corpus.py, in the manner of bin/game_corpus.py
+   (recipes expanded by a seeded random.Random; a manifest of hashes),
+   with load(category, split) as bin/image_corpus.py has it: the world
+   of §14.1, the predicates of §14.2, the expansion of recipes into
+   documents, verify, freeze and load. It holds no word of any
+   language: a word reaches a sentence only from a recipe. A document
+   is made by drawing a world, and for the frames of motion a short
+   script of events, until every statement's meaning is true of the
+   images; verify evaluates the same predicates on the frozen row.
+2. data/felt/recipes/: cast.json and one recipe for each of the 27
+   categories (§13.5's 26, and counting), with the frames of §14.4
+   exactly as written there and the conditions under its table. Add no
+   frame and change no wording. If a frame cannot be made valid, or its
+   English looks wrong to you, leave it out and list it in the return;
+   Claude and Alec read the frames before the files are final.
 3. Freeze with
    .venv/bin/python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt
-   into the files of §14.3, with the splits and the held-out casts of
-   §14.5. Where a category cannot reach a split's count with distinct
-   documents, freeze what it gives and report the count; do not repeat
-   a document and do not loosen a condition.
-4. test/test_felt_corpus.py, the nine checks of §14.6. Run it with
+   into the files of §14.3, with the splits, the held-out casts, the
+   reserved steps and places and the contrast sets of §14.5. Where a
+   category cannot reach a split's count with distinct documents,
+   freeze what it gives and report the count; do not repeat a document
+   and do not loosen a condition. The seed is the corpus's identity; it
+   is not chosen so that a check passes.
+4. test/test_felt_corpus.py, the eleven checks of §14.6. Run it with
    BASICMODEL_DEVICE=cpu PYTHONPATH=bin .venv/bin/python -m pytest test/test_felt_corpus.py
    and run test/test_game_corpus.py and test/test_math_corpus.py, which
-   must be unchanged. No sweep, nothing under RUN_SLOW, and no stopping
-   gate: no source of the model changes.
+   must pass unchanged. No sweep, nothing under RUN_SLOW, no skip, no
+   expected failure, and no stopping gate: no source of the model
+   changes.
 5. Touch nothing of §14.7. Leave the docs; Claude writes
-   doc/Training.md when you return.
-6. Return as §15 of the same document: the files and their counts by
-   category and split; every frame left out and why; every category
-   that fell short of a count; the layout of a recipe as you made it;
-   ten documents printed whole, one each from categories 3, 6, 12, 14,
-   16, 18, 20, 22, 24 and 25, each with its images drawn as small grids
-   of digits; whether any existing corpus under data/ has a comma, and
-   how its words are split there; and anything in §14 that was unclear
-   or that you had to decide. A question of design goes to Alec through Claude; a defect of
-   your own test's setup you repair without stopping.
+   doc/Training.md and doc/Testing.md when you return.
+6. Return as §15, at the end of the same document: the files and their
+   counts by category and split; every frame left out and why; every
+   category that fell short of a count; the layout of a recipe as you
+   made it; twelve documents printed whole, one each from categories 3,
+   6, 12, 14, 16, 18, 20, 22, 24, 25 and 27 and the first four rows of
+   one contrast set, each with its images drawn as small grids of
+   digits; and anything in §14 that was unclear or that you had to
+   decide. You do not stop on a question of design: propose, build, and
+   mark what you decided, and Claude takes it to Alec. A defect of your
+   own test's setup you repair without stopping.
 
-Commit locally as Alec has authorized; never push main, and never
-force-push. Receipts stay local and are not linked.
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed. Receipts stay local and are not linked.
 ~~~
 
 
@@ -1466,7 +1572,8 @@ and §12.5's "walked toward 2" and "ran toward 3" likewise. `touches`,
 are and were. The cast, the images and the events are unchanged; only the
 words of the frames are. *To settle when the generator is next run:* whether
 its frozen examples hold frames 16 and 20 as first written, and if so they
-are generated again.
+are generated again. *Settled 2026-11-23:* nothing had been frozen; §14.4 now
+holds the restated frames, with the side given for each of the four sides.
 
 ## Suggestions for the item, from `suggestions.txt` (GitHub main, 6eebcc29ff, 2026-11-21): relevant, and taken in
 
@@ -1568,6 +1675,8 @@ Alec, while item 1.7's looks were being taught to read in order: "make sure to i
 ## A common perceptual space (Alec, 2026-11-22, a possibility)
 
 "By the way, .what and .where might be muxed together at the basic percept just as different modalities (such as words and numbers) mux together. That would cause all percepts to live in a common (3d) perceptual space, even if some were of reduced rank (e.g., the location of smell might be considered as a point at the nose)." Decided the same day for the `.where`: "NB: we are treating numbers as felt things. I would like to see .where as a 3D space for all models, it simplifies things." So the numbers of this item are felt things, and they and the words have their places in one space of three dimensions (sigma-pi §19.132; built in item 1.7, round 6d, twelfth pass, f). Whether `.what` is muxed as a modality is stays a possibility.
+
+*Corrected 2026-11-23 (Claude, on reading the source at `ad8fafea92`):* the space of three dimensions is decided and is not built. The twelfth pass's return says "Item f (three axes) is not started" (sigma-pi §23.6.18); `WhereRegistry.axes` is one axis, and `doc/FutureWork.md` has "The grid in three dimensions (decided, not built)". See "Completing the item", C.2 and question 1.
 
 ## What is felt and what a number is (Alec, 2026-11-22)
 
