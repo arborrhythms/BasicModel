@@ -1,6 +1,55 @@
 # Item 1.5 integration handoff
 
-## MTM ownership and the native forecast
+## Current local checkpoint
+
+Item 1.5 is open. Training code is at `d79488b88c10786e73c8e8c5d22d5fe9184dd57a` on local main. The subsequent test and design checkpoint is `29c378be9f0534a522a3210e45c02595fe000306`. The base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, including reviewed 1.7 commit `d38029113103ce5e9cf1223eaa55c9181010d649`. Alec owns integration and push.
+
+| Four paced pages, seed 1505 | 1.7 base | Current |
+| --- | ---: | ---: |
+| CPU steady training sentences/s | 6.99 | 10.42 |
+| MPS steady training sentences/s | 0.786 | 1.67 |
+| CPU first three updates, seconds | 0.938, 0.634, 0.576 | 0.785, 0.404, 0.406 |
+| MPS first three updates, seconds | 3.352, 4.464, 4.932 | 2.159, 2.538, 2.857 |
+| CPU seconds to restored 122/122 in both modes | 97.89 | 40.40 |
+| In-sentence explicit host calls, CPU / MPS | 23,609 / 48,286 | 3,610 / 7,310 |
+| Repeated native percept addresses in the audited update | 3,696 | 402 |
+
+The steady rates include backward and optimizer in nine eager updates after the three warm-ups. In a separately instrumented step the two candidate walks together spent 180 ms on looks and 65 ms on path scoring on CPU, or 998 ms and 519 ms on MPS. Receipts are under `output/item1-5/located-close-*`. Strict Inductor on CPU and MPS reproduced both the located-parts lookup and the witnessed-overlap reconstruction. Strict capture of the ordinary sentence still stops in `PartSpace._embed_ladder_word_major` where Python consumes learned span endpoints for omission, admission and reporting.
+
+Two independent fresh starts restored to 122/122 in both modes in 40.40 s (seed 1505) and 26.56 s (seed 1539668869). On seed 1505, four pages with three extra explorations sustained 6.11 sentences/s and reached the same endpoint in 33.36 s. Eight distinct pages with one extra exploration sustained 12.87 sentences/s. At 47.47 s their restored result was 121/122 sampled and 122/122 evaluated. Both larger schedules evaluated sixteen paths per update.
+
+Each of two successive CPU update comparisons matched all 597 tensors, including 26 live gradients. Across the scoped suites there were 87 passes with 5 skips for the lookup, ladder, performance and reconstruction changes, 56 passes for closing and meaning, and 20 passes for the reading-round group. The optional fragment leaf-count assertion also failed on its unchanged predecessor. Two unseeded sampled readers missed the held-out gate at 119 and 120 of 122, both with 122 in evaluation. A fresh verbal XOR run passed both 4/4 boundaries after another fresh start failed its reading prerequisite. Numeric XOR class, numeric convergence and raised-class denotation passed. All existing assertions stand.
+
+Ordinary input now obtains characters and learned runs directly from observed bytes at every offset. The legacy hidden-part, taught nested and surrogate paths still consume host structures. The inverse can assemble a predicted percept with located children by compatible overlap and strict extension. Ordinary forms without located children still use the stored spelling projection. With the underlying byte occurrences available, the native nomination code can propose `shop` from `sho | pping` when attention supplies the four-byte window. Autonomous selection of that window and a frequency-based non-overlapping cover are proposed in the [device sentence design](2026-11-24-item1-5-device-sentence.md).
+
+Claude's closest interfaces are the two Pi lanes and native occurrence geometry in `BasicPercepts` and `PerceptField`, observed part counts and spans in `Spaces.PartSpace` and `WordIdentity`, narrowed reads in `SentenceLooks`, `FragmentRead` and `LookForecast`, and the inverse projection in `FieldReverse`. For the unfinished memory transfer the shared interfaces are `Memory.MediumTermMemory`, `Understanding`, `PartClosing` and `ClauseJournal`. The ordinary grammatical close still relies on the Python reading index, and the per-stream historical root index is open.
+
+## Measurements before the input ladder change
+
+Item 1.5 is open. The measured training commit is `efcb9c1dfe8d79b122c970e00db2da33721c4986`. The base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains the reviewed `d38029113103ce5e9cf1223eaa55c9181010d649`. Integration and push belong to Alec.
+
+| Four pages, batch four, float32, seed 1505 | 1.7 base | Measured checkpoint |
+| --- | ---: | ---: |
+| CPU steady sentences/s | 6.99 | 10.51 |
+| MPS steady sentences/s | 0.786 | 1.54 |
+| CPU warm-up updates, seconds | 0.938, 0.634, 0.576 | 0.779, 0.400, 0.401 |
+| MPS warm-up updates, seconds | 3.352, 4.464, 4.932 | 2.402, 2.829, 3.251 |
+| CPU seconds to a restored 122/122 in both reading modes | 97.89 | 40.68 |
+| CPU explicit host calls in the audited sentence | 23,609 | 3,634 |
+| MPS explicit host calls in the audited sentence | 48,286 | 7,368 |
+| Repeated native percept addresses | 3,696 | 402 |
+
+These are eager optimizer updates including backward. Nine steady updates follow three warm-ups. The MPS run overlapped a CPU job. The CPU path audit measured 58 ms for greedy looks and 22 ms for scoring, and 89 ms and 22 ms for the alternative. The corresponding MPS measurements were 413/201 and 448/219 ms. The strict whole-sentence entry fails in the input ladder when Python consumes learned byte-span endpoints for `WordIdentity`. Compilation of the overlapping spelling matcher is separately tested.
+
+Two fresh readers restored to 122/122 in sampled and evaluation modes. Five learning tests passed in 304.55 seconds, including verbal XOR at 4/4 in both directions, numeric XOR convergence and class, and raised-class denotation. Compared to the checkpoint before the device spelling scan, a real CPU update matched all 597 tensors, including 26 live gradients. Receipts are under `output/item1-5/device-spans-*`. The benchmark and comparison commands appear below.
+
+Four pages with three additional explorations sustained 5.86 sentences/s and reached restored 122/122 in both modes in 33.22 seconds. Eight independent pages with one additional exploration sustained 12.94 sentences/s and reached 121/122 sampled and 122/122 evaluated in 51.05 seconds. These schedules each evaluate sixteen paths per update. Only the four-page measurement reached the same exact held-out endpoint in this seeded comparison.
+
+The overlapping matcher checks every byte offset for each learned spelling. An attention aperture includes occurrences within its endpoints and wholes enclosing both endpoints. A partial overlap alone does not qualify. The reverse currently expands a predicted row from its known spelling, stored run, or concatenated parts, then pastes the decoded bytes using predicted locations. Changing the chooser's fixation targets or the reconstruction objective is unnecessary for the input lookup optimization.
+
+Other open work includes replacing runtime `ReadingIndex` and event replay with the selected native head, completing ownership through STM → MTM → LTM and addressing each stream’s retained root by its own time. The closest interfaces for 1.6 are `BasicPercepts`, `PerceptField`, `SentenceLooks`, `LookForecast`, `FragmentRead`, `WordIdentity`, `WordSurfaces`, `Memory`, `PartClosing`, `Understanding` and `ClauseJournal`.
+
+## Earlier MTM ownership and native forecast checkpoint
 
 The published base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`. Its reviewed 1.7 ancestor is `d38029113103ce5e9cf1223eaa55c9181010d649`. Local training commit `80150fc8da226099cf59d897b8b3fd805e1ea2de` implements the first STM → MTM → LTM transfer changes on main.
 
