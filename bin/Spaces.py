@@ -15284,6 +15284,11 @@ class ConceptualSpace(Space):
         basic = self.basic_percepts
         rows = [row for row, promoted in enumerate(basic.promoted[:len(basic.index)].tolist()) if promoted]
         model = self._model
+        # Synthetic or externally supplied banks own their own geometry.
+        if getattr(model, '_staged_concepts_in', None) is percepts[3]:
+            parts = getattr(getattr(model, 'wholeSpace', None), '_staged_part_extents', None)
+            if parts is not None:
+                percepts = (*percepts[:4], torch.cat((percepts[4], parts.to(percepts[4])), dim=1))
         from Occurrence import event_positions
         positions = event_positions(self, extents.shape[:2], device=extents.device)
         when = torch.stack((positions, positions + 1), -1)
@@ -19596,7 +19601,7 @@ class WholeSpace(Space):
         from Meronomy import pin_word_spans
         return pin_word_spans(byte_values, fine[0].tolist())
 
-    def _device_unit_tiling(self, idx, *, padded):
+    def _device_unit_tiling(self, idx, *, padded, pin=True):
         """Apply the learned begins, ends and atom predicates at every byte."""
         from Meronomy import pin_word_table, span_table
         props = self.subspace.what.primitive_properties.coefficients().detach().t() > .5
@@ -19621,9 +19626,9 @@ class WholeSpace(Space):
         cut = cut.logical_or(atomic[:, 1:]).logical_or(atomic[:, :-1]).logical_or(live[:, 1:] != live[:, :-1])
         edge = torch.ones_like(live[:, :1])
         spans = span_table(live & torch.cat((edge, cut), 1), live & torch.cat((cut, edge), 1), padded=True)
-        return pin_word_table(idx, spans, padded=padded)
+        return pin_word_table(idx, spans, padded=padded) if pin else spans
 
-    def _unit_tiling_from_predicates(self, idx):
+    def _unit_tiling_from_predicates(self, idx, *, pin=True):
         """The unit tiling and the slab; the cold start (no column on) is
         the atomic tiling, every byte a whole."""
         idx_host = idx.detach().to("cpu")
@@ -19635,7 +19640,8 @@ class WholeSpace(Space):
         spans = _predicate_unit_spans(slab, *(mask[columns] for mask in
             (begins_on, ends_on, atom_on, discard_on)))
         from Meronomy import pin_word_table
-        return pin_word_table(idx_host,spans).to(idx.device), (slab, columns)
+        fine = pin_word_table(idx_host, spans) if pin else spans
+        return fine.to(idx.device), (slab, columns)
 
     def _observe_candidate_tilings(self, byte_idx, slab, current):
         """Accrue, per candidate boundary type present in the batch, the
@@ -20217,6 +20223,7 @@ class WholeSpace(Space):
         split into a letter-run + a digit-run (``abc123`` -> two spans);
         (2) a multi-char punctuation run is ONE span, no longer one span
         per punct char (``...`` -> one span)."""
+        object.__setattr__(self, '_staged_part_extents', None)
         if IS_concepts is None:
             object.__setattr__(self, "_staged_property_signatures", None)
             object.__setattr__(self, "_staged_unit_spans", None)
@@ -20230,15 +20237,19 @@ class WholeSpace(Space):
         type_ids = _analysis_type_lut(self, idx.device)[idx]
         single = ((type_ids == _TYPE_DIGIT)
                   if getattr(self, "digit_wholes", False) else None)
+        from Meronomy import pin_word_table
         if torch.is_tensor(getattr(self, "begins_weight", None)):
             if float(getattr(self, "boundary_learning_rate", 0.) or 0.) > 0.:
-                # Candidate teaching still consumes the full observed-column slab.
-                fine, slab = self._unit_tiling_from_predicates(idx)
+                parts, slab = self._unit_tiling_from_predicates(idx, pin=False)
+                fine = pin_word_table(idx, parts)
                 self._observe_candidate_tilings(idx.cpu(), slab, fine.cpu())
             else:
-                fine = self._device_unit_tiling(idx, padded=padded)
+                parts = self._device_unit_tiling(idx, padded=padded, pin=False)
+                fine = pin_word_table(idx, parts, padded=padded)
+            # The reading has a single tiling. Its perceptual field can also
+            # see a learned part whose extent lies inside a pinned word.
+            object.__setattr__(self, '_staged_part_extents', parts)
         else:
-            from Meronomy import pin_word_table
             fine = pin_word_table(idx, _type_run_spans(type_ids, singleton=single, padded=True), padded=padded)
         object.__setattr__(self, "_staged_unit_spans", fine)
         space_only = torch.where(type_ids == _TYPE_SPACE, _TYPE_SPACE, torch.full_like(type_ids, _TYPE_LETTER))

@@ -237,3 +237,29 @@ def test_63_what_a_look_reads_is_its_table(tmp_path, monkeypatch):
         assert len(set(perception.index[0].tolist())) == capacity >= len(chosen)
     finally:
         model.End()
+
+
+def test_learned_subword_extents_reach_the_open_bank_alongside_the_word(tmp_path, monkeypatch):
+    from test_item17_looks import held_banks
+    from test_item18_expect import lesson, read
+    model = lesson(tmp_path, monkeypatch)
+    try:
+        banks = held_banks(monkeypatch)
+        ws = model.wholeSpace
+        with torch.no_grad():
+            ws.begins_weight.fill_(-8.)
+            ws.ends_weight.fill_(-8.)
+            ws.atom_level.fill_(-8.)
+            ws.begins_weight[ord('l')] = 8.
+        for text, offset in (('hello', 0), (' hello', 1)):
+            read(model, text)
+            bank = banks[-1]
+            intervals = [tuple(pair) for pair in bank.span[0].tolist()]
+            for start, stop in ((0, 2), (2, 5), (0, 5)):
+                span = (offset + start, offset + stop)
+                assert intervals.count(span) == 1
+                seat = intervals.index(span)
+                assert bank.activity[0, seat].eq(1).all()
+                assert bank.where[0, bank.token[0, seat]].tolist() == [offset, offset + 5]
+    finally:
+        model.End()

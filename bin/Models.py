@@ -13802,6 +13802,7 @@ class BasicModel(BaseModel):
             _ss._staged_analysis_spans_full = None
             _ss._staged_analysis_kinds_full = None
             _ss._staged_unit_spans = None
+            _ss._staged_part_extents = None
             _ss._staged_tiling_ladder = None
             _ss._staged_unit_parent = None
             _ss._staged_word_primitive_counts = None
@@ -21711,7 +21712,10 @@ class BasicModel(BaseModel):
             if growth:
                 GrowthTrial.commit(growth, selected)
             observations.clear()
-            # The sentence's bank closes with it.
+            # Later reads of a retained bank must use current where/when entries.
+            from BasicPercepts import BasicPercepts
+            for bank in self._sentence_banks.values():
+                BasicPercepts.release(bank)
             self._sentence_banks = {}
             self._sentence_bank = None
             self._open_sentence_slot = None

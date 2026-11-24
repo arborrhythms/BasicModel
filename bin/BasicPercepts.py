@@ -1265,6 +1265,11 @@ class BasicPercepts(nn.Module):
             object.__setattr__(bank, 'read_basis', basis)
         return bank
 
+    @staticmethod
+    def release(bank):
+        """Release the prepared Pi reads when their opening ends."""
+        object.__setattr__(bank, 'read_basis', None)
+
     def read_bank(self, bank, activity=None, look=None):
         """The basic percepts of a bank's readings over a look's table
         (``look``, or the :func:`attended` ones, chosen by ``activity``'s
