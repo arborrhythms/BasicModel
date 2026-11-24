@@ -82,6 +82,15 @@ def bit_stream(atom, dimension):
     return tuple(map(int, np.random.default_rng(seed).permutation(dimension)))
 
 
+def pack_coordinates(codes, word_bits):
+    """Pack each row's occupied coordinates in little-endian order."""
+    width = codes.shape[-1]
+    bits = torch.nn.functional.pad(codes.detach().eq(1), (0, -width % word_bits))
+    groups = bits.reshape(*codes.shape[:-1], (width + word_bits - 1) // word_bits, word_bits)
+    shifts = torch.arange(word_bits, device=codes.device, dtype=torch.long)
+    return (groups.long() << shifts).sum(-1)
+
+
 def base_atoms(raw):
     """A form's characters, each once, in order; the space is one of them."""
     return tuple(dict.fromkeys(('part', ch) for ch in text_of(raw)))
@@ -456,10 +465,7 @@ class WordIdentity(nn.Module):
         """Codes of zeros and ones, ``[n, width + property_width]``, as rows
         of 64-bit words, ``[n, limbs]``: coordinate ``i`` is bit ``i % 64``
         of word ``i // 64``."""
-        bits = codes.detach().reshape(-1, self.total).eq(1)
-        bits = torch.nn.functional.pad(bits, (0, 64 * self.limbs - self.total))
-        shifts = torch.arange(64, dtype=torch.long, device=codes.device)
-        return (bits.reshape(len(bits), self.limbs, 64).long() << shifts).sum(-1)
+        return pack_coordinates(codes.reshape(-1, self.total), 64)
 
     def _unpack(self, packed):
         """Rows of 64-bit words as codes of zeros and ones (``long``)."""
@@ -942,16 +948,28 @@ class WordIdentity(nn.Module):
         """The row of the stored form whose code (:meth:`code`) this is. A
         parts half alone names a form only where no other stored form has
         that parts half."""
-        if self.property_width and form.shape[-1] >= self.width + self.property_width:
-            raw = self.forms.get(self.key(form[..., :self.width + self.property_width]))
+        full = self.property_width > 0 and form.shape[-1] >= self.total
+        return self._row_for_key(self.key(form[..., :self.total if full else self.width]), full)
+
+    def _row_for_key(self, key, full):
+        if full:
+            raw = self.forms.get(key)
         else:
-            held = self.by_parts.get(self.key(form[..., :self.width]), ())
+            held = self.by_parts.get(key, ())
             raw = next(iter(held)) if len(held) == 1 else None
         return None if raw is None else self.word_rows[raw]
 
     def read(self, form):
         row = self.row_for_form(form)
         return None if row is None else self.store.bytes_for(row)
+
+    def read_forms(self, forms):
+        """Translate a bank of native codes at one byte-output boundary."""
+        full = self.property_width > 0 and forms.shape[-1] >= self.total
+        width = self.total if full else self.width
+        keys = pack_coordinates(forms[:, :width], 8).to(torch.uint8).cpu().numpy()
+        rows = (self._row_for_key(key.tobytes(), full) for key in keys)
+        return [None if row is None else self.store.bytes_for(row) for row in rows]
 
     def spelling(self, rows):
         """The stored form whose code is read from these rows: the fold of

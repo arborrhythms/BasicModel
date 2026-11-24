@@ -437,6 +437,17 @@ def main():
             if args.dispatch_census:
                 from torch.utils._python_dispatch import TorchDispatchMode
                 counters = {'update': Counter(), 'sentence': Counter()}
+                waits, wait_calls = Counter(), Counter()
+                sentence_seconds = 0.
+
+                def measured_sentence(*a, **kw):
+                    nonlocal sentence_seconds
+                    start = time.perf_counter()
+                    try:
+                        return sentence(*a, **kw)
+                    finally:
+                        if not sentence_depth:
+                            sentence_seconds += time.perf_counter() - start
 
                 class DeviceReads(TorchDispatchMode):
                     def __torch_dispatch__(self, func, types, args=(), kwargs=None):
@@ -456,11 +467,24 @@ def main():
                             counters['update'][event] += 1
                             if sentence_depth:
                                 counters['sentence'][event] += 1
+                                if event.startswith(('host_result/', 'device_to_host/')):
+                                    operands = args[1:] if name == 'aten::copy_' else args
+                                    device = next((t.device.type for t in operands if torch.is_tensor(t)), 'unknown')
+                                    key = f'{device}/{event}'
+                                    start = time.perf_counter()
+                                    result = func(*args, **kwargs)
+                                    waits[key] += time.perf_counter() - start
+                                    wait_calls[key] += 1
+                                    return result
                         return func(*args, **kwargs)
 
-                with patch.object(BasicModel, '_execute_input_sentence', sentence), DeviceReads():
+                with patch.object(BasicModel, '_execute_input_sentence', measured_sentence), DeviceReads():
                     step()
                 record['dispatch_census'] = counters
+                # Includes queued device work waited for by these calls. No
+                # extra synchronization is inserted in the measured sentence.
+                record['host_dispatch_wall'] = dict(sentence_seconds=sentence_seconds,
+                    seconds_by_source=waits, calls_by_source=wait_calls)
             if args.allocations:
                 with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
                                             profile_memory=True) as memory:

@@ -84,3 +84,15 @@ def test_packed_parts_keep_high_bits_and_pad_partial_limbs():
     assert torch.equal(packed, expected)
     assert torch.equal(WordIdentity._unpack(layout, packed), values.eq(1).long())
     assert WordIdentity._pack(layout, values[:0]).shape == (0, 3)
+
+
+def test_batched_spelling_matches_scalar_inverse_with_both_code_widths():
+    import torch
+    identity, *_ = coded((b'calaba', b'cabala', b'ab', b'ba'))
+    forms = torch.stack([identity.code(word) for word in identity.words])
+    # Graded entries below one do not select the corresponding coordinates.
+    forms = torch.cat((forms, forms[:1] * .75, torch.zeros_like(forms[:1])))
+    for width in (identity.width, identity.total):
+        inputs = forms[:, :width]
+        assert identity.read_forms(inputs) == [identity.read(form) for form in inputs]
+        assert identity.read_forms(inputs[:0]) == []

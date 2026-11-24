@@ -6891,8 +6891,9 @@ class BasicModel(BaseModel):
         # owners. Reconstruct the exact form through its native definition
         # reference, while retaining the object's code for conceptual reads.
         word_ids = owner._word_definition_ids()
-        form_rows = selected.clone()
-        for b, batch in enumerate(selected.detach().cpu().tolist()):
+        selected_rows = selected.tolist()
+        form_rows = [batch.copy() for batch in selected_rows]
+        for b, batch in enumerate(selected_rows):
             for j, row in enumerate(batch):
                 if row < 0:
                     continue
@@ -6902,19 +6903,24 @@ class BasicModel(BaseModel):
                 word = symbol if symbol in word_ids else owner.word_concept_of_object(symbol)
                 word_row = None if word is None else owner._concept_row_of(word)
                 if word_row is not None:
-                    form_rows[b, j] = word_row
-        forms = owner.similarity_codebook.lookup_rows(form_rows.clamp_min(0), streams=True)
+                    form_rows[b][j] = word_row
+        forms = owner.similarity_codebook.lookup_rows(selected.new_tensor(form_rows).clamp_min(0), streams=True)
         sparse_forms = torch.where(valid[..., None], forms, torch.zeros_like(forms)).detach().clone()
         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
         weights = torch.where(valid, weights, torch.zeros_like(weights))
         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
-                     for row in batch] for batch in selected.cpu().tolist()]
+                     for row in batch] for batch in selected_rows]
         identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
         if identity is not None:
-            checks = [dict(word=raw.decode('utf8', 'surrogateescape'),
-                           error=int(identity.read(sparse_forms[b,j,:identity.width]) != raw))
-                      for b,batch in enumerate(surfaces) for j,raw in enumerate(batch) if raw]
+            addresses = [(b, j) for b, batch in enumerate(surfaces) for j, raw in enumerate(batch) if raw]
+            checks = []
+            if addresses:
+                stream, slot = selected.new_tensor(addresses).unbind(1)
+                decoded = identity.read_forms(sparse_forms[stream, slot, :identity.width])
+                for (b, j), actual in zip(addresses, decoded, strict=True):
+                    raw = surfaces[b][j]
+                    checks.append(dict(word=raw.decode('utf8', 'surrogateescape'), error=int(actual != raw)))
             self._last_rung0_identity_audit = dict(identified_words=len(checks),
                 errors=sum(item['error'] for item in checks), rows=checks)
             if self._last_rung0_identity_audit['errors']:
@@ -6929,7 +6935,7 @@ class BasicModel(BaseModel):
             from CaseSelection import stage_case_bank
             native = selected.new_tensor([[owner.concept_id_at_row(int(row)) or -1
                                             if row >= 0 else -1 for row in batch]
-                                           for batch in selected.detach().cpu().tolist()])
+                                           for batch in selected_rows])
             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
         from Generative import primed_type_families
         types = primed_type_families(owner, heat, limit=limit)
