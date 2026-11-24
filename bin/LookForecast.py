@@ -86,7 +86,7 @@ class LookForecast:
         from the readings outside its extent only."""
         live, inputs = self._outside(extent, looked)
         result = self.observations.new_zeros(*live.shape, self.width, 2)
-        if not bool(live.any()):
+        if not len(inputs):
             return result
         result[live] = self._compact(read_streams(
             self.owner, lambda: ConceptSpread.expected(self.owner, inputs), axis=0, live=live))
@@ -102,7 +102,7 @@ class LookForecast:
         its own entries alone, against what the look brought."""
         live, inputs = self._outside(extent, looked)
         error = self.observations.new_zeros(live.shape[0])
-        if not bool(live.any()):
+        if not len(inputs):
             return error
         evidence = self._located(field)
         actual = self.read(evidence, extent)[live]
@@ -120,7 +120,7 @@ class LookForecast:
         basic percepts the look brought (``perception``, the look's read)."""
         live, inputs = self._outside(extent, looked)
         error = self.observations.new_zeros(live.shape[0])
-        if perception is None or not bool(live.any()):
+        if perception is None or not len(inputs):
             return error
         held = [(i, key[1]) for i, key in enumerate(perception.keys) if key[0] == 'bp']
         if not held:
@@ -189,6 +189,14 @@ class OccurrenceCredit:
         # select a region. Channels are the basic percepts' two evidence lanes.
         with torch.no_grad():
             self.observed = rows_read(owner.basic_percepts, bank).permute(1, 2, 0, 3).flatten(2)
+
+    def fork(self):
+        # The sensory target belongs to the shared opening. Each path grades
+        # its own future requests against the fixations it actually made.
+        from copy import copy
+        other = copy(self)
+        other.terms = []
+        return other
 
     def forecast(self, request):
         """The same descending content request and native place query used to look."""

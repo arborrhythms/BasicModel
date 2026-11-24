@@ -109,3 +109,23 @@ def test_mixed_streams_read_their_own_promotions_and_compact_live_rows():
     reference_gradient, = torch.autograd.grad(reference, evidence)
     assert reference_gradient[2, 1, 0, 0] > 0
     assert torch.equal(gradient[2], reference_gradient[2])
+
+
+def test_each_fixation_path_grades_its_own_requests_against_the_shared_page():
+    from Layers import Error
+    from LookForecast import OccurrenceCredit
+    greedy = OccurrenceCredit.__new__(OccurrenceCredit)
+    greedy.observed = torch.ones(2, 3)
+    greedy.terms = []
+    explore = greedy.fork()
+    assert explore.observed is greedy.observed
+    costs = [torch.tensor([.1, .2], requires_grad=True), torch.tensor([.3, .4], requires_grad=True)]
+    winners = torch.tensor([1, 0])
+    registry = Error(row_mask=torch.ones(2, dtype=torch.bool))
+    for i, path in enumerate((greedy, explore)):
+        path.terms.append((costs[i], torch.ones(2), torch.ones(2, dtype=torch.bool)))
+        path.for_rows(winners == i).register(registry)
+    loss = Error._value(registry._terms['attention.next_observation']).sum()
+    left, right = torch.autograd.grad(loss, costs)
+    assert left[0] == right[1] == 0
+    assert left[1] == right[0] > 0

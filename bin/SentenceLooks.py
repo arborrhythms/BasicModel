@@ -234,6 +234,7 @@ class Looks:
         self.prior, self.draw, self.kept = prior, draw, kept
         self.decisions, self.fields, self.stops = [], [], []
         self.look_credit = None
+        self.open_forecast = None
         self.supplied = getattr(model, '_attention_supplied_reading', None)
 
     def source_orders(self):
@@ -262,7 +263,13 @@ class Looks:
         B, W = state.known.shape
         live = (state.spans[..., 1] > state.spans[..., 0]) & self.present[:, None]
         from LookForecast import LookForecast
-        forecasts = LookForecast(owner, opened, state.spans) if opened is not None else None
+        # All departures start at this sentence's same wide-open observation.
+        # observe() replaces a walk's history tensors as later looks arrive.
+        from copy import copy
+        if opened is not None:
+            self.open_forecast = (self.prior.open_forecast if self.prior is not None
+                                  else LookForecast(owner, opened, state.spans))
+        forecasts = copy(self.open_forecast) if self.open_forecast is not None else None
         own = bank.activity.clone() if bank is not None else None
         observation = model.conceptualSpace.stm.model_state
         observation.begin_looks(state.spans, self.present)
@@ -291,9 +298,10 @@ class Looks:
             return at_rows(known_rows[key], field, V, B, index)
         held = located(opened) if opened is not None else own.new_zeros((B, V, 2))
         memory = torch.zeros_like(held)
-        if model.training and torch.is_grad_enabled() and self.supplied is None and self.prior is None:
+        if model.training and torch.is_grad_enabled() and self.supplied is None:
             from LookForecast import OccurrenceCredit
-            self.look_credit = OccurrenceCredit(owner, bank)
+            self.look_credit = (self.prior.look_credit.fork() if self.prior is not None and self.prior.look_credit is not None
+                                else OccurrenceCredit(owner, bank))
         stream = torch.arange(B, device=own.device)
         word_slots = torch.arange(W, device=own.device)[None]
         while True:

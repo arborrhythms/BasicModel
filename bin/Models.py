@@ -12131,30 +12131,13 @@ class BasicModel(BaseModel):
             # that backward once while retaining ordinary ATen execution.
             backend = "aot_eager" if backend == "eager" else backend
             from torch._dynamo.backends.registry import lookup_backend
-            from torch._functorch import config as aot_config
             compiler = lookup_backend(backend)
             if backend == "inductor":
                 from CompilerEffects import compile_inductor
                 compiler = compile_inductor
 
-            def compile_reconstruction(graph, inputs):
-                # Read-only operator diagnostics read this graph more than once.
-                # A cached single-use backward must never donate its saved
-                # buffers, even if the first call did not retain the graph.
-                # Scope the setting to this compiler; other models keep theirs.
-                with aot_config.patch(donated_buffer=False):
-                    compiled = compiler(graph, inputs)
-                    # This torch build leaves disabled donation as None, but
-                    # its retained-backward check requires the explicit empty
-                    # list once the caller's global setting is restored.
-                    # Normalize only the disabled sentinel: no compiled buffer
-                    # donation is being hidden or retroactively disabled here.
-                    from torch._guards import TracingContext
-                    context = TracingContext.try_get()
-                    metadata = getattr(context, "fw_metadata", None)
-                    if metadata is not None and metadata.bw_donated_idxs is None:
-                        metadata.bw_donated_idxs = []
-                    return compiled
+            from CompilerEffects import retained_backward_compiler
+            compile_reconstruction = retained_backward_compiler(compiler)
 
             # These are bounded traversals of this model's fixed word/stack
             # geometry. Specialize the shapes: automatic shape generalization

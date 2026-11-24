@@ -595,17 +595,26 @@ class BasicPercepts(nn.Module):
         atoms = identity.words.get(run) or identity.atoms_of(run)
         return torch.stack([identity.catalog_code(atom) for atom in atoms]).amax(0)
 
+    def _stored_boundary_codes(self, references, *, whole, row):
+        # Occurrence addresses already live in the host inventory. Only value
+        # references require a place-specific chart. Native codes stay live.
+        if min(references) < -self.identity_width:
+            return self._boundary_codes(references, whole=whole, place=int(self.places[row]))
+        bank = self.whole if whole else self.native._basis
+        ids = torch.tensor(references, dtype=torch.long, device=self.value_codes.device)
+        native = bank.lookup_rows(ids)
+        half = native[..., self.identity_width:self.width] if whole else native[..., :self.identity_width]
+        return half.to(self.value_codes)
+
     def subspace_bounds(self, row):
         """The parts half, the greatest of its parts' codes; the wholes half,
         the least of its wholes' codes: the class of all characters (all
         ones), the classes it lies in, and the form itself as its tightest
         whole."""
         parts, wholes = self.occurrences[int(row)]
-        place = int(self.places[int(row)])
         run = self.runs.get(int(row))
         if run is None:
-            ids = torch.tensor(parts, device=self.value_codes.device, dtype=torch.long)
-            identity = self._boundary_codes(ids, whole=False, place=place).amax(0)
+            identity = self._stored_boundary_codes(parts, whole=False, row=row).amax(0)
         else:
             identity = self._identity().form(run).to(self.value_codes)
         if not self.property_width:
@@ -613,8 +622,7 @@ class BasicPercepts(nn.Module):
         if wholes:
             if self.whole is None and any(reference >= -self.identity_width for reference in wholes):
                 raise ValueError('basic percept property read requires its WholeSpace')
-            ids = torch.tensor(wholes, device=self.value_codes.device, dtype=torch.long)
-            properties = self._boundary_codes(ids, whole=True, place=place).amin(0)
+            properties = self._stored_boundary_codes(wholes, whole=True, row=row).amin(0)
         else:
             properties = identity.new_ones(self.property_width)
         tightest = self._tightest(parts) if run is None else self._run_tightest(run)

@@ -47,3 +47,25 @@ def compile_inductor(graph, inputs):
         return compile_fx_inner(module, arguments, *args, **kwargs)
 
     return compile_fx(graph, inputs, inner_compile=inner)
+
+
+def retained_backward_compiler(compiler):
+    """Allow repeated differentiation of the same saved forward values."""
+    from torch._functorch import config as aot_config
+
+    def compile_graph(graph, inputs):
+        with aot_config.patch(donated_buffer=False):
+            compiled = compiler(graph, inputs)
+            # This torch build leaves disabled donation as None, but
+            # its retained-backward check requires the explicit empty
+            # list once the caller's global setting is restored.
+            # Normalize only the disabled sentinel: no compiled buffer
+            # donation is being hidden or retroactively disabled here.
+            from torch._guards import TracingContext
+            context = TracingContext.try_get()
+            metadata = getattr(context, "fw_metadata", None)
+            if metadata is not None and metadata.bw_donated_idxs is None:
+                metadata.bw_donated_idxs = []
+            return compiled
+
+    return compile_graph

@@ -37,6 +37,8 @@ def main():
     parser.add_argument('--allocations', action='store_true', help='profile allocation operators on a separate CPU step')
     parser.add_argument('--compiled-step', action='store_true',
                         help='enable the native compiled entry (step mode only)')
+    parser.add_argument('--compile-percept-fold', action='store_true',
+                        help='also compile the live whole/part fold for a native step comparison')
     parser.add_argument('--source', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--source-revision', help='revision of an archived --source without Git metadata')
     args = parser.parse_args()
@@ -44,6 +46,8 @@ def main():
         parser.error('--training-seconds needs --lesson and a positive training time')
     if args.lesson and args.compiled_step:
         parser.error('--lesson uses the native lesson runner; --compiled-step requires step mode')
+    if args.compile_percept_fold and not args.compiled_step:
+        parser.error('--compile-percept-fold requires --compiled-step')
     args.output.mkdir(parents=True, exist_ok=False)
     torch.set_num_threads(1)
     random.seed(args.seed)
@@ -96,6 +100,12 @@ def main():
 
     # runBatch belongs to BasicModel; observe the actual entry, not a kernel.
     from Models import BasicModel
+    if args.compile_percept_fold:
+        import BasicPercepts
+        from CompilerEffects import compile_inductor, retained_backward_compiler
+        BasicPercepts.held_at = torch.compile(BasicPercepts.held_at,
+            backend=retained_backward_compiler(compile_inductor), fullgraph=True, dynamic=True)
+        record['compile_percept_fold'] = True
     original = BasicModel.runBatch
 
     class TrainingBudgetReached(Exception):
@@ -279,7 +289,7 @@ def main():
                 caller = sys._getframe(1)
                 site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name)
                 calls[site] += 1
-                if site == ('BasicPercepts.py', '_boundary_codes'):
+                if site in (('BasicPercepts.py', '_boundary_codes'), ('BasicPercepts.py', '_stored_boundary_codes')):
                     # The separate census is untimed. Bypass its host counter
                     # for this instrumentation-only read of the requested IDs.
                     ids = methods['tolist'](indices.detach().reshape(-1))
