@@ -3044,3 +3044,33 @@ felt-14-inference-0002  variant s02+q03  inference converse  answer 'yes'
      {"entry": 1, "frame": "q03", "predicate": "row_before", "args": [4, 1], "truth": true, "value": true, "follows": true}
 ~~~
 
+
+### 15.10 Alec on the review (2026-11-23)
+
+Shown four of the decisions accepted in §15.8, each answer whole.
+
+- Of a question that comes before a statement, where its answer holds
+  only at an earlier image: "This will be useful for learning tense, and
+  learning to query LTM".
+- Of things a frame needs and does not name, which are not counted among
+  the two extra: "What limit now?" *Answered (Claude):* two things added
+  that no frame needs, and no limit on those a frame needs. As frozen, of
+  the 4,960 documents outside counting, 4,573 show at most two things no
+  sentence names, 387 show three to seven, and the fullest image holds
+  eight things. The most are in category 12, where "all the odds moved."
+  needs the odds to be there.
+- Of no witness for kinds, since no image makes "two is odd." false: "Two
+  is odd because two is even and evens are not odd. So reasoning can
+  proceed in two illuminative steps. Does this make sense? But this is a
+  proof in higher order types." *Claude's reading:* that "two is odd" is
+  false is not seen; it is reasoned, from two's kind and from what holds
+  between the kinds. The corpus states the first step ("two is even.") and
+  never the second (nothing says "no even is odd."), so today "two is not
+  odd." is taught digit by digit. Put to him: a statement of the kinds
+  themselves in category 4, and rows in its inference split that ask "is
+  two odd ?" after "two is even.".
+- Of the sums of 26 held out as ordered addends: "I don't understand what
+  you are saying." *Said again (Claude):* "two plus seven" is in no
+  training document, and "seven plus two" may be. As frozen, three of the
+  four held-out sums are in training the other way round. Put to him:
+  hold out both orders, so that a held-out sum has to be worked out.
