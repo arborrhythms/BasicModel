@@ -357,19 +357,18 @@ def test_49_collections_of_values_are_told_apart():
     """Collections at 1, 1 and 2 (alpha, beta, gamma) are told apart at the
     inputs 1, 2 and 4, each by its boundaries, 0 or 1; a value that arrives
     between two known ones lies above the one and below the other, and
-    inside a collection over the two. A value's code is the bins of its
-    place at or below it, in both halves; the way back reads the table."""
+    inside a collection over the two. A value's code is the bins at or
+    below it, in order, in both halves; the way back reads the table."""
     from BasicPercepts import BasicPercepts
     from NumericPercepts import feeling, number
     basic = BasicPercepts(None, 64, 64, 32)
     basic.bind(None)
-    place = 7
     felt = lambda v: feeling(torch.tensor(float(v))).to(basic.value_codes)
-    percept = {v: basic.perceive_value(felt(v), place=place) for v in (1., 2., 4., 1.5)}
+    percept = {v: basic.perceive_value(felt(v)) for v in (1., 2., 4., 1.5)}
     collections = dict(alpha=[percept[1.]], beta=[percept[1.]], gamma=[percept[2.]],
                        between=[percept[1.], percept[2.]])
     def point(v):
-        return torch.cat((basic.value_code(felt(v), 64, place), basic.value_code(felt(v), 64, place)))[None, None]
+        return torch.cat((basic.value_code(felt(v), 64), basic.value_code(felt(v), 64)))[None, None]
     def read(v):
         return {name: basic.read_collection(basic.read_points(point(v), rows),
                                             torch.ones(len(rows)))[0, 0].tolist()
@@ -381,11 +380,11 @@ def test_49_collections_of_values_are_told_apart():
     assert held(2.) == {'gamma', 'between'}
     assert held(4.) == set()
     assert held(1.5) == {'between'}
-    # Each value's code: a cut of its place's bins, the same in both halves;
-    # one value's code lies inside a greater one's.
+    # Each value's code: a cut of the bins, the same in both halves; one
+    # value's code lies inside a greater one's.
     codes = {v: basic.code(r) for v, r in percept.items()}
     for v, code in codes.items():
-        assert basic.bin_of(code, place) == int(BasicPercepts.value_bin(felt(v), 64))
+        assert basic.bin_of(code) == int(BasicPercepts.value_bin(felt(v), 64))
         torch.testing.assert_close(code[:64], code[64:])
     assert bool((codes[1.] <= codes[1.5]).all() and (codes[1.5] <= codes[2.]).all())
     # The way back: the table of values holds each exactly.
@@ -411,14 +410,16 @@ def test_49_collections_of_values_are_told_apart():
 
 
 def test_49_the_numeric_certificate_keeps_its_bar():
-    """The numeric XOR's two axes read apart, each place being a table of its
-    own, and the certificate's bar holds (``numeric_xor.certificate``)."""
+    """The numeric XOR's two places read apart, each told by its wires (its
+    place's row), and the certificate's bar holds (``numeric_xor.certificate``)."""
     from numeric_xor import certificate
     model, prediction, error = certificate()
     owner = model._concept_owner()
+    basic = owner.basic_percepts
     values = torch.tensor([[0., 0.], [0., 1.], [1., 0.], [1., 1.]]).unsqueeze(-1)
     field = model.numeric_percepts.read(values)
-    axes = [owner.concept_id_at_row(row) for row in model.numeric_percepts.rows]
+    places = [member for members in basic.conjunctions.values() for member in members]
+    axes = [owner.concept_id_at_row(owner.concept_of_basic_percept(row)) for row in places]
     features = [field.evidence[field.concept_ids == cid][0].amax(1).tolist() for cid in axes]
     print(dict(fx=features[0], fy=features[1], mse=error))
     assert features[0] != features[1]

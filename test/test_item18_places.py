@@ -23,10 +23,14 @@ def test_65_67_image_uses_the_same_reader_and_recovers_every_pixel(monkeypatch):
     assert isinstance(model.numeric_percepts, NumericPercepts)
     assert model.numeric_percepts.dimensions == 784
     assert model.inputSpace.inputShape == [28, 28]
+    sample = images[:1]
+    # An image is put back once its places are known: it is presented as
+    # often as nominates a place's row.
+    for _ in range(model._concept_owner().concept_mint_count):
+        model.forward(sample)
     calls = []
     read = model.outputSpace.read_field
     monkeypatch.setattr(model.outputSpace, 'read_field', lambda *args: (calls.append(True), read(*args))[1])
-    sample = images[:1]
     started = time.perf_counter()
     model.forward(sample)
     forward_seconds = time.perf_counter() - started
@@ -80,24 +84,23 @@ def test_66_numeric_certificate_on_level_percepts():
 
 
 def test_level_percepts_have_native_bounds_and_distinct_places():
+    """The same value at two places is one value's row: its code the bins at
+    or below it, in order; its places are told by their wires."""
     from recon_bench import _build_model
-    from NumericPercepts import feeling
     model, *_ = _build_model('data/MM_xor.xml')
     field = model.numeric_percepts.read(torch.ones(1, 2, 1))
     basic = model._concept_owner().basic_percepts
     assert not hasattr(basic, 'numeric_dimension')
     percepts = field.percepts[0].tolist()
-    assert len(set(percepts)) == 2
+    assert len(set(percepts)) == 1
     for axis, percept in enumerate(percepts):
         parts, wholes = basic.occurrences[percept]
         assert parts and wholes
-        assert basic.places[percept] == model.where_registry.slices['numeric'][0] + axis
-        # Rule 55: in each half, the bins of its place at or below the value;
-        # each place is a table of its own.
-        felt, place = feeling(torch.tensor(1.)), int(basic.places[percept])
+        # Rule 55: in each half, the bins at or below the value, in order;
+        # one table of values for every place.
+        felt = torch.tensor(1.)
         torch.testing.assert_close(basic.code(percept), torch.cat((
-            basic.value_code(felt, basic.identity_width, place),
-            basic.value_code(felt, basic.property_width, place))))
+            basic.value_code(felt, basic.identity_width),
+            basic.value_code(felt, basic.property_width))))
         torch.testing.assert_close(basic.felt([percept])[0], felt.to(basic.value_codes))
-    assert not torch.equal(basic.code(percepts[0]), basic.code(percepts[1]))
     assert basic.width == model.perceptualSpace.nWhat

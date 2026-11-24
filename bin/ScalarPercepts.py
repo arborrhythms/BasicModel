@@ -18,9 +18,8 @@ def code(owner, value):
     point = owner.similarity_codebook.W.new_zeros(owner.similarity_codebook.W.shape[-1])
     felt = _felt(owner, value)
     if float(felt) > 0:
-        place = owner.where_registry.slices['scalar'][0]
-        point[:basic.identity_width] = basic.value_code(felt, basic.identity_width, place)
-        point[basic.identity_width:basic.width] = basic.value_code(felt, basic.property_width, place)
+        point[:basic.identity_width] = basic.value_code(felt, basic.identity_width)
+        point[basic.identity_width:basic.width] = basic.value_code(felt, basic.property_width)
     return point
 
 
@@ -31,16 +30,14 @@ def bare(owner, points):
     if registry is None or 'scalar' not in registry.slices:
         # No scalar place: no point is a value's code.
         return torch.zeros(points.shape[:-1], dtype=torch.bool, device=points.device)
-    place = registry.slices['scalar'][0]
-    return (basic.bin_of(points[..., :basic.width], place) >= 0) & ~points[..., basic.width:].ne(0).any(-1)
+    return (basic.bin_of(points[..., :basic.width]) >= 0) & ~points[..., basic.width:].ne(0).any(-1)
 
 
 def perceive(owner, value):
     felt = _felt(owner, value)
     if not float(felt) > 0:
         return None
-    return owner.basic_percepts.perceive_value(felt.to(owner.basic_percepts.value_codes),
-        place=owner.where_registry.slices['scalar'][0])
+    return owner.basic_percepts.perceive_value(felt.to(owner.basic_percepts.value_codes))
 
 
 def concepts(owner):
