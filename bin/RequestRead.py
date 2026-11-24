@@ -17,8 +17,8 @@ class RequestRead(nn.Module):
         from BasicPercepts import WHERE_WIRES, WHEN_WIRES
         # Two native place codes and the present.
         self.state_weight = nn.Parameter(self.first.weight.new_zeros(int(width), 2 * WHERE_WIRES + WHEN_WIRES))
-        self.place = nn.Linear(int(width), 2, device=device)
-        for top in (self.ask, self.stop, self.place):
+        self.where = nn.Linear(int(width), WHERE_WIRES, device=device)
+        for top in (self.ask, self.stop, self.where):
             nn.init.zeros_(top.weight)
             nn.init.zeros_(top.bias)
 
@@ -37,18 +37,10 @@ class RequestRead(nn.Module):
         asked = torch.sigmoid(self.ask(h)).transpose(0, 1)
         return torch.stack((asked, torch.zeros_like(asked)), -1)
 
-    def forward(self, units, evidence, spans):
-        """Score each witnessed occurrence by its evidence and native interval.
-
-        The request learns the coefficients of the two endpoints. At
-        initialization every location contributes equally.
-        """
-        direction = self.place(units).to(evidence)
-        # Relative coordinates keep the location contribution on the same
-        # scale for a paragraph and a word, with no preferred endpoint.
-        extent = spans[..., 1].amax(-1, keepdim=True).clamp_min(1)
-        relative = spans.to(evidence) / extent[:, :, None].to(evidence)
-        return evidence + (relative * direction[:, None]).sum(-1)
+    def forward(self, units):
+        """One query over concept evidence and the native location band."""
+        location = self.where(units).T
+        return torch.cat((self.request(units), torch.stack((location, torch.zeros_like(location)), -1)))
 
     def stopping(self, h):
         return self.stop(h)[:, 0]
@@ -75,14 +67,18 @@ def install(model):
         model.request_read.ask.bias.fill_(float(TheXMLConfig.get('architecture.requestReadStart')))
 
 
-def at_rows(rows, field, V, B):
+def at_rows(rows, field, V, B, index=None):
     """A field's concepts at their inventory rows ``rows`` (``[S]`` or ``[S,
     B]``), ``[B, V, 2]``: each concept's greatest reading on each lane, in 0
     to 1, detached."""
     evidence = field.evidence.detach()[:, :B]                                 # [S, B, W, 2]
     S = evidence.shape[0]
     rows = rows[:, None].expand(S, B) if rows.ndim == 1 else rows[:, :B]
-    value = evidence.amax(2).clamp(0., 1.)                                    # [S, B, 2]
+    if index is None:
+        value = evidence.amax(2).clamp(0., 1.)
+    else:
+        batch = torch.arange(B, device=index.device)
+        value = evidence[:, batch, index.clamp_min(0)].clamp(0., 1.) * (index >= 0)[None, :, None]
     index = torch.where(rows >= 0, rows, V)[..., None].expand(-1, -1, 2)
     held = value.new_zeros(V + 1, B, 2).scatter_reduce(0, index, value, 'amax')[:V]
     return held.transpose(0, 1)

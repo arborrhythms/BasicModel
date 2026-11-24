@@ -4537,7 +4537,7 @@ class BaseModel(Mereology, nn.Module):
 
         retired_attention = [key for key in state if key.startswith(
             ('candidate_attention.', 'attention_context.', 'request_start.',
-             'request_read.say.', 'request_read.second.'))]
+             'request_read.say.', 'request_read.second.', 'request_read.place.'))]
         attention_transforms = {}
         # Earlier checkpoints appended the previously predicted word to this input.
         first_key = 'request_read.first.weight'
@@ -21556,7 +21556,8 @@ class BasicModel(BaseModel):
                 from ConceptSpread import complete
                 complete(self, present, close_errors)
                 if look_trials[0] is not None and look_trials[0].look_credit is not None:
-                    look_trials[0].look_credit.register(close_errors)
+                    paced = self.inputSpace.data.paced_observations
+                    look_trials[0].look_credit.register(close_errors, paced)
                 from IntuitionField import complete as complete_intuition
                 complete_intuition(self, present, close_errors)
                 from IdeaRead import complete as complete_idea

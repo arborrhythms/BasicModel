@@ -120,8 +120,8 @@ def _read(model, bank, concepts):
         store.expire()
         store.to(bank.table)
     current = owner._cs_open_field
-    def located(field):
-        return at_rows(inventory(owner, field), field, reader.rows, B)
+    def located(field, index=None):
+        return at_rows(inventory(owner, field), field, reader.rows, B, index)
     opened = located(current)
     memory, own = torch.zeros_like(opened), bank.activity.clone()
     left = bank.where[..., 1] > bank.where[..., 0]
@@ -129,7 +129,7 @@ def _read(model, bank, concepts):
     _, _, percept_codes = readings(bank)
     observation = model.conceptualSpace.stm.model_state
     observation.begin_looks(bank.where, left.any(-1))
-    credit = OccurrenceCredit(owner) if model.training and torch.is_grad_enabled() else None
+    credit = OccurrenceCredit(bank) if model.training and torch.is_grad_enabled() else None
     excluded, ambiguous = unkept(owner), uncertain(owner)
     for _ in range(min(model.attention_budget, model.conceptualSpace.stm.capacity)):
         units = reader.units(reader.given(opened, memory, left.any(-1)),
@@ -139,7 +139,7 @@ def _read(model, bank, concepts):
             break
         field, _, scores = narrow(model, bank, attend(model, units), own, concepts,
                                   known, left & active[:, None])
-        probabilities = occurrence_probabilities(reader(units, scores, bank.where))
+        probabilities = occurrence_probabilities(scores)
         index = select_occurrence(probabilities, sample=model.training)
         index = torch.where(active, index, -1)
         observation.observe(bank.where, index)
@@ -147,7 +147,7 @@ def _read(model, bank, concepts):
         if not found.any():
             break
         if credit is not None:
-            credit.observe(field, probabilities, index)
+            credit.observe(probabilities, index)
         batch = torch.arange(B, device=index.device)
         evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
         episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,
@@ -166,10 +166,10 @@ def _read(model, bank, concepts):
                 trust=float(scores[b, w].detach().clamp(0, 1)), entry=(episode[0][b], episode[1][b]))
             heads[b] = store.parts.append_occurrence(heads[b], store.row_name(row))
             left[b, w] = False
-        memory = torch.where(found[:, None, None], spread_once(owner, located(field)), memory)
+        memory = torch.where(found[:, None, None], spread_once(owner, located(field, index)), memory)
         own = lower(own, bank, index, found)
     if credit is not None:
-        credit.register(model.errors)
+        credit.register(model.errors, model.inputSpace.data.paced_observations)
     durable = model.symbolSpace.ltm_store
     committed = commit(stores, heads, durable)
     for b, head in enumerate(committed):

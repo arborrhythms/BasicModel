@@ -2677,3 +2677,31 @@ The grid ([Glossary](Glossary.md)) is to be a space of three dimensions for
 every modality: text on its first axis, with zeros on the other two; an image
 on two; a volume on three. Today it has one axis (`WhereRegistry.axes`), and
 the source calls it `WhereRegistry.code`.
+
+## Time and reconstruction at each look (Alec, 2026-11-23)
+
+**Give a witnessed look its own time.** On `hello world hello`, the restored
+1.7 reader visited byte spans `[0,5)`, `[6,11)` and `[12,17)`. STM's model
+clock read 25 before and after each visit. One option is to advance model
+time when a look returns an observation and write that time into the
+occurrence's existing `.when` band in STM. A later recall could then
+distinguish when the model encountered each word from where the word
+appeared on the page. Test a repeated word, a revisit to the same place
+and a walk made in reverse. Replay two candidate walks from the same
+opening and check that only the retained walk contributes elapsed time
+and timestamps to the committed episode. Batched streams that stop at
+different looks should retain the times of their own last observations.
+
+**Let a look visualize what it attended.** A second option is to run the
+existing inverse from the narrowed conceptual field on each successful
+`attend()`. Compare the percepts it puts back with the observed input at
+their native places, using the reconstruction pyramid. This would teach
+the way back from the concept formed by the look. The existing expectation
+cost grades what the request anticipated before the observation arrived.
+Keep the whole-field reconstruction as the comparison common to both
+conditions. Train with and without the additional per-look cost on the
+same presentations and compare held-out reading order, displacement of a
+repeated word, whole-field reconstruction error and time per sentence.
+Normalize the per-look contribution across the sentence so extra looks
+alone cannot increase its training weight. Either direction can reconstruct
+three isolated words exactly. Measure order from the actual walk.

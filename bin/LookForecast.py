@@ -166,49 +166,64 @@ class LookForecast:
 
 
 class OccurrenceCredit:
-    """Credit a sampled look for the change it made to the next observation's forecast."""
+    """The distribution over located wholes, fixed before each observation.
 
-    def __init__(self, owner):
-        self.owner = owner
-        self.history = self.prediction = self.previous = None
+    On the page the next observation carries its native byte positions. A
+    separately paced presentation arrives at its own origin, so a forecast
+    of that stimulus marginalizes over the visual position of each whole.
+    Neither observation identifies an action for the chooser.
+    """
+
+    def __init__(self, bank):
+        self.bank = bank
+        self.turn = 0
         self.terms = []
 
-    @torch.no_grad()
-    def observed(self, field, index):
-        rows = field_rows(self.owner, field)
-        if rows.ndim == 1:
-            rows = rows[:, None].expand(-1, len(index))
-        evidence = field.evidence[:, torch.arange(len(index), device=index.device), index.clamp_min(0)]
-        values = evidence.clamp(0., 1.) * (index >= 0)[None, :, None]
-        V = self.owner.nVectors
-        at = torch.where(rows >= 0, rows, V)[..., None].expand_as(values)
-        return values.new_zeros(V + 1, len(index), 2).scatter_reduce(0, at, values, 'amax')[:V]
+    def observe(self, probabilities, index):
+        live = (index >= 0) & (probabilities.detach().gt(0).sum(1) > 1)
+        if bool(live.any()):
+            self.terms.append((self.turn, probabilities, index.detach(), live))
+        self.turn += 1
 
-    def forecast(self, observations):
-        expected, _ = ConceptSpread.spread(self.owner, observations)
-        return expected[:self.owner.nVectors]
-
-    def observe(self, field, probabilities, index):
-        actual = self.observed(field, index)
-        if self.previous is not None:
-            chosen, eligible, log_probability, before = self.previous
-            # Both forecasts preceded this observation. Only the second had
-            # the preceding look's evidence. Equal errors supply no credit.
-            change = ((self.prediction - actual).square() - (before - actual).square()).mean((0, 2))
-            valid = eligible & (index >= 0) & (chosen != index)
-            if (valid & change.ne(0)).any():
-                self.terms.append((log_probability * change, valid))
-        if self.history is None:
-            self.history = torch.zeros_like(actual)
-            self.prediction = self.forecast(self.history)
-        before = self.prediction
-        self.history = torch.maximum(self.history, actual)
-        self.prediction = self.forecast(self.history)
-        p = probabilities.gather(1, index.clamp_min(0)[:, None])[:, 0]
-        eligible = (index >= 0) & ((probabilities.detach() > 0).sum(-1) > 1)
-        self.previous = index, eligible, torch.where(eligible, p, 1.).log(), before
-
-    def register(self, registry):
-        for term, valid in self.terms:
-            registry.error('attention.next_observation', term, 1., mask=valid,
-                           category='expectation', objective='attention')
+    def register(self, registry, paced=None):
+        from Layers import Error
+        if not self.terms:
+            return
+        bank = self.bank
+        text = bank.text.long() & 255
+        for turn, probabilities, index, live in self.terms:
+            spans = bank.where[:, :probabilities.shape[1]]
+            if paced is None:
+                # Every occurrence in a row shares this physical grid. At a
+                # given byte the forecast and witness therefore share the
+                # same content channel; only their amounts can differ.
+                place = torch.arange(text.shape[1], device=text.device)
+                inside = (place >= spans[..., :1]) & (place < spans[..., 1:])
+                # Retain byte identity through the pyramid's coarser cells.
+                amounts = (inside * probabilities[..., None]).sum(1)
+                actual = inside[torch.arange(len(index), device=index.device), index.clamp_min(0)]
+                alphabet, channels = text.unique(return_inverse=True)
+                content = F.one_hot(channels, len(alphabet)).to(probabilities)
+                put, wanted = amounts[..., None] * content, actual[..., None] * content
+            else:
+                observed = [list(row[turn].encode('ascii', errors='replace')) if turn < len(row) else [] for row in paced]
+                lengths = index.new_tensor([len(row) for row in observed])
+                live = live & (lengths > 0)
+                width = max(1, max(map(len, observed)), int((spans[..., 1] - spans[..., 0]).max()))
+                offsets = torch.arange(width, device=index.device)
+                address = spans[..., :1] + offsets
+                symbols = text.gather(1, address.clamp(0, text.shape[1]-1).flatten(1)).reshape_as(address)
+                target = index.new_tensor([row + [0] * (width-len(row)) for row in observed])
+                # A future observation can introduce a byte absent from the page.
+                alphabet, channels = torch.cat((symbols.flatten(), target.flatten())).unique(return_inverse=True)
+                native, arrived = channels.split((symbols.numel(), target.numel()))
+                predicted = probabilities[..., None] * (address < spans[..., 1:])
+                put = probabilities.new_zeros(len(index), width, len(alphabet)).scatter_add(
+                    2, native.reshape_as(symbols).transpose(1, 2), predicted.transpose(1, 2))
+                wanted = F.one_hot(arrived.reshape_as(target), len(alphabet)).to(put)
+                wanted = wanted * (offsets < lengths[:, None])[..., None]
+            if bool(live.any()):
+                shared, mass = Error.pyramid_match(put, wanted)
+                total = put.flatten(1).sum(-1) + mass
+                registry.error('attention.next_observation', (total - 2 * shared).clamp_min(0), total,
+                               mask=live, category='expectation', objective='attention')

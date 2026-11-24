@@ -666,6 +666,7 @@ class Data():
         vocabulary slot, reconstruction buffers, and the global min/max
         scaling values (filled later by ``_compute_ranges``).
         """
+        self.paced_observations = None
         self.train_input       = []
         self.train_output      = []
         self.validation_input  = []
@@ -1090,7 +1091,7 @@ class Data():
         return self.presentation(question, include_desired=False)
 
     @contextmanager
-    def runtime_batch(self, inputs, outputs=None, mode=None, context=None, document_keys=None):
+    def runtime_batch(self, inputs, outputs=None, mode=None, context=None, document_keys=None, paced=None):
         """Stage transient inference data into ``train_input`` / ``train_output``.
 
         Saves and restores the previous contents so training data is not
@@ -1101,6 +1102,9 @@ class Data():
         retired 2026-05-14.
         """
         del mode  # retained for signature back-compat only
+        if paced is not None and len(paced) != len(inputs):
+            raise ValueError("each stream needs its own paced observations")
+        saved_paced = self.paced_observations
         saved_input = self.train_input
         saved_output = self.train_output
         saved_context = self.active_context
@@ -1147,9 +1151,11 @@ class Data():
                 warnings.warn(
                     f"Inference input range [{xmin:.4f}, {xmax:.4f}] "
                     f"outside training range [{self.input_min}, {self.input_max}]")
+        self.paced_observations = paced
         try:
             yield
         finally:
+            self.paced_observations = saved_paced
             self.train_input = saved_input
             self.train_output = saved_output
             self.active_context = saved_context

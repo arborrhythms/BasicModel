@@ -22,6 +22,12 @@ def load_lesson(path):
         if not texts or len(set(texts)) != len(texts) or seen.intersection(texts):
             raise ValueError(f'{split} must contain distinct, held-out sequences')
         seen.update(texts)
+    if 'paced' in spec:
+        paced = spec['paced']
+        if set(paced) != set(spec['train']) or any(
+                not isinstance(row, list) or not all(isinstance(frame, str) for frame in row)
+                for row in paced.values()):
+            raise ValueError('paced observations must be text frames for the training pages only')
     if not set(spec['required']).issubset(spec['test']):
         raise ValueError('the required regression pairs must be in the test split')
     if not 0 < spec['minimum_accuracy'] <= 1 or min(spec['epochs'], spec['batch_size']) < 1:
@@ -112,7 +118,8 @@ def train_reader(model, spec, optimizer):
             data = model.inputSpace.data
             supervised = data.has_supervised_outputs
             try:
-                with data.runtime_batch(batch):
+                paced = [spec['paced'][text] for text in batch] if 'paced' in spec else None
+                with data.runtime_batch(batch, paced=paced):
                     data.has_supervised_outputs = False
                     source = model.inputSpace.prepInput(batch)
                     questions = tuple(What.present(i, split='runtime') for i in range(len(batch)))
@@ -138,7 +145,7 @@ def run(config, lesson, output):
     output.mkdir(parents=True, exist_ok=False)
     data = Data()
     model, _ = BaseModel.from_config(str(config), data=data)
-    manifest = dict(dataset='reading-order', training='sentence-reconstruction-and-expectation', sha256=hashlib.sha256(lesson.read_bytes()).hexdigest())
+    manifest = dict(dataset='reading-order', training='sentence reconstruction and paced text expectation', sha256=hashlib.sha256(lesson.read_bytes()).hexdigest())
     model.inputSpace.data.source_manifest = manifest
     report = dict(lesson=manifest, config=str(config.resolve()),
                   config_sha256=hashlib.sha256(config.read_bytes()).hexdigest(), epochs=[])

@@ -80,7 +80,7 @@ def extent_of(bank, activity, readings):
     return ((token[:, None, :] == slots[None, :, None]) & lit[:, None, :]).any(-1)
 
 
-def word_activity(field, concepts, known, extent, own, bank):
+def word_activity(field, concepts, known, extent, own, bank, general=False):
     """Each word's activity in a look's returned set, ``[B, W]``: a word
     with a word concept, that concept's value at its reading (for less
     against), where the look holds the reading. A word with no word concept
@@ -102,16 +102,46 @@ def word_activity(field, concepts, known, extent, own, bank):
     inside = F.pad(extent[:, :width], (0, W - width))
     word = torch.where(known & inside & (concept > 0), concept, -torch.inf)
     unknown = torch.where(~known & (presence > 0), presence.to(torch.float32), -torch.inf)
+    if general:
+        return torch.where(known, word, unknown)
     found = torch.isfinite(word).any(-1, keepdim=True)
     return torch.where(found, word, unknown)
 
 
 def narrow(model, bank, request, own, concepts, known, eligible):
     """Read the requested field and score the still eligible occurrences on that field."""
-    field, activity = look(model, bank, request, own)
+    rows = model.request_read.rows
+    general = len(request) > rows
+    prior = own.new_zeros(concepts.shape)
+    if general and bank.registry is not None:
+        # Express a reading's physical place in the same four wires as the
+        # query. Center and scale on the open field, including finished looks,
+        # so resolution does not depend on the registry's total capacity.
+        spans = bank.where[:, :concepts.shape[1]]
+        live = spans[..., 1] > spans[..., 0]
+        wires = bank.registry.encode('text', spans[..., 0]).detach()
+        mean = (wires * live[..., None]).sum(1) / live.sum(1, keepdim=True).clamp_min(1)
+        centered = (wires - mean[:, None]) * live[..., None]
+        scale = centered.abs().amax(1, keepdim=True).clamp_min(torch.finfo(wires.dtype).eps)
+        prior = ((centered / scale) * request[rows:, :, 0].T[:, None]).sum(-1)
+    # A located hypothesis has the query's spatial log weight and the
+    # returned whole's content evidence. Apply the spatial weight once.
+    # Feeding it through the percept detector as well could hide a real
+    # occurrence before its evidence is compared to the expectation.
+    field, activity = look(model, bank, request[:rows], own)
     extent = extent_of(bank, activity, concepts.shape[1]) & eligible.any(-1, keepdim=True)
-    scores = word_activity(field, concepts, known, extent, own, bank)
-    return field, extent, scores.masked_fill(~eligible, -torch.inf)
+    evidence = word_activity(field, concepts, known, extent, own, bank, general)
+    scores = (prior + evidence).masked_fill(~eligible, -torch.inf)
+    if general:
+        # Keep the field under the same spatial constraint for the following
+        # look. Eligibility and the production of evidence preceded this cap.
+        from dataclasses import replace
+        supported = prior.masked_fill(~scores.isfinite(), -torch.inf)
+        best = supported.amax(1, keepdim=True)
+        strength = (supported - torch.where(best.isfinite(), best, 0.)).exp()
+        strength = F.pad(strength, (0, field.evidence.shape[2] - strength.shape[1]))
+        field = replace(field, evidence=field.evidence * strength[None, :, :, None])
+    return field, extent, scores
 
 
 def lower(own, bank, index, rows):
@@ -122,9 +152,8 @@ def lower(own, bank, index, rows):
 
 
 def attend(model, units):
-    """``attend``'s request ``[V, B, 2]``: the read of the conceptual field
-    (``model.request_read``, rule 80) from its ``units``."""
-    return model.request_read.request(units)
+    """Predict one located concept from the open field and STM context."""
+    return model.request_read(units)
 
 
 def word_request(model, concepts, index):
@@ -261,18 +290,18 @@ class Looks:
         V = int(owner.nVectors)
         from SentenceField import inventory
         known_rows = {}
-        def located(field):
+        def located(field, index=None):
             # A field's concepts at their inventory rows, the rows found once
             # for each set of the field's concept ids.
             key = tuple(field.concept_ids.reshape(-1).tolist())
             if key not in known_rows:
                 known_rows[key] = inventory(owner, field)
-            return at_rows(known_rows[key], field, V, B)
+            return at_rows(known_rows[key], field, V, B, index)
         held = located(opened) if opened is not None else own.new_zeros((B, V, 2))
         memory = torch.zeros_like(held)
         if model.training and torch.is_grad_enabled() and self.supplied is None and self.prior is None:
             from LookForecast import OccurrenceCredit
-            self.look_credit = OccurrenceCredit(owner)
+            self.look_credit = OccurrenceCredit(bank)
         while True:
             turn = state.taken
             left = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
@@ -319,8 +348,7 @@ class Looks:
             if target is not None:
                 replay = torch.where(target >= 0, target, -1 if replay is None else replay)
             from Attention import occurrence_probabilities, select_occurrence
-            logits = read(units, words, bank.where[:, :W])
-            probabilities = occurrence_probabilities(logits)
+            probabilities = occurrence_probabilities(words)
             index, proposal = select_occurrence(probabilities, sample=model.training, replay=replay,
                                                 masked=masked, return_proposal=True)
             others = (probabilities.detach().gt(0).sum(-1) - 1).clamp_min(0)
@@ -335,7 +363,7 @@ class Looks:
             if not bool(found.any()):
                 break
             if self.look_credit is not None:
-                self.look_credit.observe(look_field, probabilities, index)
+                self.look_credit.observe(probabilities, index)
             word = index.clamp_min(0)
             allowed = found & (state.known.gather(1, word[:, None])[:, 0]
                                | torch.isfinite(words.gather(1, word[:, None])[:, 0]))
@@ -393,7 +421,7 @@ class Looks:
                 model._fragment_leaf = dict(index=index, taking=fragment['taking'],
                                             idea=fragment['idea'], classes=fragment['classes'])
             # What the next look reads: this look's field spread once.
-            memory = torch.where(rows[:, None, None], spread_once(owner, located(look_field)), memory)
+            memory = torch.where(rows[:, None, None], spread_once(owner, located(look_field, index)), memory)
             handoff_reading(model, state)
             model._sentence_look_fields = dict(getattr(model, '_sentence_look_fields', {}))
             model._sentence_look_fields[self.sid] = tuple(self.fields)

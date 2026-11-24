@@ -44,6 +44,7 @@ class PerceptBank:
     # holds: a part's event, a stored form, or a run of a row's parts.
     # ``None``: every occurrence can.
     holder: torch.Tensor = None
+    text: torch.Tensor = None       # native input bytes backing the occurrences
 
 
 @dataclass(frozen=True)
@@ -1118,7 +1119,7 @@ class BasicPercepts(nn.Module):
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
         return PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
-                           when_band, registry, holder)
+                           when_band, registry, holder, text)
 
     def read_bank(self, bank, activity=None, look=None):
         """The basic percepts of a bank's readings over a look's table

@@ -297,8 +297,10 @@ def test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word(tmp_
         alpha, gamma = word_rows(model, 'alpha', 'gamma')
         concepts = model._attention_word_concepts[:, :2]
         words = start_request(model)
-        assert bool((words[..., 0] > 0).all()) and bool((words[..., 0] < 1).all())
-        assert float(words[..., 0].max() - words[..., 0].min()) == 0. and not words[..., 1].any()
+        content = words[:model.request_read.rows]
+        assert bool((content[..., 0] > 0).all()) and bool((content[..., 0] < 1).all())
+        assert float(content[..., 0].max() - content[..., 0].min()) == 0. and not content[..., 1].any()
+        assert not words[model.request_read.rows:].any()
         found = {}
         for name, request in (('words', words), ('alpha', SentenceLooks.word_request(model, concepts, torch.tensor([0])))):
             field, activity = SentenceLooks.look(model, bank, request, bank.activity)

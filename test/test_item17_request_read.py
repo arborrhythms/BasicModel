@@ -93,8 +93,8 @@ def test_two_words_train_the_sampled_request_from_the_following_observation(tmp_
         recorded = []
         register = OccurrenceCredit.register
 
-        def capture(credit, registry):
-            register(credit, registry)
+        def capture(credit, registry, paced=None):
+            register(credit, registry, paced)
             if 'attention.next_observation' in registry._terms:
                 recorded.append(len(credit.terms))
 

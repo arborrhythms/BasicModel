@@ -41,9 +41,11 @@ def test_attend_gives_a_request_over_concepts_on_two_lanes():
     x = read.given(torch.rand(streams, rows, 2), torch.rand(streams, rows, 2),
                    torch.ones(streams))
     request = attend(model, read.units(x))
-    assert request.shape == (rows, streams, 2)
+    from BasicPercepts import WHERE_WIRES
+    assert request.shape == (rows + WHERE_WIRES, streams, 2)
+    assert not request[rows:].any()
     # The tops start at nothing: every concept is asked for by one half.
-    torch.testing.assert_close(request[..., 0], torch.full_like(request[..., 0], .5))
+    torch.testing.assert_close(request[:rows, :, 0], torch.full_like(request[:rows, :, 0], .5))
     assert not request[..., 1].any()
     # A read with weights asks by the logistic of its read, and the request's
     # gradient reaches the read's own weights.
@@ -52,7 +54,8 @@ def test_attend_gives_a_request_over_concepts_on_two_lanes():
         read.ask.bias.normal_()
     units = read.units(x)
     request = attend(model, units)
-    torch.testing.assert_close(request[..., 0], torch.sigmoid(read.ask(units)).transpose(0, 1))
+    torch.testing.assert_close(request[:rows, :, 0], torch.sigmoid(read.ask(units)).transpose(0, 1))
+    torch.testing.assert_close(request[rows:, :, 0], read.where(units).T)
     assert not request[..., 1].any()
     request[..., 0].sum().backward()
     assert bool(read.ask.weight.grad.abs().sum() > 0)

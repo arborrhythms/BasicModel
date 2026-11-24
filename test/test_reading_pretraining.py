@@ -101,3 +101,47 @@ def test_missing_or_nonfinite_checkpoint_age_cannot_qualify(tmp_path):
         torch.save({'state_dict': state}, path)
         with pytest.raises(ValueError, match='age'):
             checkpoint_qualification(path, 'what is cat ?')
+
+
+def test_paced_observations_teach_content_without_identifying_a_visual_slot(monkeypatch, eager_reading):
+    """Reverse the external word on identical pages. Repeated words give no location label."""
+    from data import Data
+    from Layers import Error
+    from LookForecast import OccurrenceCredit
+    from Models import BaseModel
+    from What import What
+    data = Data()
+    model, _ = BaseModel.from_config(str(ROOT / 'data/XOR_grammar.xml'), data=data)
+    pages = ['hello world', 'hello world', 'hello hello', 'hello hello']
+    paced = [['hello'], ['world'], ['hello'], ['hello']]
+    original = OccurrenceCredit.register
+    recorded = []
+
+    def observe(credit, registry, frames):
+        if not credit.terms:
+            return original(credit, registry, frames)
+        _, probability, _, _ = credit.terms[0]
+        original(credit, registry, frames)
+        term = registry._terms['attention.next_observation']
+        difference, = torch.autograd.grad(Error._value(term).sum(), probability, retain_graph=True)
+        # Read the native tokenizer's slots only for this independent measurement.
+        forms = model._attention_forms[0]
+        deltas = []
+        for b, row in enumerate(forms):
+            left, right = [i for i, word in enumerate(row) if word]
+            deltas.append(float(difference[b, left] - difference[b, right]))
+        recorded.append(deltas)
+
+    monkeypatch.setattr(OccurrenceCredit, 'register', observe)
+    try:
+        with data.runtime_batch(pages, paced=paced):
+            source = model.inputSpace.prepInput(pages)
+            model.runBatch(train=True, optimizer=model.getOptimizer(), batchSize=len(pages),
+                           split='runtime', questions=tuple(What.present(i, split='runtime') for i in range(len(pages))),
+                           batch_override=(source, torch.empty(len(pages), 0, device=source.device)))
+        assert data.paced_observations is None
+        left, right, repeat1, repeat2 = recorded[0]
+        assert left < 0 < right
+        assert repeat1 == pytest.approx(0., abs=1e-6) and repeat2 == pytest.approx(0., abs=1e-6)
+    finally:
+        model.End()
