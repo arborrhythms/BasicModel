@@ -27973,3 +27973,36 @@ What was read: every change of `bin/`, `data/` and the standing docs from `75388
 - *Point 5.* Alec: "OK". **For Codex:** the chart's presentations to a file of `data/`, read by `AgeChart.chart`; the XOR bar read from where the gate reads it.
 - *Point 6.* Alec: "suggest the fixes for codex to implement if you have not already." The `doc/Params.md` row is mended by Claude in this commit, and so is Claude's own section of `doc/GradientFlow.md` on when the reconstruction is computed. **For Codex, two:** (a) `SentenceField.reconstruction(model, field)` returns the reverse alone, and its callers take one value (in `bin/Models.py` the sentence opening, which writes `_, self._sentence_order_zero_reverse = ...`, and the second import near the input reconstruction; in `test/` the wrappers of `test_item17_echo.py` and `test_item17_one_reconstruction.py`); (b) the docstring of `BasicModel.reconstruct_grammar_sentence` says it reports the return by the recorded steps (`SentenceField.put_back`) and that the trained reconstruction is the opening pass.
 - *Point 7* (the new test outcome) was not put to Alec; it stands as a caution, with nothing to change today.
+
+### 23.9 Claude's closing review of item 1.7 at `47b4192fe5` (Claude, 2026-11-23; Codex's hand-over relayed by Alec)
+
+What was read: the two commits after §23.8's review, `d86b8d993e` and `47b4192fe5` (324 lines of `bin/` and `data/`, the changed tests, the hand-over in `suggestions.txt`). No file of `bin/` or `test/` is changed by this review.
+
+*What the two commits do.*
+
+- `RequestRead.place` and `RequestRead.forward`: the score of an occurrence is its evidence plus a learned coefficient on each end of its place, both from the request's own hidden units, both zero at the start. The scores are now logits the request can make large. This answers point 2 of §23.8.
+- `data/lessons/reading-order.json`, `bin/pretrain_reading.py`, and the key `architecture.data.readingOrderLesson` (empty in `data/model.xml`, set only in `data/XOR_grammar.xml`): a lesson of two- and three-word sequences of six words that teaches the looks to take the words in source order, and a certificate of it on held-out sequences, sampled and in evaluation, at 99 in 100. `BasicModel.run` measures a fresh model on the lesson's validation set before training, teaches it if it does not qualify, and raises if it still does not.
+- `test_explicit_dimensions.py::TestXorGrammarReconstruction` now asks for the four pairs in source order at the grammar's input and through its inverse, where it accepted transpositions.
+- The marker `requires_mental_age` checks a saved model's age before a test of a trained model runs, and an unmet age is a **failure**. That settles point 7 of §23.8 for saved models.
+
+*What was run* (`RUN_TRAINED` and `RUN_SLOW` unset, one run): the two gates, `test_item17_echo.py`, `test_mental_age.py`, and every test file the commits of the item's last day changed, thirty files in all. **252 passed, 14 skipped, 3 failed, 1 "not qualified at that age"**, in 7 min 34 s. Both gates passed. Of the three failures, two (`TestXorExactCliReconstruction`, both tests) were Claude's worktree having no `.venv` of its own for the command they start; run in Codex's worktree at the same commit they pass. The third is `test_whole_paths.py::test_kept_verbal_output_reaches_the_live_understanding_and_conditioner`, known since §23.7. In Codex's worktree, also one run: the verbal XOR at 400 epochs gave **4/4 in order at the grammar's input and 4/4 through its inverse**, and the reading lesson's saved reader read 122/122 held-out sequences, sampled and in evaluation. The fourteen skips are those the files had before (trained models). The full sweep was not run again; its eighteen failures are listed in §23.7.
+
+**For Alec: one thing to know, and to decide if he wishes.**
+
+Reading in order is now taught by a label on the look's own choice. During the walk the model chooses freely and nothing is put into it. After the sentence has ended, `pretrain_reading.presentation` takes the scores the request gave at each look (read by a hook on `request_read`) and applies a cross entropy toward the next word in source order, on the parameters of `request_read` alone, for as long as the walk kept to the order. It is a teacher of an internal choice, beside the model's costs and not through the output or the reconstruction. Before it, two of four fresh verbal XOR runs read all four pairs in order (Codex's count); with it, two of two by Codex and one of one here. It is a lesson, set by one key in one configuration, and no rule in the model enforces an order. Codex's wider curriculum (an ordered-reading prerequisite for every text grammar model) is proposed only and is his to accept. If he would rather the order be learned from the outcome alone, the lesson stays a comparison and point 3 below becomes the work.
+
+**For Codex: what stands open after the item, none of it a reason to hold the landing.**
+
+1. *`bin/ReadingMemory.py`*: explore removing it (§23.8, Alec's answer to point 1). The twelve attributes it puts back are still there.
+2. *A look's departure is explored and not credited by the outcome* (§23.8, point 3, with Alec's answer). `BasicModel._compose_score_function` is as `7f3031c6e3` left it. With the lesson teaching the order this matters less for reading in order and still matters for anything the order should be chosen *for*.
+3. *The place term has no scale.* `RequestRead.forward` multiplies the coefficients by the address itself. In the lesson's short sequences that is a few bytes; in a long sentence an address of some hundreds will outweigh any evidence, so the look would follow place whatever it was asked for. Measure on the corpus's longest sentences before the lesson is used beyond the XOR.
+4. *A novel spelling beside a known word is read first in 6 of 12* (Codex's probe): `SentenceLooks.word_activity` offers known words alone while any is found. Open, as Codex says.
+5. *The chart's presentations and the XOR bar in code* (§23.8, point 5, Alec: "OK"), and the two names of point 6: unchanged.
+6. *The standing failure* of `test_whole_paths.py::test_kept_verbal_output_reaches_the_live_understanding_and_conditioner`, and the sweep's others in §23.7.
+
+**What item 1.7 can and cannot say at its close**, each measured from input to output:
+
+- It can say: a word, a word with its mark, and a sentence of two words are said back (19/19, 19/19, 6/6 in three starts each, §23.7); sequences of familiar words are read in source order after the reading lesson (122/122 held out); the verbal XOR's four pairs reach the grammar and return through its inverse in order after that lesson; the input is put back by one pass at the opening (§19.149).
+- It cannot yet say: that the model learns where to look without the lesson; that a novel word is read in its place; that it speaks on a condition ("say Felix", deferred under §19.148); or any age above 0.00, since the chart's first row (a name asked for after it has gone) fails.
+
+*Claude's reading for the landing:* nothing found here is a defect in what the item claims. The claims above are narrower than the item's first aims, and the difference is written down. Whether to push is Alec's.
