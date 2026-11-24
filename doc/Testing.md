@@ -316,13 +316,17 @@ The failure report gives the source and observed words for each mismatched
 row. The default suite retains the historical selector
 `TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`.
 
-The configured verbal XOR run first measures free reading. If training is
-needed, it presents the training strings in `data/lessons/reading-order.json`
-through ordinary sentence training. Each presentation supplies the text alone.
-The opening reconstruction scores the input, and each sampled look can earn
-credit from its effect on the next observation's forecast. Source order is
-used for validation and held-out scoring only. The grammar prerequisite
-requires the validation threshold in both sampled and evaluation reading.
+The configured verbal XOR run first measures free reading. The training
+lesson pairs each printed page with a paced sequence of text observations.
+The page is available to attention. Each look predicts a distribution over
+located wholes and samples from it. Once the walk is fixed, the trainer
+compares the bytes it forecast at each turn with that turn's external
+observation, using the spatial pyramid at the observation's own origin.
+Repeated spellings at different places can predict exactly the same bytes.
+The whole-field reconstruction runs immediately after wide-open attention,
+before narrowing or thought. Validation and held-out testing supply only
+the page. The grammar prerequisite requires the validation threshold in
+both sampled and evaluation reading.
 
 To produce a reusable reader and an independent test report, run
 `.venv/bin/python bin/pretrain_reading.py --output output/reader` in a fresh

@@ -2698,7 +2698,9 @@ existing inverse from the narrowed conceptual field on each successful
 their native places, using the reconstruction pyramid. This would teach
 the way back from the concept formed by the look. The existing expectation
 cost grades what the request anticipated before the observation arrived.
-Keep the whole-field reconstruction as the comparison common to both
+Whole-field reconstruction runs once, immediately after the wide-open
+attention pass. The optional thinking loop follows it (§§19.148–149 of the
+sigma-pi plan). Keep that opening reconstruction in both experimental
 conditions. Train with and without the additional per-look cost on the
 same presentations and compare held-out reading order, displacement of a
 repeated word, whole-field reconstruction error and time per sentence.
