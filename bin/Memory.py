@@ -1937,7 +1937,8 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         'forget_last_sentence': 'last scheduled pass', 'forget_pending': 'scheduled pass'}
 
     def __init__(self, width, capacity, *, percept_width, episodic_concepts=0,
-                 relation_capacity=8192, read_capacity=None, content_width=None):
+                 relation_capacity=8192, read_capacity=None, content_width=None,
+                 relation_type=None):
         super().__init__(width, width)
         self.nDim, self.capacity = int(width), int(capacity)
         self.percept_width, self.episodic_capacity = int(percept_width), int(episodic_concepts)
@@ -1968,7 +1969,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         from MemoryActivity import Activity
         self.activity_config = Activity.from_xml()
         import weakref
-        object.__setattr__(self,'parts',LTM1(relation_capacity))
+        object.__setattr__(self,'parts',(LTM1 if relation_type is None else relation_type)(relation_capacity))
         self.parts._occurrence_store = weakref.ref(self)
         self.clear_caches()
 
@@ -2842,10 +2843,7 @@ class STM0(IdeaRows):
 
     def __init__(self,width,capacity,*,percept_width=0,relation_capacity=2,episodic_concepts=0):
         super().__init__(width,capacity,percept_width=percept_width,episodic_concepts=episodic_concepts,
-            relation_capacity=relation_capacity,read_capacity=capacity)
-        import weakref
-        object.__setattr__(self,'parts',STM1(relation_capacity))
-        self.parts._occurrence_store=weakref.ref(self)
+            relation_capacity=relation_capacity,read_capacity=capacity,relation_type=STM1)
         self.working={}
         self.generation=0
 

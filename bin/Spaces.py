@@ -15218,7 +15218,7 @@ class ConceptualSpace(Space):
         # nominated on the count that nominates a form.
         from Places import meet
         meet(self, bank)
-        return bank
+        return basic.prepare(bank)
 
     def cs_read_bank(self, bank, activity=None, *, publish=True):
         """The order-zero concepts of a bank's readings, each event present

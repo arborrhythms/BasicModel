@@ -22,13 +22,16 @@ def counts_in_spans(byte_ids, spans, observed=None):
         raise ValueError('byte extents require bytes [B,L] and spans [B,E,2]')
     B, L = byte_ids.shape
     spans = spans.to(byte_ids.device).clamp(0, L)
-    counts = torch.nn.functional.one_hot(byte_ids.long().clamp(0, 255), 256).to(torch.get_default_dtype())
-    if observed is not None:
-        counts = counts * observed[..., None].to(counts)
-    prefix = torch.cat((counts.new_zeros(B, 1, 256), counts.cumsum(1)), 1)
-    lo = spans[..., :1].expand(-1, -1, 256)
-    hi = spans[..., 1:].expand(-1, -1, 256)
-    return prefix.gather(1, hi) - prefix.gather(1, lo)
+    # Keep the scan axis contiguous. The old [B,L,256] one-hot needed a
+    # large int64 temporary and a strided cumsum for every byte channel.
+    # Each (batch, position) writes one distinct cell, including repeats.
+    counts = torch.zeros(B, 256, L, dtype=torch.get_default_dtype(), device=byte_ids.device)
+    weights = counts.new_ones(B, 1, L) if observed is None else observed[:, None].to(counts)
+    counts = counts.scatter(1, byte_ids.long().clamp(0, 255)[:, None], weights)
+    prefix = torch.nn.functional.pad(counts.cumsum(-1), (1, 0))
+    lo = spans[..., 0][:, None].expand(-1, 256, -1)
+    hi = spans[..., 1][:, None].expand(-1, 256, -1)
+    return (prefix.gather(2, hi) - prefix.gather(2, lo)).transpose(1, 2)
 
 
 class _PropertySupportRead(torch.autograd.Function):

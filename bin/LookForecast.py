@@ -30,6 +30,7 @@ class LookForecast:
         self.width = self.order_zero_width + len(allocated) - self.basic_count
         evidence = self._located(opened)
         readings = evidence.shape[1]
+        self.readings = readings
         self.slots = torch.arange(readings, device=spans.device)
         self.observations = evidence[:, :, :self.basic_count]
         everything = torch.zeros(len(evidence), readings, dtype=torch.bool, device=spans.device)
@@ -57,7 +58,9 @@ class LookForecast:
 
     def _extent(self, extent):
         """``extent`` ``[B, readings]`` as wide as the observations' readings."""
-        width = int(self.slots.max()) + 1
+        # slots contains consecutive ranges appended by observe. Its maximum
+        # is shape metadata; reading it back synchronizes every forecast.
+        width = self.readings
         return F.pad(extent, (0, max(0, width - extent.shape[1])))[:, :width]
 
     def _outside(self, extent, looked=None):
@@ -159,6 +162,7 @@ class LookForecast:
         live = extent.any(-1) if looked is None else looked
         self.latest = torch.where(live[:, None], pair, self.latest)
         self.slots = torch.cat((self.slots, torch.arange(evidence.shape[1], device=self.slots.device)))
+        self.readings = max(self.readings, evidence.shape[1])
         self.observations = torch.cat((self.observations, torch.where(
             F.pad(extent, (0, max(0, evidence.shape[1] - extent.shape[1])))[:, :evidence.shape[1], None, None],
             evidence[:, :, :self.basic_count], 0.)), 1)

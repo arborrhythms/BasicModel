@@ -1914,6 +1914,14 @@ generation is expected at this stage and is recorded, not tuned away.
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
+   **Performance return, 2026-11-23:** on published 1.7, shared percept
+   reads, contiguous byte scans and reduced host work make measured CPU
+   updates 14–15% faster; the reading lesson reaches the same restored
+   122/122 in 75.77 s versus 99.20 s. The
+   [handoff](doc/plans/2026-11-23-item1-5-handoff.md) records the port,
+   gradient checks, fresh gates and remaining costs. Item remains open.
+   Alec requires review before architecture changes, including path scheduling
+   and memory ownership changes. This round is local work on main, unpushed.
    After item 1.6 and before item 1, so the compiler work compiles what
    this builds under `fullgraph`, and before item 0. It has two parts.
    *Claude's default:* the wiring first, as it stood before the lookups

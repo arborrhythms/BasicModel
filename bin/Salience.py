@@ -175,9 +175,12 @@ def rows_read(basic, bank):
     from BasicPercepts import held_at
     if not bank.rows:
         return bank.table.new_zeros(0, *bank.token.shape, 2)
-    part, whole, added = held_at(bank, bank.table)
-    at = basic.place_factor(bank.table, bank.rows)
-    outside = basic.outside(bank.table, bank.rows, bank.width)
+    if bank.read_basis is None:
+        part, whole, added = held_at(bank, bank.table)
+        at = basic.place_factor(bank.table, bank.rows)
+        outside = basic.outside(bank.table, bank.rows, bank.width)
+    else:
+        part, whole, added, outside, _, at = bank.read_basis
     # As the way up reads it (:meth:`BasicPercepts.BasicPercepts.read_bank`),
     # each occurrence wholly present: only an occurrence of its own tells
     # against what it holds by what it lacks.

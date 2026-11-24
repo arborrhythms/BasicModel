@@ -1,5 +1,5 @@
 """Basic-level occurrences and their promoted, fixed-capacity percept table."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import torch
 from torch import nn
@@ -44,6 +44,10 @@ class PerceptBank:
     # holds: a part's event, a stored form, or a run of a row's parts.
     # ``None``: every occurrence can.
     holder: torch.Tensor = None
+    # Request-independent Pi reads, scoped to this sentence's opening:
+    # part, whole, added, outside, live location factor, stored location factor.
+    # replace(bank, ...) deliberately drops these: another table is another read.
+    read_basis: tuple = field(default=None, init=False, repr=False, compare=False)
 
 
 @dataclass(frozen=True)
@@ -723,7 +727,7 @@ class BasicPercepts(nn.Module):
             self._refresh_pi()
         return rows
 
-    def against(self, row):
+    def against(self, row, *, code=None):
         """A percept's against lane, as wide as its code.
 
         Parts half: the parts that the form's nearest holders add, the
@@ -735,7 +739,7 @@ class BasicPercepts(nn.Module):
             raise ValueError('unavailable basic percept reference')
         if int(row) in self.place_rows:
             return self.value_codes.new_zeros(self.width)
-        code = self.code(row)
+        code = self.code(row) if code is None else code
         parts, _wholes = self.occurrences[int(row)]
         held = code.new_zeros(self.identity_width)
         identity = getattr(self.native, 'identity', None)
@@ -801,7 +805,8 @@ class BasicPercepts(nn.Module):
 
     def lanes(self, row):
         """A percept's two lanes, ``[2, width]``: for, then against."""
-        return torch.stack((self.code(row), self.against(row)))
+        code = self.code(row)
+        return torch.stack((code, self.against(row, code=code)))
 
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
@@ -887,16 +892,27 @@ class BasicPercepts(nn.Module):
                     index.append(coded[run])
             parts = self.value_codes.new_zeros(len(coded), self.identity_width)
             tight = self.value_codes.new_ones(len(coded), self.property_width)
+            groups = []
             for run, n in coded.items():
                 if run is None:
+                    groups.append([])
                     continue
                 atoms = identity.words.get(run) or identity.atoms_of(run)
                 found = [identity.atoms[atom] for atom in atoms if atom in identity.atoms]
+                groups.append(found)
                 if found:
-                    parts[n] = self.part_codes(found).amax(0)
                     tightest = identity.tightest(found) if self.property_width else None
                     if tightest is not None:
                         tight[n] = tightest.to(tight)
+            # One gather for all the sentence's runs, preserving each run's
+            # exact max and its tie gradient. Padding must not join a zero tie.
+            width = max(map(len, groups), default=0)
+            if width:
+                ids = torch.tensor([g + [-1] * (width - len(g)) for g in groups],
+                                   dtype=torch.long, device=codes.device)
+                values = self.part_codes(ids.clamp_min(0))
+                parts = values.masked_fill((ids < 0)[..., None], -torch.inf).amax(1)
+                parts = torch.where((ids >= 0).any(1)[:, None], parts, 0.)
             index = torch.tensor(index, dtype=torch.long, device=codes.device).reshape(B, O)
             codes[..., :self.identity_width] = parts[index]
             held = torch.minimum(held, tight[index])
@@ -1120,6 +1136,26 @@ class BasicPercepts(nn.Module):
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
                            when_band, registry, holder)
 
+    def prepare(self, bank):
+        """Read the fixed opening once for all looks and candidate paths.
+
+        Only geometry and the Pi's local read are shared. Activity, requests,
+        conjunctions and forecasts are evaluated on each path's own history.
+        The bank expires at the sentence boundary before another update.
+        """
+        if bank.rows:
+            stored = self.place_factor(bank.table, bank.rows)
+            # The bank stores detached location wires. An attended read
+            # reconnects those wires to the registry; salience deliberately
+            # reads the stored ones. Share each graph only with its own readers.
+            live = (stored if bank.registry is None else self.place_factor(
+                attended(bank, capacity=bank.token.shape[1]).table, bank.rows))
+            basis = (*held_at(bank, bank.table),
+                     self.outside(bank.table, bank.rows, bank.width),
+                     live, stored)
+            object.__setattr__(bank, 'read_basis', basis)
+        return bank
+
     def read_bank(self, bank, activity=None, look=None):
         """The basic percepts of a bank's readings over a look's table
         (``look``, or the :func:`attended` ones, chosen by ``activity``'s
@@ -1135,6 +1171,7 @@ class BasicPercepts(nn.Module):
         A conjunction is the first Pi over its members' rows. A reading's
         value is the greatest over the attended percepts it holds."""
         from PerceptField import PerceptField
+        basis = bank.read_basis if look is None else None
         if look is None:
             look = attended(bank, share=None if activity is None else activity.sum(-1))
         own = bank.activity if activity is None else activity
@@ -1150,9 +1187,13 @@ class BasicPercepts(nn.Module):
             return out.scatter_reduce(2, slot[None, ..., None].expand_as(x), x, 'amax')[:, :, :K]
         B, A = presence.shape
         if rows:
-            part, whole, added = held_at(bank, look.table)
-            outside = self.outside(look.table, rows, bank.width)
-            factor = self.place_factor(look.table, rows)
+            if basis is None:
+                part, whole, added = held_at(bank, look.table)
+                outside = self.outside(look.table, rows, bank.width)
+                factor = self.place_factor(look.table, rows)
+            else:
+                part, whole, added, outside, factor = (
+                    value.gather(2, look.index[None].expand(len(rows), -1, -1)) for value in basis[:5])
             at = presence[None] * factor
             # Only an occurrence of its own tells against what it holds by
             # what it lacks; any occurrence that holds a row's parts tells
@@ -1230,10 +1271,11 @@ class BasicPercepts(nn.Module):
         valid = torch.ones_like(rows, dtype=torch.bool) if valid is None else valid
         if bool(((rows < 0) | (rows >= len(self.index)))[valid].any()):
             raise ValueError('unavailable basic percept row')
-        selected = torch.unique(rows[valid])
+        selected, inverse = torch.unique(rows[valid], return_inverse=True)
         result = self.value_codes.new_zeros(*rows.shape, self.width)
-        for row in selected.tolist():
-            result = result + (valid & (rows == row))[..., None] * self.code(row)
+        if len(selected):
+            codes = torch.stack([self.code(row) for row in selected.tolist()])
+            result[valid] = codes[inverse]
         return result
 
     def boundary_rows(self, rows, *, valid=None, role):

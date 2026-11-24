@@ -5119,6 +5119,7 @@ class _EntryIndex:
         self.indexed = 0
         self.tail = {}
         self.pending = 0
+        self._host = None
 
     def rebuild(self, key_of, n):
         key_of = key_of[:n]
@@ -5126,6 +5127,7 @@ class _EntryIndex:
         self.start = torch.cat((key_of.new_zeros(1),
                                 torch.bincount(key_of, minlength=self.keys).cumsum(0)))
         self.indexed, self.tail, self.pending = int(n), {}, 0
+        self._host = None
 
     def add(self, key, entry, key_of):
         self.tail.setdefault(int(key), []).append(int(entry))
@@ -5135,8 +5137,14 @@ class _EntryIndex:
 
     def of(self, key):
         key = int(key)
-        begin, end = int(self.start[key]), int(self.start[key + 1])
-        return self.order[begin:end].tolist() + self.tail.get(key, [])
+        # Host consumers need topology, never the live entry weights. Copy
+        # this immutable compressed prefix once per rebuild, not two scalar
+        # reads and a transfer for every row at every look. Pending additions
+        # already have a host index; device gathers still use start/order.
+        if self._host is None:
+            self._host = self.start.tolist(), self.order.tolist()
+        start, order = self._host
+        return order[start[key]:start[key + 1]] + self.tail.get(key, [])
 
     def gather(self, keys):
         """The entries of ``keys`` ``[K]`` (distinct) and the position in

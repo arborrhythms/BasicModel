@@ -1,4 +1,28 @@
 """The shared memory read: entry address plus a concept within that idea."""
+from contextvars import ContextVar
+from functools import wraps
+
+import torch
+
+
+_percept_reads = ContextVar('member_percept_reads', default=None)
+
+
+def share_percept_reads(function):
+    """Gather each percept once while constructing one read-only menu.
+
+    A menu can contain many collections with the same members. Its scope
+    ends before any selected link writes memory or an optimizer changes a
+    code. No cache survives into a different trial, close or autograd mode.
+    """
+    @wraps(function)
+    def shared(owner, *args, **kwargs):
+        token = _percept_reads.set((owner, {}))
+        try:
+            return function(owner, *args, **kwargs)
+        finally:
+            _percept_reads.reset(token)
+    return shared
 
 
 def read(owner, address, concept=None):
@@ -6,7 +30,12 @@ def read(owner, address, concept=None):
         concept = address
     if isinstance(concept, tuple) and concept[:1] == ('bp',):
         from torch.nn.functional import pad
-        value = owner.basic_percepts.code(concept[1])
+        scope = _percept_reads.get()
+        values = scope[1] if scope is not None and scope[0] is owner else {}
+        key = (concept[1], torch.is_grad_enabled(), torch.is_inference_mode_enabled())
+        if key not in values:
+            values[key] = owner.basic_percepts.code(concept[1])
+        value = values[key]
         return pad(value, (0, owner.similarity_codebook.W.shape[-1]-value.numel()))
     if concept is not None:
         alloc = owner._concept_allocator
@@ -48,7 +77,6 @@ def read(owner, address, concept=None):
         # A relative event has no cached result. Its state is the current
         # union of the ideas/concepts in the retained binary relation.
         from Memory import OCCURRENCE, RELATION
-        import torch
         pending, seen, values = [location[1]], set(), []
         while pending:
             relation = pending.pop()

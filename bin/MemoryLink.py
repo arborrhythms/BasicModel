@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 import torch
 
 from ConceptualMatch import match
+from MemberRead import share_percept_reads
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,7 @@ def chunk_candidates(owner, kind, order, stream):
     return result
 
 
+@share_percept_reads
 def menu(owner, occurrence, candidates, *, value, where, when, stream, projected=None):
     pool, resolver = owner.mtm, owner.components.reference_close
     site = occurrence if isinstance(occurrence, Occurrence) else Occurrence(occurrence)
