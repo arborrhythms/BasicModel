@@ -13713,6 +13713,7 @@ class BasicModel(BaseModel):
             # one tiling); handed over transiently, like the callback.
             _spans_full = getattr(_ss, "_staged_unit_spans", None)
             ps._staged_unit_spans = _spans_full
+            ps._staged_sentence_rows = getattr(self.inputSpace, '_packed_sentence_rows', None)
             ps._staged_unit_bytes = analysis_input if _ss is not None else None
             from Omission import prepare as prepare_omission
             object.__setattr__(self.perceptualSpace, '_omission_prepare',
@@ -13721,6 +13722,7 @@ class BasicModel(BaseModel):
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
                 ps._staged_unit_spans = None
+                ps._staged_sentence_rows = None
                 ps._staged_unit_bytes = None
                 object.__setattr__(self.perceptualSpace, '_omission_prepare', None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)

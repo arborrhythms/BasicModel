@@ -314,25 +314,26 @@ class WordIdentity(nn.Module):
     def block_part_visibility(self, prior_count, observed, streams, device):
         """Which independent pages witnessed each new part before block consolidation."""
         from itertools import islice
-        all_streams = set(range(streams))
+        unavailable = torch.iinfo(torch.long).max
         born = []
         for run in islice(reversed(self.added), len(self.added) - prior_count):
             between = self.added[run]
             if run in observed:
-                owners = observed[run]
+                starts = [observed[run].get(b, unavailable) for b in range(streams)]
             elif between is not None:
-                # A repair requires the two confusable forms. A pre-existing
-                # form is available to every page; a new form only to its readers.
-                left, right = between
-                owners = observed.get(left, all_streams) & observed.get(right, all_streams)
+                # A repair needs both observations. Older forms were already
+                # available when the block opened.
+                starts = [max(observed[word].get(b, unavailable) if word in observed else 0
+                              for word in between) for b in range(streams)]
             else:
-                # Explicit suffix teaching can introduce the part from its holder.
-                owners = {b for word, seen in observed.items() if run in word for b in seen}
-            born.append((self.atoms[('part', run)], owners))
+                # An explicit suffix lesson teaches the part from its holder.
+                witnesses = [seen for word, seen in observed.items() if run in word]
+                starts = [min((seen[b] for seen in witnesses if b in seen), default=unavailable)
+                          for b in range(streams)]
+            born.append((self.atoms[('part', run)], starts))
         born.sort()
         return (torch.tensor([part for part, _ in born], dtype=torch.long, device=device),
-                torch.tensor([[b in owners for _, owners in born] for b in range(streams)],
-                             dtype=torch.bool, device=device))
+                torch.tensor([starts for _, starts in born], dtype=torch.long, device=device).T)
 
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""

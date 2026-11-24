@@ -9144,16 +9144,22 @@ class InputSpace(Space):
             raw = raw + b" "
         return len(fn(raw))
 
-    def _unit_counts_by_sentence(self, sentences):
-        """Per-sentence unit counts of the joined row (``" ".join``), each
-        joining space attributed to the sentence before it."""
-        joined = " ".join(sentences).encode("ascii", errors="replace")
-        spans = self._unit_span_fn(joined)
+    @staticmethod
+    def packed_sentence_starts(sentences):
+        """Byte starts after joining the ASCII-encoded input sentences with one space."""
         starts = []
         cursor = 0
         for sentence in sentences:
             starts.append(cursor)
             cursor += len(sentence.encode("ascii", errors="replace")) + 1
+        return starts
+
+    def _unit_counts_by_sentence(self, sentences):
+        """Per-sentence unit counts of the joined row (``" ".join``), each
+        joining space attributed to the sentence before it."""
+        joined = " ".join(sentences).encode("ascii", errors="replace")
+        spans = self._unit_span_fn(joined)
+        starts = self.packed_sentence_starts(sentences)
         counts = [0] * len(sentences)
         k = 0
         for a, _z in sorted(spans):
@@ -11389,11 +11395,19 @@ class PartSpace(Space):
         # An explicit suffix lesson teaches the marker against this presentation.
         # Ordinary openings read the part inventory available on entry.
         prior_parts = len(identity.added) if identity is not None else 0
+        sentence_rows = getattr(self, '_staged_sentence_rows', None)
+        track_parts = batch > 1 or (sentence_rows is not None and any(len(row) > 1 for row in sentence_rows))
+        from bisect import bisect_right
+        sentence_starts = None if sentence_rows is None else [
+            InputSpace.packed_sentence_starts(row) for row in sentence_rows]
         new_forms = {}
-        def observe_new_form(unit, stream):
-            if batch > 1:
+        def observe_new_form(unit, stream, offset):
+            if track_parts:
                 from WordIdentity import text_of
-                new_forms.setdefault(text_of(unit), set()).add(stream)
+                starts = None if sentence_starts is None else sentence_starts[stream]
+                opening = 0 if starts is None else starts[bisect_right(starts, offset) - 1]
+                readers = new_forms.setdefault(text_of(unit), {})
+                readers[stream] = min(readers.get(stream, opening), opening)
 
         teaching_marker = identity is not None and identity._marker_pattern is not None
         if teaching_marker and admit:
@@ -11401,7 +11415,7 @@ class PartSpace(Space):
                 for w, (lo, hi) in enumerate(spans[:word_capacity]):
                     if changed is None or not changed[b][w]:
                         unit = raw[lo:hi]
-                        observe_new_form(unit, b)
+                        observe_new_form(unit, b, lo)
                         identity.observe_nested(unit)
         located_parts = None
         if layout is not None and simple_parts and not hiding:
@@ -11448,7 +11462,7 @@ class PartSpace(Space):
                         if form < 0:
                             unit = raw[lo:hi]
                             observed_forms.append(unit)
-                            observe_new_form(unit, b)
+                            observe_new_form(unit, b, lo)
                 continue
             staged_words = []
             for word_index in range(word_capacity):
@@ -11461,7 +11475,7 @@ class PartSpace(Space):
                         form = identity.word_rows.get(unit, unit)
                         observed_forms.append(form)
                         if isinstance(form, bytes):
-                            observe_new_form(form, b)
+                            observe_new_form(form, b, start)
                     if identity is not None:
                         cover = (omission['plans'][b][word_index]['cover'] if hidden
                                  else identity.ordered_cover(unit))
@@ -11574,7 +11588,7 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
-        if batch > 1 and identity is not None and len(identity.added) > prior_parts:
+        if track_parts and identity is not None and len(identity.added) > prior_parts:
             self._forward_input['block_parts'] = identity.block_part_visibility(
                 prior_parts, new_forms, batch, dev)
         if layout is not None:

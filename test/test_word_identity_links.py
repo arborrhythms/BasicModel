@@ -294,3 +294,36 @@ def test_new_reading_part_is_local_until_the_next_packed_block(monkeypatch, eage
         assert (first['lanes'][0, left, :width] < next_block['lanes'][0, right, :width]).any()
     finally:
         model.End()
+
+
+def test_later_packed_sentence_cannot_teach_an_earlier_opening(monkeypatch, eager_reading):
+    from BasicPercepts import BasicPercepts
+    from Models import BaseModel
+    from What import What
+    from data import Data
+
+    captured = []
+    original = BasicPercepts._occurrence_what
+    def capture(self, percepts, spans, wholes, **options):
+        result = original(self, percepts, spans, wholes, **options)
+        if not captured:
+            captured.append((spans[0].tolist(), result[0][0].detach().clone()))
+        return result
+    monkeypatch.setattr(BasicPercepts, '_occurrence_what', capture)
+    model, _ = BaseModel.from_config('data/MM_corpus_lessons.xml', data=Data())
+    data = model.inputSpace.data
+    try:
+        with data.runtime_batch(['abc ab abc']):
+            data.has_supervised_outputs = False
+            source = model.inputSpace.prepPackedInput([['abc', 'ab', 'abc']])
+            model.runBatch(train=True, optimizer=model.getOptimizer(), batchSize=1, split='runtime',
+                           questions=(What.present(0, split='runtime'),),
+                           batch_override=(source, source.new_empty(1, 0)))
+        spans, codes = captured[0]
+        assert [0, 2] not in spans
+        assert [7, 9] in spans
+        width = model.perceptualSpace.percept_store.identity.width
+        first, last = (codes[spans.index(interval), :width] for interval in ([0, 3], [7, 10]))
+        assert (first <= last).all() and (first < last).any()
+    finally:
+        model.End()
