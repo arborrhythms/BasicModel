@@ -139,8 +139,9 @@ class Clause:
                 raise ValueError('clause references are positive shared ids or -1')
         if any(not isinstance(child, Clause) for child in (*self.children, *self.companions)):
             raise TypeError('clause children must be grammatical clauses')
-        object.__setattr__(self, 'meaning', replace(self.meaning,
-            sentence_kind='idea' if self.relation is None else 'relation'))
+        kind = 'idea' if self.relation is None else 'relation'
+        if self.meaning.sentence_kind != kind:
+            object.__setattr__(self, 'meaning', replace(self.meaning, sentence_kind=kind))
     @property
     def slots(self):
         return self.point[None] if self.point is not None else self.meaning.roles

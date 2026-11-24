@@ -163,7 +163,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 reference = numerics.native_leaf_reference(operand.reference, concepts[word])
                 order = operand.order
             has_point = reference_has_point(reference, relations is None or not relations[word])
-            stack.append(dict(value=values[word], composed_value=values[word], ref=reference, rule=None,
+            # This closing can outlive its trial lease. Snapshot the one
+            # selected row for all its readers before another trial reuses it.
+            point = values[word] if numerics is None else values[word].clone()
+            stack.append(dict(value=point, composed_value=point, ref=reference, rule=None,
                               order=order,
                               children=(), leaves=(word,), has_point=has_point,
                               interpretation='no_op' if interpretations[word] == 'no_op' else 'symbol'))
@@ -176,7 +179,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             unbound = owner is not None and owner.interpret.no_object(reference)
             if stack[-1]['order'] == 1 or addressed or unbound:
                 stack[-1]['close_request'] = dict(mode='bind', leaves=(word,),
-                    cue=values[word], content=values[word],
+                    cue=point, content=point,
                     **forward_fields(word), leaf=True)
                 if unbound:
                     stack[-1]['close_request']['interpret_leaf'] = True
@@ -189,7 +192,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             if interpretations[word] == 'no_op':
                 stack[-1].update(order=0, has_point=True)
                 stack[-1]['close_request'] = dict(mode='mint', no_op_leaf=True, leaves=(word,),
-                    cue=None, content=values[word], percept=values[word])
+                    cue=None, content=point, percept=point)
             continue
         if kind == 3:
             stack[-2:] = reversed(stack[-2:])
@@ -455,7 +458,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             rule = current['rule']
             if rule.method_name == 'modifier':
                 attached(current['children'][0])
-                modifiers.append(frames[current['identity_action'],1])
+                modifiers.append(frames[current['identity_action'],1].clone())
             elif current is semantic and getattr(rule, 'clause_form', None) == 'S':
                 attached(current['children'][1])
             elif getattr(rule, 'head_role', 0) and current is not semantic:
@@ -469,10 +472,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             introduction=introductions.get(node.get('identity_handle', 0)) is node,
             result_composition=None if action is None else composition(
                 node['children'][1] if getattr(node['rule'], 'relation_kind', None) == 'equal' else node),
-            result=None if action is None else (frames[action, 1] if
-                getattr(node['rule'], 'relation_kind', None) == 'equal' else frames[action, 2]),
-            before=None if source_action is None else frames[source_action, 0], basis=basis,
-            verb_meaning=None if source_action is None else frames[source_action, 1],
+            result=None if action is None else frames[action,
+                1 if getattr(node['rule'], 'relation_kind', None) == 'equal' else 2].clone(),
+            before=None if source_action is None else frames[source_action, 0].clone(), basis=basis,
+            verb_meaning=None if source_action is None else frames[source_action, 1].clone(),
             operation=None if semantic['rule'] is None else semantic['rule'].method_name,
             alternative=node.get('timeline', False), modifiers=tuple(modifiers),
             timeline_order=number('timeline_actions') is not None,
@@ -697,7 +700,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 return None
             relative = request.get('introduction', False)
             description = item['children'][(getattr(item['rule'], 'head_role', 0) or 1)-1] if relative else None
-            return Clause(ConceptualMeaning.from_description(point), point=point,
+            return Clause(ConceptualMeaning.from_description(point, sentence_kind="idea"), point=point,
                 subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=node_order(item),
                 children=(recover(description),) if relative else (),
                 evidence=metadata(item['leaves'])['evidence'], **bands(item),
@@ -750,7 +753,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                            if mode == 'mint' else head(item))
             meta = metadata(description['leaves'])
             meta['order'] = determined_order(item) if mode == 'mint' else item['mint_order']
-            formed = ConceptualMeaning.from_description(value(item))
+            formed = ConceptualMeaning.from_description(value(item), sentence_kind="idea")
             formation = item.get('formation') or head(item).get('formation')
             if formation is not None:
                 formed = replace(formed, bindings={'_formation_records': (dict(formation, role=0),)})
@@ -839,7 +842,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                                  zero if right is None else right))
             occupied = (True, True, right is not None or right_ref != -1)
             mask = torch.tensor(occupied, device=roles.device)
-            described = ConceptualMeaning(roles, mask, polarity=polarity)
+            described = ConceptualMeaning(roles, mask, polarity=polarity,
+                                          sentence_kind='relation' if relation else 'idea')
             references = ((left_ref, predicate_ref, right_ref) if relation is not None else
                           (left_ref, concept(operands[1]), -1))
             factored_refs = left_ref, predicate_ref, right_ref
@@ -875,7 +879,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             children = contextual
         else:
             point = value(root)
-            described = ConceptualMeaning.from_description(point, polarity=polarity)
+            described = ConceptualMeaning.from_description(point, polarity=polarity, sentence_kind="idea")
             depth = 1 if point.ndim == 1 else point.shape[0]
             occupied = tuple(role < depth for role in range(3))
             references = (node['ref'], -1, -1)
@@ -977,7 +981,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                     refs_with_predicate = list(references)
                     refs_with_predicate[1] = ('clause', len(children))
                     predicate = described.roles[1]
-                    children.append(Clause(ConceptualMeaning.from_description(predicate),
+                    children.append(Clause(ConceptualMeaning.from_description(predicate, sentence_kind="idea"),
                         point=predicate, order=0))
                     references = tuple(refs_with_predicate)
                     factored_refs = references
@@ -1111,7 +1115,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         if operation not in relative:
             raise ValueError('three slots have no selected relative clause')
         meaning = ConceptualMeaning(torch.stack(roles), torch.ones(3, dtype=torch.bool, device=program.leaves.device),
-                                    polarity=True if meaning is None else meaning.polarity)
+                                    polarity=True if meaning is None else meaning.polarity, sentence_kind="relation")
         if operation == 'whole':
             operation = 'part'
             references = references[2], references[1], references[0]

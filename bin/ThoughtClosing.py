@@ -64,8 +64,9 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
     if committed is not None:
         # The committed row supplies the canonical references.
         source = committed
-    if (committed is None and parsed is not None and torch.equal(parsed.roles, meaning.roles)
-            and torch.equal(parsed.role_mask, meaning.role_mask)):
+    if (committed is None and parsed is not None and parsed is not meaning
+            and (parsed.role_refs != meaning.role_refs or parsed.constituents != meaning.constituents)
+            and torch.equal(parsed.roles, meaning.roles) and torch.equal(parsed.role_mask, meaning.role_mask)):
         source = replace(source, role_refs=meaning.role_refs, constituents=meaning.constituents)
     slots = list(dict.fromkeys((*open_slots(source), *clause_open)))
     if clause_open:

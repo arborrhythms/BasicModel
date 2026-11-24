@@ -12926,7 +12926,7 @@ class BasicModel(BaseModel):
         return tuple(captured.get(int(sid), (None,) * B)[b]
                      for b, sid in enumerate(final)), captured
 
-    def _capture_reading_programs(self, sentence_slot=None, *, admit=True):
+    def _capture_reading_programs(self, sentence_slot=None, *, admit=True, kept_entries=None):
         """Capture one program per sentence, sharing final rows with their slot.
 
         This is the eager boundary after forward publication. The whole brick's
@@ -12992,7 +12992,7 @@ class BasicModel(BaseModel):
             captured[slot] = (
                 self._program_entries(program, leaves, rows, word_rows, activations, end,
                                       concept_ids=concept_ids,
-                                      lexical_forms=lexical_forms, admit=admit,
+                                      lexical_forms=lexical_forms, admit=admit, kept_entries=kept_entries,
                                       complete=(published_depth[:, slot] > 0
                                                 if admit and published_depth is not None else None))
                 if program is not None and torch.is_tensor(end)
@@ -13002,7 +13002,7 @@ class BasicModel(BaseModel):
         return current, captured
 
     def _program_entries(self, program, leaf_slab, rows, word_rows, activations, end_state,
-                         *, concept_ids=None, lexical_forms=None, admit=True, complete=None):
+                         *, concept_ids=None, lexical_forms=None, admit=True, complete=None, kept_entries=None):
         """Own compact row references and compose actions for each batch row.
 
         ``lexical_forms`` is frozen grammar provenance aligned to the original
@@ -13102,7 +13102,9 @@ class BasicModel(BaseModel):
                 selected_leaf_orders = leaf_orders(chunk_scope,transactions,batch=b,
                     positions=pos,orders=selected_leaf_orders)
             from ReadingIndex import ReadingIndex
-            action_index = ReadingIndex(acts[:L], n, self.languageSpace)
+            kept = None if kept_entries is None else kept_entries[b]
+            action_index = (kept.action_index if kept is not None else
+                            ReadingIndex(acts[:L], n, self.languageSpace))
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)
@@ -13183,7 +13185,8 @@ class BasicModel(BaseModel):
                        ('symbol_when', word_view(getattr(self, 'inputSpace', None), 'symbol_when')))
                    if torch.is_tensor(value)})
             self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b,
-                after=int(self.symbolSpace.ltm_store.names_issued))
+                after=int(self.symbolSpace.ltm_store.names_issued),
+                kept_tree=None if kept is None else kept.tree)
             entries.append(entry)
         return tuple(entries)
 
@@ -20122,10 +20125,14 @@ class BasicModel(BaseModel):
                 isp._word_active_mask, orders=orders,
                 evidence=reference_evidence(self, lang[0], 'commit_word_reference_slab:per_word'))
 
-    def _sentence_observation(self, state, sid, active, *, admit=False, record=None, incoming_trust=1.):
+    def _sentence_observation(self, state, sid, active, *, admit=False, record=None, incoming_trust=1.,
+                              kept_rows=None):
         current_stm, lang, _feedback = state
         B, _K, D = current_stm[0].shape
-        _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit)
+        kept_entries = (None if kept_rows is None else
+                        tuple(source['entries'][b] for b, source in enumerate(kept_rows)))
+        _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit,
+                                                          kept_entries=kept_entries)
         # A word left uninterpreted that no rule took (rule of the literal):
         # the sentence is not well formed, and its closing publishes no tree.
         from Interpret import well_formed
@@ -20141,6 +20148,20 @@ class BasicModel(BaseModel):
         # A row whose trees did not reduce to one has no program to read.
         entries = tuple(entry if row_depths[b] > 0 else None
                         for b, entry in enumerate(programs.get(sid, (None,) * B)))
+        if kept_rows is not None:
+            # Admission assigns durable references. The candidate already
+            # interpreted these operands and scored its reference choices.
+            keys = ('payloads', 'depths', 'meanings', 'observed', 'observed_depths',
+                    'symbol_ids', 'clauses', 'partial')
+            view = {key: [source[key][row] for row, source in enumerate(kept_rows)]
+                    for key in keys}
+            infix = any(source['roles'] is not None for source in kept_rows)
+            roles = ([None if source['roles'] is None else source['roles'][row]
+                      for row, source in enumerate(kept_rows)] if infix else None)
+            plans = ([source['reference_plans'][row] for row, source in enumerate(kept_rows)]
+                     if getattr(self, '_component_reading', False) else ())
+            return dict(view, entries=entries, mask=mask, roles=roles,
+                        layout='infix' if infix else 'stm', reference_plans=plans)
         disc = getattr(self.symbolSpace, 'expectation', None)
         clauses = []
         registry = _boundary_registry(self)
@@ -20616,11 +20637,11 @@ class BasicModel(BaseModel):
         """Publish only the chosen rows before the next sentence's perception."""
         self._publish_sentence_scratch(state)
         rows = wins.detach().cpu().tolist()
-        view = self._sentence_observation(state, sid, active, admit=True)
+        chosen = [observations[index] for index in rows]
+        view = self._sentence_observation(state, sid, active, admit=True, kept_rows=chosen)
         # Admission may allocate native addresses, but it must not re-read
         # their dictionary values in place of the scored path's values or
         # change the discrete identity choice that was scored.
-        chosen = [observations[int(index)] for index in rows]
         from SentenceField import select_fields
         from EpisodicMemory import stage
         kept_field = select_fields([item['record'].understanding_field for item in observations], wins)
@@ -20666,11 +20687,6 @@ class BasicModel(BaseModel):
             forced=entry.interpret_forced,
             decisions=leaf_readings(self.languageSpace, entry, len(entry.leaves),
                                    forced=entry.interpret_forced)) for entry in entries)
-        for key in ('payloads', 'depths', 'meanings', 'observed', 'observed_depths', 'symbol_ids'):
-            view[key] = [source[key][b] for b, source in enumerate(chosen)]
-        if any(source['roles'] is not None for source in chosen):
-            view['roles'] = [None if source['roles'] is None else source['roles'][b]
-                             for b, source in enumerate(chosen)]
         view['clauses'] = [None if value is None else value.clause for value in comprehensions]
         disc = getattr(self.symbolSpace, 'expectation', None)
         store = getattr(self.symbolSpace, 'ltm_store', None)

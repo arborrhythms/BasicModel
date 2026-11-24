@@ -54,6 +54,7 @@ def test_2_first_document_matches_recorded_object_readings(monkeypatch):
 def test_comprehension_later_action_preserves_operand_views_and_gradients(reader):
     from Understanding import Reading
     from Comprehension import Evaluation
+    from SentenceStrata import IdeaStack
     from SentenceCompose import saved_sentence_values
     points = torch.tensor([[.2, .4], [.3, .1], [.1, .2]], requires_grad=True)
     actions = torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1],
@@ -70,8 +71,10 @@ def test_comprehension_later_action_preserves_operand_views_and_gradients(reader
     rule = SimpleNamespace(method_name='sum', head_role=1)
     operator = SimpleNamespace(content_operand=lambda value: value,
         compose_from_grammar_context=lambda operands, context: operands[0]+operands[1])
+    store = IdeaStack(2, capacity=8, relation_capacity=4, action_capacity=len(actions), word_capacity=len(points))
     with saved_sentence_values():
-        evaluation = Evaluation(model, program, 0)
+        evaluation = Evaluation(model, program, 0, store=store)
+        assert evaluation.leaves.data_ptr() == store._word_rows.data_ptr()
         frame_storage = evaluation.closing_value('operation_values').data_ptr()
         evaluation.leaf(0); evaluation.leaf(1)
         evaluation.operation(2, 1, 0, -1, rule, operator)
@@ -80,6 +83,9 @@ def test_comprehension_later_action_preserves_operand_views_and_gradients(reader
         evaluation.leaf(2)
         evaluation.operation(4, 1, 0, -1, rule, operator)
         assert evaluation.closing_value('operation_values').data_ptr() == frame_storage
+        next_sentence = store.operation_rows(program.operation_values)
+        assert next_sentence.data_ptr() == frame_storage
+        assert not next_sentence.any()
         if reader == 'roles':
             torch.testing.assert_close(torch.stack((left, right)), points[:2], rtol=0, atol=0)
         loss.backward()
@@ -304,6 +310,11 @@ def test_comprehension_stages_native_values_without_mutating_words_or_mtm(tmp_pa
     observe = model._sentence_observation
     def completed(*args, **kwargs):
         result = observe(*args, **kwargs)
+        if kwargs.get('kept_rows') is not None:
+            for row, source in enumerate(kwargs['kept_rows']):
+                if result['entries'][row] is not None:
+                    assert result['entries'][row].action_index is source['entries'][row].action_index
+                    assert result['clauses'][row] is source['clauses'][row]
         for entry in (result.get('comprehensions', ()) if kwargs.get('record') is not None else ()):
             if entry is None:
                 continue

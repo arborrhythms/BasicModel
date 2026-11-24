@@ -12,12 +12,36 @@ from ReadingIndex import ReadingIndex
 
 class IdeaStack(STM0):
     """A trial's native semantic entries, beside its immutable word tree."""
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, action_capacity=0, word_capacity=0, **kwargs):
         super().__init__(*args, **kwargs)
         # A semantic binding can explicitly name the idea's referent. A
         # lexical row may have the same referent without that annotation.
         self.register_buffer('_identity_bound', self.row_names.new_zeros(self.capacity, dtype=torch.bool),
                              persistent=False)
+        self.register_buffer('_operation_rows', self.slots.new_empty(action_capacity, 3, self.nDim),
+                             persistent=False)
+
+        self.register_buffer('_word_rows', self.slots.new_empty(word_capacity, self.nDim),
+                             persistent=False)
+
+    def word_rows(self, like):
+        """Own the interpreted values written by shifts of this candidate."""
+        rows = self._word_rows
+        if len(like) > len(rows) or like.shape[1:] != rows.shape[1:]:
+            raise OverflowError('candidate words exceed the reserved STM word rows')
+        if rows.device != like.device or rows.dtype != like.dtype:
+            self._word_rows = rows = like.new_empty(rows.shape)
+        # Each shift writes its addressed word before comprehension reads it.
+        return rows[:len(like)].detach()
+
+    def operation_rows(self, like):
+        """Start the numerical journal for this stream's leased candidate."""
+        rows = self._operation_rows
+        if len(like) > len(rows) or like.shape[1:] != rows.shape[1:]:
+            raise OverflowError('candidate actions exceed the reserved STM operation rows')
+        if rows.device != like.device or rows.dtype != like.dtype:
+            self._operation_rows = rows = like.new_empty(rows.shape)
+        return rows[:len(like)].detach().zero_()
 
     def append_closed_idea(self, point, *, identity, evidence, entry, surprise, name):
         if point.shape != (self.nDim,):
@@ -304,6 +328,7 @@ class SentenceStrata(nn.Module):
         # both lanes, and an untrusted located mention. These are the native
         # close's five possible rows, not copies of numerical inner nodes.
         self.idea_stores = nn.ModuleList(IdeaStack(width,5*(self.words+self.operators),
+            action_capacity=self.words+self.operators, word_capacity=self.words,
             percept_width=percept_width, relation_capacity=relation_capacity,
             episodic_concepts=episodic_concepts)
             for _ in range(self.trials*self.streams))
@@ -313,7 +338,7 @@ class SentenceStrata(nn.Module):
         self._traces = [None] * len(self.idea_stores)
         self._names = 0
 
-    def capture(self, program, language, stream, *, after=0):
+    def capture(self, program, language, stream, *, after=0, kept_tree=None):
         self._names = max(self._names, int(after))
         indices = range(self.trials*stream, self.trials*(stream+1))
         index = next((i for i in indices if self._leases[i] is None or self._leases[i]() is None), None)
@@ -329,7 +354,10 @@ class SentenceStrata(nn.Module):
         if record is None:
             record = ReadingIndex(program.actions, len(program.leaves), language)
             object.__setattr__(program, 'action_index', record)
-        record.validate_interfaces(language)
+        # The winning tree has already resolved these operator interfaces.
+        # Admission can change a referent while preserving its argument site.
+        if kept_tree is None or record is not kept_tree.trace.index:
+            record.validate_interfaces(language)
         trace = Trace(program, record, self._names + 1)
         tree = Tree(trace, ideas)
         self._names += len(trace.index.steps) + ideas.capacity

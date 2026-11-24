@@ -6,7 +6,7 @@ operands alongside that walk; it neither chooses grammar nor grows a tree.
 from dataclasses import dataclass, replace, fields, is_dataclass
 
 import torch
-from Meaning import frozen_metadata
+from Meaning import ConceptualMeaning, frozen_metadata
 
 
 def detached(value, memo=None):
@@ -34,6 +34,10 @@ def detached(value, memo=None):
 def from_stack(value, points, memo=None):
     """Keep native idea values and closing metadata, not numerical inner nodes."""
     from ClauseRow import Composition
+    # Roles and their occupied lanes were formed before staging. Only the
+    # composition carries points that can acquire a new STM address here.
+    if isinstance(value, ConceptualMeaning):
+        return value
     memo = {} if memo is None else memo
     if type(value) is tuple and frozen_metadata(value):
         return value
@@ -122,17 +126,21 @@ class Value:
 
 
 class Evaluation:
-    def __init__(self, model, program, stream, *, trust=1.):
+    def __init__(self, model, program, stream, *, trust=1., store=None):
         self.model, self.program, self.stream = model, program, stream
         self.trust = float(trust)
         self.owner, self.language = model._concept_owner(), model.languageSpace
         self.stack = []
-        self.leaves = [None] * len(program.leaves)
+        if store is None and program.tree is not None:
+            store = program.tree.ideas
+        self.leaves = (torch.empty_like(program.leaves) if store is None
+                       else store.word_rows(program.leaves))
         self.ids = program.concept_ids.clone()
         self.native_ids = self.ids.clone()
         self.orders = (torch.full_like(self.ids, -1) if program.leaf_orders is None
                        else program.leaf_orders.clone())
-        self._frames = torch.zeros_like(program.operation_values)
+        self._frames = (torch.zeros_like(program.operation_values) if store is None
+                        else store.operation_rows(program.operation_values))
         self.held_writes = None if program.held_writes is None else program.held_writes.tolist()
         self.refs = (program.actions.new_full((len(program.actions), 2), -1)
                      if program.operation_refs is None else program.operation_refs.clone())
