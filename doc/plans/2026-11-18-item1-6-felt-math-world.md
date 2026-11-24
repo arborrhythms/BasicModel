@@ -8205,3 +8205,332 @@ Keep tmp/item1-6/things_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 41. Step E: the return (Claude on Opus, 2026-11-24) (Claude on Opus, 2026-11-24)
+
+The work of §40.2, following §40.1. No git was run, and nothing is committed.
+Progress was kept in `tmp/item1-6/things_progress.md`. Every file changed
+was first copied to `/tmp/item1-6-2026-11-24/things_before/bin/`
+(`BasicPercepts.py`, `NumericPercepts.py`, `ImagePercepts.py`, `Places.py`,
+`FamiliarTier.py`). Nothing was removed: the loops of nomination in
+`NumericPercepts.read` and `ImagePercepts.perceive` were replaced in place
+by one function they now share, and the old text is in those copies.
+
+### 41.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `bin/BasicPercepts.py` | **Points 1 and 2.** `PerceptBank.things` (new field, default `None`): for each stream, each thing's occurrence and its pixels' occurrences at their places. `BasicPercepts.things`: each thing's row and its arrangement. `perceive_thing(arrangement)` makes the row; `reserve(..., thing=)` keys it; `is_value` is false for it; `value_keys` gives its entries in `value_pi`. `with_things(bank, percepts, *, where_width)` finds the runs of touching places, perceives each thing, and adds its occurrence and its reading to the bank. **Point 3 and 4.** `thing_events` (called by `value_events`) reads a thing's row at a thing's occurrence, place by place, for and against, at every shift that lays it within the occurrence. In `read_values`, a thing's reading holds its own occurrence alone. **Point 6.** `thing_at` and `thing_back` give a thing's parts back at their places. The extra state saves and restores `things`. |
+| `bin/NumericPercepts.py` | `read` calls `with_things` after `Places.meet` and nominates things as values are nominated. `reverse` gives back things' parts (point 6), and where a thing and a pixel both give a place back, the lesser. |
+| `bin/ImagePercepts.py` | `perceive` does the same as `read` and returns the bank with its things; `read` uses that bank. `image_rows` includes things' rows. `_given_back` (new) is the old `put_back`'s body plus the things'; `put_back` takes the lesser where both give back; `charge` adds `reconstruction_order_zero.things` where both give back. Module docstring: the thing's reading. |
+| `bin/Places.py` | `nominate(owner, percepts, kind)`: the loop of nomination the two readers had, written once, used for `'value'` and `'thing'`. |
+| `bin/FamiliarTier.py` | `percept_range`: a thing's row lies in `scene`, as a value's does (otherwise it would count as text, and `promoted_alone` would give it a symbol). |
+| `test/test_item16_things.py` (new) | E1 to E8. |
+
+`data/` and `doc/` are untouched, and no key was added: point 5 uses
+`architecture.intensityWhereWidth`. Neither gate's file, nor anything a gate
+uses, was touched. No existing test was changed (41.5).
+
+### 41.2 The thing's row, its key and its entries (step 1)
+
+- **The run (point 1).** In `with_things`, each run of pixel occurrences
+  whose places touch by a side on any axis of the box is one run. A run of
+  one place is no thing and has no second row (E1). A run wider than
+  `intensityWhereWidth` on any axis is no thing; 0 sets no limit (point 5).
+- **Its occurrence** comes after the pixels':
+  - its span and its reading are the box of its places, from the address
+    of the least corner to one past that of the greatest;
+  - its `.where` wires are the box origin's;
+  - its `.what` is the greatest of its pixels' codes, on two lanes;
+  - its `.when` is the moment's.
+
+  Its reading comes after the bracket, so the places and the bracket keep
+  their indices (`A` places, the bracket at `A`). A thing's reading holds its
+  own occurrence alone. The bracket holds pixels and things.
+- **The row (point 2).** Its parts are its pixels' basic percepts in address
+  order within the box (row by row), each at its offset from the box's
+  origin: `arrangement = ((offset, pixel's row), ...)`.
+  - **Its key** in `index` is `('thing', arrangement)`. The same thing at
+    another place is the same row (E2).
+  - `occurrences[row]` is the pixels' parts, their lower cuts in that order,
+    and one whole: the least upper cut that all its pixels lie under (the
+    greatest of the pixels' upper cuts).
+  - **Its code** is `subspace_bounds`, as for a form: the greatest of its
+    parts' codes and the least of its wholes'. That is the code of its
+    greatest pixel's region (E3).
+- **Its entries in `value_pi`** are `('ps', arrangement)` and `('ws', whole)`:
+  the run of parts at their places as one key, as a form's run is, and the
+  whole. It has none in the first Pi (`member_keys` and `against_keys` give
+  `[]`).
+- **Nomination.** The row is reserved at first sight. MTM nominates it under
+  `('thing', row)` on `conceptMintCount` readings (`Places.nominate`), as
+  values and forms are, and it brings its concept then with the symbol type
+  `'thing'` (E5).
+- **The reading (points 3 and 4)** is `thing_events`, inside `value_events`.
+  - For each shift `s` that lays every one of the row's places on a place
+    of the thing's occurrence: `part` is the least, over the row's places,
+    of `held_at`'s part test, the pixel's code against the part's lower cut
+    (numerical parthood, element by element); `under` is the least of
+    `held_at`'s whole test against the row's whole.
+  - For is `part * under`, and against is `part * (1 - under)`. Each lane is
+    the greatest over the shifts, times activity and `parthood`.
+  - So a run within a thing reads at it where it lies within it place by
+    place (point 3; his `[1,2,1]` within `[1,3,3,1]` lies within it at two
+    shifts).
+  - A thing's row reads nothing at a pixel's occurrence, and no other row
+    reads at a thing's occurrence.
+  - The text modality's reading is not touched: `read_bank`, `held_at` and
+    the first Pi are unchanged.
+
+### 41.3 The certificates, as printed
+
+From the development runs (`pytest -s`), on the code as it stands; the
+bounded run's outcomes are in 41.4. The MM_image model has widths 3 and 3,
+so `.2`, `.5` and `.9` fall in bins 0, 1 and 2. The scene model has widths
+64 and 64.
+
+- **E1, a run is a thing** (MM_image). The image holds a run `(3..5, 2)`
+  of `.2 .5 .2`, a run `(10, 10..11)` of `.9 .9`, and a lone `.5` at
+  `(20, 20)`.
+  - `things [[3, 4]]`.
+  - The boxes are `[(843, 846), (1074, 1103)]`, as expected.
+  - The arrangements are `3: (((0,0,0),0), ((1,0,0),1), ((2,0,0),0))` and
+    `4: (((0,0,0),2), ((0,1,0),2))`.
+  - `rows 5`: three pixels' rows and two things'. The lone place's row is
+    `[1]`, the row the first thing's middle made; it gains no second row.
+- **E2, the same thing elsewhere.** `rows ([[2]], [[2]])` and
+  `where ([843, 846], [1359, 1362])`; `things 1`.
+- **E3, parts and whole.** The image is an L: `(3,2) .2`, `(4,2) .5`,
+  `(4,3) .2`.
+  - `arrangement (((0,0,0),0), ((1,0,0),1), ((1,1,0),0))`.
+  - `parts (-4, -5, -4)` and `wholes (-5,)`.
+  - `entries_first_pi []`, and
+    `entries_value_pi [('ps', <the arrangement>), ('ws', -5)]`.
+  - `code [1,1,0, 1,1,0]`, equal to the greatest part's code, which is the
+    `.5` pixel's. `key ('thing', <the arrangement>)`.
+- **E4, for and against.** The row of `[.2,.5,.2]`, read at the reading of
+  the thing in each image:
+
+  | Case | Read |
+  |---|---|
+  | own | `(1, 0)` |
+  | one above, `[.2,.9,.2]` | `(0, 1)` |
+  | his `[1,3,3,1]`, `[.2,.9,.9,.2]` (it lies within at two shifts) | `(0, 1)` |
+  | a part not held, `[.2,.2,.2]` | `(0, 0)` |
+  | the run `[.2,.5]` within the thing (point 3) | `(1, 0)` |
+  | the pixel `.5` at the thing's reading | `(0, 0)` |
+  | the pixel `.5` at its own place | `(1, 0)` |
+  | the run `[.2,.5]` at the pixel's reading | `(0, 0)` |
+- **E5, recurrence.** `mint_count 3`. The thing seen at each presentation:
+  `{2: (False, None)}`, then `{2: (False, None)}`, then `{2: (True, 5)}`.
+- **E6, the limit** (MM_xor, after the XOR inputs have recurred).
+  `where_width 1`, `things {}`, `readings 3` with `places 2` (the places and
+  the bracket, nothing more). `with_things` on two adjacent `1.`s at width 1
+  gives `[[]]`. The XOR gate, the XOR certificate (V5) and
+  `test_concept_output.py` whole pass as they are (41.4).
+- **E7, put back.**
+  - **On the numeric stem** (a thing `[.2,.5,.2]` and a lone `.9`, after
+    recurrence). From the thing's concept alone: `[0.2, 0.5, 0.2, 0.0]` at
+    the four lit places, the centroids `{0.2: 0.2, 0.5: 0.5}`. The lone
+    pixel is not the thing's, so it gets nothing. With the pixels' concepts
+    too: `[0.2, 0.5, 0.2, 0.9]`, equal to the image (`torch.equal`).
+  - **With a sentence** (the scene model, `text ''`, pixels `(1..3, 1, 0)`
+    at steps `51 128 51`). `ImagePercepts.put_back` from the thing's concept
+    alone gives `[0.2, 0.502, 0.2]`, equal to the image felt
+    (`torch.equal` over the 512 places). `reconstruction_order_zero.things`
+    is `[0.]` when they agree.
+  - **The charge where they differ.** The same three places at step `128`
+    each, met once, so this thing has no concept yet. The pixels give back
+    `.502` at each place, and the known thing `[51,128,51]` reads for there
+    by numerical parthood. The lesser is put back, `[0.2, 0.502, 0.2]`, and
+    `reconstruction_order_zero.things` is `0.2413`.
+- **E8, the corpus (a measure).** This is the train split of each category,
+  every image's things found as the reader finds them (`with_things`, at the
+  scene model's `intensityWhereWidth`, 0), in a table of basic percepts of
+  its own with the scene model's widths and box. "Nominated" means a row met
+  in at least `conceptMintCount` (3) images.
+  - **Categories that hold things wider than a place:** 3 to 25 and 27.
+    Categories 1 and 2 have only single pixels, and 26 has no images.
+  - **In all:** 4,975 things, 2,047 distinct rows, 544 of them nominated.
+
+  | Category | Images | Things | Rows | Nominated |
+  |---|---|---|---|---|
+  | 3 | 192 | 18 | 14 | 0 |
+  | 4 | 200 | 28 | 24 | 0 |
+  | 5 | 200 | 30 | 29 | 0 |
+  | 6 | 200 | 80 | 70 | 0 |
+  | 7 | 776 | 74 | 52 | 4 |
+  | 8 | 728 | 472 | 297 | 42 |
+  | 9 | 613 | 399 | 264 | 29 |
+  | 10 | 352 | 479 | 445 | 7 |
+  | 11 | 200 | 324 | 313 | 1 |
+  | 12 | 1131 | 342 | 226 | 27 |
+  | 13 | 975 | 120 | 78 | 9 |
+  | 14 | 200 | 154 | 131 | 2 |
+  | 15 | 200 | 172 | 136 | 4 |
+  | 16 | 857 | 439 | 265 | 37 |
+  | 17 | 673 | 197 | 144 | 10 |
+  | 18 | 706 | 57 | 34 | 8 |
+  | 19 | 1180 | 157 | 93 | 19 |
+  | 20 | 1172 | 494 | 318 | 38 |
+  | 21 | 836 | 84 | 49 | 7 |
+  | 22 | 629 | 368 | 252 | 26 |
+  | 23 | 988 | 130 | 92 | 9 |
+  | 24 | 533 | 67 | 52 | 3 |
+  | 25 | 200 | 158 | 128 | 5 |
+  | 27 | 200 | 132 | 126 | 0 |
+
+  The per-category counts are within each category. A thing's row is its
+  exact arrangement of pixels' rows, and at 64 bins a value's steps fall in
+  two or three rows (V12). So one shape at one value is several rows, and
+  most rows of things are not met three times.
+
+
+### 41.4 The runs
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py`
+with the 64 selectors of `tmp/item1-6/things_run_files.txt`, logged in
+`tmp/item1-6/things_run1.log`. The selectors are:
+
+- §40.2 step 6's list;
+- `test_item16_grid.py`, `test_item17_one_reconstruction.py`,
+  `test_item20_round2_inverse.py` and `test_item20_round6_reverse.py`, the
+  other test files that build MM_image or read the numeric stem's reverse;
+- the files of `values_run4_files.txt`.
+
+**`Result: test_failure, exit 1; 558/558 cases completed.`**
+`output/tests/20261124-151411-96c9f4/result.json`: 506 passed, 44 skipped,
+4 xfailed, 4 failed. It was compared test by test with the sweep
+(`tmp/item1-6/promotion_compare.py`).
+
+- **Both stopping gates passed**, and `test_mm_xor.py` whole, V5 (the XOR
+  certificate) and `test_concept_output.py` whole. The three cases of
+  `test_native_cli_curriculum_learns_output_and_keeps_located_inverse`
+  ("without the intersection") passed.
+- E1 to E8, V1 to V12, C1 to C5, S, N1, N2 and N7 passed. N3 to N6 xfailed,
+  as marked in step D3.
+- **The four failures:**
+  - `test_item17_symbols::test_54bd_…` is `failed` in the sweep.
+  - `test_item17_symbols::test_cert_c_…` is on the list of tests that pass
+    or fail by chance.
+  - `test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`
+    is on the list of chance.
+  - `test_item16_grid::test_g1_built_widths_are_as_before[MM_xor.xml]` is on
+    the list (test order). Its MM_image case passed.
+- Every other test has its sweep outcome. The 44 skipped are skipped in the
+  sweep or are trained tests.
+
+**Memory.** The greatest of a worker was 5.09 GiB (worker-002). The others
+were 2.16 to 4.66 GiB, and none came near the 8 GiB cap.
+
+**`test_item16_scene_field.py`**, alone in the bounded runner:
+
+| | Worker time | Peak | Run |
+|---|---|---|---|
+| Before (unchanged tree) | 35.6 s | 1.35 GiB | `output/tests/20261124-150243-b64c11` |
+| After | 34.8 s | 1.35 GiB | `output/tests/20261124-153453-335ad0` |
+
+A development run of `test_item16_values.py`, `test_item16_scene_field.py`,
+`test_item18_places.py` and `test_item16_scene.py` gave 37 of 37 passed.
+On MM_image, V2 and V11 now make a thing of hundreds of places. Their
+assertions hold, because the thing gives back the same centroids as its
+pixels.
+
+
+### 41.5 Tests ported
+
+None. No assertion of an existing test was made false by a point of §40.1
+on the runs (41.4). No assertion was weakened, skipped or marked, and no seed
+was chosen.
+
+### 41.6 What in §40.1 could not be built as written, and what was built
+
+1. *A thing's `.where`.* A reading is an interval of addresses, and the
+   wires encode one place. So a thing's reading runs from the address of
+   its box's least corner to one past that of its greatest, and its wires
+   are those of the box's origin. In a box laid out row by row, that
+   interval holds the box and other places between its rows.
+   - The reading holds its own occurrence alone, set in `read_values`, so
+     no pixel of another run inside the interval is read there.
+   - The box itself is recovered from the interval's two ends
+     (`thing_at`).
+   - *Marked.*
+2. *A thing's row is read at the bracket too.* The bracket holds every
+   occurrence. Under `intensityWhereWidth` a value's row is kept from
+   readings wider than the limit, but a thing's row is not, since every
+   reading of a thing is wider than a place in addresses. A thing wider
+   than the limit is simply never made (point 5). *Marked.*
+3. *Parts of a thing (point 3).* The relation is built in the reading.
+   - A thing's row is read at a thing's occurrence at every shift that lays
+     its places within it, place by place. So a smaller thing that recurs
+     reads where it lies within a larger one (E4).
+   - No sub-run is laid out or reserved. A run becomes a row only when it
+     occurs as a thing itself.
+   - *Built:* no stored list of parts per thing; parthood is read when
+     needed. *Marked.*
+4. *Whole over which places.* "For" asks that the row's places, where they
+   are laid on the occurrence, lie under its whole. An occurrence with
+   places beyond the row's (the row a part of it) is not told against by
+   them, since the whole holds of the row's places. *Marked.*
+5. *The way back from a part found at a shift.*
+   - `thing_at` gives a thing's parts back only where the reading's box is
+     the row's own box, which fixes the shift at zero.
+   - A smaller thing's row that reads for within a larger thing gives
+     nothing back, because the field keeps no shift. The places are given
+     back by the larger thing's row and by the pixels.
+   - *Marked.*
+6. *Where a thing's and a pixel's concepts disagree,* the lesser is put
+   back (§29.3, point 2).
+   - On the image with a sentence the difference is charged as
+     `reconstruction_order_zero.things`: the squared difference at the
+     places where both give back, against the pixels' square, with the
+     image's weight and category. `SentenceField` sums every
+     `reconstruction_order_zero.*` term.
+   - The numeric stem has no charge path, so `NumericPercepts.reverse`
+     takes the lesser only.
+   - Where several things give one place back, the greatest is taken, as
+     among values.
+   - *Marked.*
+7. *E8's "rows nominated"* counts rows met in `conceptMintCount` or more
+   images, each image counting once as MTM counts a reading. The scene
+   model was not run over 19,000 images, and its table has no room for
+   their rows. The measure uses a table of basic percepts of its own, with
+   the model's widths, box and `intensityWhereWidth`. *Marked.*
+8. *A new field of `PerceptBank`, `things`.* `thing_events` needs, for each
+   thing's occurrence, its pixels' occurrences at their places. The field
+   defaults to `None` and is set only by `with_things`, so a sentence's
+   bank is as it was.
+9. *Saved state.* `things` is saved in the extra state and read back with
+   `state.get('things', ())`, as `conjunctions`, `forms` and `place_rows`
+   are read.
+10. *`data/model.xml`'s comment on `intensityWhereWidth`* still describes it
+    as the limit of a value's row alone. It was left untouched because every
+    gate reads that file. Proposed: add "and the greatest width, on any
+    axis, of a thing".
+11. *The nomination loops.* The loops in `NumericPercepts.read` and
+    `ImagePercepts.perceive` were replaced by `Places.nominate`, one
+    function with the same behaviour, now used for things as well.
+
+### 41.9 Review of step E (Claude, 2026-11-24)
+
+**Accepted.** Claude ran `test_mm_xor.py` whole, the other stopping gate,
+`test_item16_things.py`, `test_item16_values.py`,
+`test_item16_scene_field.py` and `test_concept_output.py`: 42 of 42
+passed.
+
+- *A thing's `.where` is an interval of addresses* from its box's least
+  corner to one past its greatest, which in a box laid out row by row
+  also spans places between its rows. Nothing else is read there, so it
+  is harmless now; a look that takes a felt thing will need the box
+  itself.
+- *A smaller thing within a larger gives nothing back,* since the field
+  keeps no shift. His "placing the parts according to their overlap"
+  (29.5) is so far built for a thing in its own box only.
+- *The corpus.* 4,975 things in 2,047 distinct rows, 544 of them met in
+  three images or more: at 64 bins one shape at one value falls in
+  several rows, as one value's steps do (37.9). What gathers them is the
+  same open point as naming's (39.11).
+- *The comment on `intensityWhereWidth`* in `data/model.xml` speaks of a
+  value's row only; it is to say "no thing is wider than this", and is
+  changed at the close with the gates run after it.
+

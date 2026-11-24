@@ -42,7 +42,8 @@ def percept_range(owner, percept):
     """The range of the registry that the places of the basic percept
     ``percept`` lie in: of a place's row, the range holding its place (its
     cone decoded); of a conjunction, its members' where they share one; of a
-    value's row, the range ``scene`` (a value is read at an image's places);
+    value's row or a thing's, the range ``scene`` (each is read at an image's
+    places);
     of any other row of the first Pi, the range ``text``, which holds the word
     brackets of the sentence it is read at. ``None`` where none holds it."""
     basic = owner.basic_percepts
@@ -53,7 +54,7 @@ def percept_range(owner, percept):
         registry = owner._model.where_registry
         address = int(registry.decode(basic.place_rows[percept][0].to(registry.grid)))
         return next((name for name, (lo, hi) in registry.slices.items() if lo <= address < hi), None)
-    if basic.is_value(percept):
+    if basic.is_value(percept) or percept in basic.things:
         return 'scene'
     return 'text'
 

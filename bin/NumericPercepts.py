@@ -47,14 +47,16 @@ class NumericPercepts:
         is an image's bank: each place whose intensity is above zero is an
         occurrence of the basic percept of intensity whose region holds it.
         A basic percept and its places are met, and each is nominated on the
-        count that nominates a form and brings its concept then; the promoted
+        count that nominates a form and brings its concept then; so is each
+        thing, a run of touching places, each an occurrence with a reading of
+        its own (:meth:`BasicPercepts.BasicPercepts.with_things`); the promoted
         rows are read by the Pi over values, no value's row over more places than
         the greatest .where width of a percept of intensities, and the
         order-zero Sigma reads them through the one Not. The definitions
         above order zero are closed."""
         from FieldProjection import inventory, close
         from FamiliarTier import observe_intersection, promote_candidates
-        from Places import meet, bring
+        from Places import meet, nominate
         owner = self.model._concept_owner()
         raw = inputs.reshape(len(inputs), -1)
         values = intensities(raw if raw.is_floating_point() else raw.float())
@@ -65,15 +67,14 @@ class NumericPercepts:
         axes = torch.arange(A, device=values.device)
         places = self.model.where_registry.intervals('numeric', axes.expand(B, -1))
         percepts = basic.perceive_intensities(values)
-        for percept in percepts.unique().tolist():
-            if percept >= 0:
-                for b in (percepts == percept).any(1).nonzero().flatten().tolist():
-                    if owner.nominates(('value', percept), owner.reading(b)):
-                        bring(owner, percept, 'value')
+        nominate(owner, percepts, 'value')
         bank = basic.value_bank(values, places, registry=self.model.where_registry,
                                 when_encoding=self.model.when_encoding,
                                 time=self.model.present())
         meet(owner, bank)
+        # The things, runs of touching places, after the places are met.
+        bank, things = basic.with_things(bank, percepts, where_width=self.where_width)
+        nominate(owner, things, 'thing')
         nominated = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
         bank = replace(bank, rows=tuple(nominated), codes=basic.bank_codes(nominated).to(values.device))
         presence = basic.read_values(bank, where_width=self.where_width)
@@ -101,22 +102,36 @@ class NumericPercepts:
         field reads, by an entry that is not a Not, where the field at that
         place's reading reads that concept for (its for lane above zero);
         nothing where none is. A row reads for only inside its region, so
-        one is read for at a place."""
+        one is read for at a place. A thing's concept read for at a reading
+        gives its parts back in their order at their places, each its
+        centroid (:meth:`BasicPercepts.BasicPercepts.thing_back`); where a
+        thing's and a pixel's both give a place back, the lesser."""
         from Spaces import _concept_alloc_of
         owner = self.model._concept_owner()
         basic = owner.basic_percepts
         A = self.dimensions
-        read = field.evidence[..., :A, 0].detach() > 0                       # [C, B, A]
+        found = field.evidence[..., 0].detach() > 0                          # [C, B, K]
+        read = found[..., :A]                                                # [C, B, A]
         position = {int(cid): index for index, cid in enumerate(field.concept_ids.tolist())}
-        readers = {}
+        readers, things = {}, {}
         for concept, percept, negated in _concept_alloc_of(owner).order_zero_members:
             cid = owner.concept_id_at_row(concept)
-            if not negated and cid is not None and int(cid) in position and basic.is_value(percept):
-                readers.setdefault(percept, []).append(position[int(cid)])
+            if not negated and cid is not None and int(cid) in position:
+                if basic.is_value(percept):
+                    readers.setdefault(percept, []).append(position[int(cid)])
+                elif percept in basic.things:
+                    things.setdefault(percept, []).append(position[int(cid)])
         values = torch.zeros(read.shape[1:], device=read.device, dtype=basic.value_codes.dtype)
         for row, concepts in readers.items():
             here = read[concepts].any(0)
             values = torch.where(here, torch.maximum(values, basic.felt([row])[0].to(values)), values)
+        if things:
+            registry = self.model.where_registry
+            lo, hi = registry.slices['numeric']
+            degree = torch.stack([found[concepts].any(0) for concepts in things.values()]).to(values)
+            back, given = basic.thing_back(list(things), degree, field.where, registry, lo, hi)
+            back = back.to(values)
+            values = torch.where(given & (values > 0), torch.minimum(values, back), torch.where(given, back, values))
         return values.to(field.evidence).reshape(len(values), *self.model.inputSpace.inputShape)
 
     def forward(self, inputs):

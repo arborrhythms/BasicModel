@@ -13,7 +13,8 @@ nothing at a reading of the other. The table goes to the one Not and the
 Sigma of order zero in one call (``cs_read_percept_field``).
 
 The image's readings are the places its pixels hold, each a place of the
-box, and the bracket over the box. A row with no image has none: its
+box, the bracket over the box, and each thing's, the box of a run of
+touching places that are not background. A row with no image has none: its
 columns are empty brackets. An empty image has the bracket alone.
 
 At the opening's reconstruction the image is put back from the field alone
@@ -72,22 +73,26 @@ def image_bank(model):
 def perceive(model, bank, values):
     """The image's values perceived, each basic percept of intensity
     nominated on the count that nominates a form and its concept brought then, and its places met,
-    as the numeric stem does."""
-    from Places import meet, bring
+    then its things perceived and nominated alike, as the numeric stem does.
+    Returns the bank with its things
+    (:meth:`BasicPercepts.BasicPercepts.with_things`)."""
+    from Places import meet, nominate
+    from util import TheXMLConfig
     owner = model._concept_owner()
     basic = owner.basic_percepts
     percepts = basic.perceive_intensities(values)
-    for percept in percepts.unique().tolist():
-        if percept >= 0:
-            for b in (percepts == percept).any(1).nonzero().flatten().tolist():
-                if owner.nominates(('value', percept), owner.reading(b)):
-                    bring(owner, percept, 'value')
+    nominate(owner, percepts, 'value')
     meet(owner, bank)
+    bank, things = basic.with_things(bank, percepts,
+                                     where_width=int(TheXMLConfig.get('architecture.intensityWhereWidth')))
+    nominate(owner, things, 'thing')
+    return bank
 
 
 def image_rows(model):
-    """The promoted rows of the image's space: the values' rows, the rows
-    of the places of the box, and the conjunctions over them alone."""
+    """The promoted rows of the image's space: the values' rows, the
+    things' rows, the rows of the places of the box, and the conjunctions
+    over them alone."""
     owner = model._concept_owner()
     basic = owner.basic_percepts
     registry = model.where_registry
@@ -99,7 +104,7 @@ def image_rows(model):
         cones = torch.stack([basic.place_rows[row][0] for row in places])
         at = registry.decode(cones.to(registry.grid))
         inside = {row for row, address in zip(places, at.tolist()) if lo <= address < hi}
-    own = {row for row in promoted if basic.is_value(row) or row in inside}
+    own = {row for row in promoted if basic.is_value(row) or row in basic.things or row in inside}
     own |= {row for row in promoted if row in basic.conjunctions
             and all(member in own for member in basic.conjunctions[row])}
     return [row for row in promoted if row in own]
@@ -158,19 +163,23 @@ def read(model, sid, bank):
     # The image is perceived before either is read: a row it nominates is
     # written before the reading that holds it.
     image, values = image_bank(model)
-    perceive(model, image, values)
+    image = perceive(model, image, values)
     perception, wires = joined(model, bank, owner.basic_percepts.read_bank(bank), image, values)
     field = owner.cs_read_percept_field(perception)
     object.__setattr__(owner, '_cs_field_wires', wires)
     return field
 
 
-def put_back(model, field):
-    """The image put back from the field alone, ``[B, places of the box]``:
-    at each place, the greatest over the values' rows of the row's centroid
-    times whether a concept of the field reads for it at that place's
-    reading (its for lane above zero), the derivative of that for lane
-    passed through; nothing where none reads."""
+def _given_back(model, field):
+    """What the field gives back at each place of the box, ``[B, places of
+    the box]``, from the pixels' rows and from the things' rows, and where
+    each gives one back. From the pixels: at each place, the greatest over
+    the values' rows of the row's centroid times whether a concept of the
+    field reads for it at that place's reading (its for lane above zero), the
+    derivative of that for lane passed through. From the things: a thing's
+    row read for so at a reading gives its parts back in their order at
+    their places, each its centroid
+    (:meth:`BasicPercepts.BasicPercepts.thing_back`)."""
     from Spaces import _concept_alloc_of
     owner = model._concept_owner()
     basic = owner.basic_percepts
@@ -180,24 +189,42 @@ def put_back(model, field):
     place = (where[..., 0] >= lo) & (where[..., 1] <= hi) & (where[..., 1] - where[..., 0] == 1)
     found = field.evidence[..., 0]                                                       # [C, B, E]
     degree = (found > 0).to(found) + (found - found.detach())
-    readers = {}
+    readers, things = {}, {}
     for concept, percept, negated in _concept_alloc_of(owner).order_zero_members:
-        if not negated and basic.is_value(percept):
+        if not negated and (basic.is_value(percept) or percept in basic.things):
             cid = owner.concept_id_at_row(concept)
             if cid is not None:
-                readers.setdefault(percept, set()).add(int(cid))
+                (readers if basic.is_value(percept) else things).setdefault(percept, set()).add(int(cid))
     ids = field.concept_ids if field.concept_ids.ndim == 2 else field.concept_ids[:, None].expand(-1, B)
+
+    def read(by):
+        """``[rows, B, E]``: the degree to which a concept of the field reads for each row."""
+        rows = list(by)
+        # [V, C, B]: whether the field's concept reads the row.
+        member = torch.tensor([[[int(cid) in by[row] for cid in column] for column in ids.T.tolist()]
+                               for row in rows], dtype=torch.bool, device=found.device)
+        member = member.reshape(len(rows), B, ids.shape[0]).transpose(1, 2)
+        return (degree[None] * member[..., None].to(degree)).amax(1)
     rows = list(readers)
-    # [V, C, B]: whether the field's concept reads the value's row.
-    member = torch.tensor([[[int(cid) in readers[row] for cid in column] for column in ids.T.tolist()]
-                           for row in rows], dtype=torch.bool, device=found.device)
-    member = member.reshape(len(rows), B, ids.shape[0]).transpose(1, 2)
     value = basic.felt(rows).to(found) if rows else found.new_zeros(0)
-    candidates = (degree[None] * member[..., None].to(degree)).amax(1) * value[:, None, None]   # [V, B, E]
+    candidates = read(readers) * value[:, None, None]                                   # [V, B, E]
     back = torch.cat((found.new_zeros(1, B, E), candidates)).amax(0) * place
     index = (where[..., 0] - lo).clamp(0, hi - lo - 1)
     spread = F.one_hot(index, hi - lo).to(back) * place[..., None].to(back)            # [B, E, P]
-    return (back[..., None] * spread).amax(1)
+    pixels = (back[..., None] * spread).amax(1)
+    if not things:
+        return pixels, pixels.detach() > 0, torch.zeros_like(pixels), torch.zeros_like(pixels, dtype=torch.bool)
+    thing, given = basic.thing_back(list(things), read(things), where, model.where_registry, lo, hi)
+    return pixels, pixels.detach() > 0, thing.to(pixels), given
+
+
+def put_back(model, field):
+    """The image put back from the field alone, ``[B, places of the box]``:
+    at each place, what the pixels' rows or the things' rows give back
+    there (:func:`_given_back`); where both give one back, the lesser, the
+    difference being charged (:func:`charge`); nothing where none reads."""
+    pixels, by_pixels, thing, by_things = _given_back(model, field)
+    return torch.where(by_pixels & by_things, torch.minimum(pixels, thing), torch.where(by_things, thing, pixels))
 
 
 def felt(model, device, dtype):
@@ -220,12 +247,21 @@ def charge(model, errors, sid, field, active):
     """The image's term of the opening's errors, ``reconstruction_order_zero.image``:
     the squared difference place by place over the box between what is put
     back and what was felt, against what was felt (``Error.squared``),
-    weighted as the sentence's reconstruction is. A row with no image is
-    charged nothing for one. ``None`` where this opening reads no image."""
+    weighted as the sentence's reconstruction is. Where a thing's and a
+    pixel's concepts both give a place back and differ, the difference is
+    charged too, ``reconstruction_order_zero.things``, against what the
+    pixels give back. A row with no image is charged nothing for one.
+    ``None`` where this opening reads no image."""
     if not imaged(model, sid):
         return None
-    back = put_back(model, field)
+    pixels, by_pixels, thing, by_things = _given_back(model, field)
+    both = by_pixels & by_things
+    back = torch.where(both, torch.minimum(pixels, thing), torch.where(by_things, thing, pixels))
     image, has = felt(model, back.device, back.dtype)
-    errors.squared('reconstruction_order_zero.image', back, image, mask=active.to(has.device) & has,
+    mask = active.to(has.device) & has
+    errors.squared('reconstruction_order_zero.image', back, image, mask=mask,
                    weight=model.loss.reconstruction_scale, category='reconstruction')
+    if bool(both.any()):
+        errors.squared('reconstruction_order_zero.things', thing * both, pixels * both, mask=mask,
+                       weight=model.loss.reconstruction_scale, category='reconstruction')
     return back

@@ -80,6 +80,17 @@ def admit(owner, plus, minus, what):
     return bring(owner, row, 'place')
 
 
+def nominate(owner, percepts, kind):
+    """Each row of ``percepts`` ``[B, A]`` (``-1`` where none) counted under
+    ``(kind, row)`` once for each stream that holds it, as a form is, and
+    brought with its concept on the count that nominates it."""
+    for percept in percepts.unique().tolist():
+        if percept >= 0:
+            for b in (percepts == percept).any(1).nonzero().flatten().tolist():
+                if owner.nominates((kind, percept), owner.reading(b)):
+                    bring(owner, percept, kind)
+
+
 def bring(owner, row, kind):
     """A nominated row promoted, and its concept of order zero, of the symbol
     type ``kind``, reading it; ``None`` where order zero has no room."""

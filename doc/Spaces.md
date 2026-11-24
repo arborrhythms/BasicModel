@@ -503,6 +503,19 @@ places.
   it lies below the part.
 - **Nominated on recurrence.** A row is promoted, and brings its concept,
   when occurrences recur in its region, as a form's does.
+- **A thing is a run of touching places,** as a word is a run of letters
+  between spaces: the places of an image that are not background and touch
+  by a side are one thing, an occurrence beside its pixels' with the box
+  of its places as its `.where`. Its percept is made as a form's is: its
+  parts are its pixels' percepts in their order within its box, its whole
+  the least upper cut all its pixels lie under, its row in the value
+  space's Pi, nominated when the thing recurs. The same thing at another
+  place is the same percept. It is read for and against as a form is. On
+  the way back a thing's concept gives its parts back in their order at
+  their places; where a thing and a pixel give back different values the
+  lesser is put back, and a sentence's image is charged the difference
+  (`reconstruction_order_zero.things`). A smaller thing found within a
+  larger gives nothing back.
 - **A place is told by its wires.** A place's row of the first Pi is
   nominated for an image as for a sentence, when occurrences recur at it
   (`Places.meet`), and keeps the what met there; it is a part of an
@@ -510,7 +523,8 @@ places.
   rows. The comparison needs the wires at single precision or better.
 - **Percepts atomic over digits.** `architecture.intensityWhereWidth` is
   the greatest `.where` width of a percept of intensities; 0, its default,
-  sets no limit. The XOR configurations set it to one: a value's row and
+  sets no limit. The XOR configurations set it to one: no thing is wider
+  than a place, and a value's row and
   its concept are read at single places and never over the whole input, so
   that nothing but the conjunction joins the two inputs. The output's
   readout takes each concept as the greatest over its readings, which
