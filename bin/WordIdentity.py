@@ -1003,29 +1003,28 @@ class WordIdentity(nn.Module):
         self._given_revision += 1
         return touched
 
-    def _kept(self, raw):
+    def _kept(self, raw, *, device='cpu'):
         """Where a coordinate given to a form stays in its basic percept's
         code: all of the parts half, and of the wholes half the AND of the
         codes of the rows of the table of wholes that hold on every byte of
         the form, since a percept's wholes half is at or below each of its
         wholes' (rules 5 and 52). All of the code where no table is bound."""
-        kept = torch.ones(self.total, dtype=torch.bool, device='cpu')
         properties = getattr(getattr(self.basic, 'whole', None), 'primitive_properties', None)
         if properties is None or not self.property_width:
-            return kept
-        stamp = (id(properties), properties.revision)
+            return torch.ones(self.total, dtype=torch.bool, device=device)
+        stamp = (id(properties), properties.revision, properties.members.device)
         if self._table_stamp != stamp:
             with torch.no_grad():
-                self._table = (properties.coefficients().detach().cpu() > .5,
-                               properties.codes().detach().cpu() >= 1 - 1e-6)
+                self._table = (properties.coefficients().detach() > .5,
+                               properties.codes().detach() >= 1 - 1e-6)
             self._table_stamp = stamp
         holds, codes = self._table
         if codes.shape[-1] != self.property_width:
-            return kept
-        rows = holds[:, sorted(set(bytes(raw)))].all(1)
-        if bool(rows.any()):
-            kept[self.width:] = codes[rows].all(0)
-        return kept
+            return torch.ones(self.total, dtype=torch.bool, device=device)
+        elements = torch.tensor(sorted(set(raw)), device=holds.device, dtype=torch.long)
+        rows = holds.index_select(1, elements).all(1)
+        upper = (~rows[:, None] | codes).all(0)
+        return torch.nn.functional.pad(upper, (self.width, 0), value=True).to(device)
 
     def _keep(self, affected, new=None):
         """After a change (rule 61): repair until no accident is left,

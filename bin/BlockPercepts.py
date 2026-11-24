@@ -239,7 +239,7 @@ def repaired_parts(identity, block, born, observed, repairs):
             holds = block.rows.new_tensor([w in holders for w in words], dtype=torch.bool)
             extras = [(identity.order[h], [seat[a] for a in identity.words[h]
                        if a not in identity.words[inner] and atom[1] not in a[1]]) for h in sorted(holders)]
-            targets[atom] = identity.order[inner], holds, identity._kept(inner).to(device), extras
+            targets[atom] = identity.order[inner], holds, identity._kept(inner, device=device), extras
 
     for step in range(1, max(map(len, offsets), default=0) + 1):
         live = word_visible & (word_rank <= step)
