@@ -500,3 +500,28 @@ def test_word_property_runs_fullgraph_matches_observed_bytes():
                     i = j
         torch.testing.assert_close(counts, expected, rtol=0, atol=0)
         assert torch.equal(edges, expected_edges)
+
+
+def test_all_attested_parts_are_found_on_their_own_contiguous_bytes(monkeypatch):
+    from types import SimpleNamespace
+    import FieldReverse as field
+
+    # Force collisions so the exact comparison is exercised for every candidate.
+    monkeypatch.setattr(field, 'HASH_MODULUS', 2)
+    store = SimpleNamespace(inverse_table=[b'a', b'aa', b'ab', b'ba', b'aba', b'aaa', b'zz'])
+    values = torch.tensor([list(b'aba aa'), list(b'zz aaa')])
+    visible = torch.ones_like(values, dtype=torch.bool)
+    visible[1, 1] = False
+    compiled = torch.compile(field.form_presence, backend='eager', fullgraph=True)
+    for table in (store.inverse_table, [b'a', b'ba', b'aa', b'zz', b'aaa', b'ab', b'aba']):
+        store.inverse_table = table
+        rows, spellings, groups = field.store_forms(store, values.device)
+        for valid in (visible, visible.flip(0)):
+            present = compiled(values, valid, spellings, groups)
+            expected = []
+            for index in rows.tolist():
+                run = table[index]
+                expected.append(any(bytes(row[i:i+len(run)]) == run and all(mask[i:i+len(run)])
+                    for row, mask in zip(values.tolist(), valid.tolist(), strict=True)
+                    for i in range(len(row)-len(run)+1)))
+            assert present.tolist() == expected

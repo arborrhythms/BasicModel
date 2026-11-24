@@ -117,35 +117,67 @@ def byte_rows(radix):
 HASH_BASE, HASH_MODULUS = 257, (1 << 53) - 111
 
 
-def store_forms(radix):
+def store_forms(radix, device=None):
     """The percept store's forms of two bytes or more: their rows ``[F]``,
     spellings ``[F, L]`` (``-1`` past a form's length), and for each length
     the forms of that length ``(length, window hashes sorted, their
     forms)``. Kept until a form is added."""
-    key = len(radix.inverse_table)
+    table = radix.inverse_table
+    device = torch.device('cpu') if device is None else torch.device(device)
     held = radix.__dict__.get('_multi_byte_forms')
-    if held is not None and held[0] == key:
-        return held[1]
-    found = [(row, raw) for row, raw in enumerate(radix.inverse_table) if len(raw) > 1]
-    length = max([len(raw) for _, raw in found] + [1])
-    spellings = torch.full((len(found), length), -1, dtype=torch.long)
-    hashes = []
+    if held is not None and held[0] is table and held[1:3] == (len(table), device):
+        return held[3]
+    found = [(row, raw) for row, raw in enumerate(table) if len(raw) > 1]
+    length = max((len(raw) for _, raw in found), default=1)
+    spellings = torch.full((len(found), length), -1, dtype=torch.long, device='cpu')
+    by_length = {}
     for n, (_, raw) in enumerate(found):
-        spellings[n, :len(raw)] = torch.tensor(list(raw))
+        spellings[n, :len(raw)] = torch.tensor(list(raw), device='cpu')
         h = 0
         for byte in raw:
             h = (h * HASH_BASE + byte + 1) % HASH_MODULUS
-        hashes.append(h)
-    hashes = torch.tensor(hashes, dtype=torch.long)
-    lengths = (spellings >= 0).sum(-1)
+        by_length.setdefault(len(raw), {}).setdefault(h, []).append(n)
     groups = []
-    for size in sorted({len(raw) for _, raw in found}):
-        of = (lengths == size).nonzero()[:, 0]
-        keys, order = hashes[of].sort()
-        groups.append((size, keys, of[order]))
-    forms = (torch.tensor([row for row, _ in found], dtype=torch.long), spellings, groups)
-    radix.__dict__['_multi_byte_forms'] = (key, forms)
+    for size, by_hash in sorted(by_length.items()):
+        # Most hashes have just one candidate. Keep colliding candidates
+        # in additional tables so every exact occurrence survives the lookup.
+        buckets = []
+        for key, candidates in sorted(by_hash.items()):
+            for tie, n in enumerate(candidates):
+                if tie == len(buckets):
+                    buckets.append(([], []))
+                buckets[tie][0].append(key)
+                buckets[tie][1].append(n)
+        for keys, indices in buckets:
+            groups.append((size, torch.tensor(keys, dtype=torch.long, device=device),
+                           torch.tensor(indices, dtype=torch.long, device=device)))
+    forms = (torch.tensor([row for row, _ in found], dtype=torch.long, device=device),
+             spellings.to(device), groups)
+    radix.__dict__['_multi_byte_forms'] = (table, len(table), device, forms)
     return forms
+
+
+def form_presence(raw, valid, spellings, groups):
+    """Find every attested run in the visible bytes with fixed-shape device reads."""
+    B, width = raw.shape
+    present = raw.new_zeros(len(spellings), dtype=torch.int32)
+    h = raw.new_zeros(B, width, dtype=torch.long)
+    ok = torch.ones_like(valid)
+    done = 0
+    for size, keys, indices in groups:
+        if size > width:
+            break
+        for length in range(done + 1, size + 1):
+            stop = width + 1 - length
+            h = (h[:, :stop] * HASH_BASE + raw[:, length - 1:] + 1) % HASH_MODULUS
+            ok = ok[:, :stop] & valid[:, length - 1:]
+        done = size
+        at = torch.searchsorted(keys, h.contiguous()).clamp_max(len(keys) - 1)
+        rows = indices[at]
+        same = (raw.unfold(1, size, 1) == spellings[rows, :size]).all(-1)
+        match = ok & (keys[at] == h) & same
+        present = present.scatter_reduce(0, rows.flatten(), match.flatten().int(), reduce='amax')
+    return present.bool()
 
 
 def forms_in(radix, raw, valid):
@@ -154,37 +186,35 @@ def forms_in(radix, raw, valid):
     spellings ``[F, L]`` (``-1`` past a form's length). Each window of each
     form length is hashed and looked up among the forms of that length; a
     hit is checked byte by byte."""
-    rows, spellings, groups = store_forms(radix)
+    rows, spellings, groups = store_forms(radix, raw.device)
     device = raw.device
     if not len(rows):
         return rows.to(device), spellings[:, :0].to(device)
     spellings = spellings.to(device)
-    B, P = raw.shape
-    L = spellings.shape[1]
-    padded = F.pad(raw.long(), (0, L), value=-1)
-    ok_at = F.pad(valid, (0, L))
-    h = torch.zeros(B, P, dtype=torch.long, device=device)
-    ok = torch.ones(B, P, dtype=torch.bool, device=device)
-    present = torch.zeros(len(rows), dtype=torch.bool, device=device)
-    done = 0
-    for size, keys, of in groups:
-        for length in range(done + 1, size + 1):
-            h = (h * HASH_BASE + padded[:, length - 1:length - 1 + P] + 1) % HASH_MODULUS
-            ok = ok & ok_at[:, length - 1:length - 1 + P]
-        done = size
-        keys, of = keys.to(device), of.to(device)
-        at = torch.searchsorted(keys, h).clamp_max(len(keys) - 1)
-        hit = (ok & (keys[at] == h)).nonzero()
-        if not len(hit):
-            continue
-        b, s = hit.unbind(-1)
-        form = of[at[b, s]]
-        window = padded[b[:, None], s[:, None] + torch.arange(size, device=device)]
-        present[form[(window == spellings[form, :size]).all(-1)]] = True
+    present = form_presence(raw.long(), valid, spellings, groups)
     kept = present.nonzero()[:, 0]
     spelled = spellings[kept]
     width = int((spelled >= 0).sum(-1).max()) if len(kept) else 0
     return rows.to(device)[kept], spelled[:, :width]
+
+
+def sentence_forms(radix, raw, valid):
+    """Gather the loss's observed form rows into a shape-bounded device bank."""
+    rows, spellings, groups = store_forms(radix, raw.device)
+    # At each length and hash tie a visible window names at most one row.
+    # This bounds the gather even when the inventory contains many more rows
+    # than there are possible substrings in this presentation.
+    capacity = min(len(rows), sum(min(len(keys), raw.shape[0] * (raw.shape[1] - size + 1))
+                                  for size, keys, _ in groups if size <= raw.shape[1]))
+    if not capacity:
+        return rows[:0], spellings[:0, :0], rows[:0].bool()
+    found = form_presence(raw, valid, spellings, groups)
+    # Preserve inventory order for the summation and put unused seats last.
+    order = torch.arange(len(rows), device=raw.device)
+    selected = torch.topk(torch.where(found, order, order + len(rows)),
+                          capacity, largest=False, sorted=True).indices
+    length = min(raw.shape[1], spellings.shape[1])
+    return rows[selected], spellings[selected, :length], found[selected]
 
 
 def content(amounts, byte_codes, spellings, form_codes):

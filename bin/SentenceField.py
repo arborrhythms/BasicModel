@@ -359,7 +359,7 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     bytes there; the forms are those present in the input's bytes
     (:func:`FieldReverse.forms_in`). Returns the input's bytes' ``.what``
     at each place of its readings, hidden bytes included."""
-    from FieldReverse import byte_rows, content, forms_in
+    from FieldReverse import byte_rows, content, sentence_forms
     from Omission import target as omission_target
     targets = omission_target(model)
     raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0].long()
@@ -383,8 +383,8 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     if silent is not None:
         # Silence puts back NULL at every place.
         amounts = torch.where(silent.to(amounts.device)[:, None, None], 0., amounts)
-    rows_of, spellings = forms_in(radix, raw.clamp(0, 255), asked)
-    form_codes = radix._basis.lookup_rows(rows_of).to(amounts)
+    rows_of, spellings, found = sentence_forms(radix, raw.clamp(0, 255), asked)
+    form_codes = torch.where(found[:, None], radix._basis.lookup_rows(rows_of).to(amounts), 0.)
     read = F.one_hot(raw.clamp(0, 255), 256).to(amounts) * asked[..., None].to(amounts)
     errors.pyramid(name + '.pyramid', content(amounts, codes, spellings, form_codes),
                    content(read, codes, spellings, form_codes).detach(), mask=active,
