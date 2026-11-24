@@ -81,7 +81,7 @@ def test_sentence_training_reaches_the_request_in_the_model(tmp_path, monkeypatc
 
 
 @pytest.mark.parametrize('grammar', (True, False), ids=('sentence', 'grammar-free'))
-def test_two_words_train_the_sampled_request_from_the_following_observation(tmp_path, monkeypatch, eager_reading, grammar):
+def test_two_observed_fixations_train_the_shared_request(tmp_path, monkeypatch, eager_reading, grammar):
     from LookForecast import OccurrenceCredit
     from test_item17_places import model_for, nominate
     from test_item18_expect import read
@@ -93,8 +93,8 @@ def test_two_words_train_the_sampled_request_from_the_following_observation(tmp_
         recorded = []
         register = OccurrenceCredit.register
 
-        def capture(credit, registry, paced=None):
-            register(credit, registry, paced)
+        def capture(credit, registry):
+            register(credit, registry)
             if 'attention.next_observation' in registry._terms:
                 recorded.append(len(credit.terms))
 
@@ -102,7 +102,7 @@ def test_two_words_train_the_sampled_request_from_the_following_observation(tmp_
         before = model.request_read.ask.weight.detach().clone()
         optimizer = model.getOptimizer(lr=.01)
         read(model, 'This is', training=True, optimizer=optimizer)
-        assert recorded == [1]
+        assert recorded == [2]
         assert not torch.equal(model.request_read.ask.weight.detach(), before)
     finally:
         model.End()

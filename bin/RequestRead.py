@@ -67,6 +67,20 @@ def install(model):
         model.request_read.ask.bias.fill_(float(TheXMLConfig.get('architecture.requestReadStart')))
 
 
+def spatial_match(bank, direction, starts):
+    """Match the request's location channels to native places in the open field."""
+    if bank.registry is None or not bank.span.shape[1]:
+        return direction.new_zeros(starts.shape)
+    spans = bank.span
+    live = (spans[..., 1] > spans[..., 0]) & (bank.activity[..., 0] > 0)
+    wires = bank.registry.encode('text', spans[..., 0]).detach()
+    center = (wires * live[..., None]).sum(1) / live.sum(1, keepdim=True).clamp_min(1)
+    scale = ((wires - center[:, None]) * live[..., None]).abs().amax(1, keepdim=True)
+    at = bank.registry.encode('text', starts).detach()
+    normalized = (at - center[:, None]) / scale.clamp_min(torch.finfo(at.dtype).eps)
+    return (normalized * direction[:, None]).sum(-1)
+
+
 def at_rows(rows, field, V, B, index=None):
     """A field's concepts at their inventory rows ``rows`` (``[S]`` or ``[S,
     B]``), ``[B, V, 2]``: each concept's greatest reading on each lane, in 0

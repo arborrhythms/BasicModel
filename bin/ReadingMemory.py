@@ -129,7 +129,7 @@ def _read(model, bank, concepts):
     _, _, percept_codes = readings(bank)
     observation = model.conceptualSpace.stm.model_state
     observation.begin_looks(bank.where, left.any(-1))
-    credit = OccurrenceCredit(bank) if model.training and torch.is_grad_enabled() else None
+    credit = OccurrenceCredit(owner, bank) if model.training and torch.is_grad_enabled() else None
     excluded, ambiguous = unkept(owner), uncertain(owner)
     for _ in range(min(model.attention_budget, model.conceptualSpace.stm.capacity)):
         units = reader.units(reader.given(opened, memory, left.any(-1)),
@@ -137,7 +137,10 @@ def _read(model, bank, concepts):
         active = left.any(-1) & (reader.stopping(units).detach() <= 0)
         if not active.any():
             break
-        field, _, scores = narrow(model, bank, attend(model, units), own, concepts,
+        request = attend(model, units)
+        if credit is not None:
+            anticipated = credit.forecast(request)
+        field, _, scores = narrow(model, bank, request, own, concepts,
                                   known, left & active[:, None])
         probabilities = occurrence_probabilities(scores)
         index = select_occurrence(probabilities, sample=model.training)
@@ -147,7 +150,7 @@ def _read(model, bank, concepts):
         if not found.any():
             break
         if credit is not None:
-            credit.observe(probabilities, index)
+            credit.observe(anticipated, index)
         batch = torch.arange(B, device=index.device)
         evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
         episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,
@@ -169,7 +172,7 @@ def _read(model, bank, concepts):
         memory = torch.where(found[:, None, None], spread_once(owner, located(field, index)), memory)
         own = lower(own, bank, index, found)
     if credit is not None:
-        credit.register(model.errors, model.inputSpace.data.paced_observations)
+        credit.register(model.errors)
     durable = model.symbolSpace.ltm_store
     committed = commit(stores, heads, durable)
     for b, head in enumerate(committed):

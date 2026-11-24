@@ -21556,8 +21556,7 @@ class BasicModel(BaseModel):
                 from ConceptSpread import complete
                 complete(self, present, close_errors)
                 if look_trials[0] is not None and look_trials[0].look_credit is not None:
-                    paced = self.inputSpace.data.paced_observations
-                    look_trials[0].look_credit.register(close_errors, paced)
+                    look_trials[0].look_credit.register(close_errors)
                 from IntuitionField import complete as complete_intuition
                 complete_intuition(self, present, close_errors)
                 from IdeaRead import complete as complete_idea

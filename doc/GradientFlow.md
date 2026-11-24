@@ -384,12 +384,17 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
   difference, corrected for the actual proposal after excluding the first
   trial's choice and for the probability of drawing its walk and round.
   Equal outcomes give zero credit. The opening reconstruction is shared
-  across both trials. The independent expectation term measures how the
-  preceding look changed the forecast of the next observation. It gathers
-  that occurrence, pools evidence by concept and pole, and compares the two
-  forecasts by squared error. The location selects the observation. The loss
-  itself has no spatial axis. Input reconstruction and textual answers use
-  the spatial pyramid at their respective boundaries.
+  across both trials. For each free look the request predicts activity on
+  the basic percepts’ two evidence lanes. Its concept request descends
+  through the existing ways back. Its location channels weight that
+  prediction at native percept addresses. The observed side is the first
+  Pi’s reading of the open bank, with its original activity and a stopped
+  gradient. The fixation limits both sides to the places seen. The spatial
+  pyramid compares their content and placement and charges both missing
+  and extra activity. This gradient reaches the network that issues the
+  request, including on a look with only one available occurrence. The
+  sampled index scopes the observation. Its probability contributes only
+  to the separate outcome credit described above.
 
 - **The where parameter is fixed.** The `.where` stamped
   onto percepts flows from one parameter that holds the constant sinusoid, a

@@ -103,45 +103,67 @@ def test_missing_or_nonfinite_checkpoint_age_cannot_qualify(tmp_path):
             checkpoint_qualification(path, 'what is cat ?')
 
 
-def test_paced_observations_teach_content_without_identifying_a_visual_slot(monkeypatch, eager_reading):
-    """Reverse the external word on identical pages. Repeated words give no location label."""
-    from data import Data
-    from Layers import Error
+def test_fixation_error_reaches_the_request_and_preserves_native_displacement(tmp_path, monkeypatch, eager_reading):
+    """Measure the ordinary expectation term on the actual request and percept grid."""
+    import Attention
     from LookForecast import OccurrenceCredit
-    from Models import BaseModel
-    from What import What
-    data = Data()
-    model, _ = BaseModel.from_config(str(ROOT / 'data/XOR_grammar.xml'), data=data)
-    pages = ['hello world', 'hello world', 'hello hello', 'hello hello']
-    paced = [['hello'], ['world'], ['hello'], ['hello']]
-    original = OccurrenceCredit.register
-    recorded = []
-
-    def observe(credit, registry, frames):
-        if not credit.terms:
-            return original(credit, registry, frames)
-        _, probability, _, _ = credit.terms[0]
-        original(credit, registry, frames)
-        term = registry._terms['attention.next_observation']
-        difference, = torch.autograd.grad(Error._value(term).sum(), probability, retain_graph=True)
-        # Read the native tokenizer's slots only for this independent measurement.
-        forms = model._attention_forms[0]
-        deltas = []
-        for b, row in enumerate(forms):
-            left, right = [i for i, word in enumerate(row) if word]
-            deltas.append(float(difference[b, left] - difference[b, right]))
-        recorded.append(deltas)
-
-    monkeypatch.setattr(OccurrenceCredit, 'register', observe)
+    from Layers import Error
+    from test_item17_places import model_for, nominate
+    from test_item18_expect import read
+    model = model_for(tmp_path, monkeypatch)
     try:
-        with data.runtime_batch(pages, paced=paced):
-            source = model.inputSpace.prepInput(pages)
-            model.runBatch(train=True, optimizer=model.getOptimizer(), batchSize=len(pages),
-                           split='runtime', questions=tuple(What.present(i, split='runtime') for i in range(len(pages))),
-                           batch_override=(source, torch.empty(len(pages), 0, device=source.device)))
-        assert data.paced_observations is None
-        left, right, repeat1, repeat2 = recorded[0]
-        assert left < 0 < right
-        assert repeat1 == pytest.approx(0., abs=1e-6) and repeat2 == pytest.approx(0., abs=1e-6)
+        nominate(model, ('This', 'is', 'This is'))
+        policy = []
+        draw = Attention.occurrence_probabilities
+        def measured(scores):
+            probabilities = draw(scores)
+            if probabilities.requires_grad:
+                policy.append(probabilities)
+            return probabilities
+        monkeypatch.setattr(Attention, 'occurrence_probabilities', measured)
+        register = OccurrenceCredit.register
+        gradients = []
+        def capture(credit, registry):
+            register(credit, registry)
+            cost = Error._value(registry._terms['attention.next_observation']).sum()
+            parameters = (model.request_read.ask.weight, model.request_read.where.weight,
+                          model.request_read.first.weight)
+            content, place, caller, *choices = torch.autograd.grad(
+                cost, (*parameters, *policy), allow_unused=True, retain_graph=True)
+            assert all(value is None for value in choices)
+            gradients.append(tuple(float(g.abs().sum()) for g in (content, place, caller)))
+        monkeypatch.setattr(OccurrenceCredit, 'register', capture)
+        observe, match = OccurrenceCredit.observe, Error.pyramid_match
+        fields = []
+        def capture_observation(credit, anticipated, index):
+            def capture_grid(put, wanted, axes=(1,)):
+                fields.append(wanted.detach())
+                return match(put, wanted, axes)
+            with monkeypatch.context() as context:
+                context.setattr(Error, 'pyramid_match', staticmethod(capture_grid))
+                observe(credit, anticipated, index)
+        monkeypatch.setattr(OccurrenceCredit, 'observe', capture_observation)
+        optimizer = model.getOptimizer(lr=.01)
+        for _ in range(2):
+            policy.clear()
+            read(model, 'This is This', training=True, optimizer=optimizer)
+            model.End()
+        assert policy
+        assert all(max(row[lane] for row in gradients) > 0 for lane in range(3))
+        observed = max(fields, key=lambda x: float(x.sum()))
+        # Compare offline at the same width and mass, once at the native
+        # places and once one byte away. Both inputs came from the look.
+        original = torch.nn.functional.pad(observed, (0, 0, 0, 1))
+        shifted = torch.nn.functional.pad(observed, (0, 0, 1, 0))
+        exact, mass = match(original, original)
+        displaced, same_mass = match(shifted, original)
+        torch.testing.assert_close(exact, mass)
+        torch.testing.assert_close(mass, same_mass)
+        assert (displaced < exact).any()
+        other_content, _ = match(original.roll(1, dims=-1), original)
+        assert (other_content < exact).any()
+        print('Request gradient magnitudes (content, place, hidden)', gradients,
+              'pyramid match (exact, shifted, changed channels)',
+              float(exact.sum()), float(displaced.sum()), float(other_content.sum()))
     finally:
         model.End()

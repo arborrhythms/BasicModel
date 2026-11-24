@@ -113,17 +113,9 @@ def narrow(model, bank, request, own, concepts, known, eligible):
     rows = model.request_read.rows
     general = len(request) > rows
     prior = own.new_zeros(concepts.shape)
-    if general and bank.registry is not None:
-        # Express a reading's physical place in the same four wires as the
-        # query. Center and scale on the open field, including finished looks,
-        # so resolution does not depend on the registry's total capacity.
-        spans = bank.where[:, :concepts.shape[1]]
-        live = spans[..., 1] > spans[..., 0]
-        wires = bank.registry.encode('text', spans[..., 0]).detach()
-        mean = (wires * live[..., None]).sum(1) / live.sum(1, keepdim=True).clamp_min(1)
-        centered = (wires - mean[:, None]) * live[..., None]
-        scale = centered.abs().amax(1, keepdim=True).clamp_min(torch.finfo(wires.dtype).eps)
-        prior = ((centered / scale) * request[rows:, :, 0].T[:, None]).sum(-1)
+    if general:
+        from RequestRead import spatial_match
+        prior = spatial_match(bank, request[rows:, :, 0].T, bank.where[:, :concepts.shape[1], 0])
     # A located hypothesis has the query's spatial log weight and the
     # returned whole's content evidence. Apply the spatial weight once.
     # Feeding it through the percept detector as well could hide a real
@@ -301,7 +293,7 @@ class Looks:
         memory = torch.zeros_like(held)
         if model.training and torch.is_grad_enabled() and self.supplied is None and self.prior is None:
             from LookForecast import OccurrenceCredit
-            self.look_credit = OccurrenceCredit(bank)
+            self.look_credit = OccurrenceCredit(owner, bank)
         while True:
             turn = state.taken
             left = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
@@ -321,6 +313,8 @@ class Looks:
                 request = word_request(model, concepts, target)
             else:
                 request = attend(model, units)
+            if self.look_credit is not None:
+                anticipated = self.look_credit.forecast(request)
             prediction = None
             unread = live & ~state.accepted & rows[:, None]
             look_field, extent, words = narrow(model, bank, request, own, concepts, state.known, unread)
@@ -363,7 +357,7 @@ class Looks:
             if not bool(found.any()):
                 break
             if self.look_credit is not None:
-                self.look_credit.observe(probabilities, index)
+                self.look_credit.observe(anticipated, index)
             word = index.clamp_min(0)
             allowed = found & (state.known.gather(1, word[:, None])[:, 0]
                                | torch.isfinite(words.gather(1, word[:, None])[:, 0]))
