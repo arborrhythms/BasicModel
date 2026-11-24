@@ -322,7 +322,12 @@ class WordIdentity(nn.Module):
         if len(text_of(raw)) < 2:
             return
         children = []
-        for part, _, _ in self.ordered_cover(raw):
+        cover = self.ordered_cover(raw)
+        if self.nested.get(raw) and not isinstance(cover[0][0], bytes):
+            # Explicit overlapping definitions from older checkpoints use
+            # their original reconstruction rule on the output boundary.
+            return
+        for part, _, _ in cover:
             if isinstance(part, bytes):
                 child = self.word_rows[part]
             else:

@@ -103,6 +103,17 @@ def assemble_parts(parts, starts, width):
     return assembled
 
 
+def concatenate_parts(parts, width):
+    """Decode ordered native parts, preserving repeated elements and byte zero."""
+    valid = parts >= 0
+    lengths = valid.long().sum(-1)
+    starts = lengths.cumsum(1) - lengths
+    positions = starts[..., None] + torch.arange(parts.shape[-1], device=parts.device)
+    target = torch.where(valid, positions.clamp_max(width), width).flatten(1)
+    result = parts.new_full((parts.shape[0], width + 1), -1)
+    return result.scatter_reduce(1, target, parts.flatten(1), 'amax')[:, :width]
+
+
 def _spelling_definition(basic, row):
     raw = basic.form_of(row)
     if raw is not None:
@@ -115,7 +126,11 @@ def _spelling_definition(basic, row):
             elements = [basic._part_text(leaf) for leaf in basic._leaves()(root)]
             if any(element is None for element in elements):
                 raise ValueError('a spelling element has no character translation')
-            return b''.join(elements), None
+            start, children = 0, []
+            for element in elements:
+                children.append((element, start))
+                start += len(element)
+            return raw, children
         if not children:
             return raw, None
         return raw, tuple((part, lo) for part, lo, hi in children
@@ -132,11 +147,19 @@ def _assemble_definitions(definitions, width, device):
     length = max((len(part) for group in definitions for part, _ in group), default=0)
     parts = torch.full((len(definitions), occurrences, length), -1, dtype=torch.long, device='cpu')
     starts = torch.full((len(definitions), occurrences), -1, dtype=torch.long, device='cpu')
+    contiguous = True
     for row, group in enumerate(definitions):
+        end = 0
         for i, (part, start) in enumerate(group):
+            contiguous &= start == end and start + len(part) <= width
+            end = start + len(part)
             parts[row, i, :len(part)] = torch.tensor(list(part), device='cpu')
             starts[row, i] = start
-    return assemble_parts(parts.to(device), starts.to(device), width)
+    parts = parts.to(device)
+    if contiguous:
+        return concatenate_parts(parts, width)
+    # Old checkpoints may carry overlapping, explicitly located witnesses.
+    return assemble_parts(parts, starts.to(device), width)
 
 
 def spelling(basic, row):

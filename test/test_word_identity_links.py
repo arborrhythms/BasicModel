@@ -179,3 +179,13 @@ def test_inverse_follows_ordered_native_children_after_restore():
         root = current.word_rows[b'aabb']
         current.store.part_groups[root] = tuple(reversed(current.store.part_groups[root]))
         assert spelling(reader, rows[b'aabb']) != b'aabb'
+
+
+def test_compiled_concatenation_keeps_null_bytes_and_empty_forms():
+    import torch
+    from FieldReverse import concatenate_parts
+
+    parts = torch.tensor([[[97, 0], [98, -1], [98, -1]], [[-1, -1]] * 3])
+    expected = torch.tensor([[97, 0, 98, 98, -1], [-1] * 5])
+    result = torch.compile(concatenate_parts, fullgraph=True, backend='eager')(parts, 5)
+    torch.testing.assert_close(result, expected)

@@ -191,24 +191,52 @@ def chunk_token(pool, store, state, batch, index):
 def reconcile(state, pool, store):
     """Retire expired field identities and remap promoted seats at staging."""
     from Memory import STMChunks as chunks
+    refs = state[chunks.REFS]
+    first, second = refs.unbind(-2)
+    candidate = second[..., 0] == chunks.IDENTITY_REF
+    occurrence = (second[..., 0] == chunks.OCCURRENCE) | (first[..., 0] == chunks.OCCURRENCE)
+    eligible = candidate | occurrence
+    addresses = torch.where(candidate | (second[..., 0] == chunks.OCCURRENCE), second[..., 1], first[..., 1])
+
+    # Persistent names and event aliases are owned by MTM. Index them once
+    # in token_of's precedence order, then resolve every live seat on device.
+    aliases = {}
+    for key, entry in pool.entries.items():
+        for timeline in entry.timelines:
+            for event in timeline.events:
+                if event.role == 0:
+                    aliases.setdefault(event.occurrence, key)
+    aliases.update((origin, name.token) for origin, name in pool.names.items())
+    aliases.update((key, key) for key in pool.entries)
+    names, records = [], []
+    for name, key in aliases.items():
+        if not isinstance(name, tuple):
+            continue
+        if len(name) == 2 and name[0] == 'candidate' and name == key:
+            tag, address = chunks.IDENTITY_REF, name[1]
+        elif len(name) == 3 and name[:2] == ('ltm', store.address_domain):
+            tag, address = chunks.OCCURRENCE, name[2]
+        else:
+            continue
+        entry = pool.entries.get(key)
+        if entry is None or entry.refinement.get('member_kind', 'reference') != 'reference':
+            continue
+        names.append((tag, address))
+        records.append((chunks.IDENTITY_REF, entry.transient) if entry.symbol is None
+                       else (chunks.SYMBOL, entry.symbol))
+    selected = torch.zeros_like(first)
+    if names:
+        ids = refs.new_tensor(names)
+        tags = torch.where(candidate, chunks.IDENTITY_REF, chunks.OCCURRENCE)
+        matches = (ids[:, 0] == tags[..., None]) & (ids[:, 1] == addresses[..., None])
+        values = refs.new_tensor(records)[matches.int().argmax(-1)]
+        selected = torch.where(matches.any(-1, keepdim=True), values, 0)
+    live = selected[..., 0] != 0
+    write_ref = eligible & ((first[..., 0] == chunks.SYMBOL) | (first[..., 0] == chunks.IDENTITY_REF))
     result = [value.clone() for value in state]
-    for b in range(state[0].shape[0]):
-        for index in range(state[0].shape[1]):
-            refs = state[chunks.REFS][b,index]
-            if not bool((refs[:,0] == chunks.OCCURRENCE).any()) and int(refs[1,0]) != chunks.IDENTITY_REF:
-                continue
-            key = chunk_token(pool,store,state,b,index)
-            entry = pool.entries.get(key)
-            if entry is not None and entry.refinement.get('member_kind', 'reference') != 'reference':
-                entry = None
-            identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
-            result[chunks.IDENTITY][b,index] = identity
-            if int(refs[0,0]) in (chunks.SYMBOL,chunks.IDENTITY_REF):
-                if entry is None:
-                    result[chunks.REFS][b,index,0] = 0
-                else:
-                    result[chunks.REFS][b,index,0,0] = chunks.SYMBOL if entry.symbol is not None else chunks.IDENTITY_REF
-                    result[chunks.REFS][b,index,0,1] = identity
+    result[chunks.REFS] = torch.stack((torch.where(write_ref[..., None], selected, first), second), -2)
+    result[chunks.IDENTITY] = torch.where(eligible, torch.where(live, selected[..., 1], -1),
+                                          state[chunks.IDENTITY])
     return tuple(result)
 
 
