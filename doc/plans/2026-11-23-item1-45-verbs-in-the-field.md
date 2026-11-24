@@ -228,6 +228,69 @@ above that. They are rows nominated on recurrence like any other. They
 would take the place of the separately fitted bases of
 `MeaningKernels.VerbGroups`, but only when §5.5's question is taken up.
 
+### 5.7 Alec: supply the change in conceptual activity as an input (raised 2026-11-23, not decided)
+
+Alec, after reading §5: "Another point on the temporal difference thing: we
+do not have good exposure of that difference to the conceptual hierarchy. I
+wonder if we and supply "the change in conceptual activity over two
+observations" as input to the network, and allow that to train verbs more
+directly?"
+
+Claude's reading: this is better than §5.2 and should replace it if Alec
+decides for it. §5.2 takes the difference among percepts, by rows of the
+first Pi that span two times. His takes it among concepts and hands it to
+the hierarchy as an input.
+
+*What it would be.* Beside each concept's activity, a second input: how
+that activity changed since the last observation of the same thing. A
+concept is one signed value kept as two lanes, and so is its change: what
+rose on the for lane (gained), what fell on the against lane (lost). The
+Pi above then reads twice as many inputs, activity and change. A row over
+the change inputs is a verb class; a row over activity is a kind, as now; a
+row over both is a thing doing something.
+
+*Why it is better than §5.2.*
+
+- It is a difference "between nouns", which is what §1 asks for. Ice
+  gained and water lost is the same change whatever percepts showed it, so
+  the class is general across objects from the start. A conjunction of
+  percepts across two times is tied to those percepts.
+- Earlier and later are in the sign. §9's question 2 (an event independent
+  of the tick) goes away, and no row need span two times.
+- The exposure is direct, and the gradient of a verb's row reaches the
+  concept activities it is a change of, so teaching verbs also teaches the
+  recognition of what changed.
+- A verb class's row then lists what the verb gains and loses. That list is
+  the transform itself: applied to a noun's point it gives the point after.
+  So the extension (the row over observed changes) and the intension (the
+  row applied to a point) are one object. This is the bridge §5.5 leaves
+  for later, and it is the answer to §1's last question in Alec's own
+  terms; it stays for later all the same (§4, 2).
+
+*What it costs.* One computed input. It is not learned and no rule reads
+it; it is of the kind an eye supplies (cells that answer a change beside
+cells that answer what is there). Pi rows are nominated and sparse, so the
+doubling is of indices, not of a dense matrix.
+
+*Three things it needs settled.*
+
+1. *The change of what.* Of one thing between its two observations, not of
+   the whole field between two sentences: otherwise every new sentence
+   reads as everything lost and everything gained. In the felt world the
+   concepts of order zero hold their place, so the change is taken place by
+   place, and a thing that moved is lost at one place and gained at
+   another. With text it is the change of an identity's state as MTM holds
+   it.
+2. *Not said is not lost.* With text, a sentence that does not mention a
+   property has not removed it. Lost must be evidence against that rose,
+   not evidence for that is absent, which is what the two lanes are for. In
+   the felt world an absence is perceived, so there the difference is plain.
+3. *The form of the difference.* The product "now and not before" is what
+   the layers compute elsewhere, but for a value that stays at 0.6 it gives
+   0.24 gained and 0.24 lost, a change where there is none. The difference
+   cut off at zero (what rose, and separately what fell) is zero when
+   nothing changed. Claude proposes the second, for values of degree.
+
 ## 6. Episodic memory as percepts (Claude's proposal for Alec's decision)
 
 - *The entry.* A fixed number of the open field's basic percepts, each as
@@ -291,10 +354,11 @@ Each on the felt world of item 1.6, with a second scene for one object:
 
 ## 9. Open, for Alec
 
-1. *Is an event a row of the first Pi over two `.when`, as §5.2 has it?*
-   The alternative is its own layer for time. Claude proposes the first:
-   one structure, and the wires are already there.
-2. *Earlier and later, not the tick.* A row's `.when` entries hold a code
+1. *How the change reaches the hierarchy:* as a computed input beside each
+   concept's activity (§5.7, Alec's, and Claude's recommendation), or as a
+   row of the first Pi over two `.when` (§5.2). If §5.7, its three points
+   are the questions.
+2. *Earlier and later, not the tick (only if §5.2 stands).* A row's `.when` entries hold a code
    of a time. An event must be the same event whenever it happens, so its
    two members need "before" and "after" in relation to each other, as a
    word's letters hold places in relation to the word. How the first Pi
