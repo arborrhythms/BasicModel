@@ -1,6 +1,6 @@
 # Item 1.5 proposal for a device-resident sentence
 
-**Approved representation.** The chooser writes its chosen syntax directly into each candidate’s STM. Downstream model code takes one head and follows the existing idea and relation references. This supersedes the proposed device implementation of `ReadingIndex`. MTM stages basic percepts and concepts. The STM head copies directly to LTM.
+**Approved representation.** The chooser writes its chosen syntax directly into each candidate’s STM. Downstream model code takes one head and follows the existing idea and relation references. This supersedes the proposed device implementation of `ReadingIndex`. The retained STM head passes through MTM. MTM stages recent percepts, concepts and event operands. Eligible content transfers to LTM with one owner at a time, consolidating into LTM0 wherever possible.
 
 ## Sentence boundary
 
@@ -37,6 +37,45 @@ Word expectation advances separately as each trial observes a word. For example,
 
 A morphological basic percept is defined by its parts and wholes. The existing percept code assembles their for and against evidence and reads it through Pi. Spelling across the sentence boundary uses ordered observed bytes. The centroid and its associated evidence must still come from the percept definition, including learned parts and the evidence supplied by their holders.
 
+The input can recover parts directly from observed atoms and their locations.
+A learned part can occur at any byte offset, including inside an unfamiliar
+whole. The spatial aperture selects parts within it and wholes enclosing it.
+It does not impose a common starting byte.
+
+For reconstruction, exclude the current occurrence when choosing the next
+part. Use the largest compatible overlap that preserves the bytes already
+placed and makes the resulting assembly strictly longer. From `hel`, the
+part `ello` shares `el` and `llo` shares `l`. Either yields `hello`.
+Where locations are given, distinct occurrences retain their places. The
+single reconstruction follows the opening attention pass.
+
+### Proposed experiment in frequency and non-overlapping parts
+
+Alec proposed using frequent parts for a quick reading. One ordered,
+non-overlapping cover of the observed bytes would suffice for concatenation.
+Frequency would guide the usual cover. During the presentation a later look can address the
+observed bytes. If reanalysis is to work after the presentation, each kept
+part must also expand to its ordered elements. A rare substring crossing
+an earlier cut can then be proposed before it has a frequency count.
+
+Use `sho | pping` as the first cover of `shopping`, with `shop` absent from
+the inventory. On a later look the model should be able to attend to the
+first four bytes across that cut and propose their ordered content. A kept
+observation can teach `shop` under the existing learning rules. A later
+reading may then use `shop | ping`. Both covers preserve both occurrences
+of `p`. A discarded exploration must leave the shared inventory untouched.
+
+In a fresh inventory, explicitly admitting the first four observed bytes
+added `shop` to `shopping` while preserving `sho` and `pping`. This checks
+admission. A separate MTM test supplies the aperture and verifies that the
+production nomination code proposes the four observed bytes even when the
+cover cuts after `sho`. Prefixing a space shifts the aperture by one and gives
+the same candidate. The current chooser scores existing reading brackets,
+and the native nomination code consumes complete brackets. A test of discovery must
+let the model produce the subspan without supplying `shop` or its endpoints.
+Compare training sentences per second and time to the same restored reading
+accuracy before adopting this proposal.
+
 ## Copy the retained head into LTM
 
 Each stream has at most one root per tick. Four pages read together can each close with a different root at the same tick. Index ModelState by batch row to select the closing stream and its time. The current implementation broadcasts a scalar clock across rows. An idea root resolves to an LTM0 row. A relation root resolves to an LTM1 ordered pair whose endpoints retain their reference types. STM0 ideas copy to LTM0 and STM1 links copy to LTM1 under the same logical structure.
@@ -55,7 +94,7 @@ The grammar-free and partial-reading paths use that copy. The ordinary grammatic
 
 MTM is the implementation name for the staging area for basic percepts and concepts. STM and LTM share the idea and ordered-relation representation used to retain a sentence. The two mechanisms meet when a word occurrence refers to a concept. Copying that occurrence preserves the reference and leaves concept admission with its existing owner.
 
-Each exploration can observe its own provisional growth. Only the winning stream’s observations are eligible to persist, in the existing close order. Exercise mixed winners against isolated runs from the same opening and compare STM, LTM, clock, RNG, optimizer and gradients. The current `MediumTermMemory` class also exposes event and checkpoint interfaces used by grounding. Preserve their existing lifetimes and compatibility while changing sentence storage. Alec approved keeping event operands needed on later observations as ideas and ordered relations reachable from the winning LTM root. Preserve the current teaching and expiry rules. The broader staging-area review and its compile check belong to item 1.4.
+Each exploration can observe its own provisional growth. Only the winning stream’s observations are eligible to persist, in the existing close order. Exercise mixed winners against isolated runs from the same opening and compare STM, LTM, clock, RNG, optimizer and gradients. The current `MediumTermMemory` class also exposes event and checkpoint interfaces used by grounding. Preserve their existing lifetimes and compatibility while changing sentence storage. Alec subsequently placed recent noun and event operands in MTM, with transfer to LTM when eligible. Preserve the current teaching and expiry rules. The broader staging-area review and its compile check belong to item 1.4.
 
 ## Acceptance and rollout
 

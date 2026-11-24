@@ -2710,8 +2710,10 @@ three isolated words exactly. Measure order from the actual walk.
 
 ## Locating overlapping spelling parts at every byte position
 
-Compare the current stride-one byte windows with a sparse list of
-(part, start) hits as the learned inventory grows. For one-hot atom
+Item 1.5 uses located matches to read a unit's parts directly from observed
+bytes. The whole unit can be new. The remaining experiment compares dense
+stride-one byte windows with a sparse list of (part, start) hits as the
+learned inventory grows. For one-hot atom
 columns X[:, t], the outer product of columns t and t+1 identifies the
 ordered pair at t. Summing those products gives pair counts for the
 sentence and loses the starts. The two adjacent byte IDs already encode

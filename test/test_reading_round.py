@@ -130,6 +130,32 @@ def test_lexical_letters_open_nothing_but_nonlexical_located_case_does():
     assert not cs.definitions.objects(word)
 
 
+@pytest.mark.parametrize('offset', [0, 1])
+def test_focused_bytes_nominate_a_new_part_across_the_original_cut(offset):
+    from FamiliarTier import observe_native_cases
+    from clock_fixtures import install
+
+    cs, rows = _fixture(pi=True)
+    raw = b' ' * offset + b'shopping'
+    places = torch.arange(len(raw))
+    # The initial reading units are sho | pping. Their ordered byte
+    # witnesses remain available to a look with a different aperture.
+    presented = dict(indices=torch.tensor([[256, 257]]),
+                     part_spans=torch.tensor([[[offset, offset + 3], [offset + 3, offset + 8]]]),
+                     native_indices=torch.tensor([list(raw)]),
+                     native_part_spans=torch.stack((places, places + 1), dim=-1)[None])
+    spellings = {value: bytes([value]) for value in raw}
+    spellings.update({256: b'sho', 257: b'pping'})
+    cs._model = SimpleNamespace(perceptualSpace=SimpleNamespace(
+        percept_store=SimpleNamespace(bytes_for=spellings.get), _forward_input=presented))
+    install(cs._model, tick=1)
+    cs._percept_field = SimpleNamespace(where=torch.tensor([[[offset, offset + 4]]]))
+    observe_native_cases(cs, 0, {rows[0][1]: 1., rows[1][1]: 1.})
+    candidate, = cs.mtm.entries.values()
+    assert candidate.refinement['literal_key'] == b'shop'
+    assert candidate.refinement['literal'] == ('ps', tuple(b'shop'))
+
+
 def test_documents_and_epochs_retain_history_and_live_mtm():
     from test_presentation_memory import model_for, write
     from test_document_covers import fixture
