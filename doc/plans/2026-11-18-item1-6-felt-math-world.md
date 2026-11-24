@@ -1822,3 +1822,194 @@ it will observe a change in.
   this document.
 - Write `.where`, `.what` and `.when` with the dot. Use Alec's words where
   he gave them, and plain terms otherwise.
+
+## Completing the item: the first report (Claude, 2026-11-23)
+
+Alec, 2026-11-23, starting it: "Please sync it and begin item 1.6, which
+you are to complete while Codex works independently on item 1.5." And of
+the order: the gates on this machine before anything is changed; then H.4,
+step 1; then steps 2 and 3 while the corpus is built, with the questions
+put to him "once, before any text for the model's part".
+
+### C.1 The sync, the branch, and the gates on this machine
+
+- `main` was fast-forwarded from `2109a42a5d` to `ad8fafea92`, 642 commits,
+  with nothing local. The branch is `item1-6`, in the worktree
+  `.worktrees/item1-6`, cut from `ad8fafea92`. Nothing is pushed and the
+  outer repository's pointer is not moved.
+- On this machine (an Apple M2, 24 GB, eight cores; not the one item 1.7
+  was measured on), on the CPU, with `RUN_TRAINED` and `RUN_SLOW` unset, in
+  one run of the bounded runner before any file was changed: the two
+  stopping gates and the seven tests of `test/test_item17_echo.py`.
+  **9 of 9 passed**, in 318 s (the worker 291 s, at most 1.6 GiB).
+- *Git in this worktree.* The checkout is a submodule, and its
+  `core.worktree` is inherited by a linked worktree and points nowhere
+  there, so plain `git` sees every file as deleted. Claude gives every git
+  command its work tree (`git --work-tree="$PWD"`) and adds files by name.
+  The implementers do not run git: Claude commits what it has reviewed.
+  This is the one place §14.8's last paragraph departs from H.1.
+
+### C.2 What exists in the model as item 1.7 left it (H.4, step 2)
+
+Read at `ad8fafea92` by three Opus readers that changed nothing; the rows
+on the scene, the place space, the percept, the tie, the looks and the
+reconstruction Claude then read again in the source.
+
+| Of §2 and §3 | As built | Not built |
+|---|---|---|
+| *A scene beside a sentence* | A row is `text` and at most one `scalar`; any other key is refused (`InputSpace.prepInput`). The value is joined to the sentence's field as one column, once, at the sentence's opening and only for the first sentence of a presentation (`SentenceField.open_field`, `ScalarPercepts.join`). At a kept close in training every word of the sentence is paired with it (`ScalarPercepts.commit`). | A `scene` key; more than one felt value with a sentence; no image told from an empty one; any loader of such rows (`bin/data.py` loads no frozen corpus; a felt value reaches the model only from tests and `Assessment.read_sentence`). |
+| *Places on three axes* | One axis (`WhereRegistry.axes`). Its ranges, in order: `text`, `numeric` (the product of the input shape, in a numeric model only), `scalar` (one address), `parts`, `wholes`, `conceptual`. A place is one integer, written as four wires on two rungs (`WhereEncoding`); the table of wires is fixed and is made at its first reader. The way back matches a reading's wires to the grid in the `text` range alone. | The space of three dimensions: decided (sigma-pi §19.132) and not started (§23.6.18, where its size is given as 13 files of `bin/` and 76 of `test/`). Any key for a felt modality's shape. |
+| *One reader* | Two. The value beside a sentence has a reading and a way back of its own (`ScalarPercepts`); the numeric stem has `NumericPercepts.read`, and a configuration still reads numbers or text, not both. They share `feeling`, `BasicPercepts.perceive_value` and `value_code`, and the store of `PerceptCollections`. | One reader. Intensity images: `bin/image_corpus.py` packs one bit to a pixel. |
+| *What the percept is* (§3.4) | Each exact value met has a seat and is made a row at first sight (`perceive_value` calls `promote`): rule 20 holds for words and not for values. A value's code is its bins up to the value, set out by a draw keyed on its place (`value_coordinates`), so one intensity at two places has two codes that share nothing by construction, and part-of orders values within one place only. The value beside a sentence has the one place of its range. | The level as one percept wherever it is, with its place on the occurrence. |
+| *The tie* (§2.5) | The object is made for the word, from what the word recurs with (`PerceptCollections.observe`: gathered under `defining_word`, made at `concept_mint_count` = 3). An object that already reads the percept wholly is looked for first. The certainty of a tie is kept (`WordTies`) and is the trust of the word's definition. A word's concept over several exact values is their interval, and a value inside it belongs. `conceptMatchPart` is not read on this path. | Rule 31: no object is learned from a feeling alone, and no meta concept afterwards. `TestCrossModalTie` prints its stages and asserts one thing, that a second word is tied to the first word's object; its record was "each raises the other 0 and 0" (sigma-pi, line 22399). |
+| *The looks* | A look takes a word bracket of the sentence's text. The request's four `.where` wires are compared with places of the `text` range. The joined value is read at the opening only. | A look that takes a felt thing. |
+| *The opening reconstruction* (§19.149) | Text alone: the joined column has no wires, the paste keeps the `text` range, and the cost compares bytes. The value is read back by `reconstructModalities` and charged nothing. An absent value and a value of zero are treated alike. | The scene put back and charged; `null` charging nothing. |
+| *Asked and answered* | A felt value may be taken by the thought's bind, and a bare value is said by the word of the object that holds it. A supplied answer is scored after the response is fixed. The two tests of it from input to output (`test_item18_recognition.py`, `test_90_*`) are slow and expected to fail. | A passing measure of "what is this ?" from input to output. |
+| *A sequence over the output* | A toy outside the model, and one slow test in the model that asserts only the length of its record (`test_item17_own_reading.py`). | `TestSingASong`; counting. |
+
+### C.3 Where the hand-over and the source differ
+
+The hand-over was written at `8503e9cee0`; ten commits followed it on
+`main` before the push. By the rule of this session the source stands.
+
+1. *The space of three dimensions is not built.* H.4, step 2, and the
+   section "A common perceptual space" say it is. C.2 has what is.
+2. *The paced lesson is gone* (`e1760b934b`). H.2 says a training page
+   comes "with the word due at each look, as text". Now training and
+   assessment give the page alone: before a look the request forecasts the
+   activity of basic percepts at their places, and the pyramid compares
+   that with what the field holds where the model looked
+   (`doc/Testing.md`, `doc/GradientFlow.md`). H.2's caution, that outside
+   the lesson the cost points at the look's own choice, was written of the
+   cost that was replaced. Codex's one paired comparison: with the term,
+   122 of 122 held-out sequences read in order; without it, 24 of 122.
+3. *Reading in order is lost during grammar training* (`suggestions.txt`,
+   "Item 1.7 after Claude's §23.10 review"). In the landing sweep the
+   verbal XOR certificate gave 0 of 4 at the grammar's input and through
+   its inverse, every pair reversed, after a reading prerequisite of 58 of
+   58; the order was lost within the first 20 epochs of grammar training.
+   It passed 4 of 4 in the focused run. It is open, to be assessed again
+   at item 1.4. So H.2's "sequences of familiar words are read in source
+   order after the reading lesson" holds for the lesson and not yet
+   through a grammar's training.
+4. *The landing sweep:* 7,459 cases, 7,086 passed, 336 skipped, 35 failed;
+   both gates passed.
+5. *Item 1.7 did not build rule 31.* §2.5 divided the work so: item 1.7
+   builds the tie of a word to a felt value with no place, and this item
+   gives it places. The tie that exists is the one item 1.8 left, with
+   the look for an existing object added.
+
+### C.4 What §10's first round is now
+
+*A sketch, not a text. Each round rests on the questions of C.5 named
+beside it.*
+
+§10 began at "the modality and the tie" and took the tie from item 1.7.
+The first gate is now one sentence, "three is above four" (the
+suggestions, taken in), and what it needs was not there to take. In order:
+
+| Round | Builds | Measured from input to output | Rests on |
+|---|---|---|---|
+| The corpus | §14 | The frozen files are valid (`test/test_felt_corpus.py`) | nothing; under way |
+| One: the scene is perceived | Places for a scene; the `scene` of a row, with no image told from an empty one; a loader; one reader, each pixel that is not background a percept at its place in the sentence's field; the opening pass puts the image back and is charged for it | An image alone is put back, at varied steps and at places not met; a sentence with its image puts both back; a sentence with no image is charged nothing for one | questions 1 and 2 |
+| Two: the object and its word | The object, alone and then named; "what is this ?"; several things present | Categories 1 and 2: a value named at its reserved step and places; naming with others present | question 3 |
+| Three: the first milestone | What reads an arrangement | Category 14's contrast sets, per answer, on pairs held out | questions 4 and 5 |
+| After | Kinds and what is said; counting; shapes; succession and motion; events compared; the witness | their categories | each a conversation of its own, as §12.6 |
+
+Round one is "reading without comprehension" for an image: the one pass
+at the opening, with the image as its input. Certificates F1, F2, F11 and
+F12 of §7 are its own; F3 to F7 are round two's; F9 is round three's.
+
+### C.5 The questions still open with Alec, in one list
+
+Gathered from §9, §11.6, §12.7, §13.8, the sections added after §14, and
+what C.2 and C.3 found. Each has Claude's default. Questions 1 to 3 are
+needed before round one's and round two's texts; 4 and 5 before round
+three's; 6 to 8 are in the corpus as defaults and are changed by editing a
+recipe and freezing again.
+
+1. *Who builds the space of three dimensions, and when.* It is decided
+   and not built, and round one needs places on two axes at least.
+   (a) This item builds it first, as a round of its own on its branch;
+   Codex's item 1.5 is changing `main` meanwhile, and by the estimate 13
+   files of `bin/` and 76 of `test/` name the width. (b) Codex builds it
+   on `main` and this branch takes it in. (c) Round one gives the felt
+   modality a range of 512 addresses on today's one axis, row by row
+   (§3.2 as first written), and the three axes come after. *Default:*
+   (a). With (c) nothing in a place's wires says that two places share a
+   column, which is what "above" is about. With it, his own question:
+   four wires to an axis or three.
+2. *What the percept of a pixel is* (§3.4; question 5 of §9, never
+   answered). As built a value's code is drawn by its place, so the 3 at
+   one place and the 3 at another share nothing. *Default:* the level is
+   the percept, the same at every place, and its place is on the
+   occurrence as its wires, as a letter is one percept wherever it stands.
+   XOR's two inputs are then told apart by their wires. This is near his
+   possibility of 2026-11-22, `.what` and `.where` muxed at the basic
+   percept.
+3. *The object before its word.* His order is words, objects, then their
+   meta concepts (rule 31), and suggestion 3 was taken. As built the
+   object is made for the word, and nothing gathers the steps of one value
+   into an object while no word is present. (a) Round two keeps what is
+   built: category 1's images are taught by the reconstruction alone, the
+   object is made when the word comes, and what is measured is the name at
+   the reserved step and places, which the word's interval gives. (b)
+   Round two builds the object first. That needs a rule for which
+   readings are one object with no word to say so. *Claude's proposal for
+   (b):* levels met with no gap between them wider than the variation are
+   one object, as touching places of one level are one thing. *Default:*
+   (b) if he accepts the rule, else (a) with rule 31 left to a later
+   round.
+4. *What reads an arrangement* (§6, §11.3; open since 2026-11-18). The
+   first milestone waits on it. The two candidates on record: the
+   arrangement as an ordered run that is a percept of its own; the
+   position selection of `doc/Language.md` (`preposition`, `compound`),
+   with the scene's things as its cases and a test that compares two
+   places. *Default:* Claude writes a proposal in this document after
+   round one returns, and he chooses then.
+5. *Reading in order through grammar training* (C.3, point 3). The
+   milestone turns on the order of two words. (a) Build on it as it is
+   and measure, in round three, whether the order of the looks is kept
+   while the felt lessons are taught, reporting a loss as item 1.7's open
+   point. (b) Wait for its repair. And whether the reading lesson is a
+   prerequisite of this item's models, as Codex proposed for every text
+   grammar model (sigma-pi §23.9, "his to accept"). *Default:* (a), with
+   the lesson as a prerequisite.
+6. *Counting* (category 27). (i) The counting words are the words that
+   name the values, so "three" is said of a pixel value in one category
+   and is the third word of a count in another. *Default:* accepted, as
+   one word has two uses in English. The other way: the things counted
+   are all of one value, or the count is asked in words ("how many are
+   here ?"). (ii) Nothing in the input names the task: an image with no
+   text, and the count asked for on the output alone, as he decided for
+   reading and counting over words (sigma-pi §19.129). Category 1's images
+   with no text ask for nothing. *Default:* as written. (iii) The song (a
+   count continued from its first word; a count with a number left out) is
+   not in the corpus and has no test in this item until it is talked
+   through, as `doc/ModelAge.md` says of it.
+7. *What is said when nothing follows* (category 24, the premise left
+   out). *Default:* nothing is said: the answer is the empty text. The
+   other way: a word for it.
+8. *The bar* (§13.7; question 3 of §13.8; the suggestions' "declared
+   accuracy"). The accuracy per answer on held-out contrast sets, on the
+   generalization splits and on the inference splits that must be reached
+   locally before a remote machine is paid for. *Default:* reported with
+   no bar until he declares one, which he may do after the first
+   measurements.
+
+*Taken as decided unless he says otherwise* (each was a default in §9,
+§11.6, §12.7 or §13.8, and a later section built on it): the cast is one
+to nine, and zero is the background, where nothing is felt, with no word
+in this corpus; "it" and "they" are kept; all the categories are kept,
+and what might or could have happened is left out of the first set; said
+mathematics is category 26 as written, in Claude's sentences, from no
+book; the nine grades of the math corpus get no images; the space is 8 by
+8 by 8 with an image at z = 0, and a thing is one pixel except where its
+category is about size; this item's texts and returns live in this file;
+the slow tier is run once, at submission.
+
+*Not asked now, since each is a conversation before its own round*
+(§12.6): what knits touching places into one thing; what holds a
+succession across sentences, and the verb as it is built today (item 1.4
+observes the change afterwards); two events compared; what a sentence
+false of its image leaves against it (F8).
