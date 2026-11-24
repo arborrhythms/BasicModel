@@ -15264,38 +15264,28 @@ class ConceptualSpace(Space):
         rows_t = rows_t.to(device)
 
         def closure():
-            targets, sources = [], []
-            standing = torch.zeros(S, dtype=torch.bool, device=device)
-            reached = torch.zeros(S, B, dtype=torch.long, device=device)
-            if len(rows_t):
-                reached = reached.index_add(0, rows_t, active.to(torch.long))
-            reached = reached > 0
-            for parent in (visible_store(store),):
-                if not parent.nnz:
+            from FieldProjection import reachable_rows
+            targets, sources, standing = [], [], []
+            parent = visible_store(store)
+            bias = parent.bias_column()
+            for row, column in zip(parent._rows, parent._cols):
+                if column == bias:
+                    standing.append(row)
                     continue
-                dep_t, dep_s = [], []
-                bias = parent.bias_column()
-                for row, column in zip(parent._rows, parent._cols):
-                    if column == bias:
-                        standing[row] = True
-                        continue
-                    for source in parent.column_rows(column):
-                        dep_t.append(row)
-                        dep_s.append(source)
-                if dep_t:
-                    targets.append(torch.tensor(dep_t, dtype=torch.long, device=device))
-                    sources.append(torch.tensor(dep_s, dtype=torch.long, device=device))
-            reached = reached | standing[:, None]
-            if targets:
-                dep_t, dep_s = torch.cat(targets), torch.cat(sources)
-                while True:
-                    parents = torch.zeros(S, B, dtype=torch.long, device=device).index_add(
-                        0, dep_t, reached[dep_s].to(torch.long)) > 0
-                    fresh = parents & ~reached
-                    if not bool(fresh.any()):
-                        break
-                    reached = reached | fresh
-            return reached
+                for source in parent.column_rows(column):
+                    targets.append(row)
+                    sources.append(source)
+            # A shortest path never revisits a row. Each intermediate row
+            # must both read and be read, even in a cyclic legacy definition.
+            parents = set(targets)
+            rounds = min(len(parents), 1 + len(parents.intersection(sources)))
+            levels = len(self._order_caps()) - 1
+            if rounds > levels:
+                orders = {row: self._row_order(row) for row in parents.union(sources)}
+                if all(orders[source] < orders[target] for source, target in zip(sources, targets)):
+                    rounds = levels
+            return reachable_rows(active, rows_t, rows_t.new_tensor(standing),
+                                  rows_t.new_tensor(sources), rows_t.new_tensor(targets), rounds, S)
 
         reached = read_streams(self, closure, axis=1)
         orders = max(2, int(self._symbolic_order)) + 1
@@ -15317,7 +15307,7 @@ class ConceptualSpace(Space):
                for batch in addresses]
         ids = torch.tensor([[cid if cid is not None else -1 for cid in batch] for batch in ids],
                            dtype=torch.long, device=device).t()
-        if rows.shape[1] == 1 or torch.equal(rows, rows[:, :1].expand_as(rows)):
+        if addresses and all(batch == addresses[0] for batch in addresses[1:]):
             rows, ids = rows[:, 0], ids[:, 0]
         object.__setattr__(self, '_cs_field_caps', tuple(caps))
         object.__setattr__(self, '_cs_field_rows', rows)

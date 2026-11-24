@@ -5,6 +5,17 @@ from ConceptualMatch import match
 from Understanding import ConceptualField
 
 
+def reachable_rows(active, rows, standing, sources, targets, rounds, size):
+    """Propagate each stream's occupied rows through its definition edges."""
+    counts = torch.zeros(size, active.shape[1], dtype=torch.int32, device=active.device)
+    reached = counts.index_add(0, rows, active.int()).gt(0)
+    reached = reached.index_fill(0, standing, True)
+    for _ in range(rounds):
+        parents = counts.index_add(0, targets, reached.index_select(0, sources).int())
+        reached = reached | parents.gt(0)
+    return reached
+
+
 def inventory(owner):
     store = owner._concept_allocator.layer(0)
     return sorted(row for row in store._tensor_row_keys
