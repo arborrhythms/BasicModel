@@ -122,16 +122,50 @@ def backward(model, costs, optimizer, strength, *, scale=1.):
             a = adjusted
         combined = _sum_gradients(r, a)
         p.grad = _sum_gradients(p.grad, combined.detach() * scale)
-        coordinates = (rows.tolist() if rows is not None else range(len(stats))) if kind != 'tensor' else (None,)
-        for coordinate, values in zip(coordinates, stats.detach().cpu().tolist()):
-            suffix = '' if coordinate is None else f'.{kind}.{coordinate if ids is None else ids[coordinate]}'
-            record = receipt.setdefault(name + suffix, [0., 0., 0., 0])
-            for i, value in enumerate(values):
-                record[i] += value
-            record[3] += 1
+        # The statistics describe this epoch. Keep their sums on the same
+        # device and materialize the public labels only when a report is read.
+        _record(receipt, name, kind, ids, p, rows, stats.detach())
+
+
+def _record(receipt, name, kind, ids, parameter, rows, stats):
+    entry = receipt.get(name)
+    if entry is None:
+        dtype = torch.float32 if stats.device.type == 'mps' else torch.float64
+        entry = receipt[name] = dict(
+            kind=kind, sums=stats.new_zeros((0, 3), dtype=dtype),
+            counts=stats.new_zeros(0, dtype=torch.long), labels={})
+    width = 1 if kind == 'tensor' else parameter.shape[0]
+    if kind == 'tensor':
+        rows = None
+    if ids is not None:
+        # Edge parameters compact and grow. Their allocation names are stable.
+        if entry.get('ids') is not ids:
+            labels = entry['labels']
+            mapping = [labels.setdefault(edge, len(labels)) for edge in ids]
+            entry.update(ids=ids, mapping=stats.new_tensor(mapping, dtype=torch.long))
+        width = len(entry['labels'])
+        rows = entry['mapping'] if rows is None else entry['mapping'][rows]
+    extra = width - entry['counts'].numel()
+    if extra > 0:
+        entry['sums'] = torch.nn.functional.pad(entry['sums'], (0, 0, 0, extra))
+        entry['counts'] = torch.nn.functional.pad(entry['counts'], (0, extra))
+    sums, counts = entry['sums'], entry['counts']
+    if rows is None:
+        sums[:len(stats)].add_(stats)
+        counts[:len(stats)].add_(1)
+    else:
+        sums.index_add_(0, rows, stats.to(sums))
+        counts.index_add_(0, rows, torch.ones_like(rows))
 
 
 def receipt(model):
-    return {name: dict(cosine_before=values[0]/values[3], fraction_projected=values[1]/values[3],
-                      fraction_answer_removed=values[2]/values[3], steps=values[3])
-            for name, values in getattr(model, '_projection_epoch', {}).items()}
+    result = {}
+    for name, entry in getattr(model, '_projection_epoch', {}).items():
+        kind, counts = entry['kind'], entry['counts'].tolist()
+        labels = list(entry['labels']) if kind == 'edge' else range(len(counts))
+        for label, n, (cosine, projected, removed) in zip(labels, counts, entry['sums'].tolist(), strict=True):
+            if n:
+                key = name if kind == 'tensor' else f'{name}.{kind}.{label}'
+                result[key] = dict(cosine_before=cosine/n, fraction_projected=projected/n,
+                                   fraction_answer_removed=removed/n, steps=n)
+    return result

@@ -153,3 +153,19 @@ def test_model_xml_default_projects_one_native_batch_and_steps_once(monkeypatch,
             projection=result['projection'], realized_steps=result['realized_steps']))
     finally:
         model.End()
+
+
+def test_projection_receipt_tracks_edge_names_through_compaction_and_sparse_tensor_units():
+    from GradientProjection import _record, receipt
+
+    model = torch.nn.Module()
+    entries = model._projection_epoch = {}
+    values = torch.ones(2, 3)
+    _record(entries, 'weights', 'edge', (3, 7), values, None, values)
+    _record(entries, 'weights', 'edge', (7, 9), values, torch.tensor([0]), 3 * values[:1])
+    _record(entries, 'embedding', 'tensor', None, values, torch.tensor([1]), values[:1])
+    report = receipt(model)
+    assert set(report) == {'weights.edge.3', 'weights.edge.7', 'embedding'}
+    assert report['weights.edge.7']['cosine_before'] == 2
+    assert report['weights.edge.7']['steps'] == 2
+    assert report['embedding']['steps'] == 1
