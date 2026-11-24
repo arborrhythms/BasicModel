@@ -158,6 +158,45 @@ def least_of_greater(x, c, chunk=1 << 24):
     return torch.maximum(taken, kept)
 
 
+def occurrence_parts(raw, spans, spellings, part_codes, catalog):
+    """Join the native parts contained in each byte extent, including learned runs.
+
+    Each distinct part votes once per occurrence. Keeping a single maximum
+    over the selected parts preserves the native basis gradient at ties.
+    """
+    batch, occurrences = spans.shape[:2]
+    if not spellings:
+        return (part_codes.new_zeros(batch, occurrences, part_codes.shape[-1]),
+                catalog.new_ones(batch, occurrences, catalog.shape[-1]))
+    raw = raw.to(torch.uint8)
+    lo, hi = spans.clamp(0, raw.shape[1]).unbind(-1)
+    masks = []
+    for group in spellings:
+        size = group.shape[1]
+        if size > raw.shape[1]:
+            masks.append(lo.new_zeros(batch, occurrences, len(group), dtype=torch.bool))
+            continue
+        windows = raw.unfold(1, size, 1)
+        count = windows.shape[1]
+        # Prefix counts distinguish a hit inside the extent from the same
+        # spelling immediately outside it, including overlapping matches.
+        step = max(1, (1 << 22) // max(1, batch * count * size))
+        for keys in group.split(step):
+            found = (windows[:, :, None] == keys).all(-1)
+            prefix = F.pad(found.transpose(1, 2).contiguous().long().cumsum(-1), (1, 0))
+            start = lo.clamp_max(count)[:, None].expand(-1, len(keys), -1)
+            stop = (hi - size + 1).clamp(0, count)[:, None].expand_as(start)
+            masks.append((prefix.gather(2, stop) > prefix.gather(2, start)).transpose(1, 2))
+    found = torch.cat(masks, -1)
+    coordinates = torch.cat((part_codes, catalog.to(part_codes)), -1)
+    step = max(1, (1 << 22) // max(1, batch * coordinates.numel()))
+    joined = torch.cat([coordinates.masked_fill(~mask[..., None], -torch.inf).amax(-2)
+                        for mask in found.split(step, dim=1)], dim=1)
+    parts, tight = joined.split((part_codes.shape[-1], catalog.shape[-1]), dim=-1)
+    present = found.any(-1, keepdim=True)
+    return torch.where(present, parts, 0.), torch.where(present, tight, 1.)
+
+
 def held_at(bank, table, codes=None):
     """Each row of ``bank`` at each attended percept of ``table`` ``[B, A,
     columns, 2]``, read from the graded what columns by the least and the
@@ -932,8 +971,7 @@ class BasicPercepts(nn.Module):
         a whole's code and one less the degree it holds over the bytes
         spanned (its for lane, where it covers them all), and its tightest
         whole (all ones where none). Graded, with the gradient of each
-        whole's degree. The bytes are read on the host once, and each
-        distinct run of bytes is coded once."""
+        whole's degree."""
         from PerceptProperties import counts_in_spans
         part_ids, part_spans, primitive, raw, _ = percepts
         raw = raw[:, 0] if raw.ndim == 3 else raw
@@ -944,7 +982,14 @@ class BasicPercepts(nn.Module):
         held = codes.new_ones(B, O, self.property_width)
         outside = codes.new_zeros(B, O, self.property_width)
         identity = getattr(self.native, 'identity', None)
-        if identity is not None and O:
+        bank = identity.occurrence_bank(device) if identity is not None and O else None
+        if bank is not None:
+            spellings, rows, catalog = bank
+            basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
+            parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog)
+            codes[..., :self.identity_width] = parts
+            held = torch.minimum(held, tight)
+        elif identity is not None and O:
             text = raw.tolist()
             coded, index = {}, []
             for b, row in enumerate(spans.tolist()):
@@ -991,22 +1036,17 @@ class BasicPercepts(nn.Module):
             # spanned, where it covers them all) bounds the wholes wires by
             # the greater of its code and ``1 - f``; nothing is cut.
             counts = counts_in_spans(raw, spans.to(device), observed=raw != 0)
-            selected = counts[real]
-            evidence = primitive.evidence_on_counts(selected, rows=torch.tensor(wholes, device=device))
-            complete = selected.sum(-1) == (spans[..., 1] - spans[..., 0])[real]
-            degree = codes.new_zeros(B, O, len(wholes))
-            degree = degree.index_put((real.nonzero(as_tuple=True)),
-                                      (evidence[..., 0] * complete[..., None]).to(codes))
-            whole_codes = self.whole_codes(list(wholes)).to(codes)                          # [W, pw]
+            rows = torch.tensor(wholes, device=device)
+            evidence = primitive.evidence_on_counts(counts, rows=rows)
+            complete = real & (counts.sum(-1) == spans[..., 1] - spans[..., 0])
+            degree, away = (evidence * complete[..., None, None]).to(codes).unbind(-1)
+            whole_codes = self.whole.lookup_rows(rows)[..., self.identity_width:self.width].to(codes)
             bound = least_of_greater(1 - degree, whole_codes.T).permute(1, 2, 0)             # [B, O, pw]
             held = torch.minimum(held, bound)
             # A whole witnessed outside to the degree ``g`` over every byte
             # spanned bounds the against lane of each wire it cuts by ``g``:
             # a wire holds the least over the wholes that cut it, so that a
             # whole's own wires do not take another whole's degree.
-            away = codes.new_zeros(B, O, len(wholes))
-            away = away.index_put((real.nonzero(as_tuple=True)),
-                                  (evidence[..., 1] * complete[..., None]).to(codes))
             # A wire is cut by a whole wherever its code is below one.
             uncut = (whole_codes >= 1).to(codes)                                            # [W, pw]
             outside = least_of_greater(away, uncut.T).permute(1, 2, 0) * (1 - uncut).amax(0)

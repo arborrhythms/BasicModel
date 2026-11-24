@@ -227,6 +227,44 @@ class WordIdentity(nn.Module):
         self._catalog[key] = result
         return result
 
+    def occurrence_bank(self, device):
+        """Group native part references by spelling length for the occurrence read.
+
+        The cache holds addresses and fixed catalog coordinates. Native part
+        codes are read through the actual basis on each differentiable forward.
+        """
+        stamp = (len(self.atoms), len(self.added), self.revision, self._given_revision, device)
+        cached = self._catalog.get('occurrence_bank')
+        if cached is not None and cached[0] == stamp:
+            return cached[1]
+        groups = {}
+        for atom, row in self.atoms.items():
+            text = atom[1]
+            if atom[0] != 'part' or (len(text) != 1 and text not in self.added):
+                continue
+            try:
+                raw = text.encode('utf-8')
+            except UnicodeEncodeError:
+                # A surrogateescape byte may be part of a valid character in
+                # another span. Its interpretation depends on the span's edges.
+                self._catalog['occurrence_bank'] = stamp, None
+                return None
+            groups.setdefault(len(raw), []).append((raw, row, atom))
+        spellings, rows, catalogs = [], [], []
+        for size in sorted(groups):
+            entries = groups[size]
+            spellings.append(torch.tensor([list(raw) for raw, _, _ in entries],
+                                          dtype=torch.uint8, device=device))
+            rows.extend(row for _, row, _ in entries)
+            if self.property_width:
+                catalogs.extend(self.catalog_code(atom) for _, _, atom in entries)
+        addresses = torch.tensor(rows, dtype=torch.long, device=device)
+        catalog = (torch.stack(catalogs).to(device) if catalogs else
+                   torch.empty(len(rows), self.property_width, device=device))
+        bank = tuple(spellings), addresses, catalog
+        self._catalog['occurrence_bank'] = stamp, bank
+        return bank
+
     def _link(self, raw):
         """Link a new stored form to the stored forms it holds as a run (its
         parts among the forms) and to those that hold it (its holders), on
@@ -337,6 +375,7 @@ class WordIdentity(nn.Module):
         if bits is not None:
             self.bits[atom] = max(self.bits.get(atom, self.ones), int(bits))
             self._codes.pop(atom, None)
+            self._catalog.pop('occurrence_bank', None)
         code = self.atom_code(atom)
         if atom not in self.atoms:
             key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
