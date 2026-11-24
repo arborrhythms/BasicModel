@@ -162,9 +162,8 @@ class Evaluation:
         value = program.leaves[word]
         original = identity = int(program.concept_ids[word])
         lexical = -1 if program.word_ids is None else int(program.word_ids[word])
-        order = int(self.orders[word])
-        admitted = program.staged_object_rows is None or int(program.staged_object_rows[word]) >= 0
-        if lexical > 0 and program.interpret_forced and admitted:
+        if (lexical > 0 and program.interpret_forced and
+                (program.staged_object_rows is None or int(program.staged_object_rows[word]) >= 0)):
             identity = owner.interpret.referent(lexical, batch=self.stream)
             row = owner._concept_row_of(identity)
             if identity == lexical and program.staged_object_ids is not None:
@@ -177,17 +176,19 @@ class Evaluation:
             atoms = owner.similarity_codebook.lookup_rows(self.ids.new_tensor(row), stream=self.stream)
             atoms = owner.interpret.lexical_atoms(row, atoms, word_ids=lexical, stream=self.stream)
             evidence = (program.leaf_evidence[word] if program.leaf_evidence is not None else
-                        value.new_tensor((float(program.activations[word]), 0.)))
+                        torch.stack((program.activations[word].detach().to(value), value.new_zeros(()))))
             value = owner.interpret.forward(value, object_atoms=atoms,
                 presence=program.activations[word], evidence=evidence)
             # A pending name has the word row's order, as reading() gives it;
             # its MTM handle is not an allocated concept whose order can be read.
             order = owner._row_order(row)
+            self.orders[word] = order
+        else:
+            order = int(self.orders[word])
         self.choices.append((lexical, tuple(owner.interpret.denotations(lexical)) if lexical > 0 else (), identity))
         self.leaves[word] = value
         self.ids[word] = identity
         self.native_ids[word] = self.native_leaf_reference(identity, original)
-        self.orders[word] = order
         # Occurrence bands belong to the input location, not to the dictionary.
         point = value.clone()
         start = self.model.symbolSpace.ltm_store.when_start
@@ -219,7 +220,6 @@ class Evaluation:
         children = self.stack[-arity:]; del self.stack[-arity:]
         operands, refs, orders, cases = [], [], [], []
         for role, child in enumerate(children):
-            reference = int(self.refs[at, role])
             selected = (self.program.operation_resolved is not None
                         and bool(self.program.operation_resolved[at, role]))
             # A selected external operand is a recorded input, never a copied
@@ -240,7 +240,7 @@ class Evaluation:
                 low = max(0, start-4)
                 point = torch.cat((point[:low], self.program.operation_values[at, role, low:start+4],
                                    point[start+4:]))
-            identity = reference if selected else child.reference
+            identity = int(self.refs[at, role]) if selected else child.reference
             if selected:
                 if self.program.operation_orders is None:
                     raise ValueError('a selected comprehension operand has no recorded order')

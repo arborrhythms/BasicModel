@@ -274,6 +274,10 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
     valid = ids >= 0
     ids = ids[valid]
     values = field.evidence[valid,row]
+    # Leaves read the observed field in fixation order. Keep its addresses
+    # on the device across the entire grammatical traversal.
+    positions = torch.as_tensor(positions, dtype=torch.long, device=values.device)
+    leaf_values = values[:, positions[:len(program.concept_ids)]]
     stack = []
     tree = program.tree if evaluation is None else None
     dispatch = language._tree_layer(2)
@@ -282,7 +286,7 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
             break
         if kind == 0:
             reference = (int(program.concept_ids[word]) if evaluation is None else evaluation.leaf(word))
-            source = ConceptSet(ids,values[:,int(positions[word])])
+            source = ConceptSet(ids, leaf_values[:, word])
             if program.interpret_forced:
                 source = stored(owner,interpreted(owner,source,stream=row))
             node=Node(source,reference=('sym',reference) if reference > 0 else None)
