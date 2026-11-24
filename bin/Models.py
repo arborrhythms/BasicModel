@@ -11259,22 +11259,26 @@ class BasicModel(BaseModel):
             return
         B, W = active.shape
         owner = self._concept_owner()
-        rows = torch.full_like(active, -1, dtype=torch.long)
-        object_orders = rows.clone()
-        object_ids = rows.clone()
-        referent_ids = rows.clone()
-        word_ids = rows.clone()
-        basic_ids = rows.clone()
-        word_rows, word_orders = rows.clone(), rows.clone()
+        # The MTM writer already holds these resolved integer references.
+        # Send the completed columns together, preserving their contiguous
+        # layout for the grammar and its inverse.
+        metadata = torch.full((8, B, W), -1, dtype=torch.long, device='cpu')
+        (basic_ids, word_ids, word_rows, word_orders, rows, object_ids,
+         referent_ids, object_orders) = metadata.unbind()
         lexical_forms = {}
         offsets = getattr(isp, '_ar_word_part_offsets', None)
         texts = percepts.get('word_texts')
         word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and texts is not None
-        starts = offsets[:, :, 0].detach().cpu().tolist() if word_major else None
+        if word_major:
+            active_host, starts = torch.stack((active.long(), offsets[:, :, 0])).tolist()
+        else:
+            active_host, starts = active.tolist(), None
         loop_spans = percepts.get('part_spans')
-        loop_spans = (loop_spans.detach().cpu().tolist()
-                      if torch.is_tensor(loop_spans) else None)
-        active_host = active.detach().cpu().tolist()
+        if (torch.is_tensor(loop_spans)
+                and (not word_major or any(row is None for row in texts))):
+            loop_spans = loop_spans[:, :W].tolist()
+        else:
+            loop_spans = None
         for b, lo, hi, form, native_last, word_id, object_id, row, object_order in words:
             if word_major and texts[b] is not None:
                 columns = [p for p in range(W) if active_host[b][p]
@@ -11295,18 +11299,17 @@ class BasicModel(BaseModel):
                 word_rows[b, p] = word_row
                 word_orders[b, p] = owner._row_order(word_row)
                 lexical_forms[word_row] = form
-            if not active_host[b][p]:
-                continue
-            if row is None:
-                continue
-            rows[b, p] = int(row)
-            word_ids[b, p] = int(word_id)
-            # A transient is the address of a pending MTM token. The
-            # conceptual reference of its grammar leaf is still the word
-            # occupying this row. The bind journal retains the token.
-            object_ids[b, p] = owner.concept_id_at_row(int(row))
-            referent_ids[b, p] = int(object_id)
-            object_orders[b, p] = int(object_order)
+            if active_host[b][p] and row is not None:
+                # The bind journal retains a transient MTM token. Its grammar
+                # leaf still refers to the word occupying the conceptual row.
+                word_ids[b, p] = int(word_id)
+                rows[b, p] = int(row)
+                object_ids[b, p] = owner.concept_id_at_row(int(row))
+                referent_ids[b, p] = int(object_id)
+                object_orders[b, p] = int(object_order)
+        # Public columns can be edited independently after staging.
+        (basic_ids, word_ids, word_rows, word_orders, rows, object_ids,
+         referent_ids, object_orders) = torch.unbind_copy(metadata.to(active.device))
         atoms = owner.similarity_codebook.lookup_rows(rows.clamp_min(0), streams=True)
         atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
         atoms = owner.interpret.lexical_atoms(rows, atoms, word_ids=word_ids)
