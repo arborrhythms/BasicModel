@@ -429,7 +429,8 @@ What the curriculum orders is the operations the model learns; the parts of spee
 generalization and an object generalization are each learned from their own
 occurrences, each a row that MTM nominates on recurrence with its concept;
 the object may be of another modality than the word. An occurrence keeps its
-place and time, and a generalization holds neither. Then the meta concept of
+place and time, and so does its concept of order zero; the noun, a symbol of
+the Pi of order one, holds neither ([Orders](Orders.md)). Then the meta concept of
 the two, one order above the higher of them, is learned from their consistent
 association, when the word's concept and the object's have been present
 together on enough occasions; after it a word that is found raises its

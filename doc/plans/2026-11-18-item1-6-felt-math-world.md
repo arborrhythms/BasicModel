@@ -4946,3 +4946,353 @@ any worktree (18.5).
 *Standing documents written by Claude with this step:* `doc/Params.md`,
 `doc/Spaces.md`, `doc/Training.md`, `doc/Testing.md`,
 `doc/DevelopmentHistory.md`.
+
+## 22. Alec's answers to the thirteen questions (2026-11-24)
+
+Claude gave him every open question in one list, numbered 1 to 13 (the
+paste lost the numbering; it is restored here). His words are quoted whole.
+
+### 22.0 Before the answers: where a noun begins
+
+> Please verify my logic, but a pi on events would still seem to be an
+> event, as would a sigma on top of that. To remove the .when and .where
+> elements, which is necessary for nouns, I think we need the first-order
+> pi. This would be a good thing to document.
+
+*Verified against the source and the documents.* A row of the first Pi is
+read at an occurrence, which has a place and a time. A concept of order
+zero is a Sigma over those rows; `doc/Architecture.md` says of it "A concept
+is opaque: it keeps its `.where` and its `.when`", and its width embraces
+the percept's band (§18.4). A symbol, a row of the Pi of order one, "has no
+vector, place, form or trust" and "stores no `.where` or `.when`". So the
+first thing with neither place nor time is the symbol of order one, as he
+says. One sentence of `doc/Training.md` said the opposite of a concept of
+order zero ("a generalization holds neither"); it is corrected.
+*Documented* in `doc/Orders.md`, "Where a noun begins".
+
+### 22.1 Needed for round one, step B
+
+**1. Is the meta concept raised by either noun alone?**
+
+> my guess is that the first order words and objects will live in different
+> parts of conceptual space, so they cannot be united by a hypercone (pi).
+> So it will be the sigma that makes a list of two seemingly unrelated
+> items. That does not need raising, it is just concept formation but order
+> one MTM.
+
+*Decided.* The meta concept is a Sigma of order one over the two nouns'
+symbols, a list of two. A Pi cannot unite them, since a Pi's row is a
+region of sameness and the two lie in different parts of conceptual space.
+It is formed by MTM at order one as any concept is, and nothing is raised
+for it. This stands over 19.2, point 3 ("a PI that includes both"): what
+is left of the Pi there is the being present together, which is what MTM
+goes by. Either noun raises it, being a sufficient part.
+*For round two's design:* as built, what recurs together is promoted as a
+Pi row under a new concept; a Sigma over two symbols from their being
+present together is to be designed.
+
+**2. Should the numeric stem's input be read as an image too?**
+
+> yes, one reader.
+
+**3. Is a pixel's 0..1 the step over 255, linear?**
+
+> we can do linear, the log chart was to avoid clipping,and sensation seems
+> to be log. But we can treat that as a preprocessing step, and require all
+> input in 0..1, where a linear map is best (also good for BF16)
+
+*Decided.* Every reader of intensities requires its input in 0..1 and
+takes it as it is. The logarithmic chart (`NumericPercepts.feeling`) is a
+step before the reader, for numbers that are not in 0..1.
+
+**4. May the value beside the words keep its own reading until round two?**
+
+> implementer's decision
+
+**5. Should the row's key be `scene` or `image`?**
+
+> I do not understand this question.
+
+*Withdrawn; nothing to decide.* It asked only what the field of an input
+row that carries the image is called. The frozen corpus calls it `scene`
+and step A built it so.
+
+### 22.2 Needed before round two
+
+**6. What makes one object of the several steps of one value?**
+
+> the max of the parts are the lower bound, the min of the wholes (as
+> properties) is the upper bound. So it is the same as for character
+> percepts.
+
+*Decided.* An object over values is bounded as a character's percept is:
+its lower bound is the greatest of its parts, its upper bound the least of
+its wholes, the wholes being properties. This is `doc/Mereology.md`'s rule
+for a form's code ("the parts half of a percept's code is the greatest of
+its parts' codes, and its wholes half the least of its wholes' codes"),
+and it answers 19.1's "not yet said": the rule on the part tower is the
+greatest of the parts. Neither the word nor a rule of gaps gathers the
+steps: a property that holds of every step of "three" and of no step of
+"four" does. *For round two's design:* what the properties of the line of
+values are, as text has its table of wholes.
+
+**7. Does the first Pi never join a form's row with a value's row?**
+
+> I am proposing a separate pi for each space, becuase they are not
+> mereologically related.
+
+### 22.3 Needed before round three
+
+**8. What reads an arrangement?** His answer is §23 whole. *Claude's note:*
+the question was asked of "three is above four" as a relation of two
+places in an image. He answers it as the question beneath it, how any
+other sort is mapped onto the one sort the model has, parthood, by
+relations ("we can do an ordinal sort using relations"), and then what
+three and four are. So an arrangement is read by relations and not as a
+percept of its own. Claude still owes the proposal for "above", after
+round one.
+
+**9. Reading in order through grammar training.**
+
+> sorry about this. We can wait for 1.4 which I believe will help temporal
+> verbs and sequencing in general.
+
+*Decided.* What turns on the order of two words waits for item 1.4. Round
+three's certificate on category 14 is not asked of this item before it;
+the lean of 18.7 is left with it.
+
+### 22.4 The corpus's defaults
+
+**10. Do the counting words double as the value names?**
+
+> "Three" is an abstract concept, it has any number of uses.
+
+**11. Is the task named in the input?**
+
+> we can do it this way, but a well-trained general model will not make
+> that assumption. So if you want this test to run as a part of a battery
+> on a large number of tests that already have sentence comprehension, we
+> need a version that asks a question about the image in the text modality.
+> Also, this points out the need for numerical output as well as input, so
+> please add that to the spec. We will become artists. But we will probably
+> have to keep our day jobs also, and make art of them to the best of our
+> ability.
+
+*Decided.* Counting keeps the form with no text and gains one that asks of
+the image in words. And the model is to give intensities out as it takes
+them in (§24).
+
+**12. What is said when nothing follows?**
+
+> if there is a lack of understanding, the best might be to ask a question.
+> But silence is fine for now.
+
+**13. The bar.**
+
+> this question is not about accuracy, but the amount of training required
+> to build a model required upon which further development can continue. My
+> guess is we want a ten year old, or at least a child who has passed all
+> piagetian stages, before we can give it all the books to read.
+
+*Decided.* The bar is not an accuracy. It is a model on which development
+can go on: one that has passed every stage, each stage a test
+(`doc/Training.md`), before it is given the books. No remote machine is
+paid for before that.
+
+## 23. Mathematics: what three and four are (Alec, 2026-11-24, with Claude's notes)
+
+> You are asking how to map various sorts to the sort that we already have
+> using relations. So we can do an ordinal sort using relations, and then
+> you seem to be asking "what is three or four such that we can sort them?".
+> The question is probably best answered in terms of the extension; three
+> is the set of all things that have three objects, and defined analogously
+> for four. But now we need to map that to our partial sort, so three is the
+> set of "greater than two things" and "less than four things". Four is also
+> greater than two things, but it is less than five things. So there is a
+> mathematics over greater than and a mathematics over less than that are
+> parthood relations over the extension of the sets so defined. Please read
+> a quick bit about mereology if this is not familiar, the work by Peter
+> simons is a good source for how few mereological axioms such as parthood
+> can be used to define all of mathematics (we use mereology for parts and
+> Lesniewski's naming operation which is equivalent to our symbolic
+> formation at higher orders). Please add this to the doc in a mathematics
+> section. The short answer is that four is defined at a high order based
+> on greater than three and less than five, and it is defined over the
+> integers, which are learned via the successor operation, which I think
+> has to come from order-raising rather than continuous mapping within a
+> given space. I think I have good words about this in Cognitive Set
+> Theory, I will put a copy in the doc directory.
+
+**What it says, in the model's terms.**
+
+1. *One sort.* The model has one order, parthood: `partOf` on two codes,
+   which on two values is less-than-or-equal (19.1). Every other sort
+   (above and below, before and after, more and fewer) is mapped onto it
+   by relations.
+2. *A number by its extension.* Three is what all collections of three
+   things have in common: a kind over them, at an order above the things
+   and above their collections.
+3. *A number by two bounds.* On the partial sort, three is "more than two
+   things" and "fewer than four things". More-than and fewer-than are
+   parthood between the extensions: a collection of three is a part of a
+   collection of four that holds it. A number is so bounded from below and
+   from above, as a level of intensity is bounded by its part and its
+   whole (22.2, question 6).
+4. *The integers come by the successor,* and the successor by raising an
+   order, not by a step along an axis of one space. So a number is not an
+   intensity. That "three" names an intensity in the first categories of
+   the corpus is one use of an abstract word (22.4, question 10); the
+   number three is met in the counting categories.
+
+**From the literature, as Claude has it** (to be checked against his
+*Cognitive Set Theory* when the copy is in `doc/`). Leśniewski built three
+systems one on another: Protothetic, a logic of propositions; Ontology, a
+calculus of names with the one primitive "is" ("a is one of the b"), in
+which a name may name nothing, one thing or many; and Mereology, in which
+the one primitive is "part of" and a class is the concrete whole of its
+members and never a further abstract thing, so that Russell's class of
+classes that are not members of themselves cannot be formed. Simons
+(*Parts*, 1987) sets these out beside the calculus of individuals, with
+parthood as a partial order (each thing a part of itself, no two things
+parts of each other, a part of a part a part) and the principles of
+supplementation and of sums above it. Parthood among individuals alone
+gives a Boolean algebra without its zero and no arithmetic; number comes in
+Ontology, where "there are exactly n of the a" is defined of names, at
+higher and higher semantic categories. That is his point here: mereology
+gives the parts, and the naming that makes a new name of what names have in
+common, at a category above them, is the model's formation of symbols at
+higher orders. A number is defined there, "at a high order".
+
+**What it bears on.** Round three (22.3, question 8). The counting
+categories and the said mathematics of the corpus (categories 26 and 27).
+`doc/ModelAge.md`'s song and the successor. Nothing of round one or two.
+
+## 24. Added to the specification by his answers (Claude, 2026-11-24)
+
+1. **Intensities out.** The model gives intensities out as it takes them
+   in: an answer may be an image, pixels in the scene's box with values in
+   0..1, as an answer may be words. "We will become artists." *Not designed
+   yet.* Its nearest ground is round one, step C, which puts an image back
+   at the opening; the way out is that way back asked for at the output.
+   It is designed after step C returns, with its certificate: an image
+   asked for in words is given, measured place by place.
+2. **Counting asked in words.** Category 27 gains a form in which the image
+   comes with a question in text, beside the form with no text. It is a
+   revision of the corpus (a recipe and a freeze), made by an implementer
+   after step B returns, so that two implementers do not change one tree
+   at once.
+3. **Input in 0..1.** Every reader of intensities requires 0..1. The
+   logarithmic chart is a step before a reader (22.1, question 3).
+4. **Silence when nothing follows** stays the answer. To ask a question
+   where understanding is lacking is the better answer and is not built.
+5. **The bar** is every stage passed, not an accuracy (22.4, question 13).
+6. **What turns on the order of two words waits for item 1.4** (22.3,
+   question 9).
+
+### 20.8 Step B: values in an image's bank (the text for its implementer)
+
+*Rests on 19.1, 19.4, 20.2 as reworded by 20.7, and 22.1 (one reader; input
+in 0..1; the value beside the words is the implementer's to decide).*
+
+Certificates, in `test/test_item16_values.py`, each printing what it
+measured:
+
+| | Certificate | Passes when |
+|---|---|---|
+| V1 | One table | The same value at two places is one row of the basic percepts. Its code is the bins at or below it, in order, whatever its place; `partOf` on two values' codes is less-than-or-equal, over sampled pairs. Nothing draws a value's coordinates by its place, and no percept's key holds a place |
+| V2 | Input in 0..1 | A reader of intensities takes a value in 0..1 as it is and gives it back exactly; it refuses a value below 0, above 1 or not a number, with a message. The logarithmic chart is applied by no reader |
+| V3 | The Pi over values | On an image's bank, a value's row reads for at an occurrence of its own bin, against at an occurrence of a greater value, and nothing at an occurrence of a lesser value or where nothing is. It is a function of the value space, named apart from the first Pi over forms |
+| V4 | A place by its wires | After an image has recurred as often as nominates a form, each place that held a value has a place's row that keeps that value's what. The same value at two places: one value's row, two places' rows |
+| V5 | XOR from input to output | `test/numeric_xor.py`'s certificate: its error, its answers and its exact reconstruction as they are; its conjunction is over two places' rows. The stopping gate `test_mm_xor.py::TestMMXorConvergence::test_convergence` passes untouched |
+| V6 | One Not | A pass of reading sends its rows through `order_zero_field` once |
+| V7 | Images | The tests of the image configurations (`MM_image.xml`, `mnist.xml`) that pass in the sweep pass; their time and greatest memory before and after |
+| V8 | Text as it was | The other stopping gate, the seven echo tests, the reading lesson, `test_item16_grid.py`, `test_item16_scene.py` |
+
+~~~
+Item 1.6, round one, step B: values in an image's bank. Read §20 of
+doc/plans/2026-11-18-item1-6-felt-math-world.md whole (20.7 rewords 20.2;
+20.8 is yours), then §19.1, §19.4, §22.0 to §22.2 and H.5 of the same
+document, then doc/Spaces.md ("Level Sets", "Modalities"),
+doc/Mereology.md from "A scalar is the same mechanism", and the source:
+bin/BasicPercepts.py (read_bank, held_at, reserve_place, place_factor,
+kept_percept, value_code, perceive_value, read_points), bin/Places.py,
+bin/NumericPercepts.py, bin/OrderZero.py, Spaces.py's order_zero_field and
+cs_read_percept_field, test/numeric_xor.py and test/test_item17_places.py.
+§20.2's points 1 to 7 are what you build, on the numeric stem; point 8 is
+built and point 9 is not yours. main is being changed by another
+implementer at the same time, so keep each change as small as it can be.
+
+Keep a file, tmp/item1-6/values_progress.md, current after each step. If
+your context runs short, stop at the end of a step with that file current.
+
+0. Before you change anything, on the frozen copy of the source as it is
+   now (its path is in your prompt): run test/numeric_xor.py's certificate
+   and the tests of the image configurations, and keep what they print,
+   their times and their greatest memory. They are V5's and V7's "before".
+1. One table of values (point 2). The bins of a value's code are in order
+   for every place; a value's row is keyed by the value alone.
+   value_coordinates, the place in reserve's key and BasicPercepts.places
+   go, with every caller's place argument. Nothing is kept for the older
+   form, in the source or in a saved state's loading.
+2. Input in 0..1 (22.1, question 3). A reader of intensities takes its
+   input as it is and refuses what is outside 0..1. The logarithmic chart
+   stays a function for a caller whose numbers are not in 0..1 and is
+   applied by no reader. Find every numeric data set the configurations
+   use and say what range its numbers have; change a configuration only
+   where the linear value makes one of its declared values false, and
+   list each.
+3. An image's bank (point 1 as reworded). The numeric stem makes a bank of
+   its input: each place of its box whose value is above zero is an
+   occurrence, its .what the value's code on two lanes, its .where the
+   twelve wires of its place from the registry's grid, its .when the
+   moment's. Use the bank that a sentence has (PerceptBank) if it can hold
+   it; if it cannot, say why and what you built.
+4. The Pi over values (point 3): a function of BasicPercepts for the value
+   space, by the two bounds, as V3 says, with the row's entries on the
+   wires (place_factor) as for a form. Show in the return whether it
+   agrees with held_at on a line. If a gate or V5 cannot pass with
+   "against at a greater value", build the other reading (for on the equal
+   bin, nothing elsewhere), and say which passes and what each measured.
+5. One Not (point 5): the bank's rows go through order_zero_field once.
+   The lanes set by hand in NumericPercepts.read go.
+6. A place by its wires (point 6): a place's row is nominated for an image
+   as it is for a sentence (Places.meet), and keeps the what. The concept
+   for each input place (NumericPercepts.rows) goes. The way back
+   (NumericPercepts.reverse) gives each place its exact value from the
+   table of values.
+7. The value beside the words (bin/ScalarPercepts.py) is yours to decide:
+   it takes step 1 in any case; whether it keeps its reading and its join
+   until the tie is replaced, or goes through the one reader now, say
+   which and why. If it keeps them, it applies the logarithmic chart
+   before it reads, so that its numbers are what they were.
+8. test/test_item16_values.py: V1 to V8 of §20.8.
+9. Port the tests this makes false. A test that asserted a value's percept
+   by its place, or the numeric stem's concept for each place, asserts
+   what is true now; list each with its old assertion and its new one.
+   The reader's list is in your prompt. No other assertion is weakened,
+   skipped or marked; no seed is chosen; neither stopping gate is touched.
+10. Run, with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+    stopping gates, test/test_item17_echo.py,
+    test/test_reading_pretraining.py, test/test_item16_grid.py,
+    test/test_item16_scene.py, test/test_item16_values.py, every test file
+    you changed, and every test file that names NumericPercepts,
+    ScalarPercepts, perceive_value, value_code, numeric_xor or
+    MM_image. No test that passes in the sweep of this source (its
+    outcomes are named in your prompt) may fail; for one that does, find
+    the cause and repair the source, not the test. Do not run the whole
+    sweep.
+11. No standing doc: Claude writes them at review. Nothing removed is
+    deleted but moved to a dated folder under /tmp and named.
+12. Return as a file, tmp/item1-6/section25.md, headed
+    "## 25. Round one, step B: the return": every file changed and why in
+    a line each; each certificate with what it printed; V5 and V7 before
+    and after; every test ported, with its old and new assertion; every
+    configuration changed; what you decided for the value beside the
+    words; whatever in §20 was wrong or could not be built as written,
+    and what you built in its place. You do not stop on a question of
+    design: propose, build, mark it. Stop only if a gate cannot be made to
+    pass with its assertion as it is, and then say exactly where it fails.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
