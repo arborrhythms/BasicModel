@@ -37,31 +37,43 @@ def stage(surfaces, raw_capacity, *, device, eos=False, retain_bytes=True, with_
     B = len(surfaces)
     K = len(surfaces[0]) if B else 0
     width = raw_capacity + int(eos)
-    data = torch.zeros(B, K, width, dtype=torch.uint8) if retain_bytes else None
-    valid = torch.zeros(B, K, width, dtype=torch.bool) if retain_bytes else None
-    present = torch.zeros(B, K, dtype=torch.bool)
-    support = torch.zeros(B, K, 256, dtype=torch.bool) if with_support else None
-    for b, row in enumerate(surfaces):
+    # These strings come from the old checkpoint/lesson interface. Assemble
+    # its bytes before transfer so each word does not launch separate writes.
+    octets = bytearray(B * K * width) if retain_bytes else None
+    lengths = []
+    members = [] if with_support and not retain_bytes else None
+    for row in surfaces:
         if len(row) != K:
             raise ValueError('surface rows must have the constructed candidate count')
-        for k, raw in enumerate(row):
+        for raw in row:
             if raw is None:
-                continue
+                raw = b''
             if not isinstance(raw, bytes):
                 raise TypeError(f'word surface must be bytes, got {type(raw).__name__}')
             if len(raw) > raw_capacity:
                 raise ValueError(f'word surface {raw!r} has {len(raw)} bytes; '
                                  f'wordSurfaceCapacity is {raw_capacity}')
+            seat = len(lengths)
+            lengths.append(len(raw))
             if raw:
-                present[b, k] = True
-                if support is not None:
-                    support[b, k, sorted(set(raw))] = True
-                if retain_bytes:
-                    data[b, k, :len(raw)] = torch.tensor(list(raw), dtype=torch.uint8)
-                    valid[b, k, :len(raw)] = True
-    return (None if data is None else data.to(device),
-            None if valid is None else valid.to(device),
-            present.to(device), None if support is None else support.to(device))
+                if octets is not None:
+                    start = seat * width
+                    octets[start:start + len(raw)] = raw
+                if members is not None:
+                    members.extend(seat * 256 + byte for byte in set(raw))
+    lengths = torch.tensor(lengths, device=device, dtype=torch.long).reshape(B, K)
+    data = valid = support = None
+    if octets is not None:
+        data = (torch.frombuffer(octets, dtype=torch.uint8).to(device) if octets else
+                torch.empty(0, dtype=torch.uint8, device=device)).reshape(B, K, width)
+        valid = torch.arange(width, device=device) < lengths[..., None]
+        if with_support:
+            support = primitive_support(data, valid)
+    elif members is not None:
+        support = torch.zeros(B * K * 256, device=device, dtype=torch.bool)
+        support.index_fill_(0, torch.tensor(members, device=device, dtype=torch.long), True)
+        support = support.reshape(B, K, 256)
+    return data, valid, lengths > 0, support
 
 
 def bytes_at(surface, spans, active, capacity):
