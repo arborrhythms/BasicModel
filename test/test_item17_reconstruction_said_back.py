@@ -130,7 +130,7 @@ def test_unit_the_perceptual_inverse_paste_and_the_pyramid(tmp_path, monkeypatch
             value = errors._value(errors._terms[name + '.pyramid'])
             with torch.enable_grad():
                 grads = ([None] * 3 if not value.requires_grad else
-                         torch.autograd.grad(value.sum(), [sigma.value, basic.where_entries, registry.code],
+                         torch.autograd.grad(value.sum(), [sigma.value, basic.where_entries, registry.grid],
                                              allow_unused=True, retain_graph=True))
             print('in the read, gradient of', name + '.pyramid', round(float(value.sum()), 4),
                   {k: None if g is None else float(g.norm()) for k, g in zip(('sigma', 'where_entries', 'grid'), grads)})
@@ -140,7 +140,7 @@ def test_unit_the_perceptual_inverse_paste_and_the_pyramid(tmp_path, monkeypatch
         model.End()
         monkeypatch.setattr(SentenceField, 'charge', charge)
         field, wanted = held['field'], held['wanted']
-        print('grid in an optimizer:', any(p is registry.code for g in model.getOptimizer().param_groups
+        print('grid in an optimizer:', any(p is registry.grid for g in model.getOptimizer().param_groups
                                             for p in g['params']))
         # The paste: one word's wires moved.
         radix = model.perceptualSpace.percept_store

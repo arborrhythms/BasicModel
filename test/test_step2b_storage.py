@@ -76,11 +76,12 @@ def test_held_content_without_a_thought_signature_has_no_expectation_holes(relat
     from MemoryIndex import configure_model_index
     model, registry, _, part, whole = _catalog_world()
     meaning = registry.form('part', part, whole)
-    store = STM0(8, capacity=64, percept_width=0, relation_capacity=8192)
+    from test_cs_symbol_table import _D  # the world's concept width
+    store = STM0(_D, capacity=64, percept_width=0, relation_capacity=8192)
     model.symbolSpace.ltm_store = store
     configure_model_index(model, store)
-    discourse = SymbolExpectation(4, 8, 8, concept_dim=8)
-    discourse.set_symbol_bank(torch.eye(8))
+    discourse = SymbolExpectation(4, 8, _D, concept_dim=_D)
+    discourse.set_symbol_bank(torch.eye(_D))
     discourse._ltm_store = store
     model.symbolSpace.expectation = discourse
     held = ConceptualMeaning.from_description(meaning.roles[0])

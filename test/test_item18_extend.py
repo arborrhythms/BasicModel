@@ -2,6 +2,10 @@
 from types import SimpleNamespace
 import pytest
 import torch
+from architecture import WHERE_WIRES, WHEN_WIRES
+
+# A percept of 4 content wires and the band (.where and .when): 12 -> 20.
+_W = 4 + WHERE_WIRES + WHEN_WIRES
 from test_item18_finish import named_scalar_model
 
 
@@ -206,7 +210,7 @@ def test_39_cued_rows_preserves_extension_relevance_without_role_matching():
     # Opposite vectors do not alter the relevance that the question's
     # operators already computed. Nor does an explicit address grant it one.
     frame=dict(store.row(0),index=0,match=.7)
-    cue=ConceptualMeaning.from_description(-torch.ones(12))
+    cue=ConceptualMeaning.from_description(-torch.ones(_W))
     result=store.cued_rows(cue,episodic_frames=(frame,),max_records=8)
     assert result['value'][0]['match'] == .7
     assert 'normalize' not in inspect.getsource(EntryRead.cued_rows)
@@ -270,9 +274,9 @@ def test_40_signed_existence_is_maximum_and_analogy_is_separate():
     from Memory import LTM0
     from Extension import ConceptSet
     from ExtendedRecall import existence
-    store=LTM0(12,capacity=8,percept_width=12)
+    store=LTM0(_W,capacity=8,percept_width=_W)
     for i,trust in enumerate((.3,.4,-.6,0.)):
-        store.append_idea(torch.ones(12),trust=trust)
+        store.append_idea(torch.ones(_W),trust=trust)
     results=ConceptSet(torch.arange(4),torch.tensor([[1.,0.],[.5,0.],[1.,0.],[1.,0.]]))
     luminous,exact=existence(store,results)
     torch.testing.assert_close(luminous,torch.tensor([.3,.6]))
@@ -292,13 +296,13 @@ def test_40_deduction_carries_exact_premises_and_keeps_analogy_apart(allowance):
     from Queries import ThoughtLTMCapability,QueryWorkBudget
     from test_item18_finish import memory_brick
     owner=memory_brick()._concept_owner()
-    store=LTM0(12,capacity=8,percept_width=12,episodic_concepts=4)
+    store=LTM0(_W,capacity=8,percept_width=_W,episodic_concepts=4)
     store._concept_owner=lambda:owner
     for i,trust in enumerate((.9,.3,-.6,0.)):
-        store.append_idea(torch.ones(12),trust=trust)
+        store.append_idea(torch.ones(_W),trust=trust)
     store.episodic_concepts[:,0]=10
     store.episodic_values[:4,0]=torch.tensor([.8,1.,1.,1.])
-    question=replace(ConceptualMeaning.from_description(torch.ones(12)),extension=(reference_node(10),))
+    question=replace(ConceptualMeaning.from_description(torch.ones(_W)),extension=(reference_node(10),))
     reader=ThoughtLTMCapability(store=lambda:store,equal=lambda a,b:0.,tau_id=.5)
     work=QueryWorkBudget(allowance)
     result=reader.best_match(question,max_records=8,work=work)
@@ -447,13 +451,13 @@ def test_public_existence_reads_the_question_extension_and_signed_trust():
     from test_item18_finish import memory_brick
     from test_item18_extend import reference_node
     owner = memory_brick()._concept_owner()
-    store = LTM0(12,capacity=8,percept_width=12,episodic_concepts=4)
+    store = LTM0(_W,capacity=8,percept_width=_W,episodic_concepts=4)
     store._concept_owner = lambda: owner
     for trust in (.8,-.6,0.):
-        store.append_idea(torch.zeros(12),trust=trust)
+        store.append_idea(torch.zeros(_W),trust=trust)
     store.episodic_concepts[:3,0]=10
     store.episodic_values[:3,0]=torch.tensor([.5,1.,1.])
-    question=replace(ConceptualMeaning.from_description(torch.ones(12)),extension=(reference_node(10),))
+    question=replace(ConceptualMeaning.from_description(torch.ones(_W)),extension=(reference_node(10),))
     result=TruthGroundedReasoner(store=store).evaluate(QuerySpec.from_surface('exist',question))
     assert result['support_true'] == pytest.approx(.4)
     assert result['support_false'] == pytest.approx(.6)

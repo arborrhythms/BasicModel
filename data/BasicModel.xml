@@ -206,9 +206,9 @@
     <basicPerceptCapacity>32768</basicPerceptCapacity>
     <!-- Fixed physical reserve. Recurrence activates rows without replacing
          the parameter or its optimizer state; exhaustion names nVectors. -->
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>104</nOutputDim>
+    <nOutputDim>112</nOutputDim>
 
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -221,7 +221,7 @@
     <nInput>8</nInput>
     <!-- PS/WS sigma folds have already emitted conceptual codebook
          activations here. The CS boundary itself is width-preserving. -->
-    <nInputDim>1000</nInputDim>
+    <nInputDim>1008</nInputDim>
     <!-- Concept and downstream symbol-reference inventory. This is independent
          of PartSpace's allocated prefix, WholeSpace's small property basis,
          and the eight simultaneously live CS/WS locations. All four aligned
@@ -231,11 +231,11 @@
          are an optimizer-owned reserve activated in power-of-two steps. -->
     <activeVectors>32768</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1000</nDim>
+    <nDim>1008</nDim>
     <!-- Round 4a: the 896-D complement contains 448 pole pairs. -->
     <meaningWidth>896</meaningWidth>
     <nOutput>8</nOutput>
-    <nOutputDim>1000</nOutputDim>
+    <nOutputDim>1008</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -252,11 +252,11 @@
          parallel CS mixing matrix and never mixes word/location slots. -->
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>1000</nInputDim>
+    <nInputDim>1008</nInputDim>
     <nVectors>9</nVectors>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>104</nOutputDim>
+    <nOutputDim>112</nOutputDim>
 
     <invertible>true</invertible>
   </WholeSpace>
@@ -265,7 +265,7 @@
        directly; WholeSpace is not an intermediate output producer. -->
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1000</nInputDim>
+    <nInputDim>1008</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

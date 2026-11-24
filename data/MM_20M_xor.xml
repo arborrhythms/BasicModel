@@ -64,17 +64,17 @@
   <InputSpace>
     <nOutput>8192</nOutput>
     <nVectors>256</nVectors>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>8192</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>65536</nVectors>
     <basicPerceptCapacity>65536</basicPerceptCapacity>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>1032</nOutputDim>
 
     <invertible>true</invertible>
     <butterfly>true</butterfly>
@@ -88,11 +88,11 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>65536</nVectors>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>1032</nOutputDim>
 
     <invertible>true</invertible>
     <butterfly>true</butterfly>
@@ -100,12 +100,12 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>8</nVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>1032</nOutputDim>
 
     <invertible>true</invertible>
     <butterfly>true</butterfly>
@@ -118,7 +118,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

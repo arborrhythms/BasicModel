@@ -50,14 +50,14 @@
   </architecture>
 
   <InputSpace>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>8</nVectors>
     <nOutput>8</nOutput>
   </InputSpace>
 
   <PartSpace>
     <nOutput>8</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
     <invertible>true</invertible>
@@ -65,7 +65,7 @@
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <!-- LTM2 closing seats each composing argument. Eight lexical seats
          cannot hold the three declared truths and their internal arguments. -->
     <nVectors>64</nVectors>
@@ -74,7 +74,7 @@
 
   <WholeSpace>
     <nOutput>8</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <!-- Rows 0..7 are reserved well-known atoms; serial provisioning and
          conversation ingestion both bind additional symbols. -->
     <nVectors>64</nVectors>

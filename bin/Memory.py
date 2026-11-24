@@ -17,6 +17,7 @@ from dataclasses import dataclass, field, replace
 from typing import NamedTuple
 
 import torch
+from architecture import WHERE_WIRES
 from torch import nn
 
 OCCURRENCE, SYMBOL, RELATION = 1, 2, 3
@@ -59,7 +60,7 @@ class STMChunks:
         return (floats((int(width),)), torch.zeros(shape[0], dtype=torch.long, device=device),
                 longs(fill=-1), longs(fill=-1), longs(fill=-1), floats(),
                 longs((2, 2)), longs(fill=-1), longs(), longs(fill=-1), longs(),
-                floats((4,)), floats((4,)), floats((2,)))
+                floats((WHERE_WIRES,)), floats((4,)), floats((2,)))
 
 
     @staticmethod
@@ -68,7 +69,7 @@ class STMChunks:
         if band not in (STMChunks.WHERE, STMChunks.WHEN):
             raise ValueError('chunk lookup requires the WHERE or WHEN band')
         where = torch.as_tensor(where, device=state[band].device, dtype=state[band].dtype)
-        where = where.expand(state[band].shape[0], 4)
+        where = where.expand(state[band].shape[0], state[band].shape[-1])
         match = (state[band] == where[:, None]).all(-1) & (state[STMChunks.READ] > 0)
         return torch.where(match.any(-1), match.long().argmax(-1), -1)
 
@@ -1164,9 +1165,9 @@ class MediumTermMemory(MemoryStore):
     @staticmethod
     def _where(where, previous=None):
         if where is None:
-            return torch.zeros(4) if previous is None else MemoryStore._snapshot_tensor(previous)
-        if not torch.is_tensor(where) or where.shape != (4,) or not torch.isfinite(where).all():
-            raise ValueError('identity where requires four finite percept coordinates')
+            return torch.zeros(WHERE_WIRES) if previous is None else MemoryStore._snapshot_tensor(previous)
+        if not torch.is_tensor(where) or where.shape != (WHERE_WIRES,) or not torch.isfinite(where).all():
+            raise ValueError('identity where requires a place\'s finite percept coordinates')
         return MemoryStore._snapshot_tensor(where)
 
     def promote(self, token, symbol):
@@ -1944,7 +1945,7 @@ class IdeaRows(ClauseRows, EntryRead, MemoryStore, Layer):
         if self.capacity <= 0 or not 0 <= self.percept_width <= self.nDim or self.episodic_capacity < 0:
             raise ValueError('invalid idea construction')
         self.content_width = self.nDim if content_width is None else int(content_width)
-        self.when_start = self.percept_width-4 if self.percept_width >= 8 else None
+        self.when_start = self.percept_width-4 if self.percept_width >= WHERE_WIRES+4 else None
         self.ltm_window = int(TheXMLConfig.get('architecture.ltmWindow', default=1024) if read_capacity is None else read_capacity)
         if self.ltm_window <= 0:
             raise ValueError('ltmWindow must be positive')

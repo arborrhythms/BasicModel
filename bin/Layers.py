@@ -2672,8 +2672,10 @@ class GrammarLayer(Layer):
         if TheXMLConfig.get('architecture.data.dataType', default=None) == 'embedding':
             form_width = int(TheXMLConfig.space('PartSpace', 'nDim'))
             code_width = int(TheXMLConfig.space('ConceptualSpace', 'nDim'))
-            if form_width >= 8 and code_width >= form_width and nInput in (0,code_width):
-                self.percept_band = (form_width-8,form_width,code_width)
+            from architecture import canonical_shape
+            band = sum(canonical_shape('PartSpace'))
+            if form_width >= band and code_width >= form_width and nInput in (0,code_width):
+                self.percept_band = (form_width-band,form_width,code_width)
             if code_width > form_width and nInput in (0, code_width):
                 self.meaning_layout = (form_width, code_width)
                 width = code_width - form_width
@@ -11220,7 +11222,7 @@ class ChunkLayer(Layer):
             where_idx = [D + i for i in where_encoding.index]  # e.g. [-4,-3] -> absolute
             for b in range(B):
                 for dense_idx, start, _end, _original in compact_map[b]:
-                    pos_enc = where_encoding.encode(float(start))  # [2] sin/cos
+                    pos_enc = where_encoding.encode_place(where_encoding.point(torch.tensor(float(start))))
                     dense[b, dense_idx, where_idx] = pos_enc
 
         return dense, compact_map

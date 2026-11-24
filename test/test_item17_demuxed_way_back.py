@@ -3,7 +3,7 @@ round 6d of item 1.7, twelfth pass, a to e). The simulation first: on one
 lesson sentence, the recreated `.where` of each reading (the first Pi's way
 back at its rows, `BasicPercepts.kept_percept`, asked by the Sigma's way
 back, `cs_percept_attribution`) matched against the `.where` parameter
-(`WhereRegistry.code`) by shared size, a graded paste over the addresses,
+(`WhereRegistry.grid`) by shared size, a graded paste over the addresses,
 and whether a cost on it passes a gradient to the parameter. Printed."""
 import torch
 
@@ -89,8 +89,8 @@ def test_simulation_a_graded_paste_by_where_on_one_lesson_sentence(tmp_path, mon
         live = [r for r, (lo, hi) in enumerate(brackets) if hi > lo]
         print('readings', [(r, brackets[r]) for r in live])
         lo_, _ = model.where_registry.slices['text']
-        own_code = torch.stack((model.where_registry.code[lo_:lo_ + 64].detach().float().cpu(),
-                                1 - model.where_registry.code[lo_:lo_ + 64].detach().float().cpu()), -1)
+        own_code = torch.stack((model.where_registry.grid[lo_:lo_ + 64].detach().float().cpu(),
+                                1 - model.where_registry.grid[lo_:lo_ + 64].detach().float().cpu()), -1)
         for r in [r for r, (a, b) in enumerate(field.where[0].tolist()) if b > a]:
             ranked = sorted(recreated.by_place, key=lambda e: -float(e[1][r]))[:5]
             print('reading', r, 'top place rows (support, the address their .where matches best)',
@@ -101,7 +101,7 @@ def test_simulation_a_graded_paste_by_where_on_one_lesson_sentence(tmp_path, mon
         lo, hi = registry.slices['text']
         width = max(b[1] for b in brackets) + 8
         addresses = torch.arange(width)
-        code = registry.code
+        code = registry.grid
         lanes = lambda c: torch.stack((c, 1 - c), -1)
         candidates = lanes(code[lo:lo + width].float().cpu())               # [A, wires, 2]
         for r in live:
@@ -135,7 +135,7 @@ def test_simulation_a_graded_paste_by_where_on_one_lesson_sentence(tmp_path, mon
             share = match / match.sum()
             cost = -share[int(brackets[r][0])].clamp_min(1e-12).log()
             cost.backward()
-            print('graded paste: cost', round(float(cost), 5), 'gradient at WhereRegistry.code',
+            print('graded paste: cost', round(float(cost), 5), 'gradient at WhereRegistry.grid',
                   None if code.grad is None else float(code.grad.abs().sum()),
                   'at the recreated .where', float(entries.grad.abs().sum()))
         # How exact a recreated .where must be: the shared-size match of each

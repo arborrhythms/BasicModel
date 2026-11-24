@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 
 #: The where wires and the when wires of an attended percept.
-WHERE_WIRES = WHEN_WIRES = 4
+from architecture import WHERE_WIRES, WHEN_WIRES
 
 
 def attended_capacity():
@@ -114,6 +114,35 @@ def field_factor(lanes, entries):
         e = entries.index_select(0, live)
         shared = lesser(lanes[None], e[:, None, None]).sum((-1, -2))          # [L, B, A]
         out = out.index_copy(0, live, shared / total.index_select(0, live)[:, None, None])
+    return out
+
+
+def place_factor_by_axis(lanes, entries):
+    """:func:`field_factor` on the ``.where``, axis by axis (each axis its
+    own wires), the place the product of the axes' results (sigma-pi
+    §19.132): an axis on which every place agrees, as y and z do for text,
+    reads one and leaves the others' discrimination as it is."""
+    from architecture import AXIS_WIRES
+    out = None
+    for lo in range(0, lanes.shape[-2], AXIS_WIRES):
+        f = field_factor(lanes[..., lo:lo + AXIS_WIRES, :], entries[..., lo:lo + AXIS_WIRES, :])
+        out = f if out is None else out * f
+    return out
+
+
+def place_share_by_axis(lanes, entries):
+    """The share of :func:`place_factor_by_axis`: each axis's
+    :func:`field_share` times the other axes' factors, summed."""
+    from architecture import AXIS_WIRES
+    spans = range(0, lanes.shape[-2], AXIS_WIRES)
+    factors = [field_factor(lanes[..., lo:lo + AXIS_WIRES, :], entries[..., lo:lo + AXIS_WIRES, :]) for lo in spans]
+    out = 0
+    for a, lo in enumerate(spans):
+        others = 1
+        for b, f in enumerate(factors):
+            if b != a:
+                others = others * f
+        out = out + field_share(lanes[..., lo:lo + AXIS_WIRES, :], entries[..., lo:lo + AXIS_WIRES, :]) * others
     return out
 
 
@@ -519,7 +548,7 @@ class BasicPercepts(nn.Module):
         where, when = self._entries(rows, table)
         w = table[..., self.width:self.width + WHERE_WIRES, :]
         t = table[..., self.width + WHERE_WIRES:self.width + WHERE_WIRES + WHEN_WIRES, :]
-        return field_factor(w, where) * field_factor(t, when)
+        return place_factor_by_axis(w, where) * field_factor(t, when)
 
     def kept_percept(self, rows):
         """The first Pi's way back (rule 79; §19.121, 1): for each row, the
@@ -543,7 +572,7 @@ class BasicPercepts(nn.Module):
         """Each row's share on the where wires of each attended percept per
         unit of its share there, ``[rows, B, A]`` (:func:`field_share`)."""
         where, _when = self._entries(rows, table)
-        return field_share(table[..., self.width:self.width + WHERE_WIRES, :], where)
+        return place_share_by_axis(table[..., self.width:self.width + WHERE_WIRES, :], where)
 
     def place_code(self, rows, columns):
         """The coordinates appended to each row's what in the space of

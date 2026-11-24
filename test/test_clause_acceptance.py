@@ -5,6 +5,7 @@ these fixtures do not assert that an untrained chooser parses these sentences.
 """
 from types import SimpleNamespace
 import torch
+from architecture import WHERE_WIRES
 import pytest
 
 import Language
@@ -65,7 +66,7 @@ class SentenceFixture:
         self.words = {}
         from PartsOfSpeech import PartsOfSpeech, formal_arguments
         self.language.parts_of_speech = PartsOfSpeech(formal_arguments((*self.binary, *self.unary)))
-        self.store = (LTM0(width, capacity=64, percept_width=percept_width) if percept_width >= 8
+        self.store = (LTM0(width, capacity=64, percept_width=percept_width) if percept_width >= WHERE_WIRES + 4
                       else STM0(width, capacity=64, percept_width=percept_width, relation_capacity=8192))
         self.model = SimpleNamespace(languageSpace=self.language, grammatical_thoughts=self.registry)
         attach_clause_index(self.model, self.store, self.cs)
@@ -119,7 +120,7 @@ class SentenceFixture:
             actions=torch.tensor(actions), targets=torch.tensor(targets), concept_ids=torch.tensor(ids),
             leaf_evidence=torch.tensor([[1., 0.]]).expand(count, 2).clone(),
             end_state=torch.stack((root, root * 0, root * 0)), lexical_forms=(None,) * count,
-            symbol_where=torch.ones(count, 4) if located else None,
+            symbol_where=torch.ones(count, WHERE_WIRES) if located else None,
             symbol_when=torch.tensor([1., 0., 0., 1.]).expand(count, 4).clone() if located else None)
 
     def clause(self, tree, **kwargs):

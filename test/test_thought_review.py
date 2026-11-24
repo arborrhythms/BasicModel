@@ -78,7 +78,7 @@ def test_memory_attention_is_bounded_metered_and_row_local():
     model, registry, _, part, whole = _catalog_world()
     memory = WhatInteractionMemory(batch=2, capacity=64, detach_mode='episode')
     model.symbolSpace.what_memory = memory
-    store = model.symbolSpace.ltm_store = LTM0(8, capacity=16)
+    store = model.symbolSpace.ltm_store = LTM0(16, capacity=16)
     from ThoughtReferences import with_slots
     question = registry.form('isPart', whole, open_roles=('argin1',))
     fact = __import__("Meaning").ConceptualMeaning.from_description(question.roles[0])

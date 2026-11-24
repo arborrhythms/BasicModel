@@ -60,8 +60,9 @@ def test_live_conceptual_eight_space_has_fixed_sinusoidal_slot_addresses(tmp_pat
     start, end = registry.slices['conceptual']
     assert end - start == cs.stm.capacity == 8
     bands = cs.where.clone()
-    assert bands.shape == (8, 4)
-    addresses = model.where_encoding.decode_index(bands)
+    from architecture import WHERE_WIRES
+    assert bands.shape == (8, WHERE_WIRES)
+    addresses = registry.decode(bands)
     torch.testing.assert_close(addresses, torch.arange(start, end))
     assert torch.unique(bands, dim=0).shape[0] == 8
     for name, (other_start, other_end) in registry.slices.items():
@@ -126,7 +127,7 @@ def test_where_wires_first_used_in_inference_still_receive_training_gradients():
         first = registry.band(address)
     training = registry.band(address)
     torch.testing.assert_close(first, training)
-    grad, = torch.autograd.grad(training.sum(), registry.code)
+    grad, = torch.autograd.grad(training.sum(), registry.grid)
     assert grad.nonzero()[:, 0].unique().tolist() == [7]
 
 

@@ -556,14 +556,21 @@ class WhereEncoding(QuadratureEncoding):
     """
     p = 0
 
-    def __init__(self, maxP=0, nWhere=4, nWhen=0, rung_ratio=_WHERE_RUNG_RATIO):
+    def __init__(self, maxP=0, nWhere=4, nWhen=0, rung_ratio=_WHERE_RUNG_RATIO, axes=1):
         """Place the where-encoding's slots dynamically before the when slots.
 
         When ``nWhere`` is 0 the encoding is disabled (zero-width carrier),
         otherwise the slot index is computed so it stays adjacent to the
         when slots in the muxed ``[what, where, when]`` layout.
+
+        ``nWhere`` is the band's width and ``axes`` its axes: each axis is
+        ``nWhere // axes`` wires (``axis_wires``), the code of one number
+        (:meth:`encode`). A place is a number on each axis, its code the
+        axes' codes in order (:meth:`encode_place`).
         """
         if nWhere > 0:
+            if int(nWhere) % int(axes):
+                raise ValueError('a .where band is the same wires on every axis')
             # Dynamic: where sits at [-(nWhere+nWhen), ..., -(nWhen+1)]
             index = [-(nWhere + nWhen) + i for i in range(nWhere)]
             super().__init__(index, maxP)
@@ -571,6 +578,8 @@ class WhereEncoding(QuadratureEncoding):
         else:
             Encoding.__init__(self, [], 1)  # skip QuadratureEncoding div_term
             self.nDim = 0
+        self.axes = int(axes)
+        self.axis_wires = self.nDim // self.axes
         self.rung_ratio = max(1, int(rung_ratio))
         self.set_period(self.maxVal)
         self.p = 0
@@ -592,10 +601,33 @@ class WhereEncoding(QuadratureEncoding):
         return self
 
     def decode_index(self, encoded):
-        if self.nDim < 4:
+        """The whole number of one axis's code (its first ``axis_wires``)."""
+        if self.axis_wires < 4:
             return self.decode(encoded).round().to(torch.int64)
-        return _ladder_index(encoded, self.maxVal, self.period_hf,
+        return _ladder_index(encoded[..., :self.axis_wires], self.maxVal, self.period_hf,
                              self.div_lf, self.div_hf, self.where_origin)
+
+    def encode_place(self, place):
+        """The code of a place ``[..., axes]`` of whole numbers: each axis's
+        code (:meth:`encode`) in order, ``[..., nDim]``."""
+        if not isinstance(place, torch.Tensor):
+            place = torch.as_tensor(place, device=TheDevice.get())
+        if place.shape[-1] != self.axes:
+            raise ValueError('a place has one number on each axis')
+        return torch.cat([self.encode(place[..., a]) for a in range(self.axes)], -1)
+
+    def decode_place(self, encoded):
+        """The place ``[..., axes]`` of a code ``[..., nDim]``: each axis's
+        wires decoded to its number (:meth:`decode_index`)."""
+        w = self.axis_wires
+        return torch.stack([self.decode_index(encoded[..., a * w:(a + 1) * w])
+                            for a in range(self.axes)], -1)
+
+    def point(self, position):
+        """The place of a number on the first axis: zero on the others,
+        ``[..., axes]``."""
+        position = torch.as_tensor(position)
+        return torch.cat((position[..., None], position.new_zeros(*position.shape, self.axes - 1)), -1)
 
     @property
     def period_hf(self):
@@ -626,7 +658,7 @@ class WhereEncoding(QuadratureEncoding):
         start = start + self.where_origin
         a_lf = _ladder_phase(start, self.maxVal, self.div_lf)
         parts = [torch.sin(a_lf), torch.cos(a_lf)]
-        if self.nDim >= 4:
+        if self.axis_wires >= 4:
             a_hf = _ladder_phase(start, self.period_hf, self.div_hf)
             parts += [torch.sin(a_hf), torch.cos(a_hf)]
         return unsigned_phase(torch.stack(parts, dim=-1))
@@ -644,7 +676,7 @@ class WhereEncoding(QuadratureEncoding):
         two_pi = 2 * math.pi
         a_lf = torch.atan2(encoded[..., 0], encoded[..., 1]) % two_pi
         divisor = self.div_lf
-        if self.nDim < 4 and encoded.device.type == 'mps' and a_lf.dtype == torch.float32:
+        if self.axis_wires < 4 and encoded.device.type == 'mps' and a_lf.dtype == torch.float32:
             # Inductor replaces scalar division on MPS with reciprocal
             # multiplication. At large legacy single-rung addresses that
             # changes the rounded integer. Keep the eager division as a
@@ -658,7 +690,7 @@ class WhereEncoding(QuadratureEncoding):
                 self._decode_divisor = cached
             divisor = cached[1]
         s_lf = a_lf / divisor
-        if self.nDim >= 4 and encoded.shape[-1] >= 4:
+        if self.axis_wires >= 4 and encoded.shape[-1] >= 4:
             a_hf = torch.atan2(encoded[..., 2], encoded[..., 3]) % two_pi
             p_hf = self.period_hf
             r = a_hf / self.div_hf              # fine position in [0, P_hf)
@@ -678,7 +710,7 @@ class WhereEncoding(QuadratureEncoding):
         ``encode``/``decode`` -- the origin shift rides inside ``encode``)."""
         idx = self.resolve(buf.shape[-1])
         if len(idx) and idx[0] >= 0 and idx[0] < buf.shape[-1]:
-            key = self.encode(float(offset))
+            key = self.encode_place(self.point(torch.tensor(float(offset))))
             for i, j in enumerate(idx):
                 buf[batch_idx, pos_idx, int(j)] = float(key[..., i])
 
@@ -696,7 +728,7 @@ class WhereEncoding(QuadratureEncoding):
         embeddingSize = x.shape[-1]
         index = np.add([embeddingSize] * len(self.index), self.index)
         position = torch.arange(self.p, self.p+batch*n, dtype=torch.float32, device=TheDevice.get())
-        pos = self.encode(position)  # [batch*n, nDim]
+        pos = self.encode_place(self.point(position))  # [batch*n, nDim]
         y = x.clone()
         y[:, :, index] = pos.reshape(batch, n, self.nDim)
         self.p += batch
@@ -4413,6 +4445,9 @@ def _decode_where_offset(positions, batch_idx, vector_idx, subspace=None):
         return None
     if not bool(torch.isfinite(band).all()):
         return None
+    # A byte's place is on text's axis: its other axes decode to zero.
+    if bool(where_encoding.decode_place(band.float())[1:].ne(0).any()):
+        return None
     return round(float(where_encoding.decode(band.float())))
 
 
@@ -7253,8 +7288,8 @@ class SubSpace(nn.Module):
                         m += 1
                 if self.nWhere > 0 and m < self._index.shape[-1]:
                     where_indices = self._index[:, :, m]  # byte offsets
-                    # Raw mux: store offsets directly via WhereEncoding.encode()
-                    where_vecs = self.whereEncoding.encode(where_indices)
+                    # Raw mux: each offset's place on the first axis.
+                    where_vecs = self.whereEncoding.encode_place(self.whereEncoding.point(where_indices))
                     parts.append(where_vecs)
                     m += 1
                 if self.nWhen > 0 and m < self._index.shape[-1]:
@@ -7822,7 +7857,9 @@ class Space(SpaceCarrierMixin, nn.Module):
         whatEncoding   = WhatEncoding(inputShape, outputShape)
         # Standalone spaces have a local fixture ladder. A complete model
         # installs its single registry-sized ladder after capacities are known.
-        whereEncoding = WhereEncoding(max(256, 2 * inputShape[0]), _nWhere, _nWhen)
+        from architecture import WHERE_AXES
+        whereEncoding = WhereEncoding(max(256, 2 * inputShape[0]), _nWhere, _nWhen,
+                                      axes=WHERE_AXES if _nWhere else 1)
         whenEncoding = event_when_encoding(_nWhen)
         self.subspace  = SubSpace(
             nInputDim=self.nInputDim,
@@ -10236,7 +10273,7 @@ class InputSpace(Space):
             what_buf, where_idx, when_idx, host_tokens = self._lex_batch(input)
             self.subspace.what.setW(what_buf)
             located = hasattr(self.subspace.whereEncoding, 'capacity')
-            self.subspace.where.setW(self.subspace.whereEncoding.encode(where_idx)
+            self.subspace.where.setW(self._address_model().where_registry.encode('text', where_idx).detach()
                                     if located else where_idx)
             from Occurrence import event_positions
             when_idx = event_positions(self, when_idx.shape, device=when_idx.device)
@@ -10274,7 +10311,11 @@ class InputSpace(Space):
         self.subspace.set_what(what)
         if self.nWhere > 0:
             positions = torch.arange(nIdeas, dtype=torch.float32, device=dev).unsqueeze(0).expand(batch, -1)
-            self.subspace.set_where(self.subspace.whereEncoding.encode(positions))
+            # Each event's place is its row's, on the first axis.
+            w_enc = self.subspace.whereEncoding
+            self.subspace.set_where(
+                self._address_model().where_registry.encode('text', positions.long()).detach()
+                if hasattr(w_enc, 'capacity') else w_enc.encode_place(w_enc.point(positions)))
         if self.nWhen > 0:
             from Occurrence import event_positions
             timesteps = event_positions(self, (batch, nIdeas), device=dev)
@@ -10967,7 +11008,7 @@ class PartSpace(Space):
                 # has a separate registry row address, independent of where
                 # this instance starts. The band carries no end coordinate.
                 stamp = (registry.encode('text', offsets) if registry is not None else
-                         w_enc.encode(offsets.clamp(min=0)))
+                         w_enc.encode_place(w_enc.point(offsets.clamp(min=0))))
                 stamp = stamp * (offsets >= 0).unsqueeze(-1).to(stamp.dtype)
                 event[..., w_idx] = stamp.to(event)
         if self.subspace.nWhen:
@@ -11740,7 +11781,7 @@ class PartSpace(Space):
             if _w_idx and content_width <= _w_idx[0] < muxed_width:
                 registry = getattr(self, 'where_registry', None)
                 _stamp = (registry.encode('text', word_offset_grid) if registry is not None else
-                          _w_enc.encode(word_offset_grid.clamp(min=0)))
+                          _w_enc.encode_place(_w_enc.point(word_offset_grid.clamp(min=0))))
                 _stamp = _stamp * (word_offset_grid >= 0).unsqueeze(-1).to(
                     _stamp.dtype)
                 what_event[..., _w_idx] = _stamp

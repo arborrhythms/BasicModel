@@ -19,6 +19,7 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 import torch
+from architecture import WHERE_WIRES
 
 
 @dataclass(frozen=True)
@@ -142,9 +143,9 @@ class Reading:
         if orders is not None and (not torch.is_tensor(orders) or orders.dtype != torch.long
                 or orders.shape != ids.shape or bool((orders < -1).any())):
             raise ValueError("program reference orders must be nonnegative or -1, aligned to leaves")
-        for name in ('symbol_where', 'symbol_when'):
+        for name, wires in (('symbol_where', WHERE_WIRES), ('symbol_when', 4)):
             value = getattr(self, name)
-            if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, 4)
+            if value is not None and (not torch.is_tensor(value) or value.shape != (*ids.shape, wires)
                                       or not value.is_floating_point()):
                 raise ValueError('symbol occurrence bands must align to program leaves')
         if self.reference_values is not None and self.reference_values.shape != self.leaves.shape:
@@ -317,11 +318,11 @@ class SentenceEndState:
         object.__setattr__(self, 'meaning', replace(self.meaning))
         if self.query is not None:
             object.__setattr__(self, 'query', replace(self.query))
-        for name in ('where', 'when'):
+        for name, wires in (('where', WHERE_WIRES), ('when', 4)):
             value = getattr(self, name)
             if value is not None:
-                if not torch.is_tensor(value) or value.shape != (4,):
-                    raise ValueError('a completed field band has four coordinates')
+                if not torch.is_tensor(value) or value.shape != (wires,):
+                    raise ValueError('a completed field band has its band\'s coordinates')
                 object.__setattr__(self, name, value.clone())
 
     @property

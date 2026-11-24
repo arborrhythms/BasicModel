@@ -5,6 +5,10 @@ from dataclasses import replace
 
 import pytest
 import torch
+from architecture import WHERE_WIRES, WHEN_WIRES
+
+# Every width of this world is one percept band (.where and .when): 8 -> 16.
+_B = WHERE_WIRES + WHEN_WIRES
 
 
 def world():
@@ -16,17 +20,17 @@ def world():
     from ClauseRow import attach_clause_index
     from EpisodicMemory import write
     from Meaning import ConceptualMeaning
-    stm = ShortTermMemory(batch=1, concept_dim=8)
+    stm = ShortTermMemory(batch=1, concept_dim=_B)
     model = for_stm(stm)
-    owner = _cs(nS=64, order=1, dim=8)
+    owner = _cs(nS=64, order=1, dim=_B)
     objects = [owner.new_concept(order=0) for _ in range(4)]
     owner.stm = stm
-    store = LTM0(8, capacity=8, percept_width=8, episodic_concepts=4)
+    store = LTM0(_B, capacity=8, percept_width=_B, episodic_concepts=4)
     attach_clause_index(model, store, owner)
     a, b, c, d = objects
     rows = []
     for subject, ids, values in ((a, [a, b], [1., 1.]), (c, [c, d], [1., 1.]), (a, [a, c], [1., .5])):
-        meaning = replace(ConceptualMeaning.from_description(torch.ones(8)), role_refs=(('sym', subject), None, None))
+        meaning = replace(ConceptualMeaning.from_description(torch.ones(_B)), role_refs=(('sym', subject), None, None))
         row = store.append_meaning(meaning, trust=.8)
         write(store, row, (torch.tensor(ids + [-1] * (4 - len(ids))), torch.tensor(values + [0.] * (4 - len(values)))))
         rows.append(row)
@@ -47,7 +51,7 @@ class SimpleWorld:
         from Meaning import ConceptualMeaning
         from ThoughtChunks import put
         from ThoughtReferences import with_slots
-        meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
+        meaning = replace(ConceptualMeaning.from_description(torch.ones(_B)),
                           role_refs=(('sym', ids[0]), None, None),
                           extension=(Node(ConceptSet(torch.tensor(ids), torch.tensor([[1., 0.]] * len(ids)))),))
         if question:
@@ -123,7 +127,7 @@ def test_52d_nothing_on_the_stack_or_a_top_with_no_entry_pushes_nothing():
     # one: no entry, so no key.
     from Meaning import ConceptualMeaning
     from ThoughtChunks import put
-    put(w.stm, ConceptualMeaning.from_description(torch.ones(8)), row=0, pin=True)
+    put(w.stm, ConceptualMeaning.from_description(torch.ones(_B)), row=0, pin=True)
     depth = w.depth()
     found = w.query(field)
     assert not found['pushed'] and not found['frames']

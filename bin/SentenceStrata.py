@@ -3,6 +3,7 @@ from dataclasses import replace
 import weakref
 
 import torch
+from architecture import WHERE_WIRES
 from torch import nn
 
 from Memory import STM0, OCCURRENCE, SYMBOL, RELATION
@@ -119,10 +120,10 @@ class Tree:
         start = store.when_start
         for word, at in sorted(index.word_actions.items(), key=lambda item: item[1]):
             point = store._fit(trace.leaves[word]).clone()
-            if start is not None and start >= 4:
-                for band, offset in ((where, start - 4), (when, start)):
+            if start is not None and start >= WHERE_WIRES:
+                for band, offset in ((where, start - WHERE_WIRES), (when, start)):
                     if band is not None:
-                        point[offset:offset + 4] = band[word].detach().to(point)
+                        point[offset:offset + band.shape[-1]] = band[word].detach().to(point)
             concept = concepts[word]
             unnamed += concept is None
             meaning = replace(ConceptualMeaning.from_description(point),

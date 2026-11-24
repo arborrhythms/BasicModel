@@ -103,8 +103,8 @@ def test_forming_candidates_does_not_mint_or_write_memory_after_setup():
 
 def test_unary_end_read_keeps_full_description_through_an_existing_occurrence():
     cs, registry, a, b, _ = _world()
-    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
-    description = ConceptualMeaning.from_description(torch.arange(1., 9.) / 8)
+    store = STM0(cs.nDim, percept_width=0, capacity=1024, relation_capacity=8192)
+    description = ConceptualMeaning.from_description(torch.arange(1., cs.nDim + 1.) / cs.nDim)
     description = replace(description, scope={'place': 'workshop'}, role_refs=(a, None, None))
     index = store.append_meaning(description, trust=.75)
     context = _context(cs, store=store)

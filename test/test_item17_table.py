@@ -122,7 +122,7 @@ def test_62_33b_what_is_where(tmp_path, monkeypatch):
     the second; with the entry at nothing it reads both alike. (c) A request
     for its concept, carried down, lands most on the attended percept that
     has both its what and its where; and (33 (b)) a gradient from the row's
-    value there reaches the row of ``WhereRegistry.code`` at that place."""
+    value there reaches the row of ``WhereRegistry.grid`` at that place."""
     import Salience
     from BasicPercepts import attended, WHERE_WIRES
     from test_item17_looks import nominated_lesson, held_banks
@@ -170,7 +170,7 @@ def test_62_33b_what_is_where(tmp_path, monkeypatch):
             # percept reaches the where wires' row at its place, at the first
             # less than at the second: where a wire's lane equals the row's
             # entry the derivative passes on the lane at the tie alone.
-            code = bank.registry.code
+            code = bank.registry.grid
             grads = {}
             for name, at in (('first', first), ('second', second)):
                 code.grad = None

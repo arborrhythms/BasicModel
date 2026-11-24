@@ -3362,3 +3362,399 @@ columns would invite word order to be tied to left and right in the image.
    If it is small, the image's box is given another origin, which the
    registry allows. A plane of the third axis is not spent on it: volumes
    need that axis.
+
+## 17. The grid in three dimensions: the return (implementer, 2026-11-23)
+
+The work of §16.6, in its steps. Steps 0 to 6 are complete; step 7 is
+complete for the tests that name the width or the grid and **not complete**
+for the tests built on the small fixtures (17.6); step 8 was run as 17.7
+says; nothing of §16.4 was touched. The running record, with every
+decision, is `tmp/item1-6/grid_progress.md`.
+
+### 17.1 What was built, and the decisions
+
+- *The width* is computed once, in `bin/architecture.py`: `AXIS_WIRES = 4`,
+  `WHERE_AXES` read from `architecture.whereAxes` (3, in `data/model.xml`
+  and `data/model.xsd` only), `WHERE_WIRES = AXIS_WIRES * WHERE_AXES = 12`,
+  `WHEN_WIRES = 4`; `_CANONICAL_SHAPE` reads them, so every banded space is
+  `(12, 4)`. `BasicPercepts.WHERE_WIRES` is that constant. *Decision:* the
+  key is read when `architecture` is imported, from the defaults that `util`
+  loads, since no other configuration may set it.
+- *The code of an axis.* `WhereEncoding` keeps its code of one number
+  (`encode`, `decode`, `decode_index` read the first `axis_wires`) and takes
+  `axes`; `encode_place`, `decode_place` and `point` (a number on the first
+  axis) are new. *Decision:* its `nDim` stays the band's width (12 for the
+  registry's), with `axis_wires = nDim // axes`, so that the slot layout
+  (`index`, `resolve`) of every space is unchanged code. The legacy counter
+  (`forward`, `stamp`) stamps `encode_place(point(p))`.
+- *The registry* (`bin/WhereRegistry.py`): a range is declared by a count
+  (a line on x from x = its first address) or by a shape `(w, h[, d])`, with
+  an optional origin; the default origin is `(first address, 0, 0)`. Boxes
+  that share a place are refused. New: `boxes`, `place`, `address`, `decode`
+  (wires to address, through the place) and `grid`, the `nn.Parameter` of
+  one row of twelve wires for each address, built at its first reader, fixed,
+  in no optimizer; `code` is gone. `axes` is the three slices of four wires.
+- *The numeric input as a box:* `inputShape [h, w]` with `w > 1` is the box
+  `(w, h)`, x the column and y the row, its addresses row by row as before;
+  `[n, 1]` is a line of n. XOR's two places are where they were.
+- *Producers* take their wires from the grid: the text and numeric paths of
+  `InputSpace` now call `registry.encode('text', ...)`; a stamp with no
+  registry (standalone spaces, `Layers.compact`, the raw mux of `SubSpace`,
+  the un-fold stamp in `Models`) is `encode_place(point(x))`, the grid's own
+  row for a text address. *Decoders:* `SentenceAttention.arrive` uses
+  `registry.decode`; `_decode_where_offset` requires the place's other axes
+  to decode to zero; `FieldReverse` matches over `registry.grid` on the three
+  axes; `SentenceField` takes the nearest grid row with the LTM band read by
+  `WHERE_WIRES`.
+- *The two ladders that are not places* keep four wires:
+  `Language.budget_encoding` (`WhereEncoding(nWhere=4)`) and
+  `Models._what_where_encoder` (`WhereEncoding(extent, 4, 0)`).
+- *Literals that were the band or a place's width* now read the constant:
+  STM's field 11, `STMChunks.locate`, MTM's `_where`, the LTM point's where
+  band (`when_start - WHERE_WIRES`, at every site that wrote or read it), the
+  shape checks of `Understanding`, `ClauseRow` and a program's symbol bands,
+  `PrependedSymbols`' `symbol_where`, `ThoughtChunks`' empty where, the
+  grammar operator's `percept_band` (`Layers`), `Models._stamp_channel`,
+  `CoordinateCheckpoint` and `checkpoint_migrations`. *Decision:* an LTM
+  store has a time band only when its percept width holds the whole band
+  (`>= WHERE_WIRES + 4`, was `>= 8`).
+- *Decision, the conceptual width.* A concept is the concatenation of a
+  percept's `.what`, `.where` and `.when` (§19.133), and every configuration
+  that gives the conceptual space a width gives it the percept's event (an
+  invertible conceptual space needs its input's width; a word configuration
+  derives it from the form event). So the conceptual width grew by 8 with the
+  rest, and the conceptual `.what` (its band is `(0, 0)`) grew by 8: this
+  departs from the letter of G1 ("every space's `.what` width ... as it
+  was") and agrees with §19.132 ("a concept 144 wide for 136").
+- *Decision, the place's match in the attended table.* `place_factor`
+  and `where_share` (`BasicPercepts`) read the `.where` axis by axis, the
+  place the product of the axes' shared sizes (new `place_factor_by_axis`,
+  `place_share_by_axis`; sigma-pi §19.132, "one table for an axis, a place
+  the three results together"). Summed over twelve wires, the eight wires
+  of y and z, which every place of text holds alike, diluted the match of a
+  place's row (a wrong place read about 0.87 for 0.6), and the reading
+  lesson's sampled certificate fell to 121 and then 116 of 122 under the
+  bounded runner; with the product it is 122 of 122 again (run
+  `20261123-213534`), and a place of text reads exactly as before.
+- *Decision, the byte buffer.* In `BasicModel.xml`, `BasicModel_corpus.xml`
+  and `BasicModel_answers_tied_benchmark.xml` the input's `nDim` and the part
+  space's `nInputDim`, 512, are the packed byte buffer and no event: they
+  stay 512 (grown, the reshape 144 x 8192 / 520 does not divide).
+
+### 17.2 Files changed
+
+`bin/` (24): `architecture.py` (the width), `WhereRegistry.py` (boxes, the
+grid, the maps, the numeric box), `Spaces.py` (`WhereEncoding`, the producers
+of InputSpace/SubSpace/PartSpace, `_decode_where_offset`, standalone axes),
+`BasicPercepts.py` (the constant), `FieldReverse.py` and `SentenceField.py`
+(the grid), `SentenceAttention.py` (decode through the registry),
+`Language.py` (the symbol carrier's axes), `Layers.py` (`compact`'s stamp,
+`percept_band`), `Models.py` (LTM where band, STM band reshape, the un-fold
+stamp, `_stamp_channel`), `Memory.py` (STM field, `locate`, MTM `_where`, the
+time band's guard), `EntryRead.py`, `Comprehension.py`, `ClauseRow.py`,
+`Understanding.py`, `ReferenceClose.py`, `Queries.py`, `PartClosing.py`,
+`SentenceStrata.py`, `PrependedSymbols.py`, `ReadingMemory.py`,
+`ThoughtChunks.py` (the band's place or width), `CoordinateCheckpoint.py` and
+`checkpoint_migrations.py` (the band's widths; the moved ranges are lines).
+
+`data/` (42): `model.xml` and `model.xsd` (`whereAxes`; the defaults 9 -> 17
+and their comments), and 40 configurations (the widths of 17.3; the comment
+of `MM_xor_loopback.xml`).
+
+`test/`: `test_item16_grid.py` and `fixtures/item16_widths_before.json`
+(new); the ports of 17.6.
+
+### 17.3 The widths, and G1 before and after
+
+Every positive `nDim`, `nInputDim` and `nOutputDim` of the input, part,
+modal, conceptual and whole spaces, and the output's `nInputDim`, grew by 8:
+314 values in 40 configurations (each in `tmp/item1-6/config_widths.log`);
+the defaults of `model.xml` 9 -> 17. Unchanged: the output's `nDim` and
+`nOutputDim` (the answer has no band), the 512 of 17.1, every count.
+
+The table of step 0 (`tmp/item1-6/grid_widths.py`) was taken on the frozen
+copy (`g1_before.json`, 42 of 42 built) and on this branch (`g1_after.json`,
+42 of 42 built). For every configuration and every banded space the `.what`,
+the vectors and the places are as before, the band 8 -> 16, and the
+registry's ranges are the same addresses; the conceptual spaces' `.what`
+grew by 8 (107 spaces, 17.1). Some rows (event / band / `.what`):
+
+| Configuration | Space | Before | After | Vectors | Places |
+|---|---|---|---|---|---|
+| MM_xor.xml | InputSpace | 9 / 4+4 / 1 | 17 / 12+4 / 1 | 2 | 2 |
+| MM_xor.xml | PartSpace | 14 / 4+4 / 6 | 22 / 12+4 / 6 | 8 | 8 |
+| MM_xor.xml | ConceptualSpace[0] | 14 / 0+0 / 14 | 22 / 0+0 / 22 | 8 | 8 |
+| MM_xor.xml | WholeSpace | 14 / 4+4 / 6 | 22 / 12+4 / 6 | 64 | 8 |
+| MM_xor.xml | SymbolSpace | 14 / 4+4 / 6 | 22 / 12+4 / 6 | 0 | 0 |
+| MM_xor.xml | OutputSpace | 1 / 0+0 / 1 | 1 / 0+0 / 1 | 1 | 1 |
+| MM_image.xml | InputSpace | 36 / 4+4 / 28 | 44 / 12+4 / 28 | 28 | 28 |
+| MM_image.xml | PartSpace | 14 / 4+4 / 6 | 22 / 12+4 / 6 | 8 | 8 |
+| MM_image.xml | ConceptualSpace[0] | 14 / 0+0 / 14 | 22 / 0+0 / 22 | 8 | 8 |
+| MM_image.xml | WholeSpace | 14 / 4+4 / 6 | 22 / 12+4 / 6 | 64 | 8 |
+| MM_image.xml | SymbolSpace | 14 / 4+4 / 6 | 22 / 12+4 / 6 | 0 | 0 |
+| MM_image.xml | OutputSpace | 1 / 0+0 / 1 | 1 / 0+0 / 1 | 10 | 10 |
+| MM_corpus_lessons.xml | InputSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 256 | 256 |
+| MM_corpus_lessons.xml | PartSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 4096 | 8 |
+| MM_corpus_lessons.xml | ConceptualSpace[0] | 168 / 0+0 / 168 | 176 / 0+0 / 176 | 8 | 8 |
+| MM_corpus_lessons.xml | WholeSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 9 | 8 |
+| MM_corpus_lessons.xml | SymbolSpace | 168 / 4+4 / 160 | 176 / 12+4 / 160 | 0 | 0 |
+| MM_corpus_lessons.xml | OutputSpace | 1 / 0+0 / 1 | 1 / 0+0 / 1 | 1 | 1 |
+| BasicModel.xml | InputSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 8192 | 8192 |
+| BasicModel.xml | PartSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 32768 | 8 |
+| BasicModel.xml | ConceptualSpace[0] | 1032 / 0+0 / 1032 | 1040 / 0+0 / 1040 | 8 | 8 |
+| BasicModel.xml | ConceptualSpace[3] | 1032 / 0+0 / 1032 | 1040 / 0+0 / 1040 | 8 | 8 |
+| BasicModel.xml | WholeSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 9 | 8 |
+| BasicModel.xml | SymbolSpace | 1032 / 4+4 / 1024 | 1040 / 12+4 / 1024 | 0 | 0 |
+| BasicModel.xml | OutputSpace | 1 / 0+0 / 1 | 1 / 0+0 / 1 | 1 | 1 |
+| MM_ladder.xml | InputSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 8192 | 8192 |
+| MM_ladder.xml | PartSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 4096 | 8 |
+| MM_ladder.xml | ConceptualSpace[0] | 136 / 0+0 / 136 | 144 / 0+0 / 144 | 8 | 8 |
+| MM_ladder.xml | ConceptualSpace[3] | 136 / 0+0 / 136 | 144 / 0+0 / 144 | 8 | 8 |
+| MM_ladder.xml | WholeSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 4096 | 8 |
+| MM_ladder.xml | SymbolSpace | 136 / 4+4 / 128 | 144 / 12+4 / 128 | 0 | 0 |
+| MM_ladder.xml | OutputSpace | 1 / 0+0 / 1 | 1 / 0+0 / 1 | 16 | 16 |
+
+### 17.4 The certificates (`test/test_item16_grid.py`, run `20261123-204220`, all passed)
+
+- G1: `whereAxes=3 AXIS_WIRES=4 WHERE_WIRES=12`; 43 configurations, 314
+  declared widths grew by 8, every banded `.what`, vector count and place
+  count as before; built MM_xor and MM_image as in the table.
+- G2: 4179 addresses of MM_xor: the first four wires equal the one-axis
+  ladder exactly, the other eight the code of zero. Checked once against
+  the frozen copy's own `code` too (same values; the test compares with
+  `WhereEncoding(nWhere=4, nWhen=4).set_capacity(capacity)`).
+- G3: every address of MM_xor (4179) and of a registry with a 28 by 28 box
+  (4961) round-trips; at 512,808,192 addresses the ends of every range and
+  100,000 drawn addresses round-trip.
+- G4: pixel (r, c) is at the box's origin (its first address, 0, 0) plus
+  (c, r, 0), at its row-by-row address; two boxes that share a place are
+  refused; MM_image's numeric range is the box (28, 28, 1), MM_xor's a line.
+- G5: every place of a 28 by 28 box matches itself best; a step in x and a
+  step in y are equally far, 0.012649 each.
+- G6: text is a line on x with y = z = 0; the echo (7 of 7), the reading
+  lesson (6 of 6, after 17.1's axis-by-axis match) pass.
+- G7: MM_xor.xml differs in declared widths alone; the item 2.5 gate's
+  fixture (`equality_fixture`) is 24 wide for 16, its event point's place at
+  `-(WHERE_WIRES + 4)`.
+- G8: a registry of 512,808,192 addresses is made, and places read, with no
+  grid built.
+- G9 (one axis; the three-wire forms that fit are three phases of one rung):
+  at 4179 addresses, four wires on two rungs: neighbours 1.228e-2, any two
+  1.228e-2; three on the long rung: 4.697e-4, 4.697e-4; three on the short
+  rung: 1.503e-2, any two 0 (it aliases). At 65,536: four 1.227e-2; three
+  long 2.936e-5; three short 1.503e-2. Nothing is built on it.
+
+*G2 and G1 against §16.5:* G2 holds for every range that is a line; for an
+image box only x's code is the column's, not the address's (17.8).
+
+### 17.5 Times and memory
+
+Under load (the baseline sweep, the corpus implementer and these runs
+shared the machine), the seven echo tests took 281 s here (run
+`20261123-204220`) against 354 s in the baseline sweep; the reading lesson's
+six took 527 s against 149 s, and side by side, one certificate at a time,
+228 s here against 147 s in the frozen copy. Greatest memory of a worker:
+5.57 GiB here (that run), 4.12 GiB in the baseline sweep. These are not
+clean measures; the sixteen sentences of the standard lesson were not timed
+apart.
+
+### 17.6 Tests ported, and where step 7 stops
+
+Ported (assertion kept, given the new width): `test_coordinate_registry`
+(the conceptual slots' bands `(8, 12)`, decoded by `registry.decode`),
+`test_occurrence_coordinates` (symbol bands 12 wide, decoded through the
+registry), `test_canonical_shape` ((12, 4)), `test_basicmodel` (widths
+10 -> 18 and symbolDim 9 -> 17, (12, 4), a demuxed `.where` 12 wide),
+`test_clause_closing` (three-axis stamps, decoded to (3, 0, 0)),
+`test_item17_time`, `test_definition_rows`, `test_item17_looks` (the grid is
+the place code of every address), `test_item17_places` (a printed slice),
+`test_item17_where_trace`, `test_output_path_supervised` (136 -> 144, 264 ->
+272), `test_item20_round2_memory` (the migration at the new layout),
+`identity_experiment.py` (232 -> 240), `test_orders_learned` (17.4, G7),
+and the fixtures `test_cs_sparse_weights` and `test_cs_symbol_table`
+(`_D = 16`, the band's width, where it was 8 = 4 + 4), `definition_fixtures`
+and `test_clause_acceptance` (a store has a band when it holds one). `registry.code`
+-> `registry.grid` in seven tests. A literal 8 that was `_D` became 16 in 47
+files (`torch.eye`, `ones`, `zeros`, `LTM0(8`, `STM0(8`).
+
+*Asserted something this round makes false, and now asserts what is true:*
+`test_item18_places` (784 addresses decoded row by row from four wires; now
+each pixel's place is its box offset (c, r, 0) and its wires decode to its
+address); `test_where_bracket` and `test_where_encoding_period` needed no
+change (`WhereEncoding` is still the code of one number).
+
+*Not ported:* 99 tests in 26 files fail here and pass in the baseline (run
+`20261123-215254`; the list is `tmp/item1-6/remaining_regressions.txt`).
+All but two are fixtures that build percepts or stores of the old band by
+literal widths: `LTM0(12, percept_width=8)` and its kind (`test_item18_finish`,
+`test_item18_extend`, `test_item17_query`, `test_modal_timelines`' memory
+brick), 8-wide literals against the 16-wide fixture (`test_bind_thought`,
+`test_stm_chunk_gates`, `test_accessible_mind`, `test_identity_threading`,
+`test_step2b_storage`), four-coordinate ended-field bands
+(`test_clause_storage`), centred-checkpoint sidecars
+(`test_unsigned_coordinates`), a symbol space's 8-wide width
+(`test_partition_resolve`), a printed 144/152 (`test_wholespace_property_migration`),
+MeaningKernels of width 8 (`test_item20_round6_repair`, `test_item18_operators_a`).
+Each wants its fixture widened by 8 with its slices.
+
+### 17.7 The runs of step 8, and the baseline
+
+The baseline sweep of the frozen copy (`20261123-190752-028c4d`): 6,299 of
+7,462 cases, 69 failed. Here, with the bounded runner, `RUN_TRAINED` and
+`RUN_SLOW` unset:
+
+- `20261123-213534` (after the last change to `bin/`): both gates, the
+  seven echo tests, the reading lesson, `TestXorGrammarReconstruction`:
+  15 passed, 1 failed (`test_piecewise_overall_at_least_50_pct`, below).
+- `20261123-204220`: gates, echo, reading lesson, `test_item16_grid.py`:
+  26 passed, 1 failed (the reading certificate, before the axis-by-axis
+  match).
+- `20261123-210415`: the named list and every changed test file, 1,764 of
+  1,764 cases: 1,592 passed, 102 failed, 70 skipped (before the axis-by-axis
+  match and before six files were restored).
+- `20261123-215254`: the 26 files with failures, after the last change:
+  303 passed, 99 failed, 1 skipped.
+
+*Fail here, pass in the baseline:* the 99 of 17.6, and
+`test_explicit_dimensions.py::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`
+("0/4 in order", every pair reversed: C.3's point 3). Side by side, one at a
+time: here 1 of 2 passed, the frozen copy 2 of 2. Not resolved; it may be
+the word order's known fragility, or the band.
+*Flaky in both:* `test_item17_symbols.py::test_cert_c...` (1 of 3 runs of
+the frozen copy fail, 1 of 2 here). *Fail in both:*
+`test_item17_symbols.py::test_54bd...` (the same numbers), and
+`test_performance_leaves.py::...[where_decode_2]`. *Fail there, pass here:*
+`test_item55_mechanisms.py::test_clock_independence`.
+
+### 17.8 What in §16.3 was wrong or could not be built as written
+
+- G1's "every space's `.what` as it was" cannot hold for the conceptual
+  space, whose whole width is a concept that embraces the percept's band
+  (17.1); it grew by 8.
+- G2's "for every address" holds for lines; an image's addresses are row by
+  row while x is the column, so a pixel's first four wires are its column's
+  code (point 5 and point 4 together).
+- A summed shared size over twelve wires is not "the match ... over the
+  three axes": the attended table's place factor is a product over axes
+  (17.1), which §16.3 did not say; `where_match` was already axis by axis.
+- `WhereEncoding.nDim` is the band's width with `axis_wires` the code of one
+  number, not a four-wide encoder beside a separate band (17.1).
+- "Nothing decodes the first axis alone": the legacy `Encoding.reverse` of
+  the standalone counter still decodes the first axis of a stamp it made
+  on the first axis; left as it is.
+- Saved models: none is committed. The committed fixtures named in the
+  inventory hold no band (the five load and their tests pass, except
+  `test_forward_discard`, whose identity experiment needed the conceptual
+  width 240, and passes). `CoordinateCheckpoint` and `checkpoint_migrations`
+  read the new widths; no migration is written for the old one (§16.3.11).
+- Nothing was removed; no file was moved to `/tmp`.
+
+### 17.9 The ports finished, and the audit of the scripted rewrite (Claude on Opus, 2026-11-23)
+
+Second implementer. Only test files changed; `bin/`, `data/`, the gates, `test_explicit_dimensions.py`,
+`test_felt_corpus.py` and `test_item16_grid.py` are untouched. The running record is
+`tmp/item1-6/port_progress.md`.
+
+*The ports.* All 98 tests of `remaining_regressions.txt` (25 files, `test_explicit_dimensions.py` left
+out) pass. `_D` below is the small fixtures' concept width (8 -> 16, §17.6); "band" is
+`WHERE_WIRES + WHEN_WIRES`, read from `architecture`.
+
+- `test_partition_resolve`: the symbol and concept widths default to the band; the content stays 0.
+- `test_wholespace_property_migration`: 144/136 become `128 + band + 8` and `128 + band`.
+- `test_modal_timelines`: the actions are built at `f.cs.nDim`; the cs-wide values `torch.full((8,))`
+  take `f.cs.nDim`; the readouts `.2` and `.15` per wire become `1.6 / width` and `1.2 / width`, the
+  same spectrum as before (a readout row sums the concept's wires; at `.2` over 16 wires the two
+  `post=True` cases fail, and they pass with `_D = 8` or with the scaled readout). Its timeline pool
+  (an `STM0` of width 8 with no band) keeps 8.
+- `test_item18_operators_a`: no change; fixed by `test_modal_timelines`' fixture.
+- `test_item20_round6_repair`, `test_reading_round`: `staged.codes.shape` (1, 4, 8) -> (1, 4, `f.cs.nDim`).
+- `test_item18_finish`, `test_item18_extend`: `_W = 4 + band` (12 -> 20) for the `LTM0` stores and their
+  rows; the centred bands of an old entry are reshaped as groups of four over the band.
+- `test_item17_query`: every width of its world is the band (`_B`): STM `concept_dim`, `_cs` dim, the
+  `LTM0` width and `percept_width`.
+- `test_bind_thought`: atoms and site roles at `f.cs.nDim` (also fixes `test_reference_review10`).
+- `test_stm_chunk_gates`: `w = f.cs.nDim` for concepts, mentions, chunk and entry widths, deposits and
+  menus; the counts (capacity 8, prepend 8, `range(1, 8)`) stay.
+- `test_accessible_mind`: `_meaning`'s width and the part operands are `_D`.
+- `test_identity_threading`: two cs-wide `torch.full((8,))` take `f.cs.nDim`.
+- `test_clause_storage`: an ended field's `.where` is `arange(WHERE_WIRES)`, its `.when` the next four.
+- `test_step2b_storage`: the store, `SymbolExpectation`'s `n_dim`/`concept_dim` and its bank are `_D`.
+- `test_unsigned_coordinates`: stores `LTM0(band + 4, percept_width=band)`; saved places are four wires
+  per axis; `migrate(..., band)` and its slices.
+- `test_definition_taxonomy`, `test_grammatical_query_vps`, `test_query_vp_boundaries`,
+  `test_query_work_boundaries`, `test_taxonomy_public_helpers`: stores and descriptions at `cs.nDim`;
+  the invalid width is `cs.nDim + 1` (was 9); the description `arange(1, n + 1) / n` (was `/ 8`).
+- `test_item20_round7_repair`: `4 + band` (12 -> 20) for the `_cs` dim, `percept_width` and `LTM0`.
+- `test_item25_repair`: `meaning()` takes a `width` (default 8); the recall world is one band; the
+  sentence fixture's `percept_width` is the band.
+- `test_thought_answer_adapters`: end state, STM `concept_dim` and grammar context at the world's width.
+- `test_thought_infer`: the scripted literal was restored (audit, below).
+
+*Assertions changed.* `test_unsigned_coordinates::test_checkpoint_sidecar_conversion_keeps_empty_bands_and_is_once_only`
+compared every saved STM field with one expected band; the `.where` field is now 12 wide and the
+`.when` field 4, so each field is compared with its own converted band. No other assertion changed
+in meaning; the rest are given the new width.
+
+*Suspected defects in `bin/`.* None found in the 25 files.
+
+*The audit.* The diff against the frozen copy was read for every differing test file (65, these
+ports included). A literal was kept when it is the band, a place, or a width that embraces it (the
+fixtures' `_D` included); four were not and are restored, each test run after and passing:
+`test_accessible_mind.py:95` (operands of a `ConceptualSpaceCapability(8)`), `test_item18_extend.py:503`
+and `test_item18_operators_a.py:219` (standalone meanings with no store or concept),
+`test_thought_infer.py:82` (a `ShortTermMemory(concept_dim=8)`; the 16 had made it fail). One literal
+the script left beside a changed partner was ported: `test_query_executors.py:140`
+`full((8,), nan)` -> `full((16,), nan)`, so that the NaN case is again a NaN case and not a width
+mismatch. Changed literals by the first implementer, per file, and how many restored:
+
+| File | Changed | Restored |
+|---|---|---|
+| test_accessible_mind | 15 | 1 |
+| test_item18_extend | 1 | 1 |
+| test_item18_operators_a | 1 | 1 |
+| test_thought_infer | 3 | 1 |
+| test_query_executors | 8 | 0 (+1 ported) |
+| test_query_phase_permissions | 8 | 0 |
+| test_stm_chunk_gates | 7 | 0 |
+| test_output_path_supervised | 7 | 0 |
+| test_basicmodel | 6 | 0 |
+| test_item17_time | 6 | 0 |
+| test_part_closing | 6 | 0 |
+| test_taxonomy_entry | 6 | 0 |
+| test_canonical_shape | 5 | 0 |
+| identity_experiment | 5 | 0 |
+| test_item17_where_trace | 5 | 0 |
+| test_item18_finish | 5 | 0 |
+| test_item20_round2_memory | 12 | 0 |
+| test_item17_query | 4 | 0 |
+| test_orders_learned | 4 | 0 |
+| test_query_contract_boundaries | 4 | 0 |
+| test_query_work_boundaries | 4 | 0 |
+| test_taxonomy_policy | 4 | 0 |
+| test_clause_closing | 3 | 0 |
+| test_definition_taxonomy | 3 | 0 |
+| test_query_work_budget | 3 | 0 |
+| test_clause_acceptance, test_identity_threading, test_occurrence_coordinates, test_query_structural_references, test_query_vp_boundaries, test_step2b_storage, test_thought_answer_adapters | 2 each | 0 |
+| definition_fixtures, test_bind_thought, test_coordinate_registry, test_cs_sparse_weights, test_cs_symbol_table, test_definition_rows, test_definition_writer, test_grammatical_query_vps, test_item17_places, test_memory_consolidation, test_negative_expectation, test_reference_chain_mention, test_reference_close, test_replacement_kernel_contracts, test_retire_mode, test_thought_review, test_unified_thought_controller | 1 each | 0 |
+| test_item17_demuxed_way_back, _leaf_reconstruction, _looks, _reconstruction_said_back, _table, test_item18_places | 0 (names and decoders) | 0 |
+
+Totals: 65 files read; 4 literals restored; 1 unchanged literal ported. No restored literal had to be
+put back.
+
+*The final run.* The bounded runner over the 25 files, `test_query_executors.py`, and every test file
+that imports one of them (82 files, `tmp/item1-6/port_final_files.txt`), run `20261123-224043-9a2f52`:
+`Result: test_failure, exit 1; 1025/1025 cases completed.` (988 passed, 33 failed, 4 skipped).
+Every test of the 26 files touched that passes in the baseline passes here. Of the 33 failures, one
+fails in the baseline too (`test_percept_collection_binding.py::...[2.0-True]`). The other 32 pass in
+the baseline and fail here; they are in 13 files this round did not touch and that were not in
+`remaining_regressions.txt` (26 of them are in the first implementer's `new_fail3.txt`):
+`test_item18_reduction` 8 (`test_reference_close.fixture`'s `LTM0(12, percept_width=8)`),
+`test_item6_2_thinking` 4 (line 386), `test_case_views` 3 (the modal fixture's `(1, 4, 8)` and its
+phase questions), `test_item20_round5_memory` 3 (`LTM0(12)`, `operation_fixture`'s `LTM0(owner.nDim)`),
+`test_live_query_occurrences` 3 (an operand not of the conceptual width), `test_selected_relation_meaning` 2
+(`LTM0(8)`), `test_unresolved_fixed_operand` 2 (`eye(8)` into the 16-wide codebook), `test_verb_learning` 2,
+`test_form_subspaces` 1 (`64 + 64 + 8` against 144), `test_item18_completion` 1 (`[2, 8]` rows),
+`test_item18_intuit` 1 (a `[8, 2]` field), `test_operator_catalogue` 1, and
+`test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader` (`assert calls`;
+deterministic; not diagnosed, and the only one whose message names no width). The list is in
+`tmp/item1-6/port_progress.md`. They are not ported here.

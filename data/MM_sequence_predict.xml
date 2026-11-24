@@ -39,7 +39,7 @@
 
   <InputSpace>
     <nInput>1024</nInput>
-    <nDim>10</nDim>
+    <nDim>18</nDim>
     <nVectors>1024</nVectors>
     <nOutput>1024</nOutput>
   </InputSpace>
@@ -48,7 +48,7 @@
     <nInput>1024</nInput>
     <nVectors>4096</nVectors>
     <basicPerceptCapacity>4096</basicPerceptCapacity>
-    <nDim>10</nDim>
+    <nDim>18</nDim>
     <nOutput>1024</nOutput>
     <synthesis>meronomy</synthesis>
     <wordLearning>0</wordLearning>
@@ -56,7 +56,7 @@
 
   <ConceptualSpace>
     <nOutput>1024</nOutput>
-    <nDim>10</nDim>
+    <nDim>18</nDim>
     <nVectors>1024</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -64,9 +64,9 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nInput>1024</nInput>
-    <nInputDim>10</nInputDim>
+    <nInputDim>18</nInputDim>
     <nVectors>1024</nVectors>
-    <nDim>10</nDim>
+    <nDim>18</nDim>
     <nOutput>1024</nOutput>
   </WholeSpace>
 

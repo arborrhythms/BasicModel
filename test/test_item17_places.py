@@ -290,7 +290,8 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             # difference between two.
             codes = model._concept_owner().similarity_codebook.W.detach()[sorted(concept.values())]
             spread = (codes[:, None] - codes[None]).abs().amax(-1)
-            band = codes[:, basic.width:basic.width + 8]
+            from BasicPercepts import WHERE_WIRES, WHEN_WIRES
+            band = codes[:, basic.width:basic.width + WHERE_WIRES + WHEN_WIRES]
             place_codes = dict(norms=sorted(set(round(float(v), 4) for v in codes.norm(dim=-1))),
                                greatest_difference=round(float(spread.max()), 4) if len(codes) else None,
                                greatest_difference_of_where_and_when=round(float(

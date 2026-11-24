@@ -40,19 +40,19 @@
 
   <InputSpace>
     <nVectors>32</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>32</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>32</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>200</nVectors>
     <basicPerceptCapacity>200</basicPerceptCapacity>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>32</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
     <butterfly>true</butterfly>
@@ -60,11 +60,11 @@
 
   <ConceptualSpace>
     <nInput>32</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>32</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
     <invertible>true</invertible>
     <butterfly>true</butterfly>
   </ConceptualSpace>
@@ -72,16 +72,16 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nInput>32</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>128</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>32</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
   </WholeSpace>
 
   <OutputSpace>
     <nInput>32</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>1</nVectors>
     <!-- R output vectors of width 1: the one-hot answer over [0, R)
          (the head emits [B, R, 1]; the loader's [R] labels prep to

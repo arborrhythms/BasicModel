@@ -58,7 +58,7 @@
        16*12=192 (nOutput=16, nDim=12). SS keeps nDim=12 (concept_dim
        == symbol_dim invariant). -->
   <InputSpace>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nVectors>16</nVectors>
     <nOutput>16</nOutput>
     <codebook>quantize</codebook>
@@ -66,7 +66,7 @@
 
   <PartSpace>
     <nOutput>16</nOutput>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
@@ -76,13 +76,13 @@
        XML nDim/nVectors describe the final level for non-hierarchical compat. -->
   <ConceptualSpace>
     <nOutput>16</nOutput>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nVectors>16</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
 
   <WholeSpace>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>8</nOutput>
     <nVectors>9</nVectors>
     <!-- codebook=quantize is required so the SparsityRegLayer / VQ-VAE

@@ -270,6 +270,9 @@
     <whatThinkingPressure>linear</whatThinkingPressure>
     <!-- Ratio between the two rungs of the .where code. -->
     <whereRungRatio>32</whereRungRatio>
+    <!-- The axes of the .where: a place is (x, y, z), each axis four
+         wires of the two-rung ladder; text lies on the first axis. -->
+    <whereAxes>3</whereAxes>
 
     <data>
       <dataType>numeric</dataType>
@@ -520,9 +523,9 @@
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- Per-vector EVENT width (it embraces the .where/.when band: content
-         nWhat = nDim - nWhere - nWhen). Muxed tier default 9 = 1 content + 4
+         nWhat = nDim - nWhere - nWhen). Muxed tier default 17 = 1 content + 12
          .where + 4 .when. -->
-    <nDim>9</nDim>
+    <nDim>17</nDim>
     <!-- Raw data dims; 0 = use the loader's native dim. -->
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
@@ -547,8 +550,8 @@
     <propertyOnes>3</propertyOnes>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
-    <nDim>9</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 16. -->
+    <nDim>17</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -581,8 +584,8 @@
   <ModalSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
-    <nDim>9</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 16. -->
+    <nDim>17</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -618,8 +621,8 @@
     <latticeMargin>0</latticeMargin>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
-    <nDim>9</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 16. -->
+    <nDim>17</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>

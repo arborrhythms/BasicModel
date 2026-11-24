@@ -23,6 +23,7 @@ warnings.filterwarnings(
 )
 from Generative import WALK_FEATURE_WIDTH
 import torch
+from architecture import WHERE_WIRES
 from Memory import STMChunks
 import ChunkJournal
 import collections
@@ -12558,7 +12559,7 @@ class BasicModel(BaseModel):
         n_what = int(getattr(ss, "nWhat", 0) or 0)
         if 0 < n_what < int(event_width):
             return n_what
-        return max(0, int(event_width) - 8)
+        return max(0, int(event_width) - sum(canonical_shape('SymbolSpace')))
 
     @staticmethod
     def _answer_occupancy(derivation, idea):
@@ -20461,8 +20462,8 @@ class BasicModel(BaseModel):
                 stamps[b] = self.when_encoding.encode(self._sentence_ticks[int(sid)]).to(stamps)
             if store is not None and store.when_start is not None:
                 point[b,store.when_start:store.when_start+4] = stamps[b]
-                if top >= 0 and store.when_start >= 4:
-                    point[b,store.when_start-4:store.when_start] = values[chunks.WHERE][b,top]
+                if top >= 0 and store.when_start >= WHERE_WIRES:
+                    point[b,store.when_start-WHERE_WIRES:store.when_start] = values[chunks.WHERE][b,top]
             gate = torch.arange(len(clauses),device=point.device) == b
             values = chunks.keep_close(values,gate,refs=references,value=point,when=stamps)
             self.conceptualSpace.stm.strata.keep_close(b, point[b], stamps[b],
@@ -22112,7 +22113,7 @@ class BasicModel(BaseModel):
                     activation.reshape(B), evidence=leaf_evidence)
                 when_start = self.symbolSpace.ltm_store.when_start
                 if when_start is not None:
-                    band_start = max(0, when_start - 4)
+                    band_start = max(0, when_start - WHERE_WIRES)
                     word_idea[:, band_start:when_start + 4] = (
                         symbolic_event[:, 0, band_start:when_start + 4])
             fork = getattr(self, '_compose_fork', None) if sentence_transactions else None
@@ -22161,13 +22162,13 @@ class BasicModel(BaseModel):
                 bands = word_view(isp, name)
                 if torch.is_tensor(bands):
                     stamped[field] = STMChunks.write(resolved[field], physical,
-                        _gather_word(bands,index).reshape(B,4), commit.reshape(B))
+                        _gather_word(bands,index).reshape(B,-1), commit.reshape(B))
             when_start = self.symbolSpace.ltm_store.when_start
             if when_start is not None:
                 point = STMChunks.gather(resolved[0],physical.clamp_min(0)[:,None])[:,0].clone()
                 point[:,when_start:when_start+4] = STMChunks.gather(stamped[STMChunks.WHEN],physical.clamp_min(0)[:,None])[:,0]
-                if when_start >= 4:
-                    point[:,when_start-4:when_start] = STMChunks.gather(stamped[STMChunks.WHERE],physical.clamp_min(0)[:,None])[:,0]
+                if when_start >= WHERE_WIRES:
+                    point[:,when_start-WHERE_WIRES:when_start] = STMChunks.gather(stamped[STMChunks.WHERE],physical.clamp_min(0)[:,None])[:,0]
                 stamped[0] = STMChunks.write(resolved[0],physical,point,commit.reshape(B))
             resolved = tuple(stamped)
             trace_state = current_cs_lang[1:6]
@@ -23967,7 +23968,7 @@ class BasicModel(BaseModel):
         mask = offsets >= 0.0
         if not bool(mask.any()):
             return
-        stamp = w_enc.encode(offsets.clamp(min=0.0))
+        stamp = w_enc.encode_place(w_enc.point(offsets.clamp(min=0.0)))
         stamp = stamp * mask.unsqueeze(-1).to(stamp.dtype)
         out[..., idx] = stamp.to(out.dtype)
 

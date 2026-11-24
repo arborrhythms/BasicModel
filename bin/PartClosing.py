@@ -1,5 +1,6 @@
 """Plan semantic compression from the kept journal; never retain its derivation."""
 import torch
+from architecture import WHERE_WIRES
 from dataclasses import replace
 from ClauseRow import Composition
 from Meaning import ConceptualMeaning
@@ -260,7 +261,7 @@ class PartClosing:
             return token != other_token and not torch.equal(value.detach().to(previous), previous)
         start = self.store.when_start
         if token is None and other_token is None and member[0] == other[0] == OCCURRENCE and start is not None:
-            return not torch.equal(value[start-4:start+4].detach().to(previous), previous[start-4:start+4])
+            return not torch.equal(value[start-WHERE_WIRES:start+4].detach().to(previous), previous[start-WHERE_WIRES:start+4])
         return False
 
     def observe_members(self, left, right, evidence_refs, words=(None, None)):

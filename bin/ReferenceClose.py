@@ -9,6 +9,7 @@ from dataclasses import replace
 import hashlib
 
 import torch
+from architecture import WHERE_WIRES
 from Memory import NULL_CONCEPT
 from torch import nn
 from ConceptualMatch import match
@@ -1890,8 +1891,8 @@ class ReferenceClose(nn.Module):
                 result[chunks.WHERE][stream,index] = entry.where.to(result[chunks.WHERE])
                 if self.store.when_start is not None and entry.order is None:
                     result[0][stream,index,self.store.when_start:self.store.when_start+4] = result[chunks.WHEN][stream,index]
-                    if self.store.when_start >= 4:
-                        result[0][stream,index,self.store.when_start-4:self.store.when_start] = result[chunks.WHERE][stream,index]
+                    if self.store.when_start >= WHERE_WIRES:
+                        result[0][stream,index,self.store.when_start-WHERE_WIRES:self.store.when_start] = result[chunks.WHERE][stream,index]
         return tuple(result)
 
     def link_events(self, plan, written, *, when, closed_mentions=(), observed=None, verb_action=None):

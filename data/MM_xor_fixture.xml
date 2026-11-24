@@ -21,16 +21,16 @@
   </architecture>
   <InputSpace>
     <nVectors>2</nVectors>
-    <nDim>9</nDim>
+    <nDim>17</nDim>
     <nOutput>2</nOutput>
-    <nOutputDim>9</nOutputDim>
+    <nOutputDim>17</nOutputDim>
   </InputSpace>
   <PartSpace>
-    <nInputDim>9</nInputDim>
+    <nInputDim>17</nInputDim>
     <nInput>8</nInput>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -39,7 +39,7 @@
   <ConceptualSpace>
     <nInput>8</nInput>
     <nVectors>8</nVectors>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>8</nOutput>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -47,7 +47,7 @@
     <lexer>word</lexer>
     <nInput>8</nInput>
     <nVectors>64</nVectors>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>8</nOutput>
   </WholeSpace>
   <OutputSpace>

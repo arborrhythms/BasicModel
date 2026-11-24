@@ -11,7 +11,7 @@ from test_thought_model_fixture import model_for
 
 def _setup():
     cs = _cs(nS=128)
-    store = LTM0(8, capacity=32)
+    store = LTM0(16, capacity=32)
     model = model_for(cs, store)
     bases = tuple(cs.new_concept() for _ in range(3))
     for base in bases:
@@ -25,7 +25,7 @@ def _setup():
 
 def test_numeric_world_evidence_cannot_establish_taxonomic_inclusion():
     cs, (a, b, _), store, model = _setup()
-    store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]), trust=1)
+    store.append_meaning(ConceptualMeaning.from_description(torch.eye(16)[0]), trust=1)
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == result.support_false == 0
     assert len(store) == 1
@@ -45,7 +45,7 @@ def test_unrelated_true_episode_cannot_establish_the_next_parent_relation():
             work=QueryWorkBudget(32), continuation=None)
         addressed = model.grammatical_thoughts.form('isTrue', store.occurrence_of(row), context=context)
     assert model.reason_about(addressed).support_true == 1
-    model.symbolSpace.ltm_store=LTM0(8,capacity=32)
+    model.symbolSpace.ltm_store=LTM0(16,capacity=32)
     cs._concept_allocator.parts.remove(a[1], b[1])
     result = model.reason_about(QuerySpec.from_surface('isPart', a, b))
     assert result.support_true == 0
@@ -61,7 +61,7 @@ def test_nested_taxonomy_result_keeps_each_record_source_and_premise_ablation():
     assert {(edge.part, edge.whole) for edge in path} == {(a, b), (b, c)}
     assert len(store) == 0
     assert store.row(('sym', store.parts.find(a[1],c[1])))['evidence'] == (1.,0.)
-    model.symbolSpace.ltm_store=LTM0(8,capacity=32)
+    model.symbolSpace.ltm_store=LTM0(16,capacity=32)
     # Remove the derived conclusion as well as its shared-store premises.
     cs._concept_allocator.parts.remove(a[1],c[1])
     cs._concept_allocator.parts.remove(a[1],b[1])

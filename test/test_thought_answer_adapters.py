@@ -31,7 +31,7 @@ def test_code_answer_uses_the_checked_atom_and_keeps_its_reference():
 
 def _stored_query(model, registry, part, whole):
     from Memory import LTM0
-    store=STM0(8, percept_width=0,capacity=16, relation_capacity=8192)
+    store=STM0(16, percept_width=0,capacity=16, relation_capacity=8192)
     model.symbolSpace.ltm_store=store
     source=registry.form('part',part,whole)
     from MemoryIndex import configure_model_index
@@ -71,7 +71,7 @@ def _open_goal(model, registry, part, whole):
     from ClauseRow import attach_clause_index
     from Meaning import ConceptualMeaning
     from ThoughtReferences import with_slots
-    store = LTM0(8, capacity=16)
+    store = LTM0(16, capacity=16)
     attach_clause_index(model, store, model.conceptualSpace)
     model.symbolSpace.ltm_store = store
     store.append_relation(part[1], whole[1], truth_plus=1.)
@@ -128,6 +128,7 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     from Understanding import Reading, Understanding
     from What import What
     model, registry, memory, part, whole = _catalog_world()
+    width = model.conceptualSpace.nDim  # the world's concept width (_D)
     query = registry.form('isPart', part, whole)
     if kind == 'set':
         query = _stored_query(model,registry,part,whole)
@@ -144,16 +145,16 @@ def test_typed_results_survive_resolve_and_reverse_without_execution(monkeypatch
     entry = Reading(rows=torch.tensor([1]), word_rows=torch.tensor([1]),
         concept_ids=torch.tensor([part[1]]), activations=torch.ones(1),
         leaves=registry._payload(part)[None], actions=torch.tensor([[0, -1, 0]]),
-        targets=torch.tensor([-1]), end_state=torch.zeros(3, 8))
+        targets=torch.tensor([-1]), end_state=torch.zeros(3, width))
     object.__setattr__(model, 'languageSpace', SimpleNamespace(
         program_meaning=lambda item, _registry: query,
         # This adapter fixture stubs every numerical synthesis operation.
         generation_scope=nullcontext))
     from Memory import ShortTermMemory
-    object.__setattr__(model.conceptualSpace, 'stm', ShortTermMemory(concept_dim=8))
+    object.__setattr__(model.conceptualSpace, 'stm', ShortTermMemory(concept_dim=width))
     from clock_fixtures import for_stm
     for_stm(model.conceptualSpace.stm, model=model)
-    model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, 8), None)
+    model._what_grammar_context = lambda *_a, **_k: (torch.zeros(1, width), None)
     model._select_perceptual_bindings = lambda *_a: ()
     model._condition_answer_on_question = lambda idea, _context, **_kwargs: idea
     model._synthesis_guard = nullcontext

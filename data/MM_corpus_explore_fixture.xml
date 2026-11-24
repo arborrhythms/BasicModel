@@ -18,24 +18,24 @@
       <outputInLoop>true</outputInLoop>
     </training>
   <separateChooser>false</separateChooser><reconstructionJitter>0.0</reconstructionJitter><explorePaths>1</explorePaths><omissionTarget>0.9</omissionTarget></architecture>
-  <InputSpace><nOutput>256</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>
+  <InputSpace><nOutput>256</nOutput><nVectors>256</nVectors><nDim>112</nDim></InputSpace>
   <PartSpace>
-    <nInput>256</nInput><nInputDim>104</nInputDim><nVectors>4096</nVectors><nDim>104</nDim>
-    <nOutput>8</nOutput><nOutputDim>104</nOutputDim><synthesis>meronomy</synthesis><invertible>true</invertible>
+    <nInput>256</nInput><nInputDim>112</nInputDim><nVectors>4096</nVectors><nDim>112</nDim>
+    <nOutput>8</nOutput><nOutputDim>112</nOutputDim><synthesis>meronomy</synthesis><invertible>true</invertible>
   </PartSpace>
   <ConceptualSpace>
     <attentionPromotion>true</attentionPromotion>
-    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>4096</nVectors><stmCapacity>8</stmCapacity>
-    <nDim>136</nDim><nOutput>8</nOutput><nOutputDim>136</nOutputDim>
+    <nInput>8</nInput><nInputDim>144</nInputDim><nVectors>4096</nVectors><stmCapacity>8</stmCapacity>
+    <nDim>144</nDim><nOutput>8</nOutput><nOutputDim>144</nOutputDim>
     <meaningWidth>32</meaningWidth><invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
     <analysis>meronomy</analysis><butterfly>true</butterfly><whitespaceUnits>true</whitespaceUnits>
-    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>9</nVectors><nDim>104</nDim>
-    <nOutput>8</nOutput><nOutputDim>104</nOutputDim><invertible>true</invertible>
+    <nInput>8</nInput><nInputDim>144</nInputDim><nVectors>9</nVectors><nDim>112</nDim>
+    <nOutput>8</nOutput><nOutputDim>112</nOutputDim><invertible>true</invertible>
   </WholeSpace>
   <OutputSpace>
-    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>1</nVectors><nDim>1</nDim>
+    <nInput>8</nInput><nInputDim>144</nInputDim><nVectors>1</nVectors><nDim>1</nDim>
     <nOutput>1</nOutput><nOutputDim>1</nOutputDim>
   </OutputSpace>
   <SymbolSpace><ltmCapacity>16384</ltmCapacity>

@@ -309,7 +309,7 @@ def test_event_staging_keeps_the_accessible_collections_selected_token(monkeypat
     assert f.cs.mtm.value_of(verb) is None, 'the view key alone is not the selected collection'
     before = f.cs.mtm.state()
     staged = stage_event_cases(bank, resolver, [(frame,)], limit=4)
-    assert staged.codes.shape == (1, 4, 8)
+    assert staged.codes.shape == (1, 4, f.cs.nDim)
     torch.testing.assert_close(staged.view(torch.tensor([verb])).reference[0], f.cs.mtm.value_of(token))
     for actual, expected in zip(staged.codes[0, 1:],
             (entry.events[0].before, code, f.cs.mtm.event_value(entry.events[0]))):

@@ -148,10 +148,10 @@ _NATIVE_CONCEPT_WIDTHS = [
 ]
 
 
-def _native_answer_model(tmp_path, output_loop, *, concept_width=264, answer_synthesis=True):
+def _native_answer_model(tmp_path, output_loop, *, concept_width=272, answer_synthesis=True):
     """Distinct concept/percept widths; production width is an explicit slow case."""
     from test_meronomy_ladder import _build_ladder_variant
-    if concept_width <= 136:
+    if concept_width <= 144:
         raise ValueError("native fixture requires concepts wider than percepts")
     src = (_DATA / "MM_ladder.xml").read_text()
     def block(name):
@@ -159,17 +159,17 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=264, answer_syn
         end = src.index("</" + name + ">", start) + len(name) + 3
         return src[start:end]
     cs, ws, output = block("ConceptualSpace"), block("WholeSpace"), block("OutputSpace")
-    # The fixture declares a 136-wide native face, the resolved percept
-    # event (64 + 64 + 8); resolution retains the meaning complement (128
+    # The fixture declares a 144-wide native face, the resolved percept
+    # event (64 + 64 + 16); resolution retains the meaning complement (128
     # development, 896 production).
     declared_width = concept_width
     native_cs = cs
     for tag in ("nInputDim", "nDim", "nOutputDim"):
-        native_cs = native_cs.replace(f"<{tag}>136</{tag}>", f"<{tag}>{declared_width}</{tag}>")
+        native_cs = native_cs.replace(f"<{tag}>144</{tag}>", f"<{tag}>{declared_width}</{tag}>")
     native_cs = (native_cs.replace("<nVectors>4096</nVectors>", "<nVectors>256</nVectors>")
                  .replace("<activeVectors>4096</activeVectors>", "<activeVectors>256</activeVectors>"))
-    native_ws = ws.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
-    native_output = output.replace("<nInputDim>136</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
+    native_ws = ws.replace("<nInputDim>144</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
+    native_output = output.replace("<nInputDim>144</nInputDim>", f"<nInputDim>{declared_width}</nInputDim>")
     replacements = [(cs, native_cs), (ws, native_ws), (output, native_output)]
     if not answer_synthesis:
         replacements.append(("<answerSynthesis>true</answerSynthesis>", "<answerSynthesis>false</answerSynthesis>"))
@@ -180,7 +180,7 @@ def _native_answer_model(tmp_path, output_loop, *, concept_width=264, answer_syn
     m._chart_compose_per_word = lambda: None
     m.synthesis_bindings = 0  # named percepts must not hide a dead answer operand
     assert m.answer_synthesis is answer_synthesis and m.output_in_loop is output_loop
-    assert m.wholeSpace.subspace.muxedSize == 136
+    assert m.wholeSpace.subspace.muxedSize == 144
     assert m.conceptualSpace.stm.concept_dim == concept_width
     return m
 

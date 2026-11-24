@@ -1,5 +1,6 @@
 """Located ideas from attention, committed as one sequence in the ordinary pair store."""
 import torch
+from architecture import WHERE_WIRES
 from Memory import OCCURRENCE, SYMBOL, RELATION
 
 
@@ -163,7 +164,7 @@ def _read(model, bank, concepts):
                 row = owner._concept_row_of(cid)
                 code = owner.similarity_codebook.lookup_rows(index.new_tensor([row]), stream=b)[0]
             point = store._fit(code).clone()
-            point[store.when_start-4:store.when_start] = field.wires[b, w]
+            point[store.when_start-WHERE_WIRES:store.when_start] = field.wires[b, w]
             point[store.when_start:store.when_start+4] = bank.when_band[b, w]
             row = store.append_idea(point, referent=None if cid < 0 else ('sym', cid),
                 trust=float(scores[b, w].detach().clamp(0, 1)), entry=(episode[0][b], episode[1][b]))

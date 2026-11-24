@@ -25,7 +25,7 @@ def _world():
         row = cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
         with torch.no_grad():
             cs.similarity_codebook.W[row].copy_(torch.eye(cs.nDim)[index])
-    store = LTM0(8, capacity=32)
+    store = LTM0(16, capacity=32)
     model = model_for(cs, store)
     return model, model.grammatical_thoughts, store, refs
 

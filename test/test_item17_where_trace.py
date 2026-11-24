@@ -1,7 +1,7 @@
 """The `.where` of each reading on its way up and back (round 6d of item
 1.7, fourteenth pass, step 5, its first measure). One lesson sentence is
 read eager with no gradient. At each stage that carries a reading, its
-`.where` wires are matched against the grid (`WhereRegistry.code`): the
+`.where` wires are matched against the grid (`WhereRegistry.grid`): the
 nearest address, whether it is the reading's own byte start, and the margin
 (the second nearest distance less the nearest). Stages that keep the place
 as integers are printed as integers. A record: the start is drawn afresh and
@@ -14,13 +14,16 @@ import torch
 from test_item17_own_reading import COUNTING
 from test_item17_places import LESSON, minimal, model_for, nominate
 
+from architecture import WHERE_WIRES
+
 SENTENCE = LESSON[0]
 
 
 def matched(registry, wires):
-    """``wires [..., 4]`` -> (address, margin) by distance to every grid row,
-    and the same for each rung (wires 0:2 the long, 2:4 the short)."""
-    code = registry.code.detach().float()
+    """``wires [..., WHERE_WIRES]`` -> (address, margin) by distance to every
+    grid row, and the same for each rung of the first axis (wires 0:2 the
+    long, 2:4 the short)."""
+    code = registry.grid.detach().float()
     def nearest(v, c):
         d = (c - v[None]).norm(dim=-1)
         two = d.topk(2, largest=False)
@@ -45,7 +48,7 @@ def test_where_of_each_reading(tmp_path, monkeypatch):
         nominate(model, one + two + lesson + (' '.join(COUNTING[:4]) + '.', ' '.join(COUNTING[4:]) + '.'))
         registry = model.where_registry
         text0 = registry.slices['text'][0]
-        print('grid', tuple(registry.code.shape), 'slices', dict(registry.slices))
+        print('grid', tuple(registry.grid.shape), 'slices', dict(registry.slices))
         ps, cs = model.perceptualSpace, model.conceptualSpace
         on, rows = [False], []
         events, phrase = ps._radix_code_events, cs.apply_phrase_rows
@@ -77,8 +80,8 @@ def test_where_of_each_reading(tmp_path, monkeypatch):
                     p = int(index[s])
                     if p >= 0:
                         add(f'STM slot {s} of {depth}: field 11 (chunk_where)', out[STMChunks.WHERE][0, p], None)
-                        add(f'STM slot {s} of {depth}: concept wires [{concept_where}:{concept_where + 4}]',
-                            out[0][0, p, concept_where:concept_where + 4], None)
+                        add(f'STM slot {s} of {depth}: concept wires [{concept_where}:{concept_where + WHERE_WIRES}]',
+                            out[0][0, p, concept_where:concept_where + WHERE_WIRES], None)
             return out
 
         def record_of(model, record, **kw):
@@ -88,13 +91,13 @@ def test_where_of_each_reading(tmp_path, monkeypatch):
                 print('conceptual field .where (integers, [start, end) per reading):',
                       [tuple(int(x) for x in f.where[0, r]) for r in live])
                 for k in range(int(record.end_depth[0])):
-                    add(f'record.end_slots[{k}] concept wires', record.end_slots[0, k, concept_where:concept_where + 4], None)
+                    add(f'record.end_slots[{k}] concept wires', record.end_slots[0, k, concept_where:concept_where + WHERE_WIRES], None)
             return sentence(model, record, **kw)
 
         def walk_leaf(model, words, counts, truncated, bank, trace, **kw):
             if any(f.name == 'reconstruction' for f in traceback.extract_stack()):
                 for k in range(words.shape[1]):
-                    add(f'walk leaf {k} concept wires', words[0, k, concept_where:concept_where + 4], None)
+                    add(f'walk leaf {k} concept wires', words[0, k, concept_where:concept_where + WHERE_WIRES], None)
             return generated(model, words, counts, truncated, bank, trace, **kw)
 
         monkeypatch.setattr(ps, '_radix_code_events', evented)
@@ -102,7 +105,7 @@ def test_where_of_each_reading(tmp_path, monkeypatch):
         monkeypatch.setattr(SentenceField, 'sentence_generated', record_of)
         monkeypatch.setattr(OutputOccurrences, 'generated', walk_leaf)
         when_start = model.symbolSpace.ltm_store.when_start
-        concept_where = when_start - 4
+        concept_where = when_start - WHERE_WIRES
         on[0] = True
         with torch.no_grad():
             read(model, SENTENCE)

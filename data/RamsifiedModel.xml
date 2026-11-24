@@ -49,7 +49,7 @@
   </SymbolSpace>
 
   <InputSpace>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>128</nVectors>
     <nOutput>128</nOutput>
     <codebook>quantize</codebook>
@@ -57,14 +57,14 @@
 
   <PartSpace>
     <nOutput>128</nOutput>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
 
   <ConceptualSpace>
     <nOutput>128</nOutput>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -72,7 +72,7 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nOutput>128</nOutput>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>128</nVectors>
   </WholeSpace>
 

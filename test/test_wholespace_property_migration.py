@@ -28,6 +28,7 @@ import Language  # noqa: E402
 import Models  # noqa: E402
 from Spaces import SubSpace  # noqa: E402
 from util import init_config  # noqa: E402
+from architecture import WHERE_WIRES, WHEN_WIRES  # noqa: E402
 
 
 def _set_text(root: ET.Element, path: str, value: object) -> None:
@@ -247,9 +248,13 @@ def test_symbolspace_and_grammar_use_conceptual_not_property_width(tmp_path):
 
     # Concepts are opaque codes: no conceptual band, the whole width is
     # the code (2026-09-14).  Symbols are percepts and keep their band.
-    assert cs.subspace.nWhat == 144 and cs.subspace.muxedSize == 144
+    # The form event is 128 of content and the band (136 -> 144, item 1.6);
+    # the concept is that event and 8 more (144 -> 152).
+    band = WHERE_WIRES + WHEN_WIRES
+    assert cs.subspace.nWhat == 128 + band + 8
+    assert cs.subspace.muxedSize == 128 + band + 8
     assert ws.subspace.nWhat == 128
-    assert ws.subspace.muxedSize == 136
+    assert ws.subspace.muxedSize == 128 + band
 
     assert ss.muxedSize == cs.subspace.muxedSize
     assert ss.nWhat == ss.muxedSize - ss.nWhere - ss.nWhen

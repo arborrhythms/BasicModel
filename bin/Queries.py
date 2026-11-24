@@ -10,6 +10,7 @@ from typing import Callable
 import re
 
 import torch
+from architecture import WHERE_WIRES
 
 from Meaning import ConceptualMeaning
 from AccessibleMind import Subsystem as Mind, check_access
@@ -1256,7 +1257,7 @@ class ThoughtLTMCapability:
                         # its numerical witness must use that same input.
                         before,after = before.detach().clone(),after.detach().clone()
                         if store.when_start is not None:
-                            start,end = store.when_start-4,store.when_start+4
+                            start,end = store.when_start-WHERE_WIRES,store.when_start+4
                             before[start:end] = 0
                             after[start:end] = 0
                         evaluations[reference] = dict(identity=identity,

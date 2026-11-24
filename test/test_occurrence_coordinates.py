@@ -36,13 +36,14 @@ def test_native_program_captures_the_symbol_band_and_one_field_time(tmp_path, mo
             batch_override=(raw, torch.empty(1, 0)),
             questions=(What.present(0, split='validation'),))
     program, = readings[0]
-    assert program.symbol_where.shape == (*program.rows.shape, 4)
-    addresses = model.where_encoding.decode_index(program.symbol_where)
+    from architecture import WHERE_WIRES
+    assert program.symbol_where.shape == (*program.rows.shape, WHERE_WIRES)
+    addresses = model.where_registry.decode(program.symbol_where)
     starts = model.inputSpace._ar_word_part_offsets[0,
         model.inputSpace._ar_grammar_leaf_mask[0], 0]
     expected = model.where_registry.intervals('text', starts)[..., 0]
     torch.testing.assert_close(addresses, expected)
-    assert program.symbol_when.shape == program.symbol_where.shape
+    assert program.symbol_when.shape == (*program.rows.shape, 4)
     torch.testing.assert_close(program.symbol_when,
         model.when_encoding.encode(1).expand_as(program.symbol_when))
 
@@ -56,7 +57,7 @@ def test_native_percepts_encode_input_starts_and_share_time(tmp_path):
     model._advance_when_time()
     event = parts._radix_part_events(ids, offsets)
     bands = event[..., parts._radix_where_indices]
-    torch.testing.assert_close(model.where_encoding.decode_index(bands),
+    torch.testing.assert_close(model.where_registry.decode(bands),
         offsets + model.where_registry.slices['text'][0])
     torch.testing.assert_close(event[..., -4:],
         model.when_encoding.encode(1).expand_as(event[..., -4:]))
@@ -115,7 +116,7 @@ def test_repeated_percept_occurrences_use_input_starts_and_one_time(model):
     starts = torch.tensor([[0, 8, 19]])
     model._advance_when_time()
     event = parts._radix_part_events(ids, starts)
-    decoded = model.where_encoding.decode_index(event[..., parts._radix_where_indices])
+    decoded = model.where_registry.decode(event[..., parts._radix_where_indices])
     torch.testing.assert_close(decoded, starts + model.where_registry.slices['text'][0])
     torch.testing.assert_close(event[..., -4:],
         model.when_encoding.encode(1).expand_as(event[..., -4:]))
@@ -141,7 +142,7 @@ def test_input_symbols_keep_their_word_starts_even_when_the_word_repeats(model, 
     program, = readings[0]
     # Whitespace stays in perception; the grammar holds only the three words.
     assert len(program.rows) == 3
-    torch.testing.assert_close(model.where_encoding.decode_index(program.symbol_where),
+    torch.testing.assert_close(model.where_registry.decode(program.symbol_where),
                                torch.tensor([0, 4, 8]))
     torch.testing.assert_close(program.symbol_when,
         model.when_encoding.encode(1).expand_as(program.symbol_when))

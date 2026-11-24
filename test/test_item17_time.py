@@ -21,7 +21,7 @@ def test_55a_one_clock_and_no_second_counter_is_read_as_time():
         for name in names:
             assert name not in text, (file, name)
     # A store names its rows by a count; its time is the model's present.
-    for store in (LTM0(12, capacity=2, percept_width=8), STM0(12, 2)):
+    for store in (LTM0(20, capacity=2, percept_width=16), STM0(12, 2)):
         assert 'names_issued' in dict(store.named_buffers())
         assert not any('clock' in name for name, _ in store.named_buffers())
 
@@ -160,10 +160,10 @@ def test_55e_a_row_promoted_to_a_concept_keeps_its_stamp():
     from Memory import LTM0
     from MemoryConsolidation import _content
     from RowTime import encoder
-    store = LTM0(12, capacity=2, percept_width=8)
+    store = LTM0(20, capacity=2, percept_width=16)
     store._model_present_code = lambda: encoder().encode(9)
-    row = store.append_idea(torch.ones(12))
-    torch.testing.assert_close(_content(store, row)[4:8], encoder().encode(9))
+    row = store.append_idea(torch.ones(20))
+    torch.testing.assert_close(_content(store, row)[12:16], encoder().encode(9))
 
 
 def test_55f_the_code_on_the_model_follows_every_advance_of_the_clock():

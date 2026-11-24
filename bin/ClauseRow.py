@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import Any
 
 import torch
+from architecture import WHERE_WIRES
 
 from Meaning import ConceptualMeaning
 
@@ -120,9 +121,9 @@ class Clause:
                 raise ValueError('an absolute clause requires its grammar-fused point')
         elif self.point is not None:
             raise ValueError('a relative clause has no fused point')
-        for name in ('where', 'when'):
+        for name, wires in (('where', WHERE_WIRES), ('when', 4)):
             value = getattr(self, name)
-            if value is not None and (not torch.is_tensor(value) or value.shape != (4,)
+            if value is not None and (not torch.is_tensor(value) or value.shape != (wires,)
                                       or not bool(torch.isfinite(value).all())):
                 raise ValueError('an ended field has one finite four-coordinate band')
         if self.factored_refs is not None and len(self.factored_refs) != 3:
@@ -236,12 +237,12 @@ class ClauseRows:
                 if row is not None:
                     if bool(self.entry_time(row).ne(0).any()):
                         result.add('situation')
-                    if self.when_start is not None and bool(self.slots[row, self.when_start-4:self.when_start].ne(0).any()):
+                    if self.when_start is not None and bool(self.slots[row, self.when_start-WHERE_WIRES:self.when_start].ne(0).any()):
                         result.add('spatial')
             if kind == RELATION:
                 result.add('situation')
                 head = head_idea(self, value)
-                if head is not None and self.when_start is not None and bool(head[self.when_start-4:self.when_start].ne(0).any()):
+                if head is not None and self.when_start is not None and bool(head[self.when_start-WHERE_WIRES:self.when_start].ne(0).any()):
                     result.add('spatial')
             return result
         readings = self.parts.readings(symbol, types)

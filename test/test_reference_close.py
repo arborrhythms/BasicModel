@@ -467,7 +467,7 @@ def test_kept_journal_supplies_np_content_predicate_and_positional_provenance(mo
     assert f.store.row(f.store.index_of_row(occurrence))['order'] == f.cs._concept_source_order(kind) == description_order-1
     # This unclocked grammar fixture is working memory (§17.15). Copy its
     # admitted runtime state; legacy durable migration has separate coverage.
-    restored = STM0(8, capacity=64, relation_capacity=8192)
+    restored = STM0(16, capacity=64, relation_capacity=8192)
     restored.restore_runtime_state(f.store.state_dict())
     assert not hasattr(restored, 'refs') and 'refs' not in restored.state_dict()
     torch.testing.assert_close(restored.slots, f.store.slots, rtol=0, atol=0)

@@ -154,7 +154,7 @@
   <InputSpace>
     <nOutput>8192</nOutput>
     <nVectors>256</nVectors>
-    <nDim>136</nDim>
+    <nDim>144</nDim>
   </InputSpace>
 
   <!-- Eight instantaneous part percepts. WHAT is deliberately compact (128);
@@ -163,15 +163,15 @@
        before entering this field. -->
   <PartSpace>
     <nInput>8192</nInput>
-    <nInputDim>136</nInputDim>
+    <nInputDim>144</nInputDim>
     <nVectors>4096</nVectors>
     <basicPerceptCapacity>4096</basicPerceptCapacity>
     <!-- Allocate only this initial prefix.  Chunk promotion queues new rows
          during a word pass, then grows geometrically at the post-step boundary
          without exceeding this logical ceiling. -->
-    <nDim>136</nDim>
+    <nDim>144</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>136</nOutputDim>
+    <nOutputDim>144</nOutputDim>
 
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -184,7 +184,7 @@
     <nInput>8</nInput>
     <!-- PS/WS sigma folds have already emitted conceptual codebook
          activations here. The CS boundary itself is width-preserving. -->
-    <nInputDim>136</nInputDim>
+    <nInputDim>144</nInputDim>
     <!-- Concept and downstream symbol-reference inventory. This is independent
          of PartSpace's allocated prefix, WholeSpace's small property basis,
          and the eight simultaneously live CS/WS locations. All four aligned
@@ -194,9 +194,9 @@
          are an optimizer-owned reserve activated in power-of-two steps. -->
     <activeVectors>4096</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>136</nDim>
+    <nDim>144</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>136</nOutputDim>
+    <nOutputDim>144</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -215,11 +215,11 @@
          parallel CS mixing matrix and never mixes word/location slots. -->
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>136</nInputDim>
+    <nInputDim>144</nInputDim>
     <nVectors>4096</nVectors>
-    <nDim>136</nDim>
+    <nDim>144</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>136</nOutputDim>
+    <nOutputDim>144</nOutputDim>
 
     <invertible>true</invertible>
   </WholeSpace>
@@ -228,7 +228,7 @@
        directly; WholeSpace is not an intermediate output producer. -->
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>136</nInputDim>
+    <nInputDim>144</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>16</nOutput>

@@ -8398,12 +8398,13 @@ class SymbolSubSpace(SubSpace):
         # 2026-06-06 uniform-band convention gives WS (2, 2) so the
         # default WhereEncoding(0,0) / WhenEncoding(0,0) would drift).
         from Spaces import WhereEncoding as _WhereEncoding
+        from architecture import WHERE_AXES
         from RowTime import encoder as _when_encoder
         SubSpace.__init__(
             self,
             inputShape=[0, muxed], outputShape=[0, muxed],
             nInputDim=muxed, nOutputDim=muxed,
-            whereEncoding=_WhereEncoding(0, nWhere, nWhen) if nWhere else None,
+            whereEncoding=_WhereEncoding(0, nWhere, nWhen, axes=WHERE_AXES) if nWhere else None,
             whenEncoding=_when_encoder() if nWhen else None,
         )
         # Restamp nWhat / nWhere / nWhen to mirror ConceptualSpace's column

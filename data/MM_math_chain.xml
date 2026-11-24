@@ -39,32 +39,32 @@
       <symbolFieldLossWeight>0.1</symbolFieldLossWeight>
     </training>
   </architecture>
-  <InputSpace><nOutput>128</nOutput><nVectors>256</nVectors><nDim>104</nDim></InputSpace>
+  <InputSpace><nOutput>128</nOutput><nVectors>256</nVectors><nDim>112</nDim></InputSpace>
   <PartSpace>
-    <nInput>128</nInput><nInputDim>104</nInputDim>
+    <nInput>128</nInput><nInputDim>112</nInputDim>
     <nVectors>4096</nVectors>
-    <basicPerceptCapacity>4096</basicPerceptCapacity><nDim>104</nDim>
-    <nOutput>8</nOutput><nOutputDim>104</nOutputDim>
+    <basicPerceptCapacity>4096</basicPerceptCapacity><nDim>112</nDim>
+    <nOutput>8</nOutput><nOutputDim>112</nOutputDim>
     <synthesis>meronomy</synthesis><invertible>true</invertible>
   </PartSpace>
   <ConceptualSpace>
     <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
-    <nInput>8</nInput><nInputDim>136</nInputDim>
+    <nInput>8</nInput><nInputDim>144</nInputDim>
     <nVectors>4096</nVectors><stmCapacity>8</stmCapacity>
-    <nDim>136</nDim><nOutput>8</nOutput><nOutputDim>136</nOutputDim>
+    <nDim>144</nDim><nOutput>8</nOutput><nOutputDim>144</nOutputDim>
     <meaningWidth>32</meaningWidth><invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
     <digitWholes>false</digitWholes><whitespaceUnits>true</whitespaceUnits>
     <analysis>meronomy</analysis><butterfly>true</butterfly>
-    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>4096</nVectors>
-    <nDim>104</nDim><nOutput>8</nOutput><nOutputDim>104</nOutputDim>
+    <nInput>8</nInput><nInputDim>144</nInputDim><nVectors>4096</nVectors>
+    <nDim>112</nDim><nOutput>8</nOutput><nOutputDim>112</nOutputDim>
     <invertible>true</invertible>
   </WholeSpace>
   <!-- Text answers use the ordinary binding and reverse surface reader.
        This one-slot structural adapter is independent of the numeral range. -->
   <OutputSpace>
-    <nInput>8</nInput><nInputDim>136</nInputDim><nVectors>1</nVectors>
+    <nInput>8</nInput><nInputDim>144</nInputDim><nVectors>1</nVectors>
     <nDim>1</nDim><nOutput>1</nOutput><nOutputDim>1</nOutputDim>
   </OutputSpace>
   <SymbolSpace>

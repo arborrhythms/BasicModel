@@ -16,7 +16,7 @@ from test_query_vp_boundaries import _context, _signature
 
 
 def _meaning():
-    return replace(ConceptualMeaning.from_description(torch.eye(8)[0]),
+    return replace(ConceptualMeaning.from_description(torch.eye(16)[0]),
                    scope={"place": "workshop"})
 
 
@@ -26,7 +26,7 @@ def test_content_query_keeps_all_roles_and_conflicting_fact_sources():
     for ref in refs:
         force_order(cs, ref[1], 0)
         cs._csw_concept_row(0, ref[1])
-    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=1024, relation_capacity=8192)
     from index_fixtures import one_hot_unfold
     idea = replace(_meaning(), role_refs=(refs[0], None, None))
     first = store.append_meaning(idea,  trust=0.6)
@@ -86,8 +86,8 @@ def test_removed_quantize_raises_without_symbol_snapping():
 def test_query_does_not_fill_an_unconstrained_name_from_a_held_row():
     from meaning_fixtures import unsupported as question
     cs = _cs()
-    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
-    retained = ConceptualMeaning.from_description(torch.ones(8))
+    store = STM0(16, percept_width=0, capacity=1024, relation_capacity=8192)
+    retained = ConceptualMeaning.from_description(torch.ones(16))
     row = store.append_meaning(retained,  evidence=(1., 0.))
     memory = SimpleNamespace(retrieved_frames=lambda **kwargs: (store.row(row),))
     context = _context(cs, store=store, memory=memory)
@@ -130,14 +130,14 @@ def test_wrong_domain_and_types_fail_before_execution():
 def test_equality_executor_rejects_width_truncation_and_nonfinite_values():
     context = _context(_cs())
     result = _signature('equal', 'argin1', 'argin2').invoke(
-        context, torch.ones(8), torch.ones(8))
+        context, torch.ones(16), torch.ones(16))
     assert result["support_true"] == 1
     with pytest.raises(ValueError, match="width"):
         _signature('equal', 'argin1', 'argin2').invoke(
-            context, torch.ones(8), torch.ones(4))
+            context, torch.ones(16), torch.ones(4))
     with pytest.raises((ValueError, FloatingPointError), match="finite"):
         _signature('equal', 'argin1', 'argin2').invoke(
-            context, torch.ones(8), torch.full((8,), float("nan")))
+            context, torch.ones(16), torch.full((16,), float("nan")))
 
 
 

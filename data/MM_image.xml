@@ -10,15 +10,15 @@
   <!-- A row-major 28 by 28 input, with a fixed six-coordinate percept cube.
        2048 ordinary concepts give order zero room for all 784 places;
        4096 basic percept seats accommodate distinct levels at those places. -->
-  <InputSpace><nVectors>28</nVectors><nDim>36</nDim><nOutput>28</nOutput><nOutputDim>36</nOutputDim></InputSpace>
-  <PartSpace><identityByParts>true</identityByParts><nInput>8</nInput><nInputDim>36</nInputDim>
+  <InputSpace><nVectors>28</nVectors><nDim>44</nDim><nOutput>28</nOutput><nOutputDim>44</nOutputDim></InputSpace>
+  <PartSpace><identityByParts>true</identityByParts><nInput>8</nInput><nInputDim>44</nInputDim>
     <nVectors>1024</nVectors><basicPerceptCapacity>4096</basicPerceptCapacity>
-    <nDim>14</nDim><nOutput>8</nOutput><nOutputDim>14</nOutputDim>
+    <nDim>22</nDim><nOutput>8</nOutput><nOutputDim>22</nOutputDim>
     <invertible>true</invertible><synthesis>meronomy</synthesis><butterfly>true</butterfly></PartSpace>
-  <ConceptualSpace><nInput>8</nInput><nInputDim>14</nInputDim><nVectors>2048</nVectors>
-    <nDim>14</nDim><nOutput>8</nOutput><nOutputDim>14</nOutputDim><invertible>true</invertible><butterfly>true</butterfly></ConceptualSpace>
-  <WholeSpace><analysis>meronomy</analysis><nInput>8</nInput><nInputDim>14</nInputDim>
-    <nVectors>64</nVectors><nDim>14</nDim><nOutput>8</nOutput><nOutputDim>14</nOutputDim></WholeSpace>
-  <OutputSpace><nInput>8</nInput><nInputDim>14</nInputDim><nVectors>10</nVectors><nOutput>10</nOutput></OutputSpace>
+  <ConceptualSpace><nInput>8</nInput><nInputDim>22</nInputDim><nVectors>2048</nVectors>
+    <nDim>22</nDim><nOutput>8</nOutput><nOutputDim>22</nOutputDim><invertible>true</invertible><butterfly>true</butterfly></ConceptualSpace>
+  <WholeSpace><analysis>meronomy</analysis><nInput>8</nInput><nInputDim>22</nInputDim>
+    <nVectors>64</nVectors><nDim>22</nDim><nOutput>8</nOutput><nOutputDim>22</nOutputDim></WholeSpace>
+  <OutputSpace><nInput>8</nInput><nInputDim>22</nInputDim><nVectors>10</nVectors><nOutput>10</nOutput></OutputSpace>
   <SymbolSpace><ltmCapacity>1024</ltmCapacity><language><start>S</start><grammar>field.grammar</grammar></language></SymbolSpace>
 </model>

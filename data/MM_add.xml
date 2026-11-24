@@ -34,20 +34,20 @@
 
   <InputSpace>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <!-- radix trie / percept rows promoted online from the corpus -->
     <nVectors>4096</nVectors>
     <basicPerceptCapacity>4096</basicPerceptCapacity>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
     <butterfly>true</butterfly>
@@ -55,14 +55,14 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <!-- Every distinct numeral / whole allocates aligned CS/WS rows; the
          stochastic corpus needs thousands, and runtime growth cannot
          happen inside the word loop. -->
     <nVectors>512</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
     <invertible>true</invertible>
     <butterfly>true</butterfly>
   </ConceptualSpace>
@@ -70,16 +70,16 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>4096</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
   </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>1</nVectors>
     <!-- R output vectors of width 1: the one-hot value over [0, R). -->
     <nOutput>32</nOutput>

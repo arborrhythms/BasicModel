@@ -1,5 +1,6 @@
 """Definition owner for isolated conceptual-inventory mechanism fixtures."""
 from Memory import STM0
+from architecture import WHERE_WIRES, WHEN_WIRES
 
 
 def with_definitions(cs):
@@ -27,7 +28,7 @@ def with_definitions(cs):
     # This isolated inventory has no perceptual clock, so it uses working
     # occurrences at its original width and capacity (§17.15).
     store = STM0(cs.nDim, capacity=1024, relation_capacity=8192,
-                 percept_width=cs.nDim if cs.nDim >= 8 else 0)
+                 percept_width=cs.nDim if cs.nDim >= WHERE_WIRES + WHEN_WIRES else 0)
     object.__setattr__(cs, '_fixture_occurrences', store)
     attach_clause_index(SimpleNamespace(), store, cs)
     return cs

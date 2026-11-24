@@ -247,7 +247,7 @@ def answer_pyramid_cost(radix, amounts, emitted, text):
 def where_match(wires, grid, axes, sharpness):
     """Each leaf's match ``[..., addresses]`` of its ``.where`` wires against
     the grid's rows, axis by axis (each a slice of the wires), by distance:
-    a softmax of the summed distances. One axis today."""
+    a softmax of the summed distances over the three axes."""
     distance = sum((wires[..., None, lo:hi] - grid[:, lo:hi]).norm(dim=-1) for lo, hi in axes)
     return torch.softmax(-sharpness * distance, -1)
 
@@ -315,7 +315,7 @@ def reverse(model, sub, field):
         choice = torch.zeros(B, E, dtype=torch.long, device=value.device)
     # The .where wires against the grid; a reading with no wires has no place.
     t0, t1 = registry.slices['text']
-    grid = registry.code.to(value.device).float()
+    grid = registry.grid.to(value.device).float()
     wires = field.wires.to(value.device).float()
     q = where_match(wires, grid, registry.axes, float(TheXMLConfig.get('architecture.reconstructionWhereSharpness')))
     q = (q[..., t0:t1] * wires.ne(0).any(-1)[..., None]).to(value)          # [B, E, A]

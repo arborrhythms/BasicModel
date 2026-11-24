@@ -6,6 +6,7 @@ operands alongside that walk; it neither chooses grammar nor grows a tree.
 from dataclasses import dataclass, replace, fields, is_dataclass
 
 import torch
+from architecture import WHERE_WIRES
 
 
 def detached(value, memo=None):
@@ -186,12 +187,12 @@ class Evaluation:
         # A native word push has zero occurrence coordinates when this
         # modality supplied no bands. Carry those same coordinates through
         # comprehension, including publications of a newly opened identity.
-        where = value.new_zeros(4) if program.symbol_where is None else program.symbol_where[word]
+        where = value.new_zeros(WHERE_WIRES) if program.symbol_where is None else program.symbol_where[word]
         when = value.new_zeros(4) if program.symbol_when is None else program.symbol_when[word]
         if start is not None:
-            for band, offset in ((where, start-4), (when, start)):
+            for band, offset in ((where, start-WHERE_WIRES), (when, start)):
                 if offset >= 0:
-                    point[offset:offset+4] = band
+                    point[offset:offset+len(band)] = band
         self.stack.append(Value(point, identity, order, self._cases(identity),
             where, when))
         return identity
@@ -229,7 +230,7 @@ class Evaluation:
             # into the numerical face's comprehended operands.
             start = self.model.symbolSpace.ltm_store.when_start
             if start is not None:
-                low = max(0, start-4)
+                low = max(0, start-WHERE_WIRES)
                 point = torch.cat((point[:low], self.program.operation_values[at, role, low:start+4],
                                    point[start+4:]))
             identity = reference if selected else child.reference

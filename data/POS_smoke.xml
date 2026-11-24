@@ -105,28 +105,28 @@
 
   <InputSpace>
     <nOutput>8</nOutput>
-    <nDim>20</nDim>
+    <nDim>28</nDim>
     <nVectors>128</nVectors>
     <codebook>quantize</codebook>
   </InputSpace>
 
   <PartSpace>
     <nOutput>8</nOutput>
-    <nDim>20</nDim>
+    <nDim>28</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
 
   <ConceptualSpace>
     <nOutput>8</nOutput>
-    <nDim>20</nDim>
+    <nDim>28</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
 
   <WholeSpace>
     <nOutput>8</nOutput>
-    <nDim>20</nDim>
+    <nDim>28</nDim>
     <nVectors>128</nVectors>
   </WholeSpace>
 

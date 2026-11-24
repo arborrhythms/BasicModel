@@ -21,7 +21,7 @@ def _world():
                  for base in bases)
     for ref in refs:
         cs._csw_concept_row(cs._concept_source_order(ref[1]), ref[1])
-    cs._ltm_store = LTM0(8, capacity=16)
+    cs._ltm_store = LTM0(16, capacity=16)
     return cs, refs, TruthGroundedReasoner(model_for(cs, cs._ltm_store),
                                           store=cs._ltm_store)
 
@@ -73,14 +73,14 @@ def test_normal_entry_does_not_verify_generated_vectors_as_taxonomy():
     assert cs._ltm_store.parts.truth_plus[edge] == 1
     with pytest.raises((ValueError, TypeError), match='reference|concept'):
         reasoner.model.reason_about(
-            QuerySpec.from_surface("isPart", torch.eye(8)[0], torch.ones(8)))
+            QuerySpec.from_surface("isPart", torch.eye(16)[0], torch.ones(16)))
 
 
 def test_normal_controller_does_not_certify_a_world_row_as_taxonomy():
     cs, (a, b, _), reasoner = _world()
     from Meaning import ConceptualMeaning
     cs._ltm_store.append_meaning(ConceptualMeaning.from_description(
-        torch.eye(8)[0]),  trust=1)
+        torch.eye(16)[0]),  trust=1)
     result = reasoner.model.reason_about(QuerySpec.from_surface("part", a, b))
     assert result.posture == UNKNOWN and result.support_true == 0
 
@@ -92,7 +92,7 @@ def test_budget_cutoff_and_missing_identity_are_unknown_with_diagnostics():
     result = reasoner.evaluate(QuerySpec.from_surface("isPart", a, c), max_steps=1)
     assert result["posture"] == UNKNOWN
     assert "traversal_limit" in result["incomplete"]
-    result = reasoner.evaluate(QuerySpec.from_surface("isPart", torch.zeros(8), torch.zeros(8)))
+    result = reasoner.evaluate(QuerySpec.from_surface("isPart", torch.zeros(16), torch.zeros(16)))
     assert result["posture"] == UNKNOWN
     assert "unbound_concept_reference" in result["incomplete"]
 

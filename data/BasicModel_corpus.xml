@@ -75,9 +75,9 @@
     <nInputDim>512</nInputDim>
     <nVectors>262144</nVectors>
     <basicPerceptCapacity>262144</basicPerceptCapacity>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>104</nOutputDim>
+    <nOutputDim>112</nOutputDim>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
     <chunkPromotionThreshold>2</chunkPromotionThreshold>
@@ -85,31 +85,31 @@
   <ConceptualSpace>
     <attentionPromotion>true</attentionPromotion>
     <nInput>8</nInput>
-    <nInputDim>1000</nInputDim>
+    <nInputDim>1008</nInputDim>
     <nVectors>1048576</nVectors>
     <activeVectors>32768</activeVectors>
     <primingBridgeCapacity>8388608</primingBridgeCapacity>
     <stmCapacity>8</stmCapacity>
-    <nDim>1000</nDim>
+    <nDim>1008</nDim>
     <meaningWidth>896</meaningWidth>
     <nOutput>8</nOutput>
-    <nOutputDim>1000</nOutputDim>
+    <nOutputDim>1008</nOutputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
     <analysis>meronomy</analysis>
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>1000</nInputDim>
+    <nInputDim>1008</nInputDim>
     <nVectors>9</nVectors>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>104</nOutputDim>
+    <nOutputDim>112</nOutputDim>
     <invertible>true</invertible>
   </WholeSpace>
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1000</nInputDim>
+    <nInputDim>1008</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

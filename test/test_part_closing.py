@@ -66,7 +66,7 @@ def test_sentence_projection_keeps_its_own_entry_after_an_embedded_mention(monke
     f = SentenceFixture(monkeypatch)
     # The same unresolved head appears first as a working mention and then
     # under a projecting wrapper. Only the sentence owns external testimony.
-    point = torch.eye(8)[0]
+    point = torch.eye(16)[0]
     head = Composition(point)
     mention = Clause(ConceptualMeaning.from_description(point), point=point,
                      composition=head, reference_request={'mode':'bind'})
@@ -91,7 +91,7 @@ def test_nested_unknown_terminal_keeps_its_word_without_minting(monkeypatch):
     participant = f.noun('participant')
     word = recurrent_word(f.cs.interpret, [81], [], form='new-form')
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
-    right = Composition(torch.eye(8)[3], word_id=word)
+    right = Composition(torch.eye(16)[3], word_id=word)
     value = torch.maximum(left.point, right.point)
     root = Composition(value, (left, right), operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(value), point=value, composition=root)
@@ -143,7 +143,7 @@ def test_unseated_native_argument_does_not_acquire_the_working_value_at_close(mo
     alloc.symbol_types[word] = {'word'}
     assert f.cs._concept_row_of(word) is None
     left = Composition(f.registry._payload(('sym', participant)), reference=participant)
-    right = Composition(torch.eye(8)[3], reference=word)
+    right = Composition(torch.eye(16)[3], reference=word)
     point = torch.maximum(left.point, right.point)
     term = Composition(point, (left, right), operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(point), point=point, composition=term)
@@ -314,7 +314,7 @@ def test_new_relation_argument_needs_an_occurrence_and_no_concept_seat(monkeypat
     f = SentenceFixture(monkeypatch)
     native = f.noun('participant')
     left = Composition(f.registry._payload(('sym', native)), reference=native)
-    argument = Composition(torch.eye(8)[3], order=1)
+    argument = Composition(torch.eye(16)[3], order=1)
     root = Composition(torch.maximum(left.point, argument.point), (left, argument),
                        operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
@@ -337,7 +337,7 @@ def test_relation_argument_does_not_use_the_concept_tail(monkeypatch):
     f = SentenceFixture(monkeypatch)
     native = f.noun('participant')
     left = Composition(f.registry._payload(('sym', native)), reference=native)
-    argument = Composition(torch.eye(8)[3], order=1)
+    argument = Composition(torch.eye(16)[3], order=1)
     root = Composition(torch.maximum(left.point, argument.point), (left, argument),
                        operation='part', formal_name='part', head_role=1)
     clause = Clause(ConceptualMeaning.from_description(root.point), point=root.point,
@@ -362,7 +362,7 @@ def test_surface_phrase_keeps_the_unknown_head_word_without_minting(monkeypatch)
     native = f.noun('participant')
     marker = Composition(f.registry._payload(('sym', native)), reference=native)
     word = recurrent_word(f.cs.interpret, [84], [], form='new-head')
-    description = Composition(torch.eye(8)[3], word_id=word)
+    description = Composition(torch.eye(16)[3], word_id=word)
     phrase = Composition(description.point, (marker, description), operation='surface',
                          formal_name='surface', head_role=2)
     root = Composition(torch.maximum(phrase.point, marker.point), (phrase, marker),

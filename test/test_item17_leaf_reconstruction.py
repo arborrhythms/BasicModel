@@ -9,7 +9,7 @@ order-zero Sigma's way back (`SparseSigmaLDU.reverse`) and the first Pi's
 `.what` is matched against the percept codebook (every basic percept's code,
 `bank_codes`, place rows left out) by cosine; the leaf's own `.where` wires
 (the percept's, `Places.readings`) are matched against the grid
-(`WhereRegistry.code`, the text range) by distance; the matched percept's
+(`WhereRegistry.grid`, the text range) by distance; the matched percept's
 spelling is pasted at the matched place. Is the sentence the sentence?
 Beside it, the source's own reconstruction of the input ("as built").
 A record: the start is drawn afresh and printed; nothing is asserted of
@@ -38,7 +38,7 @@ def codebook(basic):
 def grid_match(registry, wires):
     """The nearest text address of ``wires`` and its margin, by distance."""
     start, end = registry.slices['text']
-    code = registry.code.detach().float()[start:end]
+    code = registry.grid.detach().float()[start:end]
     d = (code - wires.float()[None]).norm(dim=-1)
     two = d.topk(2, largest=False)
     return int(two.indices[0]), round(float(two.values[1] - two.values[0]), 4)

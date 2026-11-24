@@ -42,10 +42,15 @@ def test_65_67_image_uses_the_same_reader_and_recovers_every_pixel(monkeypatch):
     base, end = model.where_registry.slices['numeric']
     assert end - base == 784
     addresses = field.where[0, :784, 0]
-    encoded = model.where_encoding.encode(addresses)
-    decoded = model.where_encoding.decode_index(encoded) - base
-    assert decoded.div(28, rounding_mode='floor').tolist() == [row for row in range(28) for _ in range(28)]
-    assert decoded.remainder(28).tolist() == list(range(28)) * 28
+    # An image is a box: x the column, y the row, its addresses row by row.
+    registry = model.where_registry
+    place = registry.place(addresses)
+    decoded = registry.decode(registry.encoding.encode_place(place)) - base
+    assert decoded.tolist() == list(range(784))
+    local = place - torch.tensor(registry.boxes['numeric'][0], device=place.device)
+    assert local[:, 1].tolist() == [row for row in range(28) for _ in range(28)]
+    assert local[:, 0].tolist() == list(range(28)) * 28
+    assert (local[:, 2] == 0).all()
     text, scalar = (model.where_registry.slices[key] for key in ('text', 'scalar'))
     assert text[1] <= base < end <= scalar[0] < scalar[1]
     print(dict(forward_seconds=forward_seconds, reverse_seconds=reverse_seconds,

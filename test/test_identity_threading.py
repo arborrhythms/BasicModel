@@ -329,7 +329,7 @@ def test_kept_journal_commits_two_verbs_one_identity_and_immutable_occurrences(m
     assert f.cs.mtm.entries[token].count == 2
     assert len(f.cs.mtm.entries[token].events) == 2
     torch.testing.assert_close(f.cs.mtm.value_of(token), lifts[1][2][0])
-    later = f.store.append_idea(torch.zeros(8))
+    later = f.store.append_idea(torch.zeros(16))
     retained = snapshot(resolver)  # Adding the reference is separate from recording its event.
     f.cs.mtm.event(token, f.store.occurrence_of(later), verb=f.cs.mtm.entries[token].events[-1].verb, role=0, when=20)
     unchanged(resolver, retained)
@@ -413,7 +413,7 @@ def test_dummy_bind_preserves_a_carried_object_with_different_working_content(mo
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
     reference = f.noun('carrier')
-    value = torch.ones(8) * .25
+    value = torch.ones(16) * .25
     leaf = Composition(value, reference=reference, order=0)
     bound = Composition(value, children=(leaf,), operation='bind', head_role=1, order=0)
     closing = PartClosing(f.cs, f.store)
@@ -516,7 +516,7 @@ def test_copied_store_rebinds_its_current_owner_before_closing(monkeypatch):
     original = f.store._concept_point(symbol).clone()
     with torch.no_grad():
         owner.similarity_codebook.W[row].fill_(.25)
-    torch.testing.assert_close(store._concept_point(symbol), torch.full((8,), .25))
+    torch.testing.assert_close(store._concept_point(symbol), torch.full((f.cs.nDim,), .25))
     torch.testing.assert_close(f.store._concept_point(symbol), original)
     configure_model_index(model, store)
     assert store._concept_owner() is owner
@@ -765,7 +765,7 @@ def test_relative_determination_keeps_its_introduction_and_later_bind(monkeypatc
     # §50: the alias is a nonempty part at every explicitly changed state.
     for name, level in (('left', .2), ('right', .4), ('changed', .6), ('latest', .8), ('alias', .1)):
         f.noun(name, order=2 if name in ('left', 'right', 'alias') else 0)
-        supply_meaning(f, name, torch.full((8,), level))
+        supply_meaning(f, name, torch.full((f.cs.nDim,), level))
     relative = ('bind', ('implies', 'left', 'right'))
     if dummy:
         relative = ('bind', relative)

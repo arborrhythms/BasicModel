@@ -569,13 +569,14 @@ def test_30_33a_35_36_42_the_bank_the_where_wires_garbage_the_same_look_and_an_u
     try:
         # 33 (a).
         registry = model.where_registry
-        code = registry.encoding.encode(torch.arange(registry.capacity)).float().to(registry.code)
-        torch.testing.assert_close(registry.code.detach(), code)
+        addresses = torch.arange(registry.capacity)
+        code = registry.encoding.encode_place(registry.place(addresses)).float().to(registry.grid)
+        torch.testing.assert_close(registry.grid.detach(), code)
         optimizer = model.getOptimizer(lr=.003)
         held = {id(p) for group in optimizer.param_groups for p in group['params']}
-        assert id(registry.code) not in held
+        assert id(registry.grid) not in held
         read(model, 'alpha gamma', training=True, optimizer=optimizer)
-        torch.testing.assert_close(registry.code.detach(), code)
+        torch.testing.assert_close(registry.grid.detach(), code)
         # 30: count the materialize() calls made inside a look.
         inside, calls = [False], [0]
         materialize, look = Spaces.SubSpace.materialize, SentenceLooks.look

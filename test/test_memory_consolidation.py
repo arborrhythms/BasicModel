@@ -203,7 +203,7 @@ def test_event_without_factored_refs_uses_the_captured_verb_reading(monkeypatch)
     f = SentenceFixture(monkeypatch)
     entry, _, _ = recorded_identity_reading(f, ('change', ('bind', 'subject'), 'action'))
     clause = finish_clause(f.language, entry, registry=f.registry)
-    verb = native(f.cs, torch.ones(8)*.25)
+    verb = native(f.cs, torch.ones(16)*.25)
     from Spaces import _concept_alloc_of
     alloc = _concept_alloc_of(f.cs)
     word = alloc.new_concept()

@@ -32,7 +32,7 @@ def _request():
     # no fixture call seats the Part operand to form its thought request.
     vp = registry._reference(('symbolic-definition', 'isEqual'))
     request = ConceptualMeaning(
-        torch.stack((torch.ones(8), registry._payload(vp), torch.ones(8))),
+        torch.stack((torch.ones(16), registry._payload(vp), torch.ones(16))),
         torch.ones(3, dtype=torch.bool),
         role_refs=(('sym', inner), vp, ('sym', right)))
     return cs, registry, request, witness
