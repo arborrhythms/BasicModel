@@ -65,7 +65,7 @@ Use a fresh output directory and the base archive and environment commands in th
 
 ## Host-read checkpoint, pending architecture review
 
-Local training commit `883fbb21c67d18049ec3af5b95c632507c19c299` follows the measured stopping point `5a393548e30f0e8ba0c5fbacc15b52977b6c6a3b`. Item 1.5 remains open. The revised design replaces the grammar reader with direct writes to STM ideas and relations. STM copies the retained head directly to LTM. MTM stages basic percepts and concepts. See the [representation design](2026-11-24-item1-5-device-sentence.md).
+Local training commit `883fbb21c67d18049ec3af5b95c632507c19c299` follows the measured stopping point `5a393548e30f0e8ba0c5fbacc15b52977b6c6a3b`. Item 1.5 remains open. The revised design replaces the grammar reader with direct writes to STM ideas and relations. STM copies the retained head directly to LTM. Each memory holds at most one root idea or relation per model time. MTM stages basic percepts and concepts. See the [representation design](2026-11-24-item1-5-device-sentence.md).
 
 | Four-page CPU update | Before this checkpoint | After |
 | --- | ---: | ---: |
