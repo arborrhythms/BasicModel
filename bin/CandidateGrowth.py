@@ -185,7 +185,7 @@ def row_scope(owner, batch):
     return (stream if stream is not None else GrowthTrial(owner)).active()
 
 
-def read_streams(owner, read, *, axis, live=None):
+def read_streams(owner, read, *, axis, live=None, seats=None):
     """Use each stream's own provisional topology, sharing equal topologies.
 
     The callback returns independent batch rows. A compacted forecast supplies
@@ -212,7 +212,7 @@ def read_streams(owner, read, *, axis, live=None):
         else:
             mask = torch.zeros_like(live)
             mask[indices] = True
-            mask = mask[live]
+            mask = mask[live] if seats is None else mask.index_select(0, seats)
         shape = [1] * result.ndim
         shape[axis] = -1
         result = torch.where(mask.view(shape), local, result)

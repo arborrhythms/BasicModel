@@ -115,17 +115,18 @@ class LookForecast:
 
     def stage_costs(self, field, perception, extent, looked=None):
         """Score both teaching stages against the same observations outside this look."""
-        live, inputs = self._outside(extent, looked)
+        live, inputs = self._outside(extent, looked, compact=False)
         empty = self.observations.new_zeros(live.shape[0])
-        if not len(inputs):
+        batch = live.nonzero().flatten()
+        if not len(batch):
             return empty, empty
-        batch = live.nonzero()[:, 0]
+        inputs = inputs.index_select(0, batch)
         evidence = self._located(field)
         actual = self.read(evidence, extent).index_select(0, batch)
         arrived = actual.new_zeros(len(actual), int(self.owner.nVectors), 2)
         arrived[:, self.inventory_rows()] = actual
         cost = read_streams(self.owner, lambda: ConceptSpread.look_cost(self.owner, inputs, arrived),
-                            axis=0, live=live)
+                            axis=0, live=live, seats=batch)
         concepts = empty.index_add(0, batch, cost)
 
         # The final occurrence supplies a repeated percept address, as in the
@@ -139,7 +140,7 @@ class LookForecast:
         observed = values.new_zeros(len(batch), max(held) + 1, 2)
         observed[:, rows] = values.index_select(0, sources).index_select(1, batch).transpose(0, 1)
         cost = read_streams(self.owner, lambda: ConceptSpread.percept_cost(self.owner, inputs, observed),
-                            axis=0, live=live)
+                            axis=0, live=live, seats=batch)
         return concepts, empty.index_add(0, batch, cost)
 
     def read(self, evidence, extent):
