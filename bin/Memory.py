@@ -3331,7 +3331,7 @@ class MTM1(LTM1):
         weight = self.activity[1:]
         seats = torch.arange(len(refs), device=refs.device)
         for pair in offers.unbind(0):
-            new = ~((refs == pair).all(-1) & used).any()
+            new = (pair[0] >= 0) & ~((refs == pair).all(-1) & used).any()
             magnitude = weight.abs()
             weakest = magnitude == magnitude.amin()
             weakest &= steps == steps.masked_fill(~weakest, torch.iinfo(steps.dtype).max).amin()
@@ -3346,6 +3346,47 @@ class MTM1(LTM1):
                 values.masked_fill_(take, 0)
             used = used | take
         self.ref_kinds[1:].copy_(torch.where(used[:, None], SYMBOL, 0))
+
+    def offer_read_pairs(self, offers):
+        """Seat this look's distinct nominations, each backed by a read symbol.
+
+        Every old candidate has already taken a step. Within one look fresh
+        candidates have zero weight and zero steps until all offers are in.
+        Once the free seats fill, eviction therefore cycles through those
+        seats in insertion order. A pool that started full reuses its weakest
+        seat, including a later nomination of the occupant it just evicted.
+        """
+        if not len(offers):
+            return
+        refs = self.refs[1:]
+        used = self.ref_kinds[1:, 0] != 0
+        matches = (offers[:, None] == refs).all(-1) & used
+        absent = (offers[:, 0] >= 0) & ~matches.any(-1)
+        weight, steps, age = self.activity[1:].abs(), self.read_count[1:], self.entered_at[1:]
+        weakest = weight == weight.amin()
+        weakest &= steps == steps.masked_fill(~weakest, torch.iinfo(steps.dtype).max).amin()
+        victim = age.masked_fill(~weakest, torch.iinfo(age.dtype).max).argmin().view(1)
+        free = (~used).long().sum()
+        reenter = (free == 0) & matches.index_select(1, victim)[:, 0] & (absent.long().cumsum(0) > 0)
+        new = absent | reenter
+        rank = new.long().cumsum(0) - 1
+        assigned = rank.remainder(free.clamp_min(1))
+        seats = torch.arange(len(refs), device=refs.device)
+        seat_rank = ((~used).long().cumsum(0) - 1).clamp_min(0)
+        receiving = ~used | ((free == 0) & (seats == victim))
+        write = new & receiving[:, None] & (assigned == seat_rank[:, None])
+        order = torch.arange(1, len(offers) + 1, device=refs.device)
+        last = torch.where(write, order, 0).amax(-1)
+        take = last > 0
+        index = (last - 1).clamp_min(0)
+        refs.copy_(torch.where(take[:, None], offers[index], refs))
+        age.copy_(torch.where(take, self.totals[0] + rank[index] + 1, age))
+        number = new.long().sum()
+        self.totals[0].add_(number)
+        self.totals[2].add_((number - free).clamp_min(0))
+        for column in (self.activity, self.read_count, self.held, self.gathered, self.gathered_low):
+            column[1:].masked_fill_(take, 0)
+        self.ref_kinds[1:].copy_(torch.where((used | take)[:, None], SYMBOL, 0))
 
     @staticmethod
     def _sum_with_remainder(a, b):
@@ -3366,9 +3407,12 @@ class MTM1(LTM1):
         product = a * b
         return product, (((ah * bh - product) + ah * bl) + al * bh) + al * bl
 
-    def observe(self, offers, kinds, expected, symbols, presence, *, observed=None):
+    def observe(self, offers, kinds, expected, symbols, presence, *, observed=None, read_pairs=False):
         """One look's Sigma update, including promotions, on the device."""
-        self.offer_pairs(offers)
+        if read_pairs:
+            self.offer_read_pairs(offers)
+        else:
+            self.offer_pairs(offers)
         refs = self.refs[1:]
         used = self.ref_kinds[1:, 0] != 0
         # Each kind and symbol occurs once in its respective input.

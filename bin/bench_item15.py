@@ -297,9 +297,12 @@ def main():
                 return method(*inputs, **options)
             try:
                 with patch.object(target, name, type(original_method)(probe) if descriptor else probe):
-                    step()
+                    for _ in range(args.steps if args.strict_region else 1):
+                        step()
+                        if record['probe_calls']:
+                            break
                 if not record['probe_calls']:
-                    raise RuntimeError('the training step did not call the selected probe')
+                    raise RuntimeError('the training updates did not call the selected probe')
             except Exception as error:
                 record['capture_error'] = str(error)
                 raise

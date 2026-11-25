@@ -199,3 +199,23 @@ def test_float32_relation_pool_preserves_the_promotion_boundary(strength):
     expected = [tuple(key) for key, level in zip(keys.tolist(), levels.tolist(), strict=True)
                 if level * .5 > strength]
     assert [tuple(key) for key in result.tolist() if key[0] >= 0] == expected
+
+
+def test_distinct_observed_nominations_match_serial_eviction():
+    import random
+    from Memory import MTM1
+    rng = random.Random(108)
+    reference = MTM1(4, strength=.2).double()
+    batched = reference.fork()
+    kinds = torch.arange(3)
+    symbols = torch.arange(5)
+    for _ in range(100):
+        nominations = rng.sample([(k, s) for k in range(3) for s in range(5)], rng.randrange(1, 15))
+        offers = torch.tensor([pair if rng.random() < .8 else (-1, -1) for pair in nominations])
+        forecast = torch.tensor(rng.choices([0., .25, .75], k=3), dtype=torch.float64)
+        values = torch.tensor(rng.choices([.5, .75, 1.], k=5), dtype=torch.float64)
+        args = offers, kinds, forecast, symbols, values
+        expected = reference.observe(*args)
+        assert torch.equal(batched.observe(*args, read_pairs=True), expected)
+        for name in ('refs', 'ref_kinds', 'entered_at', 'activity', 'held', 'read_count', 'totals', 'count'):
+            assert torch.equal(getattr(batched, name), getattr(reference, name)), name

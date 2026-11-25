@@ -72,6 +72,7 @@ class GrowthTrial:
             return
         field = self.owner._expected_knowing[:batch]
         opening = field.detach().clone()
+        self.opening_forecast = opening if self.expected is None else self.expected
         prior = {name: getattr(model, name, None) for name in self.costs}
         try:
             if self.expected is not None:
@@ -82,6 +83,7 @@ class GrowthTrial:
             self.expected = field.detach().clone()
         finally:
             field.copy_(opening)
+            self.opening_forecast = None
             for name, original in prior.items():
                 setattr(model, name, original)
             _current_trial.reset(token)
@@ -304,50 +306,63 @@ def pair_rows(owner):
 def sigma_step(owner, present, expected, batch=None):
     """One step of the Sigma's candidates at a look: a kind expected there
     and not read, with a thing present there. The entries written."""
-    if batch is not None:
-        if expected is None:
-            expected = ()
-        else:
-            column = expected[batch, :, 0]
-            rows = (column > 0).nonzero().flatten()
-            expected = zip(rows.tolist(), column[rows].tolist(), strict=True)
     alloc = owner._concept_allocator
     table = alloc.symbol_table()
-    held = matrices(owner)['sigma']
     things = {}
     for cid, value in present.items():
         if value >= PRESENT:
             for symbol in table.reading(cid):
                 if all(present.get(member, 0.) >= PRESENT for member in table.members(symbol)):
                     things[int(symbol)] = value
-    wanted = {}
-    if things:
-        for row, value in expected:
-            kind = owner.concept_id_at_row(row)
-            if kind is None or alloc.order_of(int(kind)) < 1:
-                continue
-            observed = present.get(int(kind), 0.)
-            if value > observed:
-                wanted[int(kind)] = (value, observed)
+    if not things:
+        return []
+    held = matrices(owner)['sigma']
     store = visible_store(alloc.layer(0))
-    offers = []
-    for kind in wanted:
-        kind_row = owner._concept_row_of(kind)
+    if batch is not None and expected is not None:
+        expected = expected[batch, :, 0]
+    # The forecast is numerical. Only inventory rows above order zero can
+    # teach a kind. Read the same rows in nomination order on every device.
+    if isinstance(expected, tuple) and len(expected) == 2 and torch.is_tensor(expected[1]):
+        rows, levels = expected
+        levels = levels.to(held.activity)
+    elif torch.is_tensor(expected):
+        rows = sorted(row for row in store._tensor_row_keys
+                      if owner._order_caps()[0] <= row < len(expected))
+        levels = expected.index_select(0, held.refs.new_tensor(rows)).to(held.activity)
+    else:
+        entries = list(expected or ())
+        rows = [row for row, _ in entries]
+        levels = held.activity.new_tensor([value for _, value in entries])
+    positions, kinds, observed = [], [], []
+    offers, sources = [], []
+    for i, row in enumerate(rows):
+        kind = owner.concept_id_at_row(row)
+        if kind is None or alloc.order_of(kind) < 1:
+            continue
+        positions.append(i)
+        kinds.append(kind)
+        observed.append(present.get(kind, 0.))
         for symbol in things:
             members = table.members(symbol)
-            if not members or owner._row_order(owner._concept_row_of(members[0])) >= owner._row_order(kind_row):
+            if not members or owner._row_order(owner._concept_row_of(members[0])) >= owner._row_order(row):
                 continue
-            column = store.column_of_thing(('sym', symbol))
-            if (kind_row, column) in store._index:
-                continue
-            offers.append((kind, symbol))
-    if not things or (not offers and held._known_count() == 0):
+            if (row, store.column_of_thing(('sym', symbol))) not in store._index:
+                offers.append((kind, symbol))
+                sources.append(len(kinds) - 1)
+    occupied = held._known_count()
+    if not offers and occupied == 0:
         return []
-    promoted = held.observe(held.refs.new_tensor(offers).reshape(-1, 2),
-        held.refs.new_tensor(list(wanted)),
-        held.activity.new_tensor([value for value, _ in wanted.values()]),
-        held.refs.new_tensor(list(things)), held.activity.new_tensor(list(things.values())),
-        observed=held.activity.new_tensor([observed for _, observed in wanted.values()]))
+    levels = levels.index_select(0, held.refs.new_tensor(positions))
+    observed = held.activity.new_tensor(observed)
+    wanted = (levels > observed) & (levels > 0)
+    pairs = held.refs.new_tensor(offers).reshape(-1, 2)
+    pairs = torch.where(wanted[held.refs.new_tensor(sources)][:, None], pairs, -1)
+    promoted = held.observe(pairs, held.refs.new_tensor(kinds),
+        torch.where(wanted, levels, 0.), held.refs.new_tensor(list(things)),
+        held.activity.new_tensor(list(things.values())),
+        observed=torch.where(wanted, observed, 0.), read_pairs=True)
+    if occupied == 0 and held.hold > 1:
+        return []
     written = []
     for kind, symbol in held.publish(promoted):
         trial = _current_trial.get()
@@ -381,7 +396,7 @@ def withheld_words(model, extent):
     return held
 
 
-def at_look(model, field, extent=None, active=None):
+def at_look(model, field, extent=None, active=None, *, forecast=None):
     """The candidates' step at one look, in training. A pair is offered and
     weighed from what the sentence held at the look: its field, and the
     words the omission withheld inside the look's ``extent`` (``[B, W]``)."""
@@ -390,16 +405,17 @@ def at_look(model, field, extent=None, active=None):
     owner = model._concept_owner()
     if getattr(owner, 'mtm', None) is None:
         return
-    expected = getattr(owner, '_expected_knowing', None)
     held = withheld_words(model, extent) if extent is not None else None
-    forecasts = [[] for _ in range(field.evidence.shape[1])]
-    if expected is not None:
-        column = expected[:len(forecasts), :, 0]
-        positive = (column > 0).nonzero()
-        values = column[positive[:, 0], positive[:, 1]].tolist()
-        for (b, row), value in zip(positive.tolist(), values, strict=True):
-            forecasts[b].append((row, value))
     trial = _current_trial.get()
+    if forecast is None:
+        # The first look shares the opening already retained by its trial.
+        expected = getattr(trial, 'opening_forecast', None)
+        if expected is None:
+            expected = getattr(owner, '_expected_knowing', None)
+        kind_rows = None
+        values = None if expected is None else expected[..., 0].detach()
+    else:
+        kind_rows, values = forecast
     events = {}
     if trial is not None:
         trial.looks.append(events)
@@ -408,10 +424,13 @@ def at_look(model, field, extent=None, active=None):
         if active is not None and not active[batch]:
             continue
         sentence = present if not held or not held[batch] else {**present, **held[batch]}
+        forecast = None if values is None else values[batch]
+        if kind_rows is not None:
+            forecast = (kind_rows, forecast)
         if trial is not None:
-            events[batch] = (present, sentence, forecasts[batch])
+            events[batch] = (present, sentence, forecast)
             if batch not in trial.streams:
                 trial.streams[batch] = GrowthTrial(owner, path=trial.path, stream=batch)
         with row_scope(owner, batch):
             pi_step(owner, sentence)
-            sigma_step(owner, present, forecasts[batch])
+            sigma_step(owner, present, forecast)
