@@ -499,6 +499,22 @@ def test_preexisting_part_becomes_a_holder_only_on_the_observing_page():
     torch.testing.assert_close(versions[1], after, rtol=0, atol=0)
 
 
+def test_containment_accidents_preserve_direction_and_linked_parts_in_both_limbs():
+    import torch
+    from WordIdentity import containment_accidents
+
+    # One coordinate is bit 63, another is bit 64. Rows 1 and 2
+    # have identical codes but no attested link to one another.
+    bit = -(1 << 63)
+    codes = torch.tensor([[bit, 0], [bit, 1], [bit, 1], [0, 1]])
+    rows = torch.tensor([2, 1])
+    # Only form 1 really contains form 0.
+    linked = torch.tensor([4])
+    matches = containment_accidents(codes, rows, linked)
+    assert matches.tolist() == [[[True, True, False, True], [False, False, True, True]],
+                                [[False, True, False, False], [False, False, True, False]]]
+
+
 def test_tensor_repair_selects_private_coordinates_and_reports_exhausted_holders():
     from WordIdentity import distinguishing_coordinates
     import torch

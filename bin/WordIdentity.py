@@ -92,6 +92,19 @@ def pack_coordinates(codes, word_bits):
     return (groups.long() << shifts).sum(-1)
 
 
+def containment_accidents(packed, queries, linked):
+    """Unexpected inner and outer code matches, in inventory order for each query.
+
+    Linked seats index the flattened [direction, query, form] result. The
+    two directions share one intersection across all the code's limbs.
+    """
+    selected = packed.index_select(0, queries)[:, None]
+    common = selected & packed
+    matches = torch.stack(((common == packed).all(-1), (common == selected).all(-1)))
+    matches = matches & (queries[:, None] != torch.arange(len(packed), device=packed.device))
+    return matches.flatten().index_fill(0, linked, False).reshape_as(matches)
+
+
 def distinguishing_coordinates(lacking, kept, opposed, added, usage, pending):
     """Rule 61 on device, for each independent inventory's outstanding holders.
 
@@ -883,19 +896,15 @@ class WordIdentity(nn.Module):
         """:meth:`accidents_of` for several stored forms, against every
         stored code in one pass."""
         live = self._packed[:len(self._ordered)]
-        codes = live[torch.tensor([self.order[raw] for raw in forms], device='cpu')]
-        inner = ((live[None] & ~codes[:, None]) == 0).all(-1)
-        outer = ((codes[:, None] & ~live[None]) == 0).all(-1)
+        queries = live.new_tensor([self.order[raw] for raw in forms])
+        links = [(direction * len(forms) + query) * len(live) + self.order[other]
+                 for direction, neighbors in enumerate((self.inside, self.holders))
+                 for query, raw in enumerate(forms) for other in neighbors[raw]]
+        matches = containment_accidents(live, queries, live.new_tensor(links))
         found = {raw: [] for raw in forms}
-        word = self._ordered.__getitem__
-        for i, j in inner.nonzero().tolist():
-            raw, other = forms[i], word(j)
-            if other != raw and other not in self.inside[raw]:
-                found[raw].append((other, raw))
-        for i, j in outer.nonzero().tolist():
-            raw, other = forms[i], word(j)
-            if other != raw and other not in self.holders[raw]:
-                found[raw].append((raw, other))
+        for direction, i, j in matches.nonzero().tolist():
+            raw, other = forms[i], self._ordered[j]
+            found[raw].append((other, raw) if direction == 0 else (raw, other))
         return found
 
     def accidents(self, chunk=64):
