@@ -136,7 +136,8 @@ def test_word_group_becomes_a_recurrent_row_without_changing_its_read(tmp_path):
     torch.testing.assert_close(after, result)
     record = Spaces._concept_alloc_of(cs).order_zero_members
     count = (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
-    recurrent_interpretation(cs, [fused], whole, key='love')
+    fused_word, fused_object = recurrent_interpretation(cs, [fused], whole, key='love')
+    assert (fused_word, fused_object) == (word, A)
     assert count == (store.nnz, len(record), Spaces._concept_alloc_of(cs).next_id)
     cs.refine_over_collected()
     assert A not in Spaces._concept_alloc_of(cs).retired

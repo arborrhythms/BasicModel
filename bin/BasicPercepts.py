@@ -827,10 +827,7 @@ class BasicPercepts(nn.Module):
                 raw = self.native.bytes_for(int(part))
             except (IndexError, KeyError, AttributeError):
                 raw = None
-            if not raw or raw.startswith(identity.PREFIX[:1]):
-                # A checkpoint can restore occurrences before its radix rows.
-                return None
-            known[int(part)] = bytes(raw)
+            known[int(part)] = bytes(raw) if raw and not raw.startswith(identity.PREFIX[:1]) else None
         return known[int(part)]
 
     def felt_of(self, references):
@@ -1968,10 +1965,6 @@ class BasicPercepts(nn.Module):
         from IndependentComponents import _pack_state
         return _pack_state(dict(version=2, occurrences=tuple(self.occurrences[:len(self.index)]), words=self.words, selectors=tuple(self.selectors.items()), places=self.places[:len(self.index)].tolist(),
                                 conjunctions=tuple(self.conjunctions.items()),
-                                # Structural-only restores need the byte leaves of
-                                # witnessed runs even without the full radix sidecar.
-                                part_bytes=tuple((part, raw) for part, raw in
-                                                 self.__dict__.get('_raw_texts', {}).items() if raw),
                                 forms=tuple((row, raw) for row, raw in self.forms.items() if raw is not None),
                                 place_rows=tuple((row, (plus.tolist(), minus.tolist(),
                                                         None if what is None else what.tolist()))
@@ -1991,7 +1984,6 @@ class BasicPercepts(nn.Module):
         self.conjunctions = {}
         self._form_roots, self.form_rows, self._keys = {}, {}, {}
         self.runs = {}
-        self._raw_texts = dict(state.get('part_bytes', ()))
         for row, raw in state.get('forms', ()):
             self._form_roots[int(row)] = bytes(raw)
             self.form_rows.setdefault(bytes(raw), []).append(int(row))

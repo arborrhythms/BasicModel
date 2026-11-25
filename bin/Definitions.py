@@ -1,8 +1,8 @@
 """Derived definition indexes over LTM1's Part(object, word) edges.
 
-Word and object IDs address the indexed relation rows. Native text queries
-first resolve a word through its percept. Appends update the index, and
-load and compaction rebuild it from the surviving rows.
+All durable data lives on those rows. Lookups never scan, compare codes or
+reconstruct a retired META. Appends update the index; load and compaction
+rebuild it from the surviving rows.
 """
 import weakref
 
@@ -138,11 +138,6 @@ class DefinitionIndex:
             got = self._units.get(key)
             if got is not None:
                 return got
-        owner_ref = getattr(self._store(), '_concept_owner', None)
-        owner = owner_ref() if owner_ref is not None else None
-        if owner is not None and isinstance(form, (str, bytes)) and owner.interpret._native_identity() is not None:
-            word = owner.interpret.word_for_form(form)
-            return word if word in self._descriptions else None
         return self._forms.get(form_key(form)) if form is not None else None
 
     def objects(self, word):
