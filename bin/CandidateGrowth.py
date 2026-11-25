@@ -146,13 +146,35 @@ class GrowthTrial:
         """Replay observations in look/stream order, including mixed winners."""
         indices = selected.tolist() if torch.is_tensor(selected) else selected
         winners = [trials[index] for index in indices]
-        for turn in range(max((len(trial.looks) for trial in winners), default=0)):
-            for batch, trial in enumerate(winners):
-                if turn >= len(trial.looks) or batch not in trial.looks[turn]:
-                    continue
-                present, sentence, expected = trial.looks[turn][batch]
-                pi_step(trial.owner, sentence)
-                sigma_step(trial.owner, present, expected)
+        turns = max((len(trial.looks) for trial in winners), default=0)
+        if not turns:
+            return
+        owner = winners[0].owner
+        pool = getattr(owner.mtm, '_candidate_pairs', None)
+        together = pool is not None and all(trial.owner is owner for trial in winners)
+        releases = pool.reserve_publication(turns * len(winners)) if together else None
+        written = 0
+        try:
+            for turn in range(turns):
+                for batch, trial in enumerate(winners):
+                    if turn >= len(trial.looks) or batch not in trial.looks[turn]:
+                        continue
+                    present, sentence, expected = trial.looks[turn][batch]
+                    if releases is None:
+                        pi_step(trial.owner, sentence)
+                    else:
+                        pending = []
+                        pi_step(owner, sentence, collect=pending, prior=releases[:written])
+                        if pending:
+                            releases[written].copy_(pending[0][1])
+                            written += 1
+                    sigma_step(trial.owner, present, expected)
+        finally:
+            if written:
+                # Only the spread reads these pairs. During replay its
+                # forecasts are already fixed. Later offers in the replay
+                # still see each earlier promotion in the device slab.
+                pair_rows(owner).extend(pool.publish(releases[:written].flatten(0, 1)))
 
 
 def row_scope(owner, batch):
@@ -316,7 +338,20 @@ def presence(owner, field, batch):
     return presences(field)[batch]
 
 
-def pi_step(owner, present, *, collect=None):
+def unpromoted_offers(offers, prior):
+    """Remove earlier promotions from the same retained sentence's offers."""
+    previous = prior.reshape(-1, 2)
+    if not len(offers) or not len(previous):
+        return offers
+    block = max(1, (1 << 18) // len(previous))
+    blocks = []
+    for pairs in offers.split(block):
+        used = (pairs[:, None] == previous).all(-1).any(-1)
+        blocks.append(torch.where(used[:, None], -1, pairs))
+    return torch.cat(blocks)
+
+
+def pi_step(owner, present, *, collect=None, prior=None):
     """One step of the Pi's candidates from the concepts present at a look;
     the symbols made."""
     table = owner._concept_allocator.symbol_table()
@@ -344,6 +379,8 @@ def pi_step(owner, present, *, collect=None):
     else:
         pairs = held.refs.new_tensor([(names[i], names[j]) for i, j in nominations]).reshape(-1, 2)
         ids, levels = held.refs.new_tensor(list(present)), held.activity.new_tensor(list(present.values()))
+    if prior is not None:
+        pairs = unpromoted_offers(pairs, prior)
     promoted = held.observe_pairs(pairs, ids, levels)
     if occupied == 0 and held.hold > 1:
         return []

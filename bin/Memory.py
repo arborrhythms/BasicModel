@@ -2375,8 +2375,9 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
     def _decode_referent(self, tag, value):
         return ('sym',value) if tag == SYMBOL else ('ltm',self.address_domain,value) if tag == OCCURRENCE else None
 
-    def order_of_row(self, row, seen=None):
-        reference = self.referent_of(row)
+    def order_of_row(self, row, seen=None, *, reference=Ellipsis):
+        if reference is Ellipsis:
+            reference = self.referent_of(row)
         owner = self.owner()
         if reference is None and owner is not None:
             pending = owner.mtm.pending.get(self.occurrence_of(row))
@@ -2411,9 +2412,11 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             return self.part_row(index[1])['meaning']
         if not 0 <= int(index) < len(self):
             raise IndexError('unavailable idea')
-        meaning = ConceptualMeaning.from_description(self.slots[int(index)].detach(),
-            role_refs=(self.referent_of(index),None,None),sentence_kind='idea')
-        return meaning
+        return self._idea_description(index, self.referent_of(index))
+
+    def _idea_description(self, index, reference):
+        return ConceptualMeaning.from_description(self.slots[int(index)].detach(),
+            role_refs=(reference, None, None), sentence_kind='idea')
 
     def meaning_of(self, index):
         value = self.raw_meaning_of(index)
@@ -2674,10 +2677,21 @@ class LTM0(IdeaRows):
         self.names_issued.copy_(torch.maximum(self.names_issued, names.amax()))
         self._write_count(end)
 
-    def raw_meaning_of(self,index):
-        value=super().raw_meaning_of(index)
-        owner=self.owner()
-        return value if isinstance(index,tuple) or owner is None else owner.mtm.pending_meaning(self.occurrence_of(index),value)
+    def _idea_description(self, index, reference):
+        value = super()._idea_description(index, reference)
+        owner = self.owner()
+        return value if owner is None else owner.mtm.pending_meaning(self.occurrence_of(index), value)
+
+    def closing_metadata(self, indices):
+        """Read the selected roots' native references and signed trust once per batch."""
+        unique = list(dict.fromkeys(i for i in indices if isinstance(i, int)))
+        if not unique:
+            return {}
+        seats = self.referent.new_tensor(unique)
+        references = self.referent.index_select(0, seats).tolist()
+        weights = self.trust.index_select(0, seats).tolist()
+        return {i: (self._decode_referent(*reference), weight)
+                for i, reference, weight in zip(unique, references, weights, strict=True)}
 
     def validate_checkpoint(self, state, prefix):
         """A checkpoint of rows named by their time, kept before rows were
@@ -3531,6 +3545,13 @@ class MTMPairRows(MTM1):
         self.register_buffer('mass_bits', self.refs.new_zeros(room, 3), persistent=False)
         self.register_buffer('gradient_bits', self.refs.new_zeros(self.capacity - 1), persistent=False)
         self.register_buffer('value_bits', self.refs.new_zeros(self.capacity - 1), persistent=False)
+        self.register_buffer('_retained_pairs', self.refs.new_empty(0, self.capacity - 1, 2), persistent=False)
+
+    def reserve_publication(self, observations):
+        """One promotion row per seat per retained look, in publication order."""
+        if len(self._retained_pairs) < observations:
+            self._retained_pairs = self.refs.new_empty(observations, self.capacity - 1, 2)
+        return self._retained_pairs[:observations]
 
     def offer_magnitudes(self):
         return self.value_bits.abs()

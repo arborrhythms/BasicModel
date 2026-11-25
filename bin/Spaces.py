@@ -15436,7 +15436,7 @@ class ConceptualSpace(Space):
         # The occurrences at each place are met, and a place's row is
         # nominated on the count that nominates a form.
         from Places import meet
-        meet(self, bank)
+        meet(self, bank, promoted=rows)
         return basic.prepare(bank)
 
     def cs_read_bank(self, bank, activity=None, *, publish=True, fixation=None):

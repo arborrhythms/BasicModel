@@ -1375,12 +1375,15 @@ class BasicPercepts(nn.Module):
         return torch.cat(self.subspace_bounds(int(row)))
 
     @torch.no_grad()
-    def promote(self, row):
+    def promote(self, row, *, promoted=None):
         row = int(row)
-        if not self.promoted[row]:
+        exists = self.promoted[row] if promoted is None else row in promoted
+        if not exists:
             self.promoted[row] = True
             self.count += 1
             self.revision += 1
+            if promoted is not None:
+                promoted.add(row)
         return row
 
     def _leaves(self):

@@ -7,16 +7,17 @@ def observed(owner, field):
     """Place the field's independent lanes at their fixed inventory addresses."""
     from SentenceField import inventory
     rows = inventory(owner, field)
-    evidence = field.evidence.amax(2)
-    knowing = evidence.new_zeros(evidence.shape[1], owner.nVectors, 2)
+    evidence = field.evidence.amax(2).transpose(0, 1)
+    batch = torch.arange(len(evidence), device=rows.device)
     if rows.ndim == 1:
-        valid = rows >= 0
-        knowing[:, rows[valid]] = evidence[valid].transpose(0, 1)
+        rows_by_page = rows.expand(len(evidence), -1)
     else:
-        for batch in range(evidence.shape[1]):
-            valid = rows[:, batch] >= 0
-            knowing[batch, rows[valid, batch]] = evidence[valid, batch]
-    return knowing, rows
+        rows_by_page = rows.T
+    # Each page's last seat absorbs its unpublished rows. Index assignment
+    # keeps the original pullback into repeated sources at an occupied seat.
+    held = evidence.new_zeros(len(evidence), owner.nVectors + 1, 2)
+    held[batch[:, None], torch.where(rows_by_page >= 0, rows_by_page, owner.nVectors)] = evidence
+    return held[:, :owner.nVectors], rows
 
 
 def open_field(model, field, *, bracket=None):

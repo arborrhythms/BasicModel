@@ -6,7 +6,8 @@ from Meaning import ConceptualMeaning
 from ThoughtReferences import bindings, evidence_pair, fill, has_open_slots, open_slots, slot_bindings, with_slots
 
 
-def closing_question(meaning, clause, parsed=None, program=None, *, store=None, written_rows=None):
+def closing_question(meaning, clause, parsed=None, program=None, *, store=None, written_rows=None,
+                     retained=None):
     """Preserve a binder's nulls, including a lexical idea with no referent.
 
     Numerical ideas are already their own conceptual contents. A filled
@@ -21,6 +22,8 @@ def closing_question(meaning, clause, parsed=None, program=None, *, store=None, 
     written_meaning = ('meaning', id(clause))
     if written_rows is not None and written_meaning in written_rows:
         committed = written_rows[written_meaning]
+    elif retained is not None and index == retained[0]:
+        committed = retained[1]
     else:
         committed = None if store is None or index is None else store.raw_meaning_of(index)
     if committed is not None:

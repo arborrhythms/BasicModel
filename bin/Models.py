@@ -20732,12 +20732,24 @@ class BasicModel(BaseModel):
         fields = []
         registry = _boundary_registry(self)
         from ThoughtClosing import closing_question
+        indices = [None if store is None or clause is None or address in (-1, 0) else store.location(address)
+                   for clause, address in zip(view['clauses'], row_addresses, strict=True)]
+        metadata = store.closing_metadata(indices) if isinstance(store, LTM0) else {}
         for b, clause in enumerate(view['clauses']):
             if clause is None:
                 fields.append(None)
                 continue
-            index = None if store is None or row_addresses[b] in (-1, 0) else store.location(row_addresses[b])
-            if index is not None:
+            index = indices[b]
+            question_root = None
+            if index in metadata:
+                reference, weight = metadata[index]
+                raw = store._idea_description(index, reference)
+                question_root = index, raw
+                meaning = store.read_reference_bindings(index, raw)
+                retained = dict(trust=weight, evidence=store._idea_evidence(weight),
+                                order=store.order_of_row(index, reference=reference))
+                refs = (-1, -1, -1)
+            elif index is not None:
                 retained = store.sentence_row(index)
                 meaning = retained['meaning']
                 if isinstance(index, tuple):
@@ -20755,7 +20767,7 @@ class BasicModel(BaseModel):
                 refs = tuple(ref if type(ref) is int and ref not in (-1, 0) else -1 for ref in clause.refs)
             parsed = clause.meaning
             query = closing_question(meaning, clause, parsed, entries[b],
-                                     store=store, written_rows=written_clauses[b])
+                                     store=store, written_rows=written_clauses[b], retained=question_root)
             from Output import witness
             meaning = witness(self, meaning, entries[b])
             fields.append(SentenceEndState(meaning, refs, row_addresses[b], clause.where, clause.when, query,
@@ -21494,6 +21506,7 @@ class BasicModel(BaseModel):
             growth = []
             if single and self.explore_paths:
                 pool.reserve_relation_trials(B, 2 + self.explore_paths, words.device)
+                pool._candidate_pairs.reserve_publication(B * (1 + self.attention_budget))
             def trial_scope(*, reuse=False):
                 if not single or not self.explore_paths:
                     return nullcontext()

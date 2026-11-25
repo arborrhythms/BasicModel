@@ -52,6 +52,33 @@ def test_mixed_winners_replay_observations_in_look_then_stream_order(monkeypatch
                       [('pi', {cid: 1.}), ('sigma', {cid: .5}, [(cid, .25)])]]
 
 
+def test_published_pairs_cannot_be_renominated_by_later_winning_reads():
+    from test_item17_symbols import _small_space
+    baseline, _, names, _ = _small_space()
+    owner, _, trial_names, _ = _small_space()
+    assert names == trial_names
+    _, left, right, first, second = names
+    retained = growth.GrowthTrial(owner)
+    first_read = {left: 1., right: 1.}
+    next_read = {**first_read, first: 1., second: 1.}
+    def observation(read):
+        return read, read, []
+    retained.looks = [{0: observation(first_read), 1: observation(next_read)} for _ in range(6)]
+    for space in (baseline, owner):
+        growth.matrices(space)
+    for turn in retained.looks:
+        for present, sentence, expected in turn.values():
+            growth.pi_step(baseline, sentence)
+            growth.sigma_step(baseline, present, expected)
+    growth.GrowthTrial.commit([retained], [0, 0])
+    assert growth.pair_rows(owner) == growth.pair_rows(baseline) == [(left, right), (first, second)]
+    oracle = growth.matrices(baseline)['pi']
+    actual = growth.matrices(owner)['pi']
+    assert actual.counts() == oracle.counts()
+    for name in actual.trial_columns:
+        assert torch.equal(getattr(actual, name), getattr(oracle, name)), name
+
+
 def test_trial_restores_on_error_and_retained_forecast_only_has_winner_gradients():
     from test_item17_symbols import _small_space
     owner, _, _, _ = _small_space()

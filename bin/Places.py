@@ -58,7 +58,7 @@ def definition_keys(plus, minus, what):
             for row in torch.cat(columns, -1).tolist()]
 
 
-def meet(owner, bank):
+def meet(owner, bank, *, promoted=None):
     """Count the occurrences of a sentence's bank at their places and
     nominate a place's row on the count that nominates a form."""
     basic = getattr(owner, 'basic_percepts', None)
@@ -118,16 +118,20 @@ def meet(owner, bank):
         return made
     nominated = points.index_select(0, seats.new_tensor(chosen))
     plus, minus, kept = nominated.split((width, width, basic.width), -1)
+    # The sentence lookup already read the promoted rows. Reuse that
+    # membership through these ordered admissions, including repeats.
+    from functools import partial
+    publish = admit if promoted is None else partial(admit, promoted=set(promoted))
     for i, key in enumerate(definition_keys(plus, minus, kept)):
         has_part = bool(key[-1] and key[-1][0] < iw)
-        row = admit(owner, plus[i], minus[i], kept[i] if has_part else None,
+        row = publish(owner, plus[i], minus[i], kept[i] if has_part else None,
                     key=key if has_part else (*key[:3], ()))
         if row is not None:
             made.append(row)
     return made
 
 
-def admit(owner, plus, minus, what, *, key=None):
+def admit(owner, plus, minus, what, *, key=None, promoted=None):
     """A place's row of the first Pi, promoted, and its concept of order zero
     reading it; ``None`` where there is no room."""
     from Spaces import _concept_alloc_of
@@ -137,7 +141,7 @@ def admit(owner, plus, minus, what, *, key=None):
         row = basic.reserve_place(plus, minus, what, key=key)
     except (RuntimeError, OverflowError):
         return None
-    basic.promote(row)
+    basic.promote(row, promoted=promoted)
     alloc = _concept_alloc_of(owner)
     if any(percept == row for _, percept, _ in alloc.order_zero_members):
         return row

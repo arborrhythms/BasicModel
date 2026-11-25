@@ -70,7 +70,7 @@ class LookForecast:
         width = self.observations.shape[1]
         return F.pad(extent, (0, max(0, width - extent.shape[1])))[:, :width]
 
-    def _outside(self, extent, looked=None):
+    def _outside(self, extent, looked=None, *, compact=True):
         """Each stream's look (``live``, ``[B]``: ``looked``, or where its
         extent holds a reading) and what the readings outside its extent
         observed, at the order-zero addresses. A look whose extent holds
@@ -78,7 +78,9 @@ class LookForecast:
         extent = self._extent(extent)
         live = extent.any(-1) if looked is None else looked.to(extent.device)
         outside = ~extent
-        knowing = self._pool(self.observations, outside[:, None])[:, 0][live]
+        knowing = self._pool(self.observations, outside[:, None])[:, 0]
+        if compact:
+            knowing = knowing[live]
         inputs = knowing.new_zeros(len(knowing), self.order_zero_width, 2)
         inputs[:, self.address[:self.basic_count]] = knowing
         return live, inputs
@@ -91,6 +93,14 @@ class LookForecast:
     def forecast(self, extent, looked=None):
         """What each stream's look is expected to hold, ``[B, width, 2]``,
         from the readings outside its extent only."""
+        from CandidateGrowth import speculative
+        if speculative(self.owner):
+            # A private spread publishes no side outputs. Keep page seats
+            # fixed through the spread and discard inactive predictions.
+            live, inputs = self._outside(extent, looked, compact=False)
+            prediction = self._compact(read_streams(
+                self.owner, lambda: ConceptSpread.expected(self.owner, inputs), axis=0))
+            return torch.where(live[:, None, None], prediction, 0.)
         live, inputs = self._outside(extent, looked)
         result = self.observations.new_zeros(*live.shape, self.width, 2)
         if not len(inputs):
