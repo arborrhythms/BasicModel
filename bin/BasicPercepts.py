@@ -772,11 +772,18 @@ class BasicPercepts(nn.Module):
         if not ids.numel():
             # An empty read must not make either code bank participate in backward.
             return self.value_codes.new_zeros(*ids.shape, width)
-        if (isinstance(references, (list, tuple))
-                and all(isinstance(ref, int) and ref >= -self.identity_width for ref in references)):
-            # Inventory references already known to Python need no device predicate
-            # or boolean compaction to establish that they are native addresses.
-            return self._native_boundary_codes(ids, whole=whole)
+        if isinstance(references, (list, tuple)) and all(isinstance(ref, int) for ref in references):
+            # The inventory already supplies the address namespace, including
+            # mixed value/native reads. Do not ask the device to classify it.
+            values = [i for i, ref in enumerate(references) if ref < -self.identity_width]
+            if not values:
+                return self._native_boundary_codes(ids, whole=whole)
+            native = [i for i, ref in enumerate(references) if ref >= -self.identity_width]
+            result = self.value_codes.new_zeros(*ids.shape, width)
+            result[values] = self.value_code(self.felt_of(ids[values]), width, place)
+            if native:
+                result[native] = self._native_boundary_codes(ids[native], whole=whole)
+            return result
         result = self.value_codes.new_zeros(*ids.shape, width)
         values = ids < -self.identity_width
         if bool(values.any()):
@@ -1887,9 +1894,8 @@ class BasicPercepts(nn.Module):
         its place). Joined by the union, as the first Pi's against entries."""
         rows = [int(row) for row in rows]
         position = {row: index for index, row in enumerate(rows)}
-        holders = {row: [members for whole, members in self.conjunctions.items()
-                         if row in members and bool(self.promoted[whole])
-                         and all(m in position for m in members)] for row in rows}
+        holders = {row: [(whole, members) for whole, members in self.conjunctions.items()
+                         if row in members and all(m in position for m in members)] for row in rows}
         if not any(holders.values()):
             return lanes
         result = list(lanes)
@@ -1897,18 +1903,23 @@ class BasicPercepts(nn.Module):
             if not found:
                 continue
             index = position[row]
-            others = torch.stack([torch.stack([lanes[position[m]][..., 0] for m in members if m != row]).amin(0)
-                                  for members in found])
-            added = 1 - (1 - others.clamp(0, 1)).prod(0)
+            wholes, members = zip(*found)
+            promoted = self.promoted[list(wholes)].to(device=lanes[index].device)
+            others = torch.stack([torch.stack([lanes[position[m]][..., 0] for m in group if m != row]).amin(0)
+                                  for group in members])
+            active = promoted.reshape(-1, *((1,) * (others.ndim - 1)))
+            added = 1 - (1 - torch.where(active, others.clamp(0, 1), 0.)).prod(0)
             against = 1 - (1 - lanes[index][..., 1]) * (1 - lanes[index][..., 0] * added)
+            against = torch.where(promoted.any(), against, lanes[index][..., 1])
             result[index] = torch.stack((lanes[index][..., 0], against), -1)
         return torch.stack(result)
 
     def lookup_rows(self, rows, *, valid=None):
+        from Meaning import require_sentence_tensor
         rows = torch.as_tensor(rows, device=self.value_codes.device, dtype=torch.long)
         valid = torch.ones_like(rows, dtype=torch.bool) if valid is None else valid
-        if bool(((rows < 0) | (rows >= len(self.index)))[valid].any()):
-            raise ValueError('unavailable basic percept row')
+        require_sentence_tensor((~valid | ((rows >= 0) & (rows < len(self.index)))).all(),
+                                'unavailable basic percept row')
         selected, inverse = torch.unique(rows[valid], return_inverse=True)
         result = self.value_codes.new_zeros(*rows.shape, self.width)
         if len(selected):

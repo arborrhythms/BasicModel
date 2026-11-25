@@ -37,41 +37,81 @@ def canonical_native_events(model, ids, positions, brackets):
     edges and never splitting a coarse percept or crossing a word boundary.
     """
     native = getattr(model.perceptualSpace, 'percept_store', None)
-    if native is None or not native.part_groups:
+    if native is None or not native.part_groups or not ids.shape[1]:
         return ids, positions
+    # Initialize from admitted ancestry only. Identity spelling children do
+    # not rewrite membership literals, so they need no occurrence readback.
+    native.canonical_parts(())
+    leaves, _ = native._canonical_group_cache
+    if not leaves:
+        return ids, positions
+    groups = sorted(leaves)
+    width = max(map(len, leaves.values()))
+    addresses = ids.new_tensor(groups)
+    table = ids.new_tensor([list(leaves[part]) + [-1] * (width - len(leaves[part])) for part in groups])
+    sizes = ids.new_tensor([len(leaves[part]) for part in groups])
+    at = torch.searchsorted(addresses, ids.contiguous()).clamp_max(len(groups) - 1)
+    formed = addresses[at] == ids
+    lengths = torch.where(formed, sizes[at], 1)
+    expanded = torch.where(formed[..., None], table[at], F.pad(ids[..., None], (0, width - 1), value=-1))
+    offsets = torch.arange(width, device=ids.device)
+    B, E = ids.shape
+    capacity = E * width
+    slots = torch.arange(E, device=ids.device)
+    places = torch.arange(capacity, device=ids.device).expand(B, -1)
+    sentinel = torch.iinfo(ids.dtype).min
+    # Longer matches win; equal-length alternatives retain inventory order.
+    choices = sorted(leaves.items(), key=lambda pair: (len(pair[1]), -pair[0]))
     result, spans = ids.clone(), positions.clone()
-    values, extents = ids.detach().cpu().tolist(), positions.detach().cpu().tolist()
-    for b, words in enumerate(brackets.detach().cpu().tolist()):
-        for lo, hi in words:
-            selected = [i for i, (a, z) in enumerate(extents[b])
-                        if lo <= a < z <= hi and values[b][i] >= 0]
-            if not selected or any(extents[b][i][1] != extents[b][j][0]
-                                   for i, j in zip(selected, selected[1:])):
-                continue
-            original = [values[b][i] for i in selected]
-            canonical = native.canonical_parts(original)
-            if canonical == original:
-                continue
-            leaves = native._canonical_group_cache[0]
-            boundaries = {0: extents[b][selected[0]][0]}
-            count = 0
-            for i in selected:
-                count += len(leaves.get(values[b][i], (values[b][i],)))
-                boundaries[count] = extents[b][i][1]
-            edges, cursor = [], 0
-            for pid in canonical:
-                end = cursor + len(leaves.get(pid, (pid,)))
-                if cursor not in boundaries or end not in boundaries:
-                    break
-                edges.append((boundaries[cursor], boundaries[end]))
-                cursor = end
-            if len(edges) != len(canonical) or len(canonical) > len(selected):
-                continue
-            result[b, selected] = -1
-            spans[b, selected] = 0
-            used = selected[:len(canonical)]
-            result[b, used] = result.new_tensor(canonical)
-            spans[b, used] = spans.new_tensor(edges)
+    for bracket in brackets.unbind(1):
+        lo, hi = bracket.unbind(-1)
+        selected = ((ids >= 0) & (positions[..., 0] >= lo[:, None])
+                    & (positions[..., 1] <= hi[:, None]) & (positions[..., 1] > positions[..., 0]))
+        count = selected.sum(1)
+        event_order = (~selected).int().argsort(1, stable=True)
+        ordered = positions.gather(1, event_order[..., None].expand(-1, -1, 2))
+        contiguous = ((slots[1:] >= count[:, None]) | (ordered[:, :-1, 1] == ordered[:, 1:, 0])).all(1)
+        occupied = selected[..., None] & (offsets < lengths[..., None])
+        order = (~occupied).flatten(1).int().argsort(1, stable=True)
+        atoms = expanded.flatten(1).gather(1, order)
+        live = occupied.flatten(1).gather(1, order)
+        extent = torch.where(selected, lengths, 0).cumsum(1)
+        total = extent[:, -1:]
+        stride, canonical = torch.ones_like(atoms), atoms
+        for part, group in choices:
+            size = len(group)
+            stop = capacity - size + 1
+            matches = (atoms.unfold(1, size, 1) == ids.new_tensor(group)).all(-1)
+            matches = F.pad(matches & (places[:, :stop] + size <= total), (0, size - 1))
+            stride = torch.where(matches, size, stride)
+            canonical = torch.where(matches, part, canonical)
+
+        ends = (places + stride).clamp_max(capacity)
+        jump = F.pad(ends, (0, 1), value=capacity)
+        reached = F.pad(places == 0, (0, 1))
+        for _ in range(capacity.bit_length()):
+            reached = reached | torch.zeros_like(jump).scatter_add(1, jump, reached.long()).bool()
+            jump = jump.gather(1, jump)
+        starts = reached[:, :capacity] & live
+        kept = starts.sum(1)
+        boundaries = ids.new_full((B, capacity + 1), sentinel)
+        begin = extent - torch.where(selected, lengths, 0)
+        boundaries = boundaries.scatter_reduce(1, begin,
+            torch.where(selected, positions[..., 0], sentinel), 'amax')
+        boundaries = boundaries.scatter_reduce(1, extent,
+            torch.where(selected, positions[..., 1], sentinel), 'amax')
+        aligned = (~starts | ((boundaries[:, :capacity] != sentinel)
+                             & (boundaries.gather(1, ends) != sentinel))).all(1)
+        update = (count > 0) & contiguous & aligned & (kept <= count)
+        take = torch.where(starts, places, capacity).sort(1).values[:, :E].clamp_max(capacity - 1)
+        used = slots < kept[:, None]
+        values = torch.where(used, canonical.gather(1, take), -1)
+        edges = torch.stack((boundaries.gather(1, take), boundaries.gather(1, ends.gather(1, take))), -1)
+        edges = torch.where(used[..., None], edges, 0)
+        values = torch.empty_like(ids).scatter(1, event_order, values)
+        edges = torch.empty_like(positions).scatter(1, event_order[..., None].expand(-1, -1, 2), edges)
+        result = torch.where(update[:, None] & selected, values, result)
+        spans = torch.where((update[:, None] & selected)[..., None], edges, spans)
     return result, spans
 
 

@@ -56,3 +56,28 @@ the first failure. Remaining dynamic perception reads and the lexical writer
 still need conversion; do not interpret these function checks as the item 1.5
 completion gate. The prior fresh-reader/XOR receipts remain in the parallel
 handoff; they were not rerun after these edits.
+
+## Follow-up after `7f23f429f1` — implementation only
+
+Alec explicitly requested continued host-read removal without behavior
+checks. No tests, benchmarks, profiling or compilation probes were run for
+the following edits; the validation above does not cover them.
+
+- `ModelAttention.canonical_native_events` no longer transfers IDs, extents
+  or brackets to CPU lists. Admitted ancestry supplies constant match tables;
+  tensor matching, pointer doubling and boundary masks perform the retile.
+  The identity-only ancestry case returns directly without reading input
+  tensors. The grammar arrival interface is unchanged.
+- `BasicPercepts.held` reads conjunction promotion as a tensor mask instead
+  of a Python boolean for each holder.
+- `_boundary_codes` uses the already-known host inventory namespace for
+  mixed native/value references as well as native-only lists, removing its
+  device classification predicates on those inputs.
+- `BasicPercepts.lookup_rows` and `WordSurfaces.bytes_at` use the existing
+  on-stream validation helper. The byte-capacity error keeps the configured
+  capacity in its message without reading the offending length to Python.
+
+Only perception/spelling implementation files were changed. No new
+persistent inventory or cache was added. Claude's files and the shared
+arrival signature remain untouched. Remaining lexical admission and
+dynamic perception reads are still outstanding.

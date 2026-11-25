@@ -79,11 +79,12 @@ def stage(surfaces, raw_capacity, *, device, eos=False, retain_bytes=True, with_
 
 def bytes_at(surface, spans, active, capacity):
     """Gather the observed spelling of each active interval for byte supervision."""
+    from Meaning import require_sentence_tensor
     lo, hi = spans.unbind(-1)
     lengths = torch.where(active, hi - lo, 0)
-    if surface.shape[1] > capacity and bool((lengths > capacity).any()):
-        longest = int(lengths.max())
-        raise ValueError(f'word surface has {longest} bytes; wordSurfaceCapacity is {capacity}')
+    if surface.shape[1] > capacity:
+        require_sentence_tensor((lengths <= capacity).all(),
+                                f'word surface exceeds wordSurfaceCapacity {capacity}')
     offsets = torch.arange(capacity, device=surface.device)
     valid = offsets < lengths[..., None]
     source = torch.nn.functional.pad(surface, (0, 1))
