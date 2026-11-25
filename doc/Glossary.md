@@ -293,7 +293,9 @@ it would join. It starts at nothing, is read as an entry is, and is promoted
 or forgotten by its value as a member. A Pi's candidate is offered by what is
 found together, and is worth what both of its constituents say of it: one
 present without the other counts against it. A Sigma's candidate is offered by
-a thing found where a kind was expected. In the source: `CandidateMatrix`.
+a thing found where a kind was expected. In the source: MTM's candidate
+rows, `MTMPairRows` beside the Pi and `MTM1` beside the Sigma
+(`CandidateGrowth`).
 
 **Tie.** A word's link to an object, kept in MTM with a certainty of its own.
 An object is looked for before one is made, so two words may be tied to one
