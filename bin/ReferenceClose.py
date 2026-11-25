@@ -13,6 +13,16 @@ from Memory import NULL_CONCEPT
 from torch import nn
 from ConceptualMatch import match
 
+
+def excluded_evidence(pairs, left, right):
+    """Opposing exclusive coordinates after removing both readings' common support."""
+    width = pairs.shape[-1]
+    def support(value):
+        seen = value[..., :width] >= .3
+        return torch.nn.functional.pad(seen, (0, width - seen.shape[-1]))
+    a, b = support(left), support(right)
+    return (pairs & (a & ~b)[..., :, None] & (b & ~a)[..., None, :]).any(dim=(-2, -1))
+
 # The features the policy weighs for each candidate: two coverages, the
 # prediction, the prime and the form; the candidate's and the request's
 # roles; the overlap of places, how far back the last mention lies (a code
@@ -391,16 +401,14 @@ class ReferenceClose(nn.Module):
 
     def exclusion_query(self, *, order):
         """Read observed exclusion once, for grouping or a bind's candidates."""
-        pairs = self.exclusion_pairs(order=order)
-        def support(value):
-            return set((value >= .3).nonzero().flatten().tolist())
-        def contradicts(a, b):
-            a, b = support(a), support(b)
-            if not a or not b or a <= b or b <= a:
-                return False
-            return any((x in a-b and y in b-a) or (y in a-b and x in b-a)
-                       for x, y in pairs)
-        return contradicts
+        derived = getattr(self.components.owner.similarity_codebook, 'mereology', None)
+        start = 0 if derived is None else derived.percept_event_width
+        pairs = self.store.coordinate_exclusion_mask(start, order=order)
+        if pairs is None:
+            return lambda a, b: False
+        if order is None:
+            pairs = pairs.any(0)
+        return lambda a, b: excluded_evidence(pairs, a, b)
 
     def individuals(self, records):
         """Compute the current identities from their codes and accessible uses.

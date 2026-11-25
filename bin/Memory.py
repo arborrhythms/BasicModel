@@ -2235,8 +2235,8 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
     def _idea_revision(self):
         return id(self.slots), self.slots._version, id(self.referent), self.referent._version, len(self)
 
-    def _observation_order(self, row):
-        reference, owner = self.referent_of(row), self.owner()
+    def _observation_order(self, owner, pair):
+        reference = self._decode_referent(*pair)
         return 0 if reference is None or owner is None else max(0,owner._concept_source_order(reference))
 
     def _ensure_observations(self):
@@ -2245,36 +2245,40 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         support = (self.slots[:len(self)].detach() >= .3).float()
         owner = self.owner()
         count = 1 if owner is None else len(owner._order_caps())
-        orders = torch.tensor([self._observation_order(row) for row in range(len(self))],
-                              device=support.device,dtype=torch.long)
+        if owner is None:
+            orders = self.referent.new_zeros(len(self))
+        else:
+            orders = self.referent.new_tensor([self._observation_order(owner, pair)
+                for pair in self.referent[:len(self)].tolist()])
         separate = support[None] * (torch.arange(count,device=support.device)[:,None] == orders)[...,None]
         self._coordinate_counts = separate.sum(1)
         self._coordinate_joint = separate.transpose(1,2) @ separate
         self._observation_revision = self._idea_revision
 
-    def coordinate_exclusions(self, start=0, *, order=None):
-        """Eight retained occurrences on each side, with no joint occurrence.
-
-        Counts are derived from immutable rows. Native appends update them;
-        compaction or restoration invalidates them for one batched rebuild.
-        """
+    def coordinate_exclusion_mask(self, start=0, *, order=None):
+        """Pairs with eight disjoint observations on each side, in the owner's coordinates."""
         self._ensure_observations()
+        if len(self) < 16 or (order is not None and not 0 <= order < len(self._coordinate_counts)):
+            return None
         eligible = self._coordinate_counts >= 8
-        eligible[:, :int(start)] = False
-        pairs = (eligible[:, :, None] & eligible[:, None, :]
-                 & (self._coordinate_joint == 0)).triu(1)
+        joint = self._coordinate_joint
         if order is not None:
-            return (() if not 0 <= order < len(pairs) else
-                    tuple(map(tuple,pairs[order].nonzero().tolist())))
-        return tuple(map(tuple, pairs.nonzero().tolist()))
+            eligible, joint = eligible[order], joint[order]
+        eligible[..., :int(start)] = False
+        return eligible[..., :, None] & eligible[..., None, :] & (joint == 0)
+
+    def coordinate_exclusions(self, start=0, *, order=None):
+        """Enumerate the observed pairs once for callers that need named coordinates."""
+        mask = self.coordinate_exclusion_mask(start, order=order)
+        return () if mask is None else tuple(map(tuple, mask.triu(1).nonzero().tolist()))
 
     def _append_cache_state(self):
         return self._observation_revision == self._idea_revision
 
-    def _append_cached(self, row, valid):
+    def _append_cached(self, row, valid, reference):
         if valid:
             support = (self.slots[row].detach() >= .3).float()
-            order = self._observation_order(row)
+            order = self._observation_order(self.owner(), reference)
             self._coordinate_counts[order].add_(support)
             self._coordinate_joint[order].add_(support[:, None] * support[None, :])
             self._observation_revision = self._idea_revision
@@ -2440,7 +2444,7 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             self.trust[row]=value
             self.referent[row]=self.referent.new_tensor(reference)
             self._write_count(row + 1)
-            self._append_cached(row, cache)
+            self._append_cached(row, cache, reference)
             if entry is not None:
                 for name,data in zip(('episodic_concepts','episodic_values'),entry):
                     getattr(self,name)[row].copy_(data.detach())
