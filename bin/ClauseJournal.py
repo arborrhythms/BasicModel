@@ -158,20 +158,21 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             if not node['has_point']:
                 return None
         return node['value']
-    def metadata(words):
+    def input_evidence(words):
         # These are input identification poles, never the source's authority.
         evidence = program.leaf_evidence
         if evidence is None:
-            pair = (0., 0.)
-        else:
-            selected = evidence[list(words)]
-            known = selected > 0
-            minimum = torch.where(known, selected, torch.inf).amin(0)
-            pair = tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+            return (0., 0.)
+        selected = evidence[list(words)]
+        known = selected > 0
+        minimum = torch.where(known, selected, torch.inf).amin(0)
+        return tuple(torch.where(known.any(0), minimum, 0.).detach().tolist())
+
+    def metadata(words):
         # A closed field has a percept point even when a leaf concept is
         # unwitnessed; only this field schema coerces its absent order to 0.
         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
-        return dict(order=order, evidence=pair)
+        return dict(order=order, evidence=input_evidence(words))
     # Each node owns the exact grammar action and its live operands.
     for action, (kind, local, word) in enumerate(recorded_steps(program)):
         if kind < 0:
@@ -733,7 +734,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             return Clause(ConceptualMeaning.from_description(point, sentence_kind="idea"), point=point,
                 subject_word_id=-1 if request.get('determined') else subject_word_id(item), order=node_order(item),
                 children=(recover(description),) if relative else (),
-                evidence=metadata(item['leaves'])['evidence'], **bands(item),
+                evidence=input_evidence(item['leaves']), **bands(item),
                 reference_request=request, composition=composition(item), identity=identity_record(item))
         standalone = close_member(root)
         if standalone is not None:
@@ -765,11 +766,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
 
         def determined_order(item):
             description = item['children'][item['rule'].head_role - 1]
-            orders = program.reference_orders
-            if orders is not None:
-                selected = orders[list(description['leaves'])]
-                if bool((selected >= 0).any()):
-                    return int(selected.max())
+            if requested_orders is not None:
+                selected = max((requested_orders[i] for i in description['leaves']), default=-1)
+                if selected >= 0:
+                    return selected
             return max(0, item['order'])
 
         def member(item, *, referent=True):
@@ -781,8 +781,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 return None
             description = (item['children'][item['rule'].head_role - 1]
                            if mode == 'mint' else head(item))
-            meta = metadata(description['leaves'])
-            meta['order'] = determined_order(item) if mode == 'mint' else item['mint_order']
+            meta = dict(evidence=input_evidence(description['leaves']),
+                        order=determined_order(item) if mode == 'mint' else item['mint_order'])
             formed = ConceptualMeaning.from_description(value(item), sentence_kind="idea")
             formation = item.get('formation') or head(item).get('formation')
             if formation is not None:
@@ -961,8 +961,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         if withheld:
             from ThoughtReferences import bindings
             described = replace(described, bindings=dict(bindings(described), _withheld_symbols=tuple(withheld)))
-        evidence = metadata(root['leaves'])
-        evidence['order'] = node_order(root)
+        evidence = dict(order=node_order(root), evidence=input_evidence(root['leaves']))
         formations = tuple(dict(formation, role=role) for role, item in enumerate(role_nodes)
             if item is not None and (formation := item.get('formation') or head(item).get('formation')) is not None)
         if formations:

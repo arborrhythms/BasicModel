@@ -176,8 +176,8 @@ def test_one_precomposition_prediction_and_one_placement_per_active_stream(monke
         events.append(('sentence',sid));return prime(sid)
     def opened(model,active,**kwargs):
         events.append(('prediction',active.tolist()));return predict(model,active,**kwargs)
-    def placement(reading,batch=0):
-        events.append(('placement',batch));return place(reading,batch)
+    def placement(reading,batch=0,**options):
+        events.append(('placement',batch));return place(reading,batch,**options)
     monkeypatch.setattr(model,'_prime_sentence_symbols',sentence)
     monkeypatch.setattr(ConceptSpread,'open_prediction',opened)
     monkeypatch.setattr(derived,'observe_close',placement)

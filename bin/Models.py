@@ -20710,8 +20710,8 @@ class BasicModel(BaseModel):
                         owner.mtm.close(store, stream=b, references=
                             getattr(owner, '_field_activated_references', {}).get(b, ()))
                         derived = getattr(owner.similarity_codebook, 'mereology', None)
-                        context = None if derived is None else derived.observe_close(entries[b], b)
-                        key = None if derived is None else derived.reading_key(entries[b])
+                        context, key = ((None, None) if derived is None else
+                                        derived.observe_close(entries[b], b, with_key=True))
                         owner.__dict__.setdefault('_mtm_placement_contexts', {})[b] = (context, key)
                         consolidate(owner, store, context=context, key=key, batch=b)
                 if row is not None and row != -1 and retain:
@@ -21157,10 +21157,11 @@ class BasicModel(BaseModel):
             def meters_for(reading):
                 from copy import copy
                 meters = tuple(copy(meter) for meter in sentence_meters)
-                for b, meter in enumerate(meters):
+                costs = torch.where(present, reading.looks, 0).tolist()
+                for meter, cost in zip(meters, costs):
                     meter._counts = meter._counts.copy()
-                    if bool(present[b]):
-                        meter.require('look', int(reading.looks[b]))
+                    if cost:
+                        meter.require('look', cost)
                 return meters
             self._sentence_departure = None
             from SentenceFork import SentenceFork, detached
@@ -21627,8 +21628,9 @@ class BasicModel(BaseModel):
                     kept = kept._replace(accepted=kept.accepted & (~here | admitted))
                 handoff(self, kept)
                 for b, meter in enumerate(self._attention_meters):
-                    if bool(present[b]):
-                        for kind, units in attention_work_trials[winner_indices[b]][b].items():
+                    winner = active_winners[b]
+                    if winner >= 0:
+                        for kind, units in attention_work_trials[winner][b].items():
                             meter.require(kind, units)
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])

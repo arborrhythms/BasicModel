@@ -113,12 +113,12 @@ class MereologicalCodes(nn.Module):
 
     def reading_key(self, reading):
         from Occurrence import sentence_key
-        rows = reading.word_rows.detach().reshape(-1).tolist()
+        rows = reading.word_rows.detach().reshape(-1)
         identities = getattr(reading, 'concept_ids', None)
         if identities is not None:
-            rows = [row if row >= 0 else self.owner._concept_row_of(int(cid))
-                    for row, cid in zip(rows, identities.reshape(-1).tolist())]
-        return sentence_key([self.content_key(int(row)) for row in rows if row is not None and row >= 0])
+            seats = self.owner._concept_allocator.layer(0).concept_rows(identities.reshape(-1).to(rows))
+            rows = torch.where(rows >= 0, rows, seats)
+        return sentence_key([self.content_key(row) for row in rows.tolist() if row >= 0])
 
     def placement_step(self, q, context, weights, negatives):
         """One subgradient step of the meet-ratio objective; negatives brake collapse."""
@@ -218,10 +218,10 @@ class MereologicalCodes(nn.Module):
             self.placement_dirty[row] = True
 
     @torch.no_grad()
-    def observe_close(self, reading, batch=0):
+    def observe_close(self, reading, batch=0, *, with_key=False):
         """Place the registered sentence once, on its kept close only."""
         if reading is None:
-            return None
+            return (None, None) if with_key else None
         context = self.owner.placement_context(batch)
         sentence = context.clone()
         language = getattr(getattr(self.owner, '_model', None), 'languageSpace', None)
@@ -240,7 +240,7 @@ class MereologicalCodes(nn.Module):
         self.place_rows(rows.tolist(), sentence, key)
         from ConceptPlacement import meta_groups
         self.place_groups(meta_groups(self.owner, context), key)
-        return context
+        return (context, key) if with_key else context
 
     def placement_extras(self):
         return dict(version=2, placement=self.placement.detach().cpu().clone(),

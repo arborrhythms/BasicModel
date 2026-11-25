@@ -1866,8 +1866,8 @@ class ReferenceClose(nn.Module):
         owner = self.components.owner
         derived = getattr(owner.similarity_codebook, 'mereology', None)
         batch = int(plan.get('stream') or 0)
-        context = None if derived is None else derived.observe_close(kept_reading, batch)
-        key = None if derived is None or kept_reading is None else derived.reading_key(kept_reading)
+        context, key = ((None, None) if derived is None else
+                        derived.observe_close(kept_reading, batch, with_key=True))
         owner.__dict__.setdefault('_mtm_placement_contexts', {})[batch] = (context, key)
         consolidate(owner, self.store, context=context, key=key, batch=batch)
         while len(mentions) > self.components.source_capacity:
