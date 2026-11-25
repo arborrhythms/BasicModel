@@ -407,17 +407,23 @@ class MereologicalCodes(nn.Module):
         cached = owner.similarity_codebook.W
         # Allocation and reference readers often already hold a Python row
         # address. Validate it before staging it on the accelerator.
-        scalar_row = isinstance(indices, int)
-        if scalar_row and not 0 <= indices < len(cached):
-            raise IndexError('concept row is outside the constructed inventory')
-        indices = torch.as_tensor(indices, dtype=torch.long, device=cached.device)
-        shape = indices.shape
-        if indices.numel() == 1:
-            unique, inverse = indices.reshape(-1), None
+        if isinstance(indices, slice):
+            unique = torch.arange(len(cached), device=cached.device)[indices]
+            shape, inverse = unique.shape, None
         else:
-            unique, inverse = torch.unique(indices.flatten(), return_inverse=True)
-        if not scalar_row and unique.numel() and bool(((unique < 0) | (unique >= len(cached))).any()):
-            raise IndexError('concept row is outside the constructed inventory')
+            scalar_row = isinstance(indices, int)
+            if scalar_row and not 0 <= indices < len(cached):
+                raise IndexError('concept row is outside the constructed inventory')
+            indices = torch.as_tensor(indices, dtype=torch.long, device=cached.device)
+            shape = indices.shape
+            if indices.numel() == 1:
+                unique, inverse = indices.reshape(-1), None
+            else:
+                unique, inverse = torch.unique(indices.flatten(), return_inverse=True)
+            if not scalar_row and unique.numel():
+                from Meaning import require_sentence_tensor
+                require_sentence_tensor(((unique >= 0) & (unique < len(cached))).all(),
+                                        'concept row is outside the constructed inventory', IndexError)
         self._invalidate_forms()
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(owner)

@@ -6,7 +6,7 @@ import torch
 from torch import nn
 
 from Memory import STM0, OCCURRENCE, SYMBOL, RELATION
-from Meaning import ConceptualMeaning
+from Meaning import ConceptualMeaning, require_sentence_tensor
 from ReadingIndex import ReadingIndex
 
 
@@ -46,8 +46,7 @@ class IdeaStack(STM0):
     def append_closed_idea(self, point, *, identity, evidence, entry, surprise, name):
         if point.shape != (self.nDim,):
             raise ValueError('idea width differs from its store')
-        if not bool(point.isfinite().all()):
-            raise FloatingPointError('non-finite occupied meaning role')
+        require_sentence_tensor(point.isfinite().all(), 'non-finite occupied meaning role', FloatingPointError)
         reference = self._reference_value(identity)
         self._reserve_idea_name(name)
         first = len(self)
@@ -127,8 +126,7 @@ class IdeaStack(STM0):
             raise OverflowError('STM0 construction capacity exhausted')
         if points.shape != (count, self.nDim):
             raise ValueError('word ideas must have the width of their STM store')
-        if not bool(points.isfinite().all()):
-            raise FloatingPointError('non-finite occupied meaning role')
+        require_sentence_tensor(points.isfinite().all(), 'non-finite occupied meaning role', FloatingPointError)
         # Basic word ideas have only their native referent. raw_meaning_of
         # reads it directly from this column, as it does for copied LTM0 ideas.
         if torch.is_tensor(concepts):
@@ -169,14 +167,15 @@ class Trace:
         self.index = index
         self.leaves = program.leaves
         self.frames = getattr(program, 'operation_values', None)
-        if not bool(self.leaves.isfinite().all()):
-            raise FloatingPointError('non-finite occupied meaning role')
-        operators = index.actions[:, 0] != 0
+        finite = self.leaves.isfinite().all()
         if any(kind != 0 for kind, _, _ in index.steps):
             if self.frames is None:
                 raise ValueError('recorded operations require their result points')
-            if not bool(self.frames[operators, 2].isfinite().all()):
-                raise FloatingPointError('non-finite occupied meaning role')
+            if self.frames.shape[0] != index.actions.shape[0]:
+                raise ValueError('recorded result points must align with their actions')
+            operators = index.actions[:, 0] != 0
+            finite = finite & (~operators | self.frames[:, 2].isfinite().all(-1)).all()
+        require_sentence_tensor(finite, 'non-finite occupied meaning role', FloatingPointError)
         self.head = None
         self.marks = {}
         self.live = True

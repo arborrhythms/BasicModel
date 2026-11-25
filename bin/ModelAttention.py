@@ -87,14 +87,13 @@ def native_word_poles(model, spans, forms, known):
     ids = fi.get('native_indices', fi.get('indices'))
     positions = fi.get('native_part_spans', fi.get('part_spans'))
     raw = getattr(model, '_staged_concepts_in', None)
-    poles = owner.similarity_codebook.getW().new_zeros(*known.shape, 2)
     if not all(torch.is_tensor(value) for value in (ids, positions, raw)):
-        return poles  # no current native witness, hence neither
+        return owner.similarity_codebook.W.new_zeros(*known.shape, 2)
     if 'native_indices' not in fi:
         ids, positions = canonical_native_events(model, ids, positions, spans)
         fi['native_indices'], fi['native_part_spans'] = ids, positions
     if not bool(known.any()):
-        return poles
+        return owner.similarity_codebook.W.new_zeros(*known.shape, 2)
     # The native field's concept axis can be large. Its reading axis needs
     # only extents containing known words, not the padded word capacity.
     # Keep positions unchanged and restore the silent suffix afterwards.
@@ -348,7 +347,7 @@ def stage_symbol_bank(model, owner):
     if not rows:
         return
     basis = space.similarity_codebook
-    ids = torch.tensor([identity for _, identity in rows], device=basis.getW().device)
+    ids = torch.tensor([identity for _, identity in rows], device=basis.W.device)
     indices = ids.new_tensor([row for row, _ in rows])
     keys = basis.lookup_rows(indices).detach()
     orders = ids.new_tensor([space._concept_source_order(identity) for _, identity in rows])
@@ -373,9 +372,8 @@ def forecast_percept(model, active, *, history=None):
         reference = owner.similarity_codebook.W
         for lo in range(0,len(rows),256):
             ids = torch.tensor(rows[lo:lo+256],device=reference.device,dtype=torch.long)
-            codes = owner.similarity_codebook.lookup_rows(
-                ids[None].expand(len(active),-1), streams=True)[...,:expectation.width]
-            yield ids, codes.detach()
+            codes = owner.similarity_codebook.lookup_rows(ids, streams=True)[..., :expectation.width]
+            yield ids, codes.detach().expand(len(active), -1, -1)
     from Expectation import ActivationPredictor
     # The completed order-zero state belongs to stream slots. A previous
     # batch's carrier has its own batch extent and cannot be threaded here.

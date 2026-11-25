@@ -2388,7 +2388,7 @@ class Codebook(Tensor):
         those paths are byte-identical.
         """
         if getattr(self, 'mereology', None) is not None:
-            return self.lookup_rows(torch.arange(len(self.W), device=self.W.device))
+            return self.lookup_rows(slice(None))
         if hasattr(self, '_property_identity_width'):
             return self.W
         if hasattr(self, 'fixed_row_mask'):
@@ -2412,12 +2412,10 @@ class Codebook(Tensor):
         an int, a list/LongTensor of ids, or a slice.
         """
         if getattr(self, 'mereology', None) is not None:
-            if isinstance(idx, slice):
-                idx = torch.arange(len(self.W), device=self.W.device)[idx]
             value = self.mereology.derive(idx, b=stream)
             if not streams and stream == 0:
                 with torch.no_grad():
-                    address = idx if type(idx) is int else torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
+                    address = idx if isinstance(idx, (int, slice)) else torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
                     self.W[address] = value.detach()
             return value
         if self.W is None:
