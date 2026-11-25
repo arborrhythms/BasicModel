@@ -31,18 +31,22 @@ def _validate(present, stamp):
 
 
 @torch.library.custom_op('basicmodel::metal_clock', mutates_args=(), device_types='mps')
-def clock_code(present: torch.Tensor, stamp: torch.Tensor, low: float, high: float) -> torch.Tensor:
+def clock_code(present: torch.Tensor, stamp: torch.Tensor, low: float, high: float,
+               save_wires: bool) -> tuple[torch.Tensor, torch.Tensor]:
     _validate(present, stamp)
     out = torch.empty_like(stamp, memory_format=torch.contiguous_format)
+    saved = stamp.new_empty((2, *stamp.shape) if save_wires else (0,))
     if out.numel():
         shader('metal_clock', (low, high)).clock_code(
-            out, present.contiguous(), stamp.contiguous(), threads=[out.numel() // 2])
-    return out
+            out, present.contiguous(), stamp.contiguous(), saved, stamp.numel() if save_wires else 0,
+            threads=[out.numel() // 2])
+    return out, saved
 
 
 @clock_code.register_fake
-def _(present, stamp, low, high):
-    return torch.empty_like(stamp, memory_format=torch.contiguous_format)
+def _(present, stamp, low, high, save_wires):
+    return (torch.empty_like(stamp, memory_format=torch.contiguous_format),
+            stamp.new_empty((2, *stamp.shape) if save_wires else (0,)))
 
 
 @torch.library.custom_op('basicmodel::metal_clock_stamp_grad', mutates_args=(), device_types='mps')
@@ -64,22 +68,30 @@ def _(present, stamp, grad, low, high):
 
 
 def _setup(ctx, inputs, output):
-    present, stamp, ctx.low, ctx.high = inputs
-    ctx.save_for_backward(present, stamp)
+    _, _, ctx.low, ctx.high, _ = inputs
+    ctx.set_materialize_grads(False)
+    ctx.save_for_backward(output[1])
 
 
-def _backward(ctx, grad):
-    present, stamp = ctx.saved_tensors
+def _backward(ctx, grad, saved_grad):
+    saved, = ctx.saved_tensors
+    # A higher derivative through the saved wires reaches the original stamp.
+    extra = None if saved_grad is None else saved_grad[1]
+    if grad is None:
+        return None, extra, None, None, None
+    present, stamp = saved.unbind(0)
     if torch.is_grad_enabled():
         # Higher derivatives use the differentiable reference operations.
         from RowTime import _rotate
         with torch.enable_grad():
-            point = stamp.to('cpu', torch.float64)
-            value = _rotate(present.to('cpu', torch.float64), point, ctx.low, ctx.high)
+            point = stamp.cpu().double()
+            value = _rotate(present.cpu().double(), point, ctx.low, ctx.high)
             value = torch.where(point.ne(0).any(-1, keepdim=True), value, 0.)
-            derivative, = torch.autograd.grad(value, point, grad.to(value), create_graph=True)
-        return None, derivative.to(stamp), None, None
-    return None, stamp_gradient(present, stamp, grad, ctx.low, ctx.high), None, None
+            derivative, = torch.autograd.grad(value, point, grad.cpu().double(), create_graph=True)
+        result = derivative.to(stamp.dtype).to(stamp.device)
+    else:
+        result = stamp_gradient(present, stamp, grad, ctx.low, ctx.high)
+    return None, result if extra is None else result + extra, None, None, None
 
 
 clock_code.register_autograd(_backward, setup_context=_setup)

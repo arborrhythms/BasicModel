@@ -132,8 +132,12 @@ inline bool finite_pair(device const uint* pair) {
 }
 
 kernel void clock_code(device uint* out, device const uint* present, device const uint* stamp,
-                       uint i [[thread_position_in_grid]]) {
+                       device uint* saved, constant uint& size, uint i [[thread_position_in_grid]]) {
     uint k = 2 * i, rung = i & 1;
+    if (size) {
+        saved[k] = present[k]; saved[k+1] = present[k+1];
+        saved[size+k] = stamp[k]; saved[size+k+1] = stamp[k+1];
+    }
     if (!has_stamp(stamp + (k & ~3u))) { out[k] = out[k+1] = 0; return; }
     if (!finite_pair(stamp+k) || !finite_pair(present+k)) { out[k] = out[k+1] = 0x7fc00000u; return; }
     Rotation r = rotate(present+k, stamp+k);

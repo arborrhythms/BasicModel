@@ -211,7 +211,12 @@ def test_native_clock_rotation_and_stamp_gradient_match_double_precision():
         cpu = source.detach().requires_grad_()
         native = source.detach().to('mps').requires_grad_()
         expected = how_far_back(now, cpu)
-        actual = compiled(now.to('mps'), native)
+        clock = now.to('mps')
+        actual = compiled(clock, native)
+        # Both source and clock can be reused by a later look before backward.
+        with torch.no_grad():
+            native.zero_()
+            clock.zero_()
         torch.testing.assert_close(actual.cpu(), expected, rtol=0, atol=0)
         reference, = torch.autograd.grad(expected, cpu, weights)
         gradient, = torch.autograd.grad(actual, native, weights.to('mps'))

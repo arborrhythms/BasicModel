@@ -54,7 +54,10 @@ def how_far_back(present, stamp):
             and present.shape[-1] == stamp.shape[-1] == 4 and not present.requires_grad
             and torch.broadcast_shapes(present.shape, stamp.shape) == stamp.shape):
         from MetalNumerics import clock_code
-        return clock_code(present.expand_as(stamp), stamp, low, high)
+        # The rotation retains its input wires through backward. The STM
+        # seats and the current clock can then be reused in this sentence.
+        return clock_code(present.expand_as(stamp), stamp, low, high,
+                          torch.is_grad_enabled() and stamp.requires_grad)[0]
     work = torch.device('cpu') if device.type == 'mps' else device
     code = _rotate(present.to(device=work).to(torch.float64),
                    stamp.to(device=work).to(torch.float64), low, high).to(dtype).to(device)
