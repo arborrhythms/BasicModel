@@ -219,12 +219,21 @@ def main():
     count=0; phase='training'
     idea_samples, choices = [], {}
     from Comprehension import Evaluation
+    leaf = Evaluation.leaf
+    def observed_leaf(evaluation, word):
+        identity = leaf(evaluation, word)
+        ids = evaluation.program.word_ids
+        lexical = -1 if ids is None else int(ids[word])
+        offered = evaluation.owner.interpret.denotations(lexical) if lexical > 0 else ()
+        evaluation.__dict__.setdefault('observed_choices', []).append((lexical, tuple(offered), identity))
+        return identity
+    Evaluation.leaf = observed_leaf
     finish = Evaluation.finish
     from Comprehension import Result
     detach = Result.detached
     def finished(evaluation, *a, **kw):
         result = finish(evaluation, *a, **kw)
-        choices[id(result)] = tuple(evaluation.choices)
+        choices[id(result)] = tuple(getattr(evaluation, 'observed_choices', ()))
         return result
     Evaluation.finish = finished
     def detached(result):

@@ -147,7 +147,6 @@ class Evaluation:
         self.case_values = None if program.case_values is None else torch.zeros_like(program.case_values)
         self.case_selected = None if program.case_selected is None else torch.zeros_like(program.case_selected)
         self.timeline = None if program.timeline_actions is None else program.timeline_actions.clone()
-        self.choices = []
         self.result = None
         self.equality_terms = []
         from HeldConcepts import Evaluation as HeldEvaluation
@@ -199,7 +198,6 @@ class Evaluation:
             self.orders[word] = order
         else:
             order = int(self.orders[word])
-        self.choices.append((lexical, tuple(owner.interpret.denotations(lexical)) if lexical > 0 else (), identity))
         self.leaves[word] = value
         self.ids[word] = identity
         self.native_ids[word] = self.native_leaf_reference(identity, original)
