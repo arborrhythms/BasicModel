@@ -9,7 +9,7 @@ UNUSED_KEY = torch.iinfo(torch.int64).max
 HALF = 64  # coordinates of a code written here; the rest stay zero
 SCALE = 2.0 ** 32  # fixed point of the holder sums: integer adds are exact in any order
 MASK32 = 0xFFFFFFFF
-PASSES = 4  # pull passes up and down a new unit's levels at insertion, each step the whole way
+PASSES = 4  # pull passes over a new unit's levels at insertion, up and down in turn, each step the whole way
 
 
 class FormLinks(nn.Module):
@@ -30,7 +30,7 @@ class FormLinks(nn.Module):
     of its links' mean and its holders' mean; with none,
     ``clamp(1 - step + m - mean(m), 0, 1)`` for m its links' mean. Steps are
     taken by the rows read (``recentre_rows``), by every form of a unit that
-    gained a row at insertion (``passes`` whole steps up and down its levels),
+    gained a row at insertion (``passes`` whole steps, up and down its levels in turn),
     and over the whole table at a save (``sweep``, ``rounds`` steps).
 
     ``holder_sum`` [capacity, HALF] (int64, units of 1/SCALE) and
@@ -297,8 +297,9 @@ class FormLinks(nn.Module):
         Fixed shape, no host read. A new row takes its hashed point and is
         added to its links' holder sums; then every form of a unit that
         gained a row takes ``passes`` pull steps of the whole way to its
-        target, level by level up and down (each level's forms are the links
-        of the next). A full table raises by a device
+        target, one a pass, the passes going level by level up and down in
+        turn (each level's forms are the links of the next; a row has one
+        length, so one level). A full table raises by a device
         assertion. ``longest``, a static Python bound on the units' lengths,
         limits the levels built; a unit above it raises by a device assertion.
         """
@@ -326,8 +327,8 @@ class FormLinks(nn.Module):
             unit = torch.where(lengths == n, cur[:, 0], unit)
         if added:
             self._merge(torch.cat([k for k, _ in added]), torch.cat([r for _, r in added]))
-        for _ in range(self.passes):
-            for row in levels + levels[-2::-1]:
+        for p in range(self.passes):
+            for row in (levels if p % 2 == 0 else levels[::-1]):
                 self._pull_distinct(torch.where(fresh[:, None], row, -1).reshape(-1), 1.)
         return unit
 

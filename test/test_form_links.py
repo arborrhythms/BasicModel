@@ -390,6 +390,45 @@ def test_recentre_rows_moves_the_rows_given_and_their_links_only(device):
         assert torch.equal(getattr(captured, name), buffer), name
 
 
+def test_each_distinct_form_is_stepped_and_counted_once_a_pass():
+    """Repeats by position (the middle of a form) and by content (``aa`` in ``aaaa``) touch a row once a pass."""
+    units = [b'aaaa', b'abab', b'banana', b'mississippi']
+    table = FormLinks(4096, 16, 0)
+    calls, pull = [], table._pull
+
+    def recorded(rows, keep, rate=None):
+        calls.append(rows[keep].tolist())
+        pull(rows, keep, rate)
+
+    table._pull = recorded
+    table.insert(*_pack(units, 'cpu'))
+    row_of = {s: r for r, s in enumerate(_host_spellings(table))}
+    levels = [sorted({row_of[u[i:i + n]] for u in units for i in range(len(u) - n + 1)})
+              for n in range(2, max(map(len, units)) + 1)]
+    assert len(calls) == PASSES * len(levels)
+    for k, call in enumerate(calls):
+        p, j = divmod(k, len(levels))
+        assert sorted(call) == (levels if p % 2 == 0 else levels[::-1])[j], (p, j)
+        assert len(call) == len(set(call))
+    calls.clear()
+    given = [row_of[u] for u in units] * 2 + [row_of[b'aa'], row_of[b'ab'], row_of[b'a'], -1]
+    table.recentre_rows(torch.tensor(given))
+    want = {r for g in given if g >= LEAVES for r in (g, int(table.left[g]), int(table.right[g])) if r >= LEAVES}
+    assert len(calls) == 1 and sorted(calls[0]) == sorted(want)
+    calls.clear()
+    table.sweep(2)
+    forms = list(range(LEAVES, int(table.used)))
+    assert calls == [forms, forms]
+    held = {r: set() for r in range(int(table.used))}
+    for h in forms:
+        held[int(table.left[h])].add(h)
+        held[int(table.right[h])].add(h)
+    q = table._quantise(table.code[:, :HALF])
+    for r, holders in held.items():
+        assert int(table.holder_count[r]) == len(holders), r
+        assert torch.equal(table.holder_sum[r], q[sorted(holders)].sum(0) if holders else torch.zeros(HALF, dtype=torch.int64)), r
+
+
 @pytest.mark.parametrize('device', DEVICES)
 def test_read_and_recentre_capture_whole_and_read_nothing_on_the_host(device, monkeypatch):
     dev = _device(device)
