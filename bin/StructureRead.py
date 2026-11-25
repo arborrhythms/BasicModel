@@ -64,7 +64,7 @@ def parts(owner, cid, *, work=None):
     reads = (graph.parent == int(row)).nonzero().flatten().tolist()
     for e in reads:
         weight, negated = float(graph.weight[e]), bool(graph.negated[e])
-        if weight < least:
+        if weight == 0 or weight < least:
             continue
         child = int(graph.child[e])
         if graph.concepts <= child < graph.percept_start:
@@ -95,7 +95,7 @@ def wholes(owner, cid, *, work=None):
         for e in (graph.child == int(symbol)).nonzero().flatten().tolist():
             weight = float(graph.weight[e])
             reference = _reference(owner, graph, int(graph.parent[e]))
-            if weight < least or reference is None or reference in found:
+            if weight == 0 or weight < least or reference is None or reference in found:
                 continue
             if not _charge(work):
                 return list(found.values())

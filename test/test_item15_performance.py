@@ -665,6 +665,90 @@ def test_compiled_spread_preserves_local_stage_gradient(symbol_cycle):
                                torch.autograd.grad(expected.sum(), weight)[0])
 
 
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_forecast_structure_keeps_zero_and_muted_seats_without_dynamic_outputs(device):
+    from types import SimpleNamespace
+    import ConceptSpread as spread
+    from torch._dynamo.testing import CompileCounterWithBackend
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    sigma_value = torch.tensor([.4, 0., -.6, -0.], device=device, requires_grad=True)
+    pi_value = torch.tensor([[.7, .3, .8, .4, .5]], device=device, requires_grad=True)
+    rows = torch.tensor([0, 0, 1, 2], device=device)
+    inputs = torch.tensor([0, 1, 1, 0], device=device)
+    col = torch.tensor([0, -1, 1, 1, 0], device=device)
+    against = torch.tensor([False, False, True, False, False], device=device)
+    pi_rows = torch.tensor([0, 0, 0, 1, 1], device=device)
+    owner = SimpleNamespace(nVectors=3, _concept_allocator=None,
+        _expected_knowing=torch.zeros(1, 3, 2, device=device),
+        order_zero=SimpleNamespace(nnz=4, nInput=2, entry_row=rows, entry_input=inputs, w=lambda: sigma_value),
+        basic_percepts=SimpleNamespace(pi=SimpleNamespace(n_rows=2, nnz=5, keys=('a', 'b'),
+            crow=torch.tensor([0, 3, 5], device=device), col=col, value=pi_value, against=against)))
+    observed = torch.tensor([[[.8, .1], [.1, .4]], [[.2, .4], [.9, .1]], [[.7, .3], [.4, .6]]], device=device)
+    percepts = torch.tensor([[[.4, .3], [.6, .2]], [[.9, .1], [.2, .5]]], device=device)
+
+    def reading():
+        graph = spread.structure(owner, observed.device)
+        flow = spread._flow(graph, observed, percepts, 8, native=True)
+        return torch.cat((spread._read_stage(graph, flow, 'concepts'),
+                          spread._read_stage(graph, flow, 'percepts')))
+
+    counter = CompileCounterWithBackend('eager')
+    compiled = torch.compile(reading, backend=counter, fullgraph=True)
+    for weights in ([.4, 0., -.6, -0.], [0., -.2, .5, .1], [0., 0., 0., 0.]):
+        with torch.no_grad():
+            sigma_value.copy_(sigma_value.new_tensor(weights))
+        live = sigma_value != 0
+        keep = ~against & (col >= 0)
+        graph = spread.Structure(torch.cat((rows[live], 3 + pi_rows[keep])),
+            torch.cat((3 + inputs[live], 5 + col[keep])),
+            torch.cat((sigma_value[live].abs(), pi_value[0, keep])),
+            torch.cat((sigma_value[live] < 0, torch.zeros_like(col[keep], dtype=torch.bool))),
+            3, 0, 2, 2, ('a', 'b'), 0)
+        flow = spread._flow(graph, observed, percepts, 8, native=True)
+        reference = torch.cat((spread._read_stage(graph, flow, 'concepts'),
+                               spread._read_stage(graph, flow, 'percepts')))
+        actual = compiled()
+        torch.testing.assert_close(actual, reference, rtol=0, atol=0)
+        expected_grads = torch.autograd.grad(reference.square().sum(), (sigma_value, pi_value))
+        actual_grads = torch.autograd.grad(actual.square().sum(), (sigma_value, pi_value))
+        for expected, found in zip(expected_grads, actual_grads, strict=True):
+            torch.testing.assert_close(found, expected, rtol=0, atol=0)
+    assert counter.frame_count == 1
+
+
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_salience_transpose_fullgraph_preserves_request_gradient(device):
+    import Salience
+    from ConceptSpread import Structure
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    parent = torch.tensor([2, 2, 0, 1, 3, 3], device=device)
+    child = torch.tensor([0, 1, 2, 3, 4, 0], device=device)
+    weight = torch.tensor([1., 1., .6, .3, .7, 0.], device=device)
+    negated = torch.tensor([False, False, True, False, False, False], device=device)
+    graph = Structure(parent, child, weight, negated, 2, 1, 1, 1, ('a',))
+    request = torch.tensor([[[.3, -.1], [.2, .4]], [[.1, .2], [0., .6]]], device=device, requires_grad=True)
+    values = torch.linspace(.1, .9, 40, device=device).reshape(5, 2, 2, 2)
+    # The previous compact graph, unrolled with ordinary autograd rather
+    # than the custom transpose. Include a Not, a silent seat and a part.
+    keep = child < graph.part_start
+    a, z = parent[keep], child[keep]
+    symbols = ((a >= graph.concepts) & (a < graph.percept_start))[:, None, None, None]
+    factor = torch.where(symbols, values[a] / values[z], 1.) * weight[keep, None, None, None]
+    source = F.pad(torch.where(request >= 0, request, 0.)[:, :, None].expand(-1, -1, 2, -1), (0, 0, 0, 0, 0, 0, 0, 3))
+    expected = source
+    for _ in range(4):
+        lanes = expected[a]
+        lanes = torch.where(negated[keep, None, None, None], lanes.flip(-1), lanes)
+        expected = source.index_add(0, z, lanes * factor)
+    compiled = torch.compile(Salience._down, backend='eager', fullgraph=True)
+    actual = compiled(graph, request, values, 2, 4)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    torch.testing.assert_close(torch.autograd.grad(actual.square().sum(), request)[0],
+                               torch.autograd.grad(expected.square().sum(), request)[0], rtol=1e-6, atol=1e-6)
+
+
 def test_native_forecast_forks_at_the_shared_opening_and_scores_its_own_history():
     from Expectation import PerceptExpectation
     predictor = PerceptExpectation(2, streams=1, capacity=2)
@@ -714,7 +798,7 @@ def test_mixed_native_winners_replay_only_their_own_observations_and_gradients()
                             both, path=path, turn=turn)
     assert owner.updates.item() == 0
     NativeReading.select(model, paths, torch.arange(2))
-    NativeReading.commit(paths, torch.arange(2), [0, 1])
+    NativeReading.commit(paths, torch.arange(2))
     assert owner.moments.count.item() == 0
     selected_contexts = [path.history.recent[row] for row, path in enumerate(paths)]
     torch.testing.assert_close(owner.context_recent, torch.stack(selected_contexts))
@@ -730,6 +814,68 @@ def test_mixed_native_winners_replay_only_their_own_observations_and_gradients()
         col = (index % 2) ^ winner
         torch.testing.assert_close(guess.grad[winner], (guess[winner] - raw[winner, col]) / 2)
         assert not guess.grad[1-winner].any()
+
+
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_native_retention_captures_device_winners_and_ignores_rejected_suffix(device):
+    """Mixed winners, shared readings and a losing extra look keep causal state."""
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    from Expectation import PerceptExpectation
+    from ModelAttention import NativeReading
+    from torch.utils._python_dispatch import TorchDispatchMode
+
+    owner = PerceptExpectation(2, streams=3, capacity=8).to(device)
+    control = PerceptExpectation(2, streams=3, capacity=8).to(device)
+    paths = [NativeReading(owner, owner.history(3), torch.zeros(3, 2, device=device),
+                           torch.zeros(3, device=device)) for _ in range(2)]
+    active = torch.ones(3, dtype=torch.bool, device=device)
+    for path, columns in zip(paths, ((0, 1), (1, 0)), strict=True):
+        for turn, column in enumerate(columns):
+            observed = torch.full((3, 2), .2 + .1 * column, device=device)
+            expected = torch.full_like(observed, .1 * turn)
+            path.arrivals[turn, column] = (observed, (expected, torch.tensor([column], device=device)), active)
+    # Only path 1 sees the suffix. It must not publish keys, a forecast,
+    # context, update count or last-arrival diagnostics if path 0 wins.
+    suffix = torch.full((3, 2), .9, device=device)
+    paths[1].arrivals[2, 0] = (suffix, (suffix * .5, torch.tensor([7], device=device)), active)
+    choices = [paths[0], paths[1], paths[0]]  # an output departure shares path 0
+    compiled = torch.compile(NativeReading.commit, backend='eager', fullgraph=True)
+
+    class NoHostReads(TorchDispatchMode):
+        def __torch_dispatch__(self, function, types, args=(), kwargs=None):
+            assert function not in (torch.ops.aten._local_scalar_dense.default,
+                                    torch.ops.aten.equal.default, torch.ops.aten.nonzero.default)
+            if function == torch.ops.aten._to_copy.default:
+                assert not (args[0].device.type == 'mps' and str((kwargs or {}).get('device')) == 'cpu')
+            return function(*args, **(kwargs or {}))
+
+    for selected in ((0, 1, 2), (2, 0, 0), (1, 1, 1)):
+        # Reference: replay precisely the retained paths at each causal turn.
+        winners = torch.tensor(selected, device=device)
+        selected_paths = [choices[index] for index in selected]
+        keys = sorted(set().union(*(path.arrivals for path in selected_paths)))
+        for key in keys:
+            observed = torch.zeros(3, 2, device=device)
+            expected = torch.zeros_like(observed)
+            mask = torch.zeros_like(active)
+            for row, path in enumerate(selected_paths):
+                if key in path.arrivals:
+                    value, forecast, seen = path.arrivals[key]
+                    observed[row], expected[row], mask[row] = value[row], forecast[0][row], seen[row]
+                    control.known[forecast[1]] = True
+            control.arrive((expected, winners[:0]), observed, mask, sentence=True)
+        compiled(choices, winners)
+        for actual, expected in zip(owner.history(3), control.history(3), strict=True):
+            torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+        torch.testing.assert_close(owner.updates, control.updates, rtol=0, atol=0)
+        torch.testing.assert_close(owner.last_arrival['local_loss'], control.last_arrival['local_loss'], rtol=0, atol=0)
+        # Audit the actual eager operators too; a captured CPU helper alone
+        # says nothing about synchronization on the physical Metal device.
+        with NoHostReads():
+            NativeReading.commit(choices, winners)
+        control.load_state_dict(owner.state_dict())
+        control.last_arrival = {key: value.clone() for key, value in owner.last_arrival.items()}
 
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires a Metal device')

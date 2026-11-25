@@ -48,8 +48,9 @@ def _down(graph, request, values, readings, depth=8, nodes=None):
     edge passes nothing down."""
     B = request.shape[1]
     keep = graph.child < graph.part_start
-    parent, child = graph.parent[keep], graph.child[keep]
-    weight, negated = graph.weight[keep].detach().to(request), graph.negated[keep]
+    parent, child = torch.where(keep, graph.parent, 0), torch.where(keep, graph.child, 0)
+    weight = torch.where(keep, graph.weight, 0.).detach().to(request)
+    negated = graph.negated & keep
     symbol = ((parent >= graph.concepts) & (parent < graph.percept_start))[:, None, None, None]
     # Never below zero; at exactly zero the derivative passes, so that a
     # request that starts at nothing can be taught (as signed_lanes).
@@ -124,14 +125,17 @@ def _concepts_asked(owner, request, field=None):
     import ConceptSpread
     device = request.device
     graph = ConceptSpread.structure(owner, device)
-    above = graph.child < graph.percept_start
-    graph = replace(graph, parent=graph.parent[above], child=graph.child[above],
-                    weight=graph.weight[above], negated=graph.negated[above])
+    above = (graph.child < graph.percept_start) & (graph.parent < graph.percept_start)
+    graph = replace(graph, parent=torch.where(above, graph.parent, 0),
+                    child=torch.where(above, graph.child, 0),
+                    weight=torch.where(above, graph.weight, 0.), negated=graph.negated & above)
     V = owner.nVectors
     if not len(graph.parent):
         return torch.where(request >= 0, request, 0.)[:V]
-    concepts = torch.arange(V, device=device)
-    nodes = torch.unique(torch.cat((graph.parent, graph.child, concepts)))
+    # Every concept already had a seat in the compact graph. Symbols have
+    # construction-time seats too; use those addresses directly, without a
+    # value-dependent unique() result or a remapping after each look.
+    nodes = torch.arange(graph.percept_start, device=device)
     readings = 1 if field is None else field.shape[2]
     values = request.new_ones(len(nodes), request.shape[1], readings, 2)
     if field is not None:
@@ -139,14 +143,15 @@ def _concepts_asked(owner, request, field=None):
         values = torch.where((nodes < width)[:, None, None, None],
                              field.detach().to(values).index_select(0, nodes.clamp_max(width - 1)), values)
         held = (graph.parent >= graph.concepts) & (graph.parent < graph.percept_start)
-        parent = torch.searchsorted(nodes, graph.parent[held])
-        child = torch.searchsorted(nodes, graph.child[held])
+        parent = torch.where(held, graph.parent, 0)
+        child = torch.where(held, graph.child, 0)
         logs = torch.log(values.index_select(0, child).clamp_min(1e-30))
-        product = torch.exp(torch.zeros_like(values).index_add(0, parent, logs))
+        product = torch.exp(torch.zeros_like(values).index_add(
+            0, parent, torch.where(held[:, None, None, None], logs, 0.)))
         is_symbol = (nodes >= graph.concepts) & (nodes < graph.percept_start)
         values = torch.where(is_symbol[:, None, None, None], product, values)
     grad = _down(graph, request.to(values), values, readings, 2 * (len(owner._order_caps()) + 1), nodes=nodes)
-    return grad.index_select(0, torch.searchsorted(nodes, concepts)).amax(2)
+    return grad[:V].amax(2)
 
 
 def rows_asked(sigma, rows, concepts):

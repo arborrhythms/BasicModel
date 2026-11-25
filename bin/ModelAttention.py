@@ -420,21 +420,18 @@ class NativeReading:
 
     @staticmethod
     @torch.no_grad()
-    def commit(paths, winners, winner_indices):
+    def commit(paths, winners):
         """Advance the existing durable predictor only after a successful close."""
         owner = paths[0].owner
-        retained = {paths[index] for index in winner_indices}
-        if len(retained) == 1:
-            only, = retained
-            for observed, forecast, active in only.arrivals.values():
-                owner.arrive(forecast, observed, active, sentence=True)
-            return
-        groups = {path: torch.zeros_like(winners, dtype=torch.bool) for path in retained}
+        groups = {}
         for index, path in enumerate(paths):
-            if path in retained:
-                groups[path] = groups[path] | (winners == index)
+            # Output-only departures can share a reading. Combine their row
+            # masks without reading the selected path numbers back to Python.
+            rows = winners == index
+            groups[path] = groups[path] | rows if path in groups else rows
         # The persistent owner receives only winning rows, in the same
-        # source-column order as one live walk. Forecasts are already scored.
+        # causal arrival order as one live walk. Candidate keys are execution
+        # metadata; whether an arrival is retained is a device predicate.
         for key in sorted(set().union(*(path.arrivals for path in groups))):
             active = torch.zeros_like(winners, dtype=torch.bool)
             expected = torch.zeros_like(owner.last_expected[:len(active)])
@@ -450,7 +447,13 @@ class NativeReading:
                 # Each path can have different provisional native keys.
                 admitted = forecast[1]
                 owner.known[admitted] = owner.known[admitted] | rows.any()
+            previous = getattr(owner, 'last_arrival', None)
             owner.arrive((expected, winners[:0]), observed, active, sentence=True)
+            if previous is not None:
+                # A rejected suffix must not erase the last retained arrival.
+                # Context, known keys and the update count already use active.
+                owner.last_arrival['local_loss'] = torch.where(
+                    active.any(), owner.last_arrival['local_loss'], previous['local_loss'])
 
 
 def observe_percept(model, forecast, payload, sub, index, active, *, path=None, turn=None):

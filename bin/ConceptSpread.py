@@ -114,10 +114,10 @@ def _store_edges(owner, V, device):
             edges.append((symbol, member, torch.ones(len(member), device=device),
                           torch.zeros(len(member), dtype=torch.bool, device=device)))
             value = store.values.to(device).index_select(0, positions)
-            live = value.ne(0).nonzero().flatten()
-            written = value.index_select(0, live)
-            edges.append((targets.index_select(0, live), sources.index_select(0, live),
-                          written.abs(), written < 0))
+            # The structural seats are fixed; a zero weight carries no share.
+            # Compacting them by live weight creates a device-sized output
+            # and synchronizes every forecast after an optimizer update.
+            edges.append((targets, sources, value.abs(), value < 0))
             height = definition_depth(store, V, store.inventory_indices(V, device))
     pairs = _pair_edges(owner, V + T, edges, device)
     return T + pairs, edges, None if height is None else height + int(bool(pairs))
@@ -153,8 +153,7 @@ def structure(owner, device=None):
         value = sigma.w()[:n].to(device)
         rows = sigma.entry_row[:n].to(device)
         inputs = sigma.entry_input[:n].to(device)
-        keep = value != 0
-        edges.append((rows[keep], V + T + inputs[keep], value[keep].abs(), value[keep] < 0))
+        edges.append((rows, V + T + inputs, value.abs(), value < 0))
         basic = getattr(owner, 'basic_percepts', None)
         pi = getattr(basic, 'pi', None)
         if pi is not None and pi.n_rows:
@@ -166,8 +165,11 @@ def structure(owner, device=None):
             col = pi.col[:nnz].to(device)
             weight = pi.value[0, :nnz].to(device)
             keep = ~pi.against[:nnz].to(device) & (col >= 0)
-            source = col[keep]
-            edges.append((V + T + row_of[keep], V + T + R + source, weight[keep],
+            # Against and standing-bias seats carry no forward part edge.
+            # Give muted seats an in-range source even with an empty catalog;
+            # their value and their pullback are both exactly zero.
+            source = torch.where(keep, V + T + R + col, 0)
+            edges.append((V + T + row_of, source, torch.where(keep, weight, 0.),
                           torch.zeros_like(source, dtype=torch.bool)))
     if edges:
         parent, child, weight, negated = (torch.cat(part) for part in zip(*edges))

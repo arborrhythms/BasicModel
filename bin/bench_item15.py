@@ -102,12 +102,14 @@ def main():
         config = args.output.resolve() / 'benchmark.xml'
         tree.write(config, encoding='utf-8', xml_declaration=True)
     record = dict(source=args.source_revision or subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip(),
-                  seed=args.seed, torch=torch.__version__, platform=platform.platform(),
+                  seed=args.seed, torch=torch.__version__, torch_git=torch.version.git_version, platform=platform.platform(),
                   threads=torch.get_num_threads(), batch_size=spec['batch_size'],
                   compiled_step=args.compiled_step, strict_sentence=args.strict_sentence,
                   config=str(config), config_sha256=hashlib.sha256(config.read_bytes()).hexdigest(),
                   lesson_sha256=hashlib.sha256(lesson.read_bytes()).hexdigest(),
-                  environment={k: v for k, v in os.environ.items() if k.startswith(('MODEL_', 'BASICMODEL_', 'PYTHONHASH', 'TORCHINDUCTOR'))},
+                  environment={k: v for k, v in os.environ.items() if k.startswith((
+                      'MODEL_', 'BASICMODEL_', 'PYTHONHASH', 'TORCHINDUCTOR',
+                      'PYTORCH_MPS_', 'PYTORCH_ENABLE_MPS_', 'MTL_CAPTURE_'))},
                   steps=[])
     record['explore_paths_override'] = args.explore_paths
     record['source_files'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -549,6 +551,7 @@ def main():
                 from torch.utils._python_dispatch import TorchDispatchMode
                 counters = {'update': Counter(), 'sentence': Counter()}
                 waits, wait_calls, wait_sites = Counter(), Counter(), {}
+                native_seconds, native_calls = Counter(), Counter()
                 sentence_seconds = 0.
 
                 def measured_sentence(*a, **kw):
@@ -574,6 +577,20 @@ def main():
                                 event = 'device_to_host/' + name
                         elif name == 'aten::copy_' and args[0].device.type == 'cpu' and args[1].device.type != 'cpu':
                             event = 'device_to_host/' + name
+                        # The tag on aten::index also covers fixed-size integer
+                        # indexing. Distinguish boolean compaction in the timing
+                        # table without inspecting any tensor values.
+                        operation = str(func)
+                        if name == 'aten::index':
+                            boolean = any(t is not None and t.dtype in (torch.bool, torch.uint8)
+                                          for t in args[1])
+                            operation += '/boolean' if boolean else '/integer'
+                        if sentence_depth:
+                            start = time.perf_counter()
+                            result = func(*args, **kwargs)
+                            elapsed = time.perf_counter() - start
+                            native_seconds[operation] += elapsed
+                            native_calls[operation] += 1
                         if event is not None:
                             counters['update'][event] += 1
                             if sentence_depth:
@@ -582,9 +599,7 @@ def main():
                                     operands = args[1:] if name == 'aten::copy_' else args
                                     device = next((t.device.type for t in operands if torch.is_tensor(t)), 'unknown')
                                     key = f'{device}/{event}'
-                                    start = time.perf_counter()
-                                    result = func(*args, **kwargs)
-                                    waits[key] += time.perf_counter() - start
+                                    waits[key] += elapsed
                                     wait_calls[key] += 1
                                     frame = sys._getframe(1)
                                     while frame is not None:
@@ -594,7 +609,8 @@ def main():
                                             wait_sites.setdefault(key, Counter())[site] += 1
                                             break
                                         frame = frame.f_back
-                                    return result
+                        if sentence_depth:
+                            return result
                         return func(*args, **kwargs)
 
                 with patch.object(BasicModel, '_execute_input_sentence', measured_sentence), DeviceReads():
@@ -604,6 +620,12 @@ def main():
                 # extra synchronization is inserted in the measured sentence.
                 record['host_dispatch_wall'] = dict(sentence_seconds=sentence_seconds,
                     seconds_by_source=waits, calls_by_source=wait_calls, calls_by_model_site=wait_sites)
+                # CPU time inside native dispatch includes submission and any
+                # queued GPU work waited for. It is not GPU kernel time and
+                # does not attribute causal cost to synchronization alone.
+                record['native_dispatch_wall'] = {
+                    name: dict(seconds=seconds, calls=native_calls[name])
+                    for name, seconds in native_seconds.most_common()}
             if args.allocations:
                 with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
                                             profile_memory=True) as memory:

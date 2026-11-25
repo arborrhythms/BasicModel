@@ -223,9 +223,18 @@ def test_native_sentence_local_boundary_ownership_loss_identity_and_compiled_wor
             assert not torch.compiler.is_compiling()
             others=tuple(p for p in model.parameters() if id(p) not in {id(q) for q in parameters})
             versions=tuple(p._version for p in others)
+            count=int(owner.updates)
+            before=owner.history(len(args[2])).fork()
             result=arrive(*args,**kwargs)
             assert versions==tuple(p._version for p in others)
-            checks.append((int(owner.updates),result.expected.clone()))
+            if int(owner.updates) != count:
+                checks.append((int(owner.updates),result.expected.clone()))
+            else:
+                # Fixed candidate schedules also visit discarded arrivals.
+                # Count the live updates as before, and check every no-op.
+                assert not bool(args[2].any())
+                for expected,actual in zip(before,owner.history(len(args[2])),strict=True):
+                    torch.testing.assert_close(actual,expected,rtol=0,atol=0)
             return result
         monkeypatch.setattr(owner,'arrive',observed_arrival)
         score=model._sentence_path_cost

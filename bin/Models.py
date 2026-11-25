@@ -21807,7 +21807,7 @@ class BasicModel(BaseModel):
             from Meaning import expire_meaning_metadata
             expire_meaning_metadata()
             if speculative:
-                NativeReading.commit(native_paths, selected, winner_indices)
+                NativeReading.commit(native_paths, selected)
             if growth:
                 GrowthTrial.commit(growth, winner_indices)
             observations.clear()
