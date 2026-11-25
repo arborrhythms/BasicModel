@@ -11684,9 +11684,8 @@ class LanguageSpace(nn.Module):
             held_bind=torch.where((binding & (bound_chunk >= 0))[:,None],bind_read,-1))
         if reference_scope is not None and reference_scope.shape[-1] > 2:
             choice = self.chunk_journal.choice(reference_scope,choice)
-        def rule_heads(rules):
-            return torch.tensor([getattr(rule, 'head_role', 0) for rule in rules] or [0], device=buffer.device)
-        bheads, uheads = rule_heads(self._compose_binary_rules), rule_heads(self._compose_unary_rules)
+        # Column zero of the journal's rule tables is each rule's head role.
+        bheads, uheads = self.chunk_journal.binary[:, 0], self.chunk_journal.unary[:, 0]
         choice = choice._replace(head_role=torch.where(choice.kind == 1,
             bheads[choice.local_op.clamp(0,len(bheads)-1)], uheads[choice.local_op.clamp(0,len(uheads)-1)]))
         start = model.symbolSpace.ltm_store.when_start

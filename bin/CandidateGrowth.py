@@ -1,5 +1,6 @@
 """Implicit growth of the Pi above order zero and of the store's Sigma, by
-candidate matrices kept with MTM (:mod:`CandidateMatrix`).
+candidate pools kept with MTM (:class:`Memory.MTMPairRows`,
+:class:`Memory.MTM1`).
 
 At each look, in training:
 
@@ -11,13 +12,17 @@ At each look, in training:
   with a thing present at the look, offers a candidate entry of the kind on
   that thing; held above the penalty it is written as the kind's entry. A
   thing read at another look is never offered.
+
+What may be offered is each pool's ``admissible`` mask, read again only
+where the table, the rows or the entries change; a look meets it with what
+is present, on the device.
 """
 from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from copy import copy
-import itertools
 
 import torch
+from torch.nn import functional as F
 
 
 #: Presence at or above which a concept or a thing is present at a look.
@@ -35,7 +40,6 @@ class GrowthTrial:
         self.path, self.stream = path, stream
         self.store = owner._concept_allocator.layer(0)
         self.candidates = None
-        self.pairs = None
         self.edges = {}
         self.streams = {}
         self.looks = []
@@ -50,7 +54,6 @@ class GrowthTrial:
         other.looks = self.looks.copy()
         other.edges = self.edges.copy()
         other.costs = {name: entries.copy() for name, entries in self.costs.items()}
-        other.pairs = self.pairs.copy() if self.pairs is not None else None
         if self.candidates is not None:
             other.candidates = other.fork_matrices(self.candidates)
         return other
@@ -174,7 +177,8 @@ class GrowthTrial:
                 # Only the spread reads these pairs. During replay its
                 # forecasts are already fixed. Later offers in the replay
                 # still see each earlier promotion in the device slab.
-                pair_rows(owner).extend(pool.publish(releases[:written].flatten(0, 1)))
+                promoted = releases[:written].flatten(0, 1)
+                pool.append_pairs(promoted, len(pool.publish(promoted)), owner._concept_allocator.layer(0))
 
 
 def row_scope(owner, batch):
@@ -194,12 +198,14 @@ def read_streams(owner, read, *, axis, live=None, seats=None):
     trial = _current_trial.get()
     if trial is None or trial.owner is not owner or not trial.streams:
         return read()
-    base_pairs = getattr(getattr(owner, 'mtm', None), 'pair_rows', None) or ()
+    base = getattr(getattr(owner, 'mtm', None), '_candidate_pairs', None)
+    base = 0 if base is None else base.pair_count
     groups = {}
     for b, stream in trial.streams.items():
-        pairs = stream.pairs[len(base_pairs):] if stream.pairs else ()
-        key = (tuple(stream.edges), tuple(pairs))
-        if key != ((), ()):
+        # A stream with its own promoted pairs reads alone.
+        held = (stream.candidates or {}).get('pi')
+        key = (tuple(stream.edges), b if held is not None and held.pair_count > base else None)
+        if key != ((), None):
             groups.setdefault(key, []).append(b)
     result = read()
     for members in groups.values():
@@ -229,11 +235,18 @@ def visible_store(store):
     return trial.projected_store() if trial is not None and trial.store is store and trial.edges else store
 
 
-def visible_pairs(owner):
+def pair_pool(owner):
+    """The Pi candidates whose promoted pairs the current trial reads."""
     trial = _current_trial.get()
-    if trial is not None and trial.owner is owner and trial.pairs is not None:
-        return trial.pairs
-    return getattr(getattr(owner, 'mtm', None), 'pair_rows', None) or ()
+    if trial is not None and trial.owner is owner and trial.candidates is not None:
+        return trial.candidates['pi']
+    return getattr(getattr(owner, 'mtm', None), '_candidate_pairs', None)
+
+
+def visible_pairs(owner):
+    """The promoted pairs ``[P, 2]`` on the device, or ``None``."""
+    pool = pair_pool(owner)
+    return None if pool is None else pool.promoted_pairs()
 
 
 def matrices(owner):
@@ -300,14 +313,16 @@ def field_levels(concepts, evidence, ids, active):
     return values, earliest
 
 
-def bound_nominations(owner, names):
-    """Derive possible pairs from the shared symbol topology once for this read."""
-    allocator = owner._concept_allocator
-    table = allocator.symbol_table()
-    orders = tuple(allocator.order_of(name) for name in names)
-    seats = tuple((i, j) for i, j in itertools.combinations(range(len(names)), 2)
-                  if orders[i] == orders[j] >= 0 and table.fit(names[i], names[j]) is None)
-    return table.revision, seats
+def binding_names(ids, width):
+    """The bound concepts ``ids`` (``-1`` for none), each once in ascending
+    order, padded to ``width`` with the largest id."""
+    top = torch.iinfo(ids.dtype).max
+    flat = torch.where(ids >= 0, ids, top).reshape(-1).sort().values
+    first = torch.ones_like(flat, dtype=torch.bool)
+    first[1:] = flat[1:] != flat[:-1]
+    first &= flat != top
+    place = torch.where(first, first.long().cumsum(0) - 1, width)
+    return flat.new_full((width + 1,), top).scatter_(0, place, flat)[:width]
 
 
 def field_readings(owner, field, active, binding):
@@ -319,18 +334,26 @@ def field_readings(owner, field, active, binding):
     """
     if binding is None:
         return None
-    names = binding
-    if not names:
-        empty = field.concept_ids.new_empty(0)
-        return [(names, empty, field.evidence.new_empty(0), empty, bound_nominations(owner, names))] * field.evidence.shape[1]
-    if len(names) * (len(names) - 1) // 2 > len(owner.mtm._candidate_pairs.tally_refs):
+    width = owner.mtm._candidate_pairs.binding_width
+    if len(binding) > width:
         return None
-    ids = field.concept_ids.new_tensor(names)
+    names = binding_names(owner._cs_field_concept_ids, width)
     if active is None:
-        active = torch.ones(field.evidence.shape[1], dtype=torch.bool, device=ids.device)
-    values, ranks = field_levels(field.concept_ids, field.evidence, ids, active)
-    nominations = bound_nominations(owner, names)
-    return [(names, ids, row, rank, nominations) for row, rank in zip(values.unbind(), ranks.unbind(), strict=True)]
+        active = torch.ones(field.evidence.shape[1], dtype=torch.bool, device=names.device)
+    values, ranks = field_levels(field.concept_ids, field.evidence, names, active)
+    return [(names, row, rank, len(binding)) for row, rank in zip(values.unbind(), ranks.unbind(), strict=True)]
+
+
+def dict_readings(held, present, *, places=False):
+    """A reading ``{cid: value}`` as a bound one: names ascending, each
+    one's value and, with ``places``, the place of its first reading (its
+    order in ``present``)."""
+    names = sorted(present)
+    read = held.refs.new_tensor(names), held.activity.new_tensor([present[cid] for cid in names])
+    if not places:
+        return read
+    first = {cid: place for place, cid in enumerate(present)}
+    return *read, held.refs.new_tensor([first[cid] for cid in names])
 
 
 def presence(owner, field, batch):
@@ -354,162 +377,110 @@ def unpromoted_offers(offers, prior):
 def pi_step(owner, present, *, collect=None, prior=None):
     """One step of the Pi's candidates from the concepts present at a look;
     the symbols made."""
-    table = owner._concept_allocator.symbol_table()
-    order = owner._concept_allocator.order_of
     held = matrices(owner)['pi']
-    numerical = isinstance(present, tuple)
-    rows = pair_rows(owner)
-    if numerical:
-        names, ids, levels, _, (revision, eligible) = present
-        if table.revision != revision:
-            _, eligible = bound_nominations(owner, names)
-        nominations = [(i, j) for i, j in eligible if (names[i], names[j]) not in rows]
+    store = owner._concept_allocator.layer(0)
+    if isinstance(present, tuple):
+        names, levels, _, count = present
     else:
-        names = sorted(cid for cid, value in present.items() if value >= PRESENT)
-        nominations = [(i, j) for i, j in itertools.combinations(range(len(names)), 2)
-                       if order(names[i]) == order(names[j]) >= 0 and (names[i], names[j]) not in rows
-                       and table.fit(names[i], names[j]) is None]
+        count = sum(value >= PRESENT for value in present.values())
     occupied = held._known_count()
-    if not nominations and occupied == 0:
+    if count < 2 and occupied == 0:
         return []
-    if numerical:
-        seats = held.refs.new_tensor(nominations).reshape(-1, 2)
-        pairs = torch.where((levels[seats] >= PRESENT).all(-1, keepdim=True), ids[seats], -1)
-        levels = levels.to(held.activity)
-    else:
-        pairs = held.refs.new_tensor([(names[i], names[j]) for i, j in nominations]).reshape(-1, 2)
-        ids, levels = held.refs.new_tensor(list(present)), held.activity.new_tensor(list(present.values()))
+    if not isinstance(present, tuple):
+        names, levels = dict_readings(held, present)
+    held.admit_pairs(owner)
+    # Pairs in ascending order of their two names, each read where both
+    # concepts are present and the pair is admissible.
+    seats = torch.triu_indices(len(names), len(names), 1, device=names.device).T
+    ends = store.concept_rows(names)[seats]
+    admitted = held.admissible[ends[:, 0].clamp_min(0), ends[:, 1].clamp_min(0)] & (ends >= 0).all(-1)
+    pairs = torch.where((admitted & (levels[seats] >= PRESENT).all(-1))[:, None], names[seats], -1)
+    levels = levels.to(held.activity)
     if prior is not None:
         pairs = unpromoted_offers(pairs, prior)
-    promoted = held.observe_pairs(pairs, ids, levels)
+    promoted = held.observe_pairs(pairs, names, levels)
     if occupied == 0 and held.hold > 1:
         return []
     if collect is not None:
-        collect.append((held, promoted, rows, None))
+        collect.append((held, promoted, True, None))
         return []
     written = held.publish(promoted)
-    rows.extend(key for key in written if key not in rows)
+    held.append_pairs(promoted, len(written), store)
     return written
 
 
 def pair_rows(owner):
     """The rows of the Pi above order zero that the candidates promoted,
-    each a pair of concepts of one order; the spread reads them as symbols
-    (:func:`ConceptSpread.structure`). They are not the fit of a concept
-    alone, so no kind reads them for a member."""
-    pool = owner.mtm
-    rows = getattr(pool, 'pair_rows', None)
-    trial = _current_trial.get()
-    if trial is not None and trial.owner is owner:
-        if trial.pairs is None:
-            trial.pairs = list(rows or ())
-        return trial.pairs
-    if rows is None:
-        rows = pool.pair_rows = []
-    return rows
+    each a pair of concepts of one order, as a list; the spread reads them
+    as symbols (:func:`ConceptSpread.structure`). They are not the fit of a
+    concept alone, so no kind reads them for a member."""
+    pool = pair_pool(owner)
+    return [] if pool is None else [tuple(pair) for pair in pool.promoted_pairs().tolist()]
 
 
 def sigma_step(owner, present, expected, batch=None, *, collect=None):
     """One step of the Sigma's candidates at a look: a kind expected there
     and not read, with a thing present there. The entries written."""
     alloc = owner._concept_allocator
-    table = alloc.symbol_table()
-    numerical = isinstance(present, tuple)
-    if numerical:
-        names, ids, values, ranks, _ = present
-        by_name = {name: i for i, name in enumerate(names)}
-        members = [table.members(symbol) for symbol in range(len(table))]
-        eligible = [(symbol, [by_name[cid] for cid in row]) for symbol, row in enumerate(members)
-                    if row and all(cid in by_name for cid in row)]
-        if not eligible:
+    if isinstance(present, tuple):
+        names, values, ranks, count = present
+        if not count:
             return []
-        things = [symbol for symbol, _ in eligible]
-    else:
-        things = {}
-        for cid, value in present.items():
-            if value >= PRESENT:
-                for symbol in table.reading(cid):
-                    if all(present.get(member, 0.) >= PRESENT for member in table.members(symbol)):
-                        things[int(symbol)] = value
-        if not things:
-            return []
+    elif not any(value >= PRESENT for value in present.values()):
+        return []
     held = matrices(owner)['sigma']
+    if not isinstance(present, tuple):
+        names, values, ranks = dict_readings(held, present, places=True)
     store = visible_store(alloc.layer(0))
+    held.admit_offers(owner, store)
+    symbols = owner.mtm._candidate_relations
+    symbols.read_symbols(owner)
     if batch is not None and expected is not None:
         expected = expected[batch, :, 0]
     # The forecast is numerical. Only inventory rows above order zero can
-    # teach a kind. Read the same rows in nomination order on every device.
+    # teach a kind; kinds are read in ascending row order.
     if isinstance(expected, tuple) and len(expected) == 2 and torch.is_tensor(expected[1]):
         rows, levels = expected
-        levels = levels.to(held.activity)
     elif torch.is_tensor(expected):
-        rows = sorted(row for row in store._tensor_row_keys
-                      if owner._order_caps()[0] <= row < len(expected))
-        levels = expected.index_select(0, held.refs.new_tensor(rows)).to(held.activity)
+        rows, levels = None, expected[:len(symbols.kinds)]
     else:
         entries = list(expected or ())
-        rows = [row for row, _ in entries]
+        rows = held.refs.new_tensor([row for row, _ in entries])
         levels = held.activity.new_tensor([value for _, value in entries])
-    positions, kinds, observed = [], [], []
-    offers, sources = [], []
-    for i, row in enumerate(rows):
-        kind = owner.concept_id_at_row(row)
-        if kind is None or alloc.order_of(kind) < 1:
-            continue
-        positions.append(i)
-        kinds.append(kind)
-        observed.append(by_name.get(kind, len(names)) if numerical else present.get(kind, 0.))
-        for symbol in things:
-            members = table.members(symbol)
-            if not members or owner._row_order(owner._concept_row_of(members[0])) >= owner._row_order(row):
-                continue
-            if (row, store.column_of_thing(('sym', symbol))) not in store._index:
-                offers.append((kind, symbol))
-                sources.append(len(kinds) - 1)
+    levels = levels.to(held.activity)
+    kinds = symbols.kinds[:len(levels)] if rows is None else symbols.kinds[rows]
+    legal = held.admissible[:len(levels)] if rows is None else held.admissible[rows]
+    top = len(names)
+    def seat(keys):
+        place = torch.searchsorted(names, keys.clamp_min(0)).clamp_max(top - 1)
+        return torch.where((keys >= 0) & (names[place] == keys), place, top)
+    padded, placed = F.pad(values, (0, 1)), F.pad(ranks, (0, 1))
+    observed = padded[seat(kinds)].to(held.activity)
+    # A symbol is offered once every member is present. The first member
+    # to occur sets its offer order; the last supplies its observed value.
+    member = symbols.members
+    valid = member >= 0
+    seats = seat(member)
+    named = valid.any(-1) & ((seats < top) | ~valid).all(-1)
+    seen = named & ((padded[seats] >= PRESENT) | ~valid).all(-1)
+    first = placed[seats].masked_fill(~valid, torch.iinfo(ranks.dtype).max).amin(-1)
+    last = placed[seats].masked_fill(~valid, -1).argmax(-1, keepdim=True)
+    order = first.argsort(stable=True)
+    presence = padded[seats.gather(1, last)[:, 0]].to(held.activity)
+    things = torch.where(seen, torch.arange(len(member), device=member.device), -1)
+    wanted = (levels > observed) & (levels > 0)
+    take = (legal & wanted[:, None] & seen).index_select(1, order)
+    ordered = things[order].expand(len(kinds), -1)
+    pairs = torch.stack((kinds[:, None].expand_as(ordered), ordered), -1)
+    pairs = torch.where(take[..., None], pairs, -1).reshape(-1, 2)
     occupied = held._known_count()
-    if not offers and occupied == 0:
-        return []
-    levels = levels.index_select(0, held.refs.new_tensor(positions))
-    if numerical:
-        observed = torch.nn.functional.pad(values, (0, 1))[ids.new_tensor(observed)].to(held.activity)
-        # The first constituent to occur sets the symbol's offer order.
-        # The last constituent in that order supplies its observed value.
-        width = max(len(row) for _, row in eligible)
-        member = ids.new_tensor([row + [-1] * (width - len(row)) for _, row in eligible])
-        valid = member >= 0
-        seats = member.clamp_min(0)
-        seen = ((values[seats] >= PRESENT) | ~valid).all(-1)
-        first = ranks[seats].masked_fill(~valid, torch.iinfo(ranks.dtype).max).amin(-1)
-        last = ranks[seats].masked_fill(~valid, -1).argmax(-1, keepdim=True)
-        order = first.argsort(stable=True)
-        symbols = ids.new_tensor(things)
-        presence = values[seats.gather(1, last)[:, 0]].to(held.activity)
-        symbols = torch.where(seen, symbols, -1)
-        legal = torch.zeros(len(kinds), len(things), device=ids.device, dtype=torch.bool)
-        if offers:
-            index = {symbol: i for i, symbol in enumerate(things)}
-            legal[ids.new_tensor(sources), ids.new_tensor([index[symbol] for _, symbol in offers])] = True
-        wanted = (levels > observed) & (levels > 0)
-        take = (legal & wanted[:, None] & seen).index_select(1, order)
-        candidates = ids.new_tensor(kinds)
-        ordered = symbols[order].expand(len(kinds), -1)
-        pairs = torch.stack((candidates[:, None].expand_as(ordered), ordered), -1)
-        pairs = torch.where(take[..., None], pairs, -1).reshape(-1, 2)
-    else:
-        observed = held.activity.new_tensor(observed)
-        wanted = (levels > observed) & (levels > 0)
-        pairs = held.refs.new_tensor(offers).reshape(-1, 2)
-        pairs = torch.where(wanted[held.refs.new_tensor(sources)][:, None], pairs, -1)
-        candidates = held.refs.new_tensor(kinds)
-        symbols = held.refs.new_tensor(list(things))
-        presence = held.activity.new_tensor(list(things.values()))
-    promoted = held.observe(pairs, candidates, torch.where(wanted, levels, 0.), symbols, presence,
+    promoted = held.observe(pairs, kinds, torch.where(wanted, levels, 0.), things, presence,
         observed=torch.where(wanted, observed, 0.), read_pairs=True)
     if occupied == 0 and held.hold > 1:
         return []
     trial = _current_trial.get()
     if collect is not None:
-        collect.append((held, promoted, None, trial))
+        collect.append((held, promoted, False, trial))
         return []
     return publish_relations(owner, held.publish(promoted), trial)
 
@@ -530,11 +501,12 @@ def publish_look(owner, pending):
         return
     records = torch.stack([torch.cat((pool.count.expand(1, 2), pairs))
                            for pool, pairs, _, _ in pending]).tolist()
-    for (count, *records), (pool, _, rows, trial) in zip(records, pending, strict=True):
+    store = owner._concept_allocator.layer(0)
+    for (count, *records), (pool, promoted, paired, trial) in zip(records, pending, strict=True):
         pool._remember_count(count[0])
         pairs = [(left, right) for left, right in records if left >= 0]
-        if rows is not None:
-            rows.extend(key for key in pairs if key not in rows)
+        if paired:
+            pool.append_pairs(promoted, len(pairs), store)
         elif pairs:
             with trial.active():
                 publish_relations(owner, pairs, trial)

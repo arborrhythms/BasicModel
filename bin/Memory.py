@@ -1220,6 +1220,11 @@ class MediumTermMemory(MemoryStore):
             return staged
         return durable
 
+    @staticmethod
+    def penalty():
+        """The one strength of the penalty, shared by both candidate pools."""
+        return float(TheXMLConfig.get('architecture.candidatePenalty', default=.2))
+
     def reserve_relation_trials(self, streams, trials, device):
         """Reserve MTM1 rows before the paths branch; each stream/trial owns its writes."""
         base = getattr(self, '_candidate_relations', None)
@@ -1228,13 +1233,15 @@ class MediumTermMemory(MemoryStore):
         if (base is not None and base.refs.device == device and streams == prior_width
                 and len(self._relation_trials) >= streams * trials):
             return
-        from CandidateMatrix import penalty
-        from util import TheXMLConfig
         room = int(TheXMLConfig.get('architecture.candidateCapacity', default=64))
+        # Offers are read over the concept rows, the first transient id.
+        inventory = int(self.transient_ids[0])
         dtype = torch.float32 if device.type == 'mps' else torch.float64
         if base is None:
-            self._candidate_relations = MTM1(room, strength=penalty()).to(device=device, dtype=dtype)
-            self._candidate_pairs = MTMPairRows(room, strength=penalty()).to(device=device, dtype=dtype)
+            self._candidate_relations = MTM1(room, strength=self.penalty(), inventory=inventory).to(
+                device=device, dtype=dtype)
+            self._candidate_pairs = MTMPairRows(room, strength=self.penalty(), inventory=inventory).to(
+                device=device, dtype=dtype)
             self._relation_trials, self._pair_trials = [], []
             for pool in (self._candidate_pairs, self._candidate_relations):
                 pool.pack_trial_columns()
@@ -1249,7 +1256,7 @@ class MediumTermMemory(MemoryStore):
                     pool._remember_count(occupied)
                 seats.clear()
             for _ in range(len(seats), required):
-                seat = type(pool)(room, strength=pool.strength).to(device=device, dtype=dtype)
+                seat = type(pool)(room, strength=pool.strength, inventory=inventory).to(device=device, dtype=dtype)
                 seat.pack_trial_columns()
                 seats.append(seat)
         self._relation_trial_width = streams
@@ -3323,11 +3330,17 @@ class LTM1(_CountedRows, nn.Module):
 
 
 class MTM1(LTM1):
-    """Provisional kind-to-symbol entries in native relation slots."""
-    trial_columns = ('refs', 'ref_kinds', 'activity', 'entered_at', 'read_count', 'held',
-                     'gathered', 'gathered_low', 'totals')
+    """Provisional kind-to-symbol entries in native relation slots.
 
-    def __init__(self, capacity, *, strength, hold=3):
+    ``admissible[row, symbol]``: the kind on that concept row may be offered
+    that symbol (a kind above order zero, a symbol of lower order, no entry
+    yet). It is read again only where the table, the rows or the entries
+    change (:meth:`admit_offers`); a look meets it with what is present.
+    """
+    trial_columns = ('refs', 'ref_kinds', 'activity', 'entered_at', 'read_count', 'held',
+                     'gathered', 'gathered_low', 'totals', 'admissible')
+
+    def __init__(self, capacity, *, strength, hold=3, inventory=0):
         # As in STM1, zero is reserved. The two ordered coordinates are
         # a kind and an entry in its symbol table.
         super().__init__(capacity + 1)
@@ -3340,11 +3353,70 @@ class MTM1(LTM1):
         self.register_buffer('gathered', torch.zeros_like(self.activity), persistent=False)
         self.register_buffer('gathered_low', torch.zeros_like(self.activity), persistent=False)
         self.register_buffer('totals', self.refs.new_zeros(3), persistent=False)
+        # Concept rows and symbols share the inventory's extent.
+        from Symbols import SymbolTable
+        inventory = int(inventory)
+        self.register_buffer('admissible', torch.zeros(inventory, inventory, dtype=torch.bool), persistent=False)
+        self.register_buffer('kinds', self.refs.new_full((inventory,), -1), persistent=False)
+        self.register_buffer('members', self.refs.new_full((inventory, SymbolTable.ENTRIES_PER_ROW), -1),
+                             persistent=False)
+        self._admitted = self._symbols_read = None
 
     def fork(self):
-        other = type(self)(self.capacity - 1, strength=self.strength, hold=self.hold).to(self.activity)
+        other = type(self)(self.capacity - 1, strength=self.strength, hold=self.hold,
+                           inventory=len(self.admissible)).to(self.activity)
         other.reset_from(self)
         return other
+
+    def read_symbols(self, owner):
+        """``kinds``: the concept on each row able to be a kind (order one
+        or more), else -1; ``members``: each symbol's member concepts."""
+        alloc = owner._concept_allocator
+        store, table = alloc.layer(0), alloc.symbol_table()
+        stamp = (table.revision, len(store._tensor_row_keys))
+        if self._symbols_read == stamp:
+            return
+        kinds = torch.full(self.kinds.shape, -1, dtype=torch.long)
+        for row, key in store._tensor_row_keys.items():
+            concept = key[1] if isinstance(key, tuple) else key
+            if alloc.order_of(concept) >= 1:
+                kinds[row] = concept
+        members = torch.full(self.members.shape, -1, dtype=torch.long)
+        for symbol in range(len(table)):
+            held = table.members(symbol)
+            if len(held) > members.shape[1]:
+                raise ValueError('a symbol holds more members than its Pi row allows')
+            for index, concept in enumerate(held):
+                members[symbol, index] = concept
+        self.kinds.copy_(kinds)
+        self.members.copy_(members)
+        self._symbols_read = stamp
+
+    def admit_offers(self, owner, store):
+        """Read ``admissible`` from the table, the rows and ``store``'s
+        entries, where any of them has changed."""
+        table = store.symbol_table
+        stamp = (table.revision, len(store._tensor_row_keys), store.nnz, store._next_edge_id)
+        if self._admitted == stamp:
+            return
+        alloc, size = owner._concept_allocator, len(self.admissible)
+        kind = torch.zeros(size, dtype=torch.bool)
+        order = torch.zeros(size, dtype=torch.long)
+        for row, key in store._tensor_row_keys.items():
+            if alloc.order_of(key[1] if isinstance(key, tuple) else key) >= 1:
+                kind[row] = True
+                order[row] = owner._row_order(row)
+        member = torch.full((size,), torch.iinfo(torch.long).max, dtype=torch.long)
+        for symbol in range(len(table)):
+            held = table.members(symbol)
+            row = owner._concept_row_of(held[0]) if held else None
+            if row is not None:
+                member[symbol] = owner._row_order(row)
+        entry = torch.zeros(size, size + 1, dtype=torch.bool)
+        for row, column in store._index:
+            entry[row, column] = True
+        self.admissible.copy_(kind[:, None] & (member < order[:, None]) & ~entry[:, :size])
+        self._admitted = stamp
 
     def pack_trial_columns(self):
         """Make the mutable columns views into one transfer per storage dtype."""
@@ -3384,6 +3456,8 @@ class MTM1(LTM1):
         occupied = source._known_count()
         if occupied is not None:
             self._remember_count(occupied)
+        # The copied columns hold what the source last read and promoted.
+        self._admitted = source._admitted
 
     def publish(self, promoted):
         """Return new edges and record the remaining extent in the same transfer."""
@@ -3539,13 +3613,23 @@ class MTM1(LTM1):
 
 
 class MTMPairRows(MTM1):
-    """Two symbols seen together, with their meeting and marginal masses in MTM."""
-    trial_columns = (*MTM1.trial_columns, 'tally_refs', 'tally_time', 'tally_clock',
-                     'mass_bits', 'gradient_bits', 'value_bits')
+    """Two symbols seen together, with their meeting and marginal masses in MTM.
 
-    def __init__(self, capacity, *, strength, hold=3):
-        super().__init__(capacity, strength=strength, hold=hold)
+    ``admissible[row, row']``: the concepts on the two rows may be nominated
+    as a pair (one order, no symbol holding both, not yet a row).
+    ``pair_rows[:pair_count]``: the pairs promoted, in promotion order; the
+    spread reads them as symbols (:func:`ConceptSpread.structure`).
+    """
+    trial_columns = (*MTM1.trial_columns, 'tally_refs', 'tally_time', 'tally_clock',
+                     'mass_bits', 'gradient_bits', 'value_bits', 'pair_rows')
+
+    def __init__(self, capacity, *, strength, hold=3, inventory=0):
+        super().__init__(capacity, strength=strength, hold=hold, inventory=inventory)
         room = 16 * capacity
+        # The most names whose pairs the tallies can hold.
+        self.binding_width = (1 + math.isqrt(1 + 8 * room)) // 2
+        self.register_buffer('pair_rows', self.refs.new_full((room, 2), -1), persistent=False)
+        self.pair_count = 0
         self.register_buffer('tally_refs', self.refs.new_full((room, 2), -1), persistent=False)
         self.register_buffer('tally_time', self.refs.new_zeros(room), persistent=False)
         self.register_buffer('tally_clock', self.refs.new_zeros(()), persistent=False)
@@ -3564,6 +3648,55 @@ class MTMPairRows(MTM1):
         if len(self._retained_pairs) < observations:
             self._retained_pairs = self.refs.new_empty(observations, self.capacity - 1, 2)
         return self._retained_pairs[:observations]
+
+    def reset_from(self, source):
+        super().reset_from(source)
+        self.pair_count = source.pair_count
+
+    def admit_pairs(self, owner):
+        """Read ``admissible`` from the table and the rows, where either has
+        changed, then close the pairs already promoted."""
+        alloc = owner._concept_allocator
+        store, table = alloc.layer(0), alloc.symbol_table()
+        stamp = (table.revision, len(store._tensor_row_keys))
+        if self._admitted == stamp:
+            return
+        size = len(self.admissible)
+        order = torch.full((size,), -1, dtype=torch.long)
+        for row, key in store._tensor_row_keys.items():
+            order[row] = alloc.order_of(key[1] if isinstance(key, tuple) else key)
+        fit = torch.zeros(size, size, dtype=torch.bool)
+        for symbol in range(len(table)):
+            rows = [row for row in map(owner._concept_row_of, table.members(symbol)) if row is not None]
+            for left in rows:
+                for right in rows:
+                    fit[left, right] = True
+        self.admissible.copy_((order[:, None] == order) & (order >= 0)[:, None] & ~fit)
+        self._close_pairs(store, self.pair_rows[:self.pair_count])
+        self._admitted = stamp
+
+    def _close_pairs(self, store, pairs):
+        rows = store.concept_rows(pairs.reshape(-1)).view(-1, 2)
+        promoted = (pairs[:, 0] >= 0) & (rows >= 0).all(-1)
+        left, right = rows.clamp_min(0).unbind(-1)
+        self.admissible.index_put_((left, right), self.admissible[left, right] & ~promoted)
+
+    def append_pairs(self, promoted, number, store):
+        """Write ``number`` promotions (``promoted``'s valid rows, in order)
+        after the pairs already promoted."""
+        if not number:
+            return
+        start = self.pair_count
+        if start + number > len(self.pair_rows):
+            raise OverflowError('promoted pair rows exceed the room of the pair tallies')
+        valid = promoted[:, 0] >= 0
+        first = (~valid).to(torch.uint8).argsort(stable=True)[:number]
+        self.pair_rows[start:start + number] = promoted.index_select(0, first)
+        self.pair_count = start + number
+        self._close_pairs(store, promoted)
+
+    def promoted_pairs(self):
+        return self.pair_rows[:self.pair_count]
 
     def offer_magnitudes(self):
         return self.value_bits.abs()

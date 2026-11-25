@@ -66,9 +66,9 @@ def test_the_cone_reads_one_meaning_never_a_join():
     assert float(lanes[2, 0]) == 1.
 
 
-# Certificate 60: implicit growth, tried. Each trial holds its candidates in a
-# small sparse matrix (CandidateMatrix), read in the forward pass, stepped by
-# the proximal step and promoted or forgotten by its value.
+# Certificate 60: implicit growth, tried. Each trial holds its candidates in
+# MTM's candidate rows (Memory.MTM1, Memory.MTMPairRows), read in the forward
+# pass, stepped by the proximal step and promoted or forgotten by its value.
 
 def test_60_1_the_pi_at_order_zero_widens_a_row_or_starts_a_candidate():
     """``caat`` after ``cat``: within the row's width the row widens (its
@@ -77,7 +77,7 @@ def test_60_1_the_pi_at_order_zero_widens_a_row_or_starts_a_candidate():
     against entry on what ``cats`` adds."""
     from test_item17_forms import lesson_store
     from IdentityRows import meet_ratios
-    from CandidateMatrix import CandidateMatrix
+    from Memory import MediumTermMemory, MTM1
     store, identity = lesson_store()
     for word in (b'caat', b'cats'):
         if word not in identity.words:
@@ -89,13 +89,16 @@ def test_60_1_the_pi_at_order_zero_widens_a_row_or_starts_a_candidate():
     held, row_holds = meet_ratios(caat, cat)
     widths, outcomes = (.5, .75, .9, 1.), {}
     for width in widths:
-        candidates = CandidateMatrix(4)
+        candidates = MTM1(4, strength=MediumTermMemory.penalty()).double()
         row = cat.clone()
         if float(held) >= width:
             row = torch.minimum(row, caat)
             outcomes[width] = ('widen', float(row.sum()), float(cat.sum()))
         else:
-            candidates.offer(('row', b'caat'))
+            # The candidate row of caat enters at nothing, read by nothing.
+            offer = candidates.refs.new_tensor([[1, 2]])
+            none = candidates.refs.new_empty(0)
+            candidates.observe(offer, none, candidates.activity.new_empty(0), none, candidates.activity.new_empty(0))
             outcomes[width] = ('candidate', candidates.counts())
     # One correction: cats read as cat. The against entry is what cats adds.
     against = (cats > 0) & ~(cat > 0)
@@ -107,20 +110,18 @@ def test_60_1_the_pi_at_order_zero_widens_a_row_or_starts_a_candidate():
 
 
 def _pair_lesson(strength, looks):
-    from CandidateMatrix import CandidateMatrix, pair_gradient
-    held = CandidateMatrix(8, strength=strength)
+    from Memory import MTMPairRows
+    held = MTMPairRows(8, strength=strength).double()
+    names = sorted({name for look in looks for name in look})
+    symbols = torch.arange(len(names))
     made = []
     for present in looks:
         found = sorted(k for k, v in present.items() if v >= .5)
-        for i, left in enumerate(found):
-            for right in found[i + 1:]:
-                if (left, right) not in made:
-                    held.offer((left, right))
-        gradients = {key: pair_gradient(held.value(key),
-                                        held.meet(key, present.get(key[0], 0.), present.get(key[1], 0.)))
-                     for key in list(held.entries) if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
-        promoted, _ = held.step(gradients)
-        made += [key for key, _ in promoted]
+        offers = [(names.index(left), names.index(right))
+                  for i, left in enumerate(found) for right in found[i + 1:] if (left, right) not in made]
+        promoted = held.observe_pairs(held.refs.new_tensor(offers).reshape(-1, 2), symbols,
+                                      held.activity.new_tensor([present.get(name, 0.) for name in names]))
+        made += [(names[left], names[right]) for left, right in held.publish(promoted)]
     return made, held.counts()
 
 
@@ -135,8 +136,8 @@ def test_60_2_the_pi_above_a_pair_used_together_becomes_a_symbol():
             look['delta'] = 1.
         looks.append(look)
         looks.append({'beta': 1., 'delta': 1.} if k % 4 else {'beta': 1.})
-    from CandidateMatrix import penalty
-    made, counts = _pair_lesson(penalty(), looks)
+    from Memory import MediumTermMemory
+    made, counts = _pair_lesson(MediumTermMemory.penalty(), looks)
     print(dict(made=made, counts=counts))
     assert ('alpha', 'gamma') in made and ('beta', 'delta') in made
     assert ('alpha', 'delta') not in made and ('delta', 'gamma') not in made
@@ -144,26 +145,27 @@ def test_60_2_the_pi_above_a_pair_used_together_becomes_a_symbol():
     # each word is, but is present far more often without it, so no pair of
     # a word and the kind is made.
     with_kind = [dict(look, kind=1.) for look in looks]
-    made, counts = _pair_lesson(penalty(), with_kind)
+    made, counts = _pair_lesson(MediumTermMemory.penalty(), with_kind)
     print(dict(made_with_kind=made, counts=counts))
     assert ('alpha', 'gamma') in made and ('beta', 'delta') in made
     assert not any('kind' in key for key in made)
 
 
 def _substitution_lesson(strength, places):
-    from CandidateMatrix import CandidateMatrix, substitution_gradient
-    held = CandidateMatrix(8, strength=strength)
+    from Memory import MTM1
+    held = MTM1(8, strength=strength).double()
+    kinds = sorted({kind for expected, read, _ in places for kind in (*expected, *read)})
+    things = sorted({thing for _, _, present in places for thing in present})
     made = []
     for expected, read, present in places:
-        for thing in present:
-            for kind, value in expected.items():
-                if value > read.get(kind, 0.) and (kind, thing) not in made:
-                    held.offer((kind, thing))
-        gradients = {(kind, thing): substitution_gradient(expected.get(kind, 0.), read.get(kind, 0.),
-                                                          present.get(thing, 0.))
-                     for kind, thing in held.entries if present.get(thing, 0.) > 0}
-        promoted, _ = held.step(gradients)
-        made += [key for key, _ in promoted]
+        offers = [(kinds.index(kind), things.index(thing)) for thing in present
+                  for kind, value in expected.items() if value > read.get(kind, 0.) and (kind, thing) not in made]
+        promoted = held.observe(held.refs.new_tensor(offers).reshape(-1, 2), torch.arange(len(kinds)),
+            held.activity.new_tensor([expected.get(kind, 0.) for kind in kinds]),
+            held.refs.new_tensor([things.index(thing) for thing in present]),
+            held.activity.new_tensor(list(present.values())),
+            observed=held.activity.new_tensor([read.get(kind, 0.) for kind in kinds]))
+        made += [(kinds[kind], things[thing]) for kind, thing in held.publish(promoted)]
     return made, held.counts()
 
 
@@ -177,8 +179,8 @@ def test_60_3_the_sigma_a_word_in_a_kinds_place_gains_its_entry():
         places.append(({'noun': .6}, {}, {'wug': 1.}))            # wug in the noun's place
         places.append(({'noun': .6}, {'noun': 1.}, {'cat': 1.}))  # a noun read where expected
         places.append(({'determiner': .6}, {'determiner': 1.}, {'the': 1.}))
-    from CandidateMatrix import penalty
-    made, counts = _substitution_lesson(penalty(), places)
+    from Memory import MediumTermMemory
+    made, counts = _substitution_lesson(MediumTermMemory.penalty(), places)
     print(dict(made=made, counts=counts))
     assert ('noun', 'wug') in made
     assert not any(thing == 'the' and kind == 'noun' for kind, thing in made)
@@ -207,8 +209,8 @@ def test_60_penalty_strength_measured():
         right[strength] = (sorted(pairs) == [('alpha', 'gamma'), ('beta', 'delta')]
                            and sorted(kinds) == [('noun', 'wug')])
     print(dict(right_by_strength=right))
-    from CandidateMatrix import penalty
-    assert right[penalty()]
+    from Memory import MediumTermMemory
+    assert right[MediumTermMemory.penalty()]
 
 
 def test_60_4_on_the_lesson_beside_what_mtm_makes(tmp_path, monkeypatch):

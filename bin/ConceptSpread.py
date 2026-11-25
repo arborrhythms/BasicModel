@@ -128,15 +128,14 @@ def _pair_edges(owner, start, edges, device):
     from ``start``, each reading its two concepts at one."""
     from CandidateGrowth import visible_pairs
     pairs = visible_pairs(owner)
-    rows = [(owner._concept_row_of(a), owner._concept_row_of(b)) for a, b in pairs]
-    rows = [pair for pair in rows if None not in pair]
-    if not rows:
+    if pairs is None or not len(pairs):
         return 0
-    member = torch.tensor([r for pair in rows for r in pair], dtype=torch.long, device=device)
-    parent = start + torch.arange(len(rows), device=device).repeat_interleave(2)
+    # A promoted pair's two concepts were read at a look, so each has a row.
+    member = owner._concept_allocator.layer(0).concept_rows(pairs.reshape(-1)).to(device)
+    parent = start + torch.arange(len(pairs), device=device).repeat_interleave(2)
     edges.append((parent, member, torch.ones(len(member), device=device),
                   torch.zeros(len(member), dtype=torch.bool, device=device)))
-    return len(rows)
+    return len(pairs)
 
 
 def structure(owner, device=None):
