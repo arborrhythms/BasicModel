@@ -501,6 +501,18 @@ class ShortTermMemory(MemoryStore, Layer):
 
     DEFAULT_CAPACITY = 8
 
+    def reserve_look_history(self, like, streams, budget):
+        """Reserve the initial STM columns from which each candidate takes its own copy."""
+        history = getattr(self, '_empty_look_history', None)
+        if (history is None or history[2].device != like.device or history[2].dtype != like.dtype
+                or history[0].shape[0] < streams or history[0].shape[1] < budget):
+            capacity = max(streams, getattr(self, '_init_batch', streams))
+            shape = (capacity, budget)
+            history = (torch.full(shape, -1, device=like.device, dtype=torch.long),
+                       torch.zeros(shape, device=like.device, dtype=torch.bool), like.new_zeros(shape))
+            self._empty_look_history = history
+        return tuple(column[:streams, :budget] for column in history)
+
     @staticmethod
     def reserve_word_sources(width, parts, wholes):
         """Reserve the two live physical folds for this sentence's candidate walks.

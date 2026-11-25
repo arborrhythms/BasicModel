@@ -408,10 +408,8 @@ class Looks:
             probability = probabilities.gather(1, index.clamp_min(0)[:, None])[:, 0]
             index = torch.where(rows, index, -1)
             observation.observe(bank.where, index)
-            state.actions.append(index)
-            state.alternatives.append((others > 0) & rows & (index >= 0) & (self.supplied is None))
-            state.probabilities.append(probability)
-            state.proposals.append(torch.where(rows, proposal, 0.))
+            state.record_look(index, (others > 0) & rows & (index >= 0) & (self.supplied is None),
+                              probability, torch.where(rows, proposal, 0.))
             found = index >= 0
             if not bool(found.any()):
                 break

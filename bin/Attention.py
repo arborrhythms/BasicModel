@@ -8,7 +8,6 @@ words were interpreted and with what key, which looks had alternatives, and
 how many looks were taken.
 """
 from typing import NamedTuple
-from dataclasses import dataclass, field
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -29,41 +28,31 @@ class Reading(NamedTuple):
     looks: torch.Tensor               # [B] looks taken
 
 
-@dataclass
 class SentenceReading:
     """One path's reading of a sentence, advanced look by look."""
-    chooser: object
-    keys: torch.Tensor
-    spans: torch.Tensor
-    known: torch.Tensor
-    poles: torch.Tensor
-    limit: torch.Tensor               # [B] looks allowed
-    width: int
-    budget: int = 0                   # looks a reading's history is padded to
-    exploit: object = None            # the reading a departure departs from
-    departure: torch.Tensor = None    # [B] the look that departs, -1 none
-    replay_until: torch.Tensor = None  # [B] looks before it replay the exploit
-    accepted: torch.Tensor = None
-    descended: torch.Tensor = None
-    values: torch.Tensor = None
-    actions: list = field(default_factory=list)
-    alternatives: list = field(default_factory=list)
-    probabilities: list = field(default_factory=list)
-    proposals: list = field(default_factory=list)
+    def __init__(self, chooser, keys, spans, known, poles, limit, width, history, *,
+                 exploit=None, departure=None, replay_until=None):
+        self.chooser, self.keys, self.spans = chooser, keys, spans
+        self.known, self.poles, self.limit = known, poles, limit
+        self.width, self.exploit = width, exploit
+        self.departure = spans.new_full((len(keys),), -1) if departure is None else departure
+        self.replay_until = self.departure if replay_until is None else replay_until
+        self.accepted = torch.zeros_like(known)
+        self.descended = torch.zeros_like(known)
+        self.values = torch.zeros_like(keys)
+        self.actions, self.alternatives, self.probabilities = (column.clone() for column in history)
+        self.proposals = history[2].clone()
+        self.taken = 0
 
-    def __post_init__(self):
-        self.accepted = torch.zeros_like(self.known)
-        self.descended = torch.zeros_like(self.known)
-        self.values = torch.zeros_like(self.keys)
-        B = self.keys.shape[0]
-        if self.departure is None:
-            self.departure = torch.full((B,), -1, dtype=torch.long, device=self.keys.device)
-        if self.replay_until is None:
-            self.replay_until = self.departure.clone()
-
-    @property
-    def taken(self):
-        return len(self.actions)
+    def record_look(self, index, alternative, probability, proposal):
+        turn = self.taken
+        self.actions[:, turn] = index
+        self.alternatives[:, turn] = alternative
+        self.probabilities = self.probabilities.to(probability)
+        self.proposals = self.proposals.to(proposal)
+        self.probabilities[:, turn] = probability
+        self.proposals[:, turn] = proposal
+        self.taken += 1
 
     def record(self, index, interpreted):
         """The word ``index`` interpreted where ``interpreted``."""
@@ -72,19 +61,13 @@ class SentenceReading:
         self.values = torch.where(picked[..., None], self.keys, self.values)
 
     def reading(self):
-        B, W = self.known.shape
-        length = max(int(self.budget), len(self.actions))
-        def history(values, like, fill=0):
-            value = torch.stack(values, 1) if values else like.new_full((B, 0), fill)
-            # Paths take different numbers of looks; their histories are
-            # kept at the same addresses for replay and selection.
-            return torch.cat((value, value.new_full((B, length - value.shape[1]), fill)), 1)
+        W = self.known.shape[1]
         poles = torch.where(self.descended[..., None],
             torch.stack((torch.ones_like(self.known), torch.zeros_like(self.known)), -1).to(self.keys), self.poles)
-        looks = torch.stack(self.actions, 1).ge(0).sum(1) if self.actions else self.spans.new_zeros(B)
+        looks = self.actions.ge(0).sum(1)
         reading = Reading(self.values, self.accepted, self.descended,
-            history(self.actions, self.spans, -1), history(self.alternatives, self.known),
-            history(self.probabilities, self.keys), history(self.proposals, self.keys), poles.detach(), looks)
+            self.actions.clone(), self.alternatives.clone(), self.probabilities.clone(),
+            self.proposals.clone(), poles.detach(), looks)
         pad = self.width - W
         return reading._replace(values=F.pad(reading.values, (0, 0, 0, pad)),
             accepted=F.pad(reading.accepted, (0, pad)), descended=F.pad(reading.descended, (0, pad)),

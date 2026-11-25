@@ -21147,8 +21147,12 @@ class BasicModel(BaseModel):
                 native = self.perceptualSpace._forward_input
                 surface = native.get('sentence_bytes')
                 bank = getattr(self, '_sentence_bank', None)
-                text_width = (surface.shape[1] if surface is not None and native.get('unit_spans') is not None
-                              and bank is not None and opened.where is bank.where else None)
+                # The open field snapshots these brackets. join() appends a
+                # reading when it adds a modality with its own coordinate range.
+                text_only = (bank is not None and self._concept_owner()._cs_field_where is bank.where
+                             and opened.where.shape == bank.where.shape)
+                text_width = (surface.shape[1] if text_only and surface is not None
+                              and native.get('unit_spans') is not None else None)
                 self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
                     self._sentence_order_zero_reverse, opened, present, hidden=False, text_width=text_width)
             from SentenceLooks import WordForecast, Looks

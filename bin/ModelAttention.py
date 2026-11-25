@@ -265,6 +265,9 @@ def stage_input(model):
         torch.arange(W, device=live.device)[None] + 1, 0).max()))
     concepts=torch.tensor(concepts,device=slab.device,dtype=torch.long)
     model._attention_word_concepts=torch.where(known,concepts,-1)
+    from Memory import ShortTermMemory
+    stm = getattr(model.conceptualSpace, 'stm', model.conceptualSpace)
+    history = ShortTermMemory.reserve_look_history(stm, keys, B, model.attention_budget)
     def opening(*, sentence=None, spent_override=None, exploit=None, departure=None, replay_until=None):
         reading_spans=spans[:, :live_width]
         if sentence is not None:
@@ -274,7 +277,7 @@ def stage_input(model):
                  if spent_override is None else spent_override.to(spans))
         limit=spans.new_tensor([meter.spent + meter.remaining for meter in model._attention_meters])-spent
         return SentenceReading(chooser, keys[:, :live_width], reading_spans, known[:, :live_width],
-            poles[:, :live_width], limit.clamp(0, model.attention_budget), W, model.attention_budget,
+            poles[:, :live_width], limit.clamp(0, model.attention_budget), W, history,
             exploit=exploit, departure=departure, replay_until=replay_until)
     model._attention_spans=spans
     model._attention_forms=(forms,ids,keys,live)
