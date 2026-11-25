@@ -134,7 +134,7 @@ class ThoughtTrialState:
             if hasattr(stm, 'model_state'):
                 owners.append((stm.model_state, ('last_where',)))
             owners.append((stm, tuple('_live_' + name for name in STMChunks.FIELDS) +
-                           ('_thought_contents', '_active_batch', '_max_depth_host')))
+                           ('_thought_contents', '_active_batch', '_live_max_depth_host')))
         conceptual = (model._concept_owner() if hasattr(model, '_concept_owner') else
                       getattr(model, 'conceptualSpace', None))
         self.field_owner = conceptual
@@ -195,7 +195,7 @@ class ThoughtTrialState:
                 from Memory import STMChunks
                 owner.set_state(tuple(values['_live_' + name] for name in STMChunks.FIELDS))
                 owner.ensure_batch(values['_active_batch'])
-                owner._max_depth_host = values['_max_depth_host']
+                owner._live_max_depth_host = values['_live_max_depth_host']
                 owner._thought_contents = values['_thought_contents']
                 continue
             # A trial may introduce a knowing carrier for the first time.

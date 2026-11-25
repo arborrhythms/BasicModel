@@ -18466,8 +18466,6 @@ class BasicModel(BaseModel):
         stm._wholes, phrase, owner._chunk_prop_slab, owner._chunk_prop_count = self._chunk_reduce_provenance(
             stm.ensure_whole_state(), choice.local_op, binary, slab, count)
         stm.set_state(self.conceptualSpace.apply_phrase_rows(next_state, phrase, binary))
-        if not torch.compiler.is_compiling():
-            stm._max_depth_host = int(stm._depth.max())
         return choice.applied
 
     def _compose_admission(self, gate):

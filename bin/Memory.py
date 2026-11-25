@@ -560,7 +560,7 @@ class ShortTermMemory(MemoryStore, Layer):
             else:
                 self._assign_live(self, '_live_'+name, full)
         if not torch.compiler.is_compiling():
-            self._max_depth_host = int(state[1].max())
+            self._live_max_depth_host = state[1].detach().amax()
 
     def attach_word_subspace(self, word_subspace):
         if int(word_subspace._idea_capacity) != self._init_capacity or int(word_subspace._stm_payload_dim) != self._init_concept_dim:
@@ -697,7 +697,13 @@ class ShortTermMemory(MemoryStore, Layer):
 
     @property
     def _max_depth_host(self):
-        return self._live_max_depth_host
+        # The tensor captures the installed state, including a trial whose
+        # depth is subsequently overwritten. Only an eager width consumer
+        # needs a Python integer. Checkpoints use the same integer format.
+        depth = self._live_max_depth_host
+        if torch.is_tensor(depth):
+            self._live_max_depth_host = depth = int(depth)
+        return depth
 
     @_max_depth_host.setter
     def _max_depth_host(self, value):
