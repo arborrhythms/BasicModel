@@ -145,6 +145,8 @@ def write_time(store, index, value):
         band.zero_()
     else:
         value = torch.as_tensor(value, device=band.device, dtype=band.dtype)
-        if value.shape != (4,) or not bool(torch.isfinite(value).all()):
+        if value.shape != (4,):
             raise ValueError('entry time requires four finite coordinates')
+        from Meaning import require_sentence_tensor
+        require_sentence_tensor(torch.isfinite(value).all(), 'entry time requires four finite coordinates')
         band.copy_(value)

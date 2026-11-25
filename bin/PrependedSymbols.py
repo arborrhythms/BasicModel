@@ -271,11 +271,10 @@ def stage(model, state, present):
                     and (not pool.accesses.get(key) or b in pool.accesses[key]))
         # Equal-time arrivals retain admission order. Sorting the set itself
         # would make bind-menu positions and training depend on Python's hash.
-        now = model.present()
         keys = sorted((key for key in pool.entries if key in keys), key=lambda key: (
-            max((event.when - now for timeline in pool.entries[key].timelines
-                 for event in timeline.events), default=pool.entries[key].when - now),
-            pool.entries[key].when - now), reverse=True)
+            max((event.when for timeline in pool.entries[key].timelines
+                 for event in timeline.events), default=pool.entries[key].when),
+            pool.entries[key].when), reverse=True)
         choices = [(key, timeline) for key in keys for timeline in range(len(pool.entries[key].timelines))]
         for column, (key, timeline) in enumerate(choices[:entries.prepend]):
             token = pool.entries[key]
