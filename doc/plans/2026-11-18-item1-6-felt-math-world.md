@@ -8866,3 +8866,171 @@ passed.
 - *Nothing reads the relations.* The words, a look that takes two things
   and category 14's questions wait for item 1.4.
 
+### 43.10 The sweep's four
+
+- **The line.** Step F's, in `Models._capture_understanding`:
+  `if imaged(self, 0):`. `ImagePercepts.imaged` reads `model.inputSpace._scenes`.
+  `_capture_understanding` runs after every forward, on every path of
+  `understand`, `ask` and `think`, whether or not a sentence was opened.
+  `test_what_spacetime.py`'s `_TinyWhatModel` is a `BasicModel` whose
+  `forward` opens no sentence and that has no spaces, so the read raised
+  `AttributeError` on `inputSpace`. Step C's reads (`ImagePercepts.read` and
+  `charge`) are made only at a sentence's opening, and none of the four
+  reaches them.
+- **What was done: the read was moved, not the stand-in widened.** Only a
+  pass that opened a sentence can have read an image, and the image's field
+  is the first sentence's opened field. So the test is now made only where
+  that field exists: `if 0 in scalar_fields and imaged(self, 0):`
+  (`scalar_fields` is `_sentence_open_fields`, already read just above with
+  `getattr`). A pass with no opening no longer asks the input space about
+  images. The stand-in and its assertions are unchanged.
+- **The search.** Test files in `test/` that define a `BasicModel` subclass
+  or build a model with `object.__new__`, and test files that name
+  `_capture_understanding`, `.understand(`, `open_sentence`, `ImagePercepts`
+  or `reconstructModalities` and also build a stand-in (`SimpleNamespace`,
+  `object.__new__`, a `class _...` or a `BasicModel` subclass). 31 files
+  beyond the five selectors asked for; the list of 36 selectors is
+  `tmp/item1-6/out_run2_files.txt`. In the sweep their tests are 454
+  passed, 35 skipped and 1 xpassed, none failed.
+- **The run.** `Result: passed, exit 0; 470/470 cases completed.`
+  `output/tests/20261124-172243-14ad97/result.json`, logged in
+  `tmp/item1-6/out_run2.log`: 434 passed, 35 skipped, 1 xpassed. Every
+  outcome other than passed is the sweep's. Both stopping gates passed,
+  and so did the four of `test_what_spacetime.py`, F1 to F4 and C1 to C5.
+  Workers peaked at 4.44 GiB at most.
+
+## 44. Hand-over for review (Claude, 2026-11-24)
+
+*For Codex, who reviews the branch, and for Alec. The branch is `item1-6`,
+local, cut from `main` at `ad8fafea92`, 45 commits, in the worktree
+`.worktrees/item1-6`. Nothing is pushed and the outer repository's pointer
+is not moved. `main` has not moved, so nothing was merged in. In a linked
+worktree of this submodule git needs `--work-tree="$PWD"` (C.1).*
+
+### 44.1 What was built, by its commit
+
+| Step | Commit | What it is | Its return and review |
+|---|---|---|---|
+| The corpus, four revisions | `e79898489c`, `3d22596d9e`, `bc4d4be674`, `652d678323` | The felt-world corpus, 5,760 rows in 27 files, frozen from recipes | §15, §27 |
+| The grid | `3d5581dc90` to `20a31b10ea` | The `.where` on three axes, twelve wires; ranges are boxes | §17, §18 |
+| A | `636929bf47` | A row may carry a `scene`; `sceneShape`; the scene's box | §21 |
+| B | `bac9eee602` | One table of values in 0..1; an image's bank; places by their wires | §25 |
+| T | `dbf76d7dd1` | A value's concept on recurrence; `intensityWhereWidth`. Its reading for only was undone by T2 | §31 |
+| C | `77910696a8` | The image read with its sentence through one Not, put back, charged | §33 |
+| D2 | `76aac1ba6a` | `createMetaConcepts`; `interpret` reading a unit. Its own counter of pairs was undone by D3 | §35 |
+| T2 | `4b8f23a943` | A basic percept of intensity as a row over a part and a whole in a Pi of its own, with a centroid | §37 |
+| D3 | `78b8437a71` | A text concept promoted to its symbol; the name by MTM's ordinary promotion, measured | §39 |
+| E | `6a50a07124` | A thing is a run of touching places, its percept made as a form's | §41 |
+| F, G | `2a081ff82e`, `c7b4ee54b2` | An image out at the output; relations of place | §43 |
+
+Alec's decisions are quoted whole where they were made: C.6, 15.10, 16.7,
+§19, 20.7, §22, §23, §29, §36, §38, 39.11. Later sections stand over
+earlier ones; §36 stands over what §28 to §30 say of a value's row and of
+a concept.
+
+### 44.2 The sweep of the finished branch
+
+Run `20261124-155719-147215`, on a frozen copy of `2a081ff82e`, with
+`RUN_TRAINED` and `RUN_SLOW` unset, against the baseline of the unchanged
+source (18.1):
+
+| | Unchanged | Finished |
+|---|---|---|
+| Cases | 7,462 | 7,544 |
+| Passed | 7,053 | 7,127 |
+| Skipped | 338 | 338 |
+| Failed | 69 | 73 |
+| Expected to fail | 1 | 5 |
+| Seconds | 6,173 | 5,030 |
+| Greatest memory at once | 9.54 GiB | 9.69 GiB |
+
+The 82 cases added are this item's nine test files; all pass but the four
+expected to fail. Six cases pass on the unchanged source and failed in
+that sweep:
+
+1. Four of `test_what_spacetime.py`: a fault of step F, mended in
+   `c7b4ee54b2` (43.10) and run again, 470 of 470 with 31 other files that
+   build a stand-in for a model.
+2. `test_item17_stacks::test_seconds_against_an_mlp_layer[mps]`: the
+   graphics processor's hang, which fails by chance on the unchanged
+   source too (18.1).
+3. `test_explicit_dimensions::TestXorGrammarReconstruction::test_piecewise_overall_at_least_50_pct`:
+   44.3.
+
+Two fail on the unchanged source and pass here, as after the grid (18.1).
+The 66 that fail in both are 18.1's. No sweep has been run since
+`c7b4ee54b2` and the mark of 44.3; the files they touch were run.
+
+### 44.3 The order of two words
+
+In that sweep the test failed before its own assertion, at its reading
+prerequisite, 0 of 58. Run three times more on the finished branch it
+passed once and twice gave every pair reversed, with the prerequisite
+met; so the prerequisite's failure was not seen again. Counted over every
+fresh start: the unchanged source 10 of 12, the grid 8 of 14, the finished
+branch 1 of 4. The lean of 18.7 against this branch is stronger and is
+not settled; a text model's concepts now get their symbols automatically
+(39.11), which may bear on it. Alec: "Obviously they should be run_slow,
+and as I mentioned, reading order should improve in 1.4". The test was a
+learning certificate of the default tier (`learning_certificate`, which
+the slow gate never skips); that mark is taken off it and the class is
+marked `slow` (by Claude, two lines of `test/test_explicit_dimensions.py`,
+on his word). It runs with `RUN_SLOW=1` and is to be judged at item 1.4.
+
+### 44.4 What does not work, and what is marked
+
+- *A name is not formed automatically.* `test_item16_naming.py`'s N3 to N6
+  are expected to fail, by Alec's word, the one exception to H.5's rule.
+  MTM does not know a candidate of a word and its object again, writes
+  nothing against a word met without its object, and gives no symbol to
+  an intensity's concept (39.11, with four proposals in §39). Meta
+  concepts are made as before; `createMetaConcepts` is false only in that
+  test's model.
+- *One value's steps, and one shape, fall in several rows* at 64 bins
+  (37.9, 41.9). Nothing gathers them; it is the same point.
+- *XOR.* "Not without the conjunction" holds by two things of the numeric
+  stem: `intensityWhereWidth` one, and `NumericPercepts.pooled`, which
+  keeps a value's concept from the readout because the readout takes each
+  concept as the greatest over its readings (31.9, 37.9).
+- *The value beside the words* keeps its own reading and the logarithmic
+  chart: the one second path left.
+- *Not built:* a look that takes a felt thing; an image carried across
+  sentences; an image given in answer to words; the words for relations
+  and category 14's questions (they wait for item 1.4); the song.
+
+### 44.5 Where the build departs from what a reviewer might expect
+
+- The conceptual space grew by 8 with the band, and the place match is a
+  product over the axes (18.4).
+- A fresh model reads no concept of an image until its regions and places
+  have recurred, and six tests present their input that often first
+  (25.10).
+- The image is put back from whether a concept reads for, since a concept
+  fully read gives .76 (33.9).
+- A thing's `.where` is an interval of addresses; a smaller thing within a
+  larger gives nothing back; two things that touch are one (41.9, 43.9).
+- The scene's configuration is `data/scene/BasicModel_scene.xml`, a copy of
+  `data/BasicModel.xml` with three keys changed; a test holds it to that.
+- No model saved before the grid, or a numeric one saved before step B,
+  loads; none is committed.
+
+### 44.6 Faults of the unchanged source found on the way
+
+Tests that pass or fail by chance or by the order of the tests:
+`test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`,
+`test_item20_round6_loop::test_parallel_input_without_composed_sentences_books_only_field_reconstruction`,
+`test_item17_stacks::test_seconds_against_an_mlp_layer[mps]`,
+`test_item17_symbols::test_cert_c_an_operator_class_reads_its_arguments_through_symbols`,
+`test_item16_grid::test_g1_built_widths_are_as_before` for `MM_xor.xml` and
+`MM_image.xml` (this item's test, after any that builds `MM_image.xml`).
+`mnist.xml`'s loader gives numbers outside 0..1. The three of
+`test_doc_links.py` fail from a worktree. The thirteen of 18.1.
+
+### 44.7 Still to do in this item
+
+The comment on `intensityWhereWidth` in `data/model.xml` (41.9). The 0-or-1
+match of a place at bfloat16 (25.11). The felt world's configuration with
+room at order zero and one for the corpus (33.9). The slow tier, once, at
+submission. `doc/Training.md` does not yet say that the corpus is taught
+through the model, because it is not.
+

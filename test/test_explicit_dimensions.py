@@ -259,10 +259,10 @@ class TestXorGrammarLearnsXor(unittest.TestCase):
 @pytest.mark.usefixtures("_bind_trained_xor_grammar")
 @pytest.mark.shared_training("xor_grammar")
 @pytest.mark.large_memory
+@pytest.mark.slow
 class TestXorGrammarReconstruction(unittest.TestCase):
     """Every XOR sentence reaches grammar and returns through its inverse in source order."""
 
-    @pytest.mark.learning_certificate
     def test_piecewise_overall_at_least_50_pct(self):
         # Keep the historical selector used by the landing sweep.
         model = self.trained_xor_grammar
