@@ -2327,6 +2327,7 @@ class BaseModel(Mereology, nn.Module):
                 relation_capacity=self._concept_owner()._concept_allocator.parts.capacity,
                 paths=1 + self.explore_paths,
                 episodic_concepts=self.symbolSpace.ltm_store.episodic_capacity))
+            self._concept_owner().reserve_candidate_trials()
             from ThoughtStrata import bound_to_sentence
             bound_to_sentence(self.conceptualSpace.stm._thought_stores,
                               _stage_words, self.conceptualSpace.stm.strata.operators)
@@ -21531,10 +21532,14 @@ class BasicModel(BaseModel):
 
             from CandidateGrowth import GrowthTrial
             growth = []
+            if single and self.explore_paths:
+                pool.reserve_relation_trials(B, 1 + self.explore_paths, words.device)
             def trial_scope(*, reuse=False):
                 if not single or not self.explore_paths:
                     return nullcontext()
-                trial = growth[0].from_reading() if reuse else GrowthTrial(self._concept_owner())
+                index = len(growth)
+                trial = (growth[0].from_reading(path=index) if reuse else
+                         GrowthTrial(self._concept_owner(), path=index))
                 growth.append(trial)
                 return trial.active(self, B)
 

@@ -19,7 +19,7 @@ import itertools
 
 import torch
 
-from CandidateMatrix import CandidateMatrix, pair_gradient, substitution_gradient
+from CandidateMatrix import CandidateMatrix, pair_gradient
 from util import TheXMLConfig
 
 #: Presence at or above which a concept or a thing is present at a look.
@@ -32,8 +32,9 @@ _current_trial = ContextVar('candidate_growth_trial', default=None)
 class GrowthTrial:
     """Provisional observations and sparse promotions of one batched reading."""
 
-    def __init__(self, owner):
+    def __init__(self, owner, *, path=None, stream=None):
         self.owner = owner
+        self.path, self.stream = path, stream
         self.store = owner._concept_allocator.layer(0)
         self.candidates = None
         self.pairs = None
@@ -43,18 +44,22 @@ class GrowthTrial:
         self.expected = None
         self.costs = {'_expectation_looks': [], '_expectation_percept_looks': []}
 
-    def from_reading(self):
+    def from_reading(self, *, path=None):
         """An output-only departure inherits the completed reading by value."""
-        other = GrowthTrial(self.owner)
-        other.streams = {b: stream.from_reading() for b, stream in self.streams.items()}
+        other = GrowthTrial(self.owner, path=path, stream=self.stream)
+        other.streams = {b: stream.from_reading(path=path) for b, stream in self.streams.items()}
         other.expected = self.expected
         other.looks = self.looks.copy()
         other.edges = self.edges.copy()
         other.costs = {name: entries.copy() for name, entries in self.costs.items()}
         other.pairs = self.pairs.copy() if self.pairs is not None else None
         if self.candidates is not None:
-            other.candidates = {name: matrix.fork() for name, matrix in self.candidates.items()}
+            other.candidates = other.fork_matrices(self.candidates)
         return other
+
+    def fork_matrices(self, held):
+        return dict(pi=held['pi'].fork(),
+                    sigma=self.owner.mtm.candidate_relations(self.path, self.stream, source=held['sigma']))
 
     @contextmanager
     def active(self, model=None, batch=None):
@@ -219,13 +224,17 @@ def matrices(owner):
         if trial.candidates is not None:
             return trial.candidates
         if held is not None:
-            trial.candidates = {name: matrix.fork() for name, matrix in held.items()}
+            trial.candidates = trial.fork_matrices(held)
             return trial.candidates
     else:
         trial = None
     if held is None:
         room = int(TheXMLConfig.get('architecture.candidateCapacity', default=64))
-        held = dict(pi=CandidateMatrix(room), sigma=CandidateMatrix(room))
+        if not hasattr(pool, '_candidate_relations'):
+            pool.reserve_relation_trials(0, 0, owner.similarity_codebook.W.device)
+        sigma = (pool.candidate_relations() if trial is None else pool.candidate_relations(
+            trial.path, trial.stream, source=pool._candidate_relations))
+        held = dict(pi=CandidateMatrix(room), sigma=sigma)
         if trial is None:
             pool.candidates = held
         else:
@@ -321,24 +330,26 @@ def sigma_step(owner, present, expected, batch=None):
             if value > observed:
                 wanted[int(kind)] = (value, observed)
     store = visible_store(alloc.layer(0))
+    offers = []
     for kind in wanted:
         kind_row = owner._concept_row_of(kind)
         for symbol in things:
             members = table.members(symbol)
-            if (kind, symbol) in held or not members or owner._row_order(owner._concept_row_of(members[0])) >= owner._row_order(kind_row):
+            if not members or owner._row_order(owner._concept_row_of(members[0])) >= owner._row_order(kind_row):
                 continue
             column = store.column_of_thing(('sym', symbol))
             if (kind_row, column) in store._index:
                 continue
-            held.offer((kind, symbol))
-    gradients = {}
-    for kind, symbol in held.entries:
-        if symbol in things:
-            e, r = wanted.get(kind, (0., 0.))
-            gradients[(kind, symbol)] = substitution_gradient(e, r, things[symbol])
-    promoted, _ = held.step(gradients)
+            offers.append((kind, symbol))
+    if not things or (not offers and held._known_count() == 0):
+        return []
+    promoted = held.observe(held.refs.new_tensor(offers).reshape(-1, 2),
+        held.refs.new_tensor(list(wanted)),
+        held.activity.new_tensor([value for value, _ in wanted.values()]),
+        held.refs.new_tensor(list(things)), held.activity.new_tensor(list(things.values())),
+        observed=held.activity.new_tensor([observed for _, observed in wanted.values()]))
     written = []
-    for (kind, symbol), value in promoted:
+    for kind, symbol in held.publish(promoted):
         trial = _current_trial.get()
         promote = trial.promote if trial is not None and trial.owner is owner else owner.kind_entry
         if promote(kind, table.brought[symbol]) is not None:
@@ -400,7 +411,7 @@ def at_look(model, field, extent=None, active=None):
         if trial is not None:
             events[batch] = (present, sentence, forecasts[batch])
             if batch not in trial.streams:
-                trial.streams[batch] = GrowthTrial(owner)
+                trial.streams[batch] = GrowthTrial(owner, path=trial.path, stream=batch)
         with row_scope(owner, batch):
             pi_step(owner, sentence)
             sigma_step(owner, present, forecasts[batch])

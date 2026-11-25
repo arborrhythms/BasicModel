@@ -158,3 +158,44 @@ def test_each_fixation_path_grades_its_own_requests_against_the_shared_page():
     left, right = torch.autograd.grad(loss, costs)
     assert left[0] == right[1] == 0
     assert left[1] == right[0] > 0
+def test_mtm_relation_slots_match_ordered_admission_eviction_and_promotion():
+    from CandidateMatrix import CandidateMatrix, substitution_gradient
+    from Memory import MTM1
+    native = MTM1(3, strength=.2, hold=3).double()
+    reference = CandidateMatrix(3, strength=.2, hold=3)
+    for offers, expected, things in (
+            ([(0, 4), (1, 4), (2, 5), (3, 6)], {0: .8, 1: .7, 3: .75}, {4: 1., 5: .5, 6: 1.}),
+            ([(1, 4), (3, 6)], {1: .7, 3: .75}, {4: 1., 6: 1.}),
+            ([(4, 5), (5, 6)], {1: .7, 3: .75, 4: .8}, {4: 1., 5: .75, 6: 1.}),
+            ([], {}, {5: 1., 6: 1.}),
+            ([], {}, {}),
+            ([(2, 4)], {2: .4}, {4: 1.}),
+            ([], {}, {4: 1.})):
+        for key in offers:
+            reference.offer(key)
+        gradients = {key: substitution_gradient(expected.get(key[0], 0.), 0., things[key[1]])
+                     for key in reference.entries if key[1] in things}
+        promoted, _ = reference.step(gradients)
+        result = native.observe(native.refs.new_tensor(offers).reshape(-1, 2),
+            native.refs.new_tensor(list(expected)), native.activity.new_tensor(list(expected.values())),
+            native.refs.new_tensor(list(things)), native.activity.new_tensor(list(things.values())))
+        assert [tuple(pair) for pair in result.tolist() if pair[0] >= 0] == [key for key, _ in promoted]
+        assert native.counts() == reference.counts()
+        assert native.diagnostic_entries() == {str(k): vars(v) for k, v in reference.entries.items()}
+    private = native.fork()
+    private.activity.fill_(.8)
+    assert not torch.equal(native.activity, private.activity)
+
+
+@pytest.mark.parametrize('strength', [.2, .125])
+def test_float32_relation_pool_preserves_the_promotion_boundary(strength):
+    from Memory import MTM1
+    pool = MTM1(3, strength=strength, hold=1).float()
+    midpoint = pool.activity.new_tensor(2 * strength)
+    levels = torch.stack((midpoint.nextafter(torch.zeros_like(midpoint)), midpoint,
+                          midpoint.nextafter(torch.ones_like(midpoint))))
+    keys = pool.refs.new_tensor([[1, 4], [2, 5], [3, 6]])
+    result = pool.observe(keys, keys[:, 0], levels, keys[:, 1], torch.full_like(levels, .5))
+    expected = [tuple(key) for key, level in zip(keys.tolist(), levels.tolist(), strict=True)
+                if level * .5 > strength]
+    assert [tuple(key) for key in result.tolist() if key[0] >= 0] == expected

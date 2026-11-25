@@ -1208,6 +1208,41 @@ class MediumTermMemory(MemoryStore):
             return staged
         return durable
 
+    def reserve_relation_trials(self, streams, trials, device):
+        """Reserve MTM1 rows before the paths branch; each stream/trial owns its writes."""
+        base = getattr(self, '_candidate_relations', None)
+        prior_width = getattr(self, '_relation_trial_width', 0)
+        streams = max(streams, prior_width)
+        if (base is not None and base.refs.device == device and streams == prior_width
+                and len(self._relation_trials) >= streams * trials):
+            return
+        from CandidateMatrix import penalty
+        from util import TheXMLConfig
+        room = int(TheXMLConfig.get('architecture.candidateCapacity', default=64))
+        dtype = torch.float32 if device.type == 'mps' else torch.float64
+        if base is None:
+            self._candidate_relations = MTM1(room, strength=penalty()).to(device=device, dtype=dtype)
+            self._candidate_relations._remember_count(0)
+            self._relation_trials = []
+        if self._candidate_relations.refs.device != device:
+            occupied = self._candidate_relations._known_count()
+            self._candidate_relations.to(device=device, dtype=dtype)
+            if occupied is not None:
+                self._candidate_relations._remember_count(occupied)
+            self._relation_trials.clear()
+        required = streams * trials
+        for _ in range(len(self._relation_trials), required):
+            self._relation_trials.append(MTM1(room, strength=self._candidate_relations.strength).to(
+                device=device, dtype=dtype))
+        self._relation_trial_width = streams
+
+    def candidate_relations(self, path=None, stream=None, *, source=None):
+        if path is None or stream is None:
+            return self._candidate_relations if source is None else source.fork()
+        held = self._relation_trials[path * self._relation_trial_width + stream]
+        held.reset_from(self._candidate_relations if source is None else source)
+        return held
+
     def staging_store(self, durable):
         """Use the native idea layout for values needed across recent observations."""
         staged = self.__dict__.get('_staged_ideas')
@@ -2136,14 +2171,19 @@ class _CountedRows(MemoryStore):
         self.count.fill_(value)
         self._remember_count(value)
 
-    def __len__(self):
+    def _known_count(self):
+        """The published extent, if the tensor has not changed since publication."""
         count = self.count
-        if count.is_inference():
-            return int(count)
         cached = self.__dict__.get('_count_cache')
-        if cached is not None and cached[0] is count and cached[1] == count._version:
+        if not count.is_inference() and cached is not None and cached[0] is count and cached[1] == count._version:
             return cached[2]
-        value = int(count)
+        return None
+
+    def __len__(self):
+        value = self._known_count()
+        if value is not None:
+            return value
+        value = int(self.count)
         self._remember_count(value)
         return value
 
@@ -3246,6 +3286,141 @@ class LTM1(_CountedRows, nn.Module):
             readings.append('part')
         return tuple(readings)
 
+
+
+class MTM1(LTM1):
+    """Provisional kind-to-symbol entries in native relation slots."""
+    def __init__(self, capacity, *, strength, hold=3):
+        # As in STM1, zero is reserved. The two ordered coordinates are
+        # a kind and an entry in its symbol table.
+        super().__init__(capacity + 1)
+        self.strength, self.hold = float(strength), int(hold)
+        from struct import pack, unpack
+        self.strength_high, = unpack('f', pack('f', self.strength))
+        self.strength_low = self.strength - self.strength_high
+        for name in ('entered_at', 'read_count', 'held'):
+            self.register_buffer(name, self.refs.new_zeros(self.capacity), persistent=False)
+        self.register_buffer('gathered', torch.zeros_like(self.activity), persistent=False)
+        self.register_buffer('gathered_low', torch.zeros_like(self.activity), persistent=False)
+        self.register_buffer('totals', self.refs.new_zeros(3), persistent=False)
+
+    def fork(self):
+        other = MTM1(self.capacity - 1, strength=self.strength, hold=self.hold).to(self.activity)
+        other.reset_from(self)
+        return other
+
+    def reset_from(self, source):
+        for name in ('refs', 'ref_kinds', 'activity', 'entered_at', 'read_count', 'held',
+                     'gathered', 'gathered_low', 'totals', 'count'):
+            getattr(self, name).copy_(getattr(source, name))
+        occupied = source._known_count()
+        if occupied is not None:
+            self._remember_count(occupied)
+
+    def publish(self, promoted):
+        """Return new edges and record the remaining extent in the same transfer."""
+        extent = self.count.expand(1, 2)
+        count, *pairs = torch.cat((extent, promoted)).tolist()
+        self._remember_count(count[0])
+        return [(kind, member) for kind, member in pairs if kind >= 0]
+
+    def offer_pairs(self, offers):
+        """Admit in nomination order. Tied weakest entries expire oldest first."""
+        refs, used = self.refs[1:], self.ref_kinds[1:, 0] != 0
+        age, steps = self.entered_at[1:], self.read_count[1:]
+        weight = self.activity[1:]
+        seats = torch.arange(len(refs), device=refs.device)
+        for pair in offers.unbind(0):
+            new = ~((refs == pair).all(-1) & used).any()
+            magnitude = weight.abs()
+            weakest = magnitude == magnitude.amin()
+            weakest &= steps == steps.masked_fill(~weakest, torch.iinfo(steps.dtype).max).amin()
+            eviction = age.masked_fill(~weakest, torch.iinfo(age.dtype).max).argmin()
+            free = seats.masked_fill(used, len(refs)).amin()
+            take = new & (seats == torch.where(free < len(refs), free, eviction))
+            self.totals[2].add_((take & used).any())
+            self.totals[0].add_(new)
+            refs.copy_(torch.where(take[:, None], pair, refs))
+            age.copy_(torch.where(take, self.totals[0], age))
+            for values in (weight, steps, self.held[1:], self.gathered[1:], self.gathered_low[1:]):
+                values.masked_fill_(take, 0)
+            used = used | take
+        self.ref_kinds[1:].copy_(torch.where(used[:, None], SYMBOL, 0))
+
+    @staticmethod
+    def _sum_with_remainder(a, b):
+        total = a + b
+        carried = total - a
+        return total, (a - (total - carried)) + (b - carried)
+
+    @staticmethod
+    def _product_with_remainder(a, b):
+        # Dekker splitting at 12 mantissa bits. Evidence and weights are
+        # bounded; the split retains the roundoff of a binary32 product.
+        def split(value):
+            expanded = 4097. * value
+            high = expanded - (expanded - value)
+            return high, value - high
+        ah, al = split(a)
+        bh, bl = split(b)
+        product = a * b
+        return product, (((ah * bh - product) + ah * bl) + al * bh) + al * bl
+
+    def observe(self, offers, kinds, expected, symbols, presence, *, observed=None):
+        """One look's Sigma update, including promotions, on the device."""
+        self.offer_pairs(offers)
+        refs = self.refs[1:]
+        used = self.ref_kinds[1:, 0] != 0
+        # Each kind and symbol occurs once in its respective input.
+        kind_match = refs[:, :1] == kinds
+        expected = (kind_match * expected).sum(-1)
+        observed = (kind_match * observed).sum(-1) if observed is not None else torch.zeros_like(expected)
+        match = refs[:, 1:] == symbols
+        seen = used & match.any(-1)
+        level = (match * presence).sum(-1)
+        gathered, steps, held, value = self.gathered[1:], self.read_count[1:], self.held[1:], self.activity[1:]
+        steps.add_(seen)
+        n = steps.clamp_min(1).to(value.dtype)
+        if gathered.dtype == torch.float64:
+            gathered.add_(torch.where(seen, -(expected - observed).clamp_min(0) * level, 0.))
+            excess = -gathered / n - self.strength
+        else:
+            # Keep the low part on Metal, which lacks binary64 arithmetic.
+            # A nominal equality after binary32 rounding can still promote.
+            deficit, tail = self._sum_with_remainder(expected, -observed)
+            product, residual = self._product_with_remainder(deficit.clamp_min(0), level)
+            total, carry = self._sum_with_remainder(gathered, -product)
+            tail = self.gathered_low[1:] + carry - residual - torch.where(deficit > 0, tail * level, 0.)
+            high, low = self._sum_with_remainder(total, tail)
+            gathered.copy_(torch.where(seen, high, gathered))
+            self.gathered_low[1:].copy_(torch.where(seen, low, self.gathered_low[1:]))
+            threshold, residual = self._product_with_remainder(n, torch.full_like(n, self.strength_high))
+            margin, carry = self._sum_with_remainder(-gathered, -threshold)
+            excess = (margin + (carry - self.gathered_low[1:] - residual - n * self.strength_low)) / n
+        value.copy_(torch.where(seen, excess.clamp_min(0), value))
+        held.add_(seen & (value != 0))
+        promote = seen & (value != 0) & (held >= self.hold)
+        forget = seen & (value == 0) & (held > 0)
+        self.totals[1].add_(promote.sum())
+        self.totals[2].add_(forget.sum())
+        used = used & ~(promote | forget)
+        self.ref_kinds[1:].copy_(torch.where(used[:, None], SYMBOL, 0))
+        self.count.copy_(used.sum())
+        # Promotion order is the original insertion order even after a seat
+        # has been reused. Invalid entries follow all the promoted ones.
+        order = self.entered_at[1:].masked_fill(~promote, torch.iinfo(steps.dtype).max).argsort(stable=True)
+        return torch.where(promote[order, None], refs[order], -1)
+
+    def counts(self):
+        entered, promoted, forgotten = self.totals.tolist()
+        return dict(entered=entered, promoted=promoted, forgotten=forgotten, held=int(self.count))
+
+    def diagnostic_entries(self):
+        live = self.ref_kinds[:, 0] != 0
+        pairs = self.refs[live].tolist()
+        values = torch.stack((self.activity, self.held, self.read_count, self.gathered), 1)[live].tolist()
+        return {str(tuple(pair)): dict(value=value, held=int(held), steps=int(steps), gathered=gathered)
+                for pair, (value, held, steps, gathered) in zip(pairs, values, strict=True)}
 
 
 class STM1(LTM1):

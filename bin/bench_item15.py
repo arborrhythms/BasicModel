@@ -395,11 +395,14 @@ def main():
                     sentence_depth -= 1
             sites, percept_addresses = Counter(), Counter()
             sentence_callers = Counter()
+            inspecting_growth = False
             source_directory = str(args.source.resolve() / 'bin') + os.sep
             methods = {name: getattr(torch.Tensor, name) for name in
                        ('tolist', 'item', 'cpu', '__bool__', '__int__', '__float__')}
             def counted(name, function):
                 def invoke(*a, **kw):
+                    if inspecting_growth:
+                        return function(*a, **kw)
                     host[name] += 1
                     if sentence_depth:
                         caller = sys._getframe(1)
@@ -436,10 +439,17 @@ def main():
                     percept_addresses.update((id(book), row) for row in ids)
                 return lookup(book, indices, **kw)
             def growth_state():
+                nonlocal inspecting_growth
                 pool = model._concept_owner().mtm
-                return {name: dict(counts=matrix.counts(), entries={str(k): vars(v).copy() for k, v in
-                                    matrix.entries.items()}, tallies={str(k): v.copy() for k, v in matrix.tallies.items()})
-                        for name, matrix in (getattr(pool, 'candidates', None) or {}).items()}
+                inspecting_growth = True
+                try:
+                    return {name: dict(counts=matrix.counts(),
+                                entries=matrix.diagnostic_entries() if hasattr(matrix, 'diagnostic_entries') else
+                                    {str(k): vars(v).copy() for k, v in matrix.entries.items()},
+                                tallies={str(k): v.copy() for k, v in getattr(matrix, 'tallies', {}).items()})
+                            for name, matrix in (getattr(pool, 'candidates', None) or {}).items()}
+                finally:
+                    inspecting_growth = False
             trial_audit = []
             def looking(walk, *a, **kw):
                 in_look[0] = True

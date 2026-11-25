@@ -14134,6 +14134,12 @@ class ConceptualSpace(Space):
         if torch.is_tensor(cached):
             self.chunk_row_table(cached.device)
 
+    def reserve_candidate_trials(self):
+        model = self._model
+        if model is not None and getattr(model, 'explore_paths', 0):
+            self.mtm.reserve_relation_trials(self.nStreams, 1 + model.explore_paths,
+                                             self.similarity_codebook.W.device)
+
     def Reset(self, batch=None, hard=True):
         """Clear the subspace event so next forward() does a full recompute.
 
@@ -14144,6 +14150,7 @@ class ConceptualSpace(Space):
 
         See ``Space.Reset`` for ``batch`` / ``hard`` semantics.
         """
+        self.reserve_candidate_trials()
         # Fullgraph refactor (2026-06-03): the word auto-bind (host-side WS
         # symbol creation, untraceable under torch.compile) is deferred off
         # the compiled forward to here -- the sentence/document boundary.
