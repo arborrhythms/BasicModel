@@ -59,8 +59,8 @@ class Evaluation:
                                         if key not in idea_points})
         return self.arrivals
 
-    def read(self, witness, *, relative=False):
-        index = int(witness[0])
+    def read(self, witness, *, relative=False, seat=None):
+        index = int(witness[0]) if seat is None else seat
         if index < 0:
             return None
         identity, timeline = witness[1:]

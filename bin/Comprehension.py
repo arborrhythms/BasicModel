@@ -143,7 +143,7 @@ class Evaluation:
         self.word_columns = word_columns(program, self.native_ids, self.orders)
         self._frames = (torch.zeros_like(program.operation_values) if store is None
                         else store.operation_rows(program.operation_values))
-        self.held_writes = None if program.held_writes is None else program.held_writes.tolist()
+        self.operand_seats = self._operand_seats(program)
         self.refs = (program.actions.new_full((len(program.actions), 2), -1)
                      if program.operation_refs is None else program.operation_refs.clone())
         self.case_values = None if program.case_values is None else torch.zeros_like(program.case_values)
@@ -162,6 +162,28 @@ class Evaluation:
             from ClauseJournal import ComprehensionClose
             from Models import _boundary_registry
             self.closing = ComprehensionClose(self.language, program, self, _boundary_registry(model))
+
+    @staticmethod
+    def _operand_seats(program):
+        """Resolve sources on the recorded STM columns before grammar dispatch.
+
+        A stack operand uses -1, a recorded external point uses -2, and a
+        nonnegative address reads the current held field. The third source
+        is the bound operand. The existing publication records follow them.
+        """
+        if all(value is None for value in (program.held_refresh, program.held_bind,
+                                           program.operation_resolved, program.held_writes)):
+            return None
+        seats = (program.actions.new_full((len(program.actions), 2), -1)
+                 if program.held_refresh is None else program.held_refresh[..., 0].clamp_min(-1))
+        if program.operation_resolved is not None:
+            seats = torch.where(program.operation_resolved, -2, seats)
+        bound = (torch.full_like(seats[:, :1], -1) if program.held_bind is None
+                 else program.held_bind[:, :1])
+        columns = [seats, bound]
+        if program.held_writes is not None:
+            columns.append(program.held_writes.flatten(1))
+        return torch.cat(columns, 1).tolist()
 
     def _cases(self, identity):
         bank = self.program.case_bank
@@ -233,17 +255,16 @@ class Evaluation:
         arity = 2 if kind == 1 and rule.method_name != 'bind' else 1
         children = self.stack[-arity:]; del self.stack[-arity:]
         operands, refs, orders, cases = [], [], [], []
+        seats = self.operand_seats[at] if self.operand_seats is not None else (-1, -1, -1)
         for role, child in enumerate(children):
-            selected = (self.program.operation_resolved is not None
-                        and bool(self.program.operation_resolved[at, role]))
+            seat = seats[role]
+            selected = seat == -2
             # A selected external operand is a recorded input, never a copied
             # operator result. Unsubstituted operands come from this evaluation.
             point = (self.program.operation_values[at, role] if selected else
                      child.point)
-            if self.program.held_refresh is not None and not selected:
-                refreshed = self.held.read(self.program.held_refresh[at,role])
-                if refreshed is not None:
-                    point = refreshed
+            if seat >= 0:
+                point = self.held.read(self.program.held_refresh[at, role], seat=seat)
             # Occurrence coordinates were read before the reference choice:
             # choose_operation reads relative time, then STMChunks.refresh can
             # take an off-stack value (whose occurrence band may be empty).
@@ -267,8 +288,8 @@ class Evaluation:
             cases.append(self._cases(identity) if selected else child.cases)
             self.refs[at, role] = identity
         if rule.method_name == 'bind':
-            bound = (None if self.program.held_bind is None else
-                     self.held.read(self.program.held_bind[at],relative=True))
+            bound = (None if seats[2] < 0 else
+                     self.held.read(self.program.held_bind[at], seat=seats[2], relative=True))
             operands.append(self.program.operation_values[at, 1:2] if bound is None else bound[None])
             refs.append(int(self.refs[at, 1]))
         head = 2 if getattr(rule, 'clause_form', None) == 'S' else getattr(rule, 'head_role', 0)
@@ -326,9 +347,11 @@ class Evaluation:
         frame = torch.stack((operands[0][0], operands[1][0] if len(operands) == 2 else value*0, value))
         self._frames[at].copy_(frame)
         self.current_operation = frame, refs, order
-        if self.held_writes is not None:
-            for witness in self.held_writes[at]:
-                self.held.publish(witness,frame[:2],value,self._frames,physical)
+        if self.program.held_writes is not None:
+            width = self.program.held_writes.shape[-1]
+            for column in range(3, len(seats), width):
+                witness = seats[column:column + width]
+                self.held.publish(witness, frame[:2], value, self._frames, physical)
         if self.timeline is not None:
             self.timeline[at, 0] = order
         working = value
