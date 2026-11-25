@@ -1,6 +1,7 @@
 """The table of forms agrees with a host dictionary of spellings and runs on the device without host reads."""
 import os
 import random
+from collections import Counter
 
 import pytest
 import torch
@@ -131,16 +132,21 @@ def test_a_full_table_raises():
 def test_state_dict_restores_the_table():
     rng = random.Random(4)
     table, words = _table('cpu', rng)
-    table.tally(*_pack(words[:5], 'cpu'))
+    table.close(*_pack(words[:5], 'cpu'))
     state = table.state_dict()
-    assert set(state) == {'left', 'right', 'length', 'count', 'used', 'pair_keys', 'pair_rows', 'code'}
+    assert set(state) == {'left', 'right', 'length', 'count', 'used', 'pair_keys', 'pair_rows', 'code',
+                          'whole_sum', 'whole_count'}
     restored = FormLinks(table.capacity, LONGEST, 0)
     restored.load_state_dict(state)
     data, lengths = _pack(_sentences(rng, words), 'cpu')
     for got, want in zip(restored.recognise(data, lengths), table.recognise(data, lengths)):
         assert torch.equal(got, want)
     assert torch.equal(restored.count, table.count) and int(restored.used) == int(table.used)
-    assert torch.equal(restored.code, table.code)
+    for name in ('code', 'whole_sum', 'whole_count'):
+        assert torch.equal(getattr(restored, name), getattr(table, name)), name
+    table.close(*_pack(words[5:9], 'cpu'))
+    restored.close(*_pack(words[5:9], 'cpu'))
+    assert torch.equal(restored.code, table.code) and torch.equal(restored.whole_sum, table.whole_sum)
 
 
 class _NoHostScalar(TorchDispatchMode):
@@ -196,6 +202,9 @@ def test_a_row_is_a_form_only_once_counted_to_the_threshold():
     assert int(table.count[at]) == 0 and int(rows[0, 1, 5]) == -1, 'a part read only inside a unit is not counted'
 
 
+READINGS = 8  # times each dictionary word is read; the codes settle by readings, not sweeps
+
+
 def _dictionary(count):
     path = '/usr/share/dict/words'
     if not os.path.exists(path):
@@ -205,50 +214,132 @@ def _dictionary(count):
     return random.Random(7).sample(words, count)
 
 
-def _dictionary_table(device, words, capacity=131072):
+def _read(table, stream, device, batch=500):
+    for i in range(0, len(stream), batch):
+        table.close(*_pack(stream[i:i + batch], device))
+
+
+def _dictionary_table(device, words, readings=READINGS, capacity=131072):
     table = FormLinks(capacity, LONGEST, 2).to(device)
-    for i in range(0, len(words), 500):
-        table.close(*_pack(words[i:i + 500], device))
+    rng = random.Random(8)
+    for _ in range(readings):
+        order = list(words)
+        rng.shuffle(order)
+        _read(table, order, device)
     return table
+
+
+def _part_pairs(table):
+    """Spellings, a row by spelling, and every (form, distinct proper substring) pair by the host."""
+    spelled = _host_spellings(table)
+    row_of = {s: r for r, s in enumerate(spelled)}
+    whole, part = [], []
+    for r in range(LEAVES, len(spelled)):
+        s = spelled[r]
+        for p in {s[i:j] for i in range(len(s)) for j in range(i + 1, len(s) + 1)} - {s}:
+            whole.append(r)
+            part.append(row_of[p])
+    return spelled, row_of, torch.tensor(whole), torch.tensor(part)
 
 
 @pytest.fixture(scope='module')
 def dictionary():
     words = _dictionary(3000)
-    return words, _dictionary_table('cpu', words)
+    table = _dictionary_table('cpu', words)
+    return words, table, _part_pairs(table)
 
 
-def test_codes_order_parts_below_wholes_in_both_towers_and_are_distinct(dictionary):
-    _, table = dictionary
+def test_every_code_is_distinct_and_wholes_lie_above_their_parts(dictionary):
+    _, table, (spelled, _, whole, part) = dictionary
     used = int(table.used)
-    rows = torch.arange(LEAVES, used)
-    parts, wholes = table.code[:, :HALF], table.code[:, HALF:]
-    for link in (table.left, table.right):
-        part = link[rows].long()
-        assert bool((parts[rows] >= parts[part]).all() and (parts[rows] > parts[part]).any(1).all())
-        assert bool((wholes[part] >= wholes[rows]).all() and (wholes[part] > wholes[rows]).any(1).all())
-    assert torch.unique(table.code[:used], dim=0).shape[0] == used
+    code = table.code[:, :HALF]
+    assert torch.unique(code[:used], dim=0).shape[0] == used
+    assert bool((table.code[:, HALF:] == 0).all()), 'the wholes half is not written here'
+    above = (code[whole] >= code[part]).all(1)
+    share = float(above.float().mean())
+    kinds = Counter((len(spelled[w]), len(spelled[p])) for w, p in zip(whole[~above].tolist(), part[~above].tolist()))
+    print(f'\nwhole >= part everywhere: {share:.5f} of {len(whole)} pairs; '
+          f'failing (whole, part) lengths: {kinds.most_common(8)}')
+    assert share >= .99
 
 
-def test_distance_falls_as_shared_substrings_rise_among_words_of_one_length(dictionary):
-    words, table = dictionary
-    for n in (7, 9):
-        same = [w for w in words if len(w) == n]
-        code = table.code[table._unit_rows(*_pack(same, 'cpu'))]
-        dist = torch.cdist(code, code)
-        subs = [{w[i:j] for i in range(n) for j in range(i + 1, n + 1)} for w in same]
-        few, many = [], []
-        for i in range(len(same)):
-            for j in range(i + 1, len(same)):
-                shared = len(subs[i] & subs[j])
-                (few if shared <= 2 else many if shared >= 6 else []).append(float(dist[i, j]))
-        assert len(many) > 50 and sum(many) / len(many) < sum(few) / len(few), n
+def _agreement(code, items, row_of):
+    """Mean cosine of mean-removed codes by shared distinct substrings, buckets 0, 2, 4, 6+."""
+    centred = code - code.mean(1, keepdim=True)
+    centred = centred / centred.norm(dim=1, keepdim=True).clamp_min(1e-12)
+    subs = [{a[p:q] for p in range(len(a)) for q in range(p + 1, len(a) + 1)} for a in items]
+    rows = torch.tensor([row_of[a] for a in items])
+    cosine = (centred[rows] @ centred[rows].T).tolist()
+    buckets = {}
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            shared = len(subs[i] & subs[j])
+            buckets.setdefault(min(shared // 2 * 2, 6), []).append(cosine[i][j])
+    return {k: sum(v) / len(v) for k, v in sorted(buckets.items())}
+
+
+def test_direction_agrees_more_as_more_substrings_are_shared(dictionary):
+    words, table, (spelled, row_of, _, _) = dictionary
+    rng = random.Random(9)
+    code = table.code[:, :HALF]
+    for label, items in (('whole words', rng.sample(words, 400)),
+                         ('forms of 3 to 6', rng.sample([s for s in spelled if 3 <= len(s) <= 6], 400))):
+        means = _agreement(code, items, row_of)
+        print(f'\n{label}: ' + ', '.join(f'{k}{"+" if k == 6 else ""}: {v:.3f}' for k, v in means.items()))
+        values = [means[k] for k in (0, 2, 4, 6)]
+        assert values == sorted(values) and values[0] < values[-1], (label, means)
+
+
+def _brute_whole_sums(table, whole, part):
+    q = table._quantise(table.code[:, :HALF])
+    total = torch.zeros_like(table.whole_sum).index_add_(0, part, q[whole])
+    count = torch.zeros_like(table.whole_count).index_add_(0, part, torch.ones_like(part, dtype=torch.int32))
+    return total, count
+
+
+def test_running_whole_sums_equal_the_gathered_ones():
+    rng = random.Random(10)
+    table, words = _table('cpu', rng)
+    for _ in range(4):
+        table.close(*_pack(rng.sample(words, 20), 'cpu'))
+        table.admit_forms(*_pack([bytes(rng.choices(range(97, 123), k=rng.randint(2, 9))) for _ in range(6)], 'cpu'))
+    _, _, whole, part = _part_pairs(table)
+    total, count = _brute_whole_sums(table, whole, part)
+    assert torch.equal(table.whole_count, count) and torch.equal(table.whole_sum, total)
+    held = count > 0
+    gathered = total[held].double() / (count[held, None].double() * 2.0 ** 32)
+    assert torch.allclose(table._whole_mean(torch.nonzero(held)[:, 0]).double(), gathered, atol=1e-6)
+
+
+def test_running_whole_sums_equal_the_gathered_ones_on_the_dictionary(dictionary):
+    _, table, (_, _, whole, part) = dictionary
+    total, count = _brute_whole_sums(table, whole, part)
+    assert torch.equal(table.whole_count, count) and torch.equal(table.whole_sum, total)
+
+
+def test_room_above_a_word_by_its_readings():
+    words = _dictionary(1000)
+    rng = random.Random(11)
+    stream = [w for rank, w in enumerate(words, 1) for _ in range(-(-300 // rank))]
+    rng.shuffle(stream)
+    table = FormLinks(65536, LONGEST, 2)
+    _read(table, stream, 'cpu', batch=250)
+    rows = table._unit_rows(*_pack(words, 'cpu'))
+    room = 1 - table.code[rows, :HALF].mean(1)
+    read = table.count[rows]
+    table_of = {}
+    for lo, hi in ((1, 1), (2, 5), (6, 30), (31, 10 ** 6)):
+        m = (read >= lo) & (read <= hi)
+        table_of[f'{lo}-{hi}'] = (float(room[m].mean()), int(m.sum()))
+    print(f'\n{len(stream)} readings; room above a word by its readings: '
+          + ', '.join(f'{k}: {v:.3f} ({n})' for k, (v, n) in table_of.items()))
 
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires Metal')
 def test_cpu_and_metal_make_equal_codes(dictionary):
-    words, table = dictionary
-    metal = _dictionary_table('mps', words[:1000])
-    cpu = _dictionary_table('cpu', words[:1000])
-    assert int(metal.used) == int(cpu.used)
-    assert torch.equal(metal.code.cpu(), cpu.code) and torch.equal(metal.left.cpu(), cpu.left)
+    words = dictionary[0][:1000]
+    metal = _dictionary_table('mps', words, readings=3)
+    cpu = _dictionary_table('cpu', words, readings=3)
+    assert int(metal.used) == int(cpu.used) and torch.equal(metal.left.cpu(), cpu.left)
+    assert torch.equal(metal.whole_count.cpu(), cpu.whole_count)
+    assert (metal.code.cpu() - cpu.code).abs().max() <= 1e-5

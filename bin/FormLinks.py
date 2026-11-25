@@ -1,6 +1,4 @@
 """The table of forms: a form of length n is one row linking its first and last n-1 bytes."""
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,8 +7,9 @@ LEAVES = 256
 # Sorts after every real pair key (a key is below capacity squared).
 UNUSED_KEY = torch.iinfo(torch.int64).max
 HALF = 64  # width of each half of a code: parts half, then wholes half
-# Odd multiplier spreading row numbers over the increment subsets (made coprime at init).
-SPREAD = 2654435761
+LEAF_BITS = 8  # coordinates set in a byte's direction
+LEAF_SEED = 1  # fixes the byte directions
+SCALE = 2.0 ** 32  # fixed point of the running whole sums: integer adds are exact in any order
 
 
 class FormLinks(nn.Module):
@@ -24,19 +23,23 @@ class FormLinks(nn.Module):
     ``count`` is a row's readings as a whole unit; recognise returns a row
     only once its count reaches ``threshold`` (leaves always), else its parts.
 
-    ``code`` [capacity, 2*HALF]: the parts half of a leaf is its eight bits
-    as (bit, not bit) pairs; of a form, the coordinate maximum of its two
-    parts' plus its increment. The wholes half of a part is the coordinate
-    maximum over the wholes linking it of their wholes half plus their
-    increment (zero when held by none). A row's increment is one on the
-    ``spread`` coordinates of a subset unique to the row, so every whole
-    exceeds its parts strictly there, and every part its wholes.
+    ``code`` [capacity, 2*HALF]: the parts half of a leaf is ``step`` on
+    ``LEAF_BITS`` coordinates of its own; of a form, halfway between the
+    mean of its distinct proper substrings and the mean of the distinct
+    forms holding it (``1 - step`` everywhere when none holds it). Placed so
+    at admission, recentred when read by ``close``. The wholes half is not
+    written here.
+
+    ``whole_sum`` [capacity, HALF] (int64, units of 1/SCALE) and
+    ``whole_count`` [capacity] keep, for each row, the sum and number of the
+    forms holding it: a form adds its code to every distinct substring when
+    admitted, and its change whenever it moves.
     """
 
-    def __init__(self, capacity, longest, threshold):
+    def __init__(self, capacity, longest, threshold, step=1 / 16):
         super().__init__()
         self.capacity, self.longest = int(capacity), int(longest)
-        self.threshold = int(threshold)
+        self.threshold, self.step = int(threshold), float(step)
         if self.capacity <= LEAVES:
             raise ValueError(f'FormLinks capacity must exceed {LEAVES}, got {self.capacity}')
         if self.longest < 1:
@@ -52,18 +55,14 @@ class FormLinks(nn.Module):
         self.register_buffer('pair_rows', torch.arange(self.capacity, dtype=torch.int64))
         if self.threshold < 0:
             raise ValueError(f'FormLinks threshold must not be negative, got {self.threshold}')
-        # Smallest subset size giving every row its own subset of HALF coordinates.
-        self.spread = next(k for k in range(1, HALF + 1) if math.comb(HALF, k) >= self.capacity)
-        self.subsets = math.comb(HALF, self.spread)
-        self.multiplier = SPREAD % self.subsets
-        while math.gcd(self.multiplier, self.subsets) != 1:
-            self.multiplier += 1
-        binom = torch.tensor([[math.comb(i, j) for j in range(self.spread + 1)] for i in range(HALF)])
-        self.register_buffer('binom', binom, persistent=False)
+        if not 0 < self.step < .5:
+            raise ValueError(f'FormLinks step must lie in (0, 1/2), got {self.step}')
         code = torch.zeros(self.capacity, 2 * HALF)
-        bits = (torch.arange(LEAVES)[:, None] >> torch.arange(8)) & 1
-        code[:LEAVES, :16] = torch.stack((bits, 1 - bits), -1).reshape(LEAVES, 16).float()
+        noise = torch.rand(LEAVES, HALF, generator=torch.Generator().manual_seed(LEAF_SEED))
+        code[:LEAVES, :HALF].scatter_(1, noise.topk(LEAF_BITS, 1).indices, self.step)
         self.register_buffer('code', code)
+        self.register_buffer('whole_sum', torch.zeros(self.capacity, HALF, dtype=torch.int64))
+        self.register_buffer('whole_count', torch.zeros(self.capacity, dtype=torch.int32))
 
     # -- find ---------------------------------------------------------------
 
@@ -155,75 +154,112 @@ class FormLinks(nn.Module):
         known = unit >= 0
         self.count.index_add_(0, unit.clamp_min(0), known.to(self.count.dtype))
 
+    @torch.no_grad()
     def close(self, data, lengths):
-        """The post-sentence reset: admit what the units lack, then raise their counts."""
+        """The post-sentence reset: admit what the units lack, recentre their forms, raise their counts."""
         unit = self.admit_forms(data, lengths)
+        self.recentre(data, lengths)
         self._raise(unit)
         return unit
 
-    def _increment(self, rows):
-        """[n, HALF] ones on the coordinate subset of each row (colex unranking of a spread rank)."""
-        rank = rows.long() * self.multiplier % self.subsets
-        left = torch.full_like(rank, self.spread)
-        out = []
-        for i in range(HALF - 1, -1, -1):
-            c = self.binom[i][left.clamp_min(0)]
-            take = (left > 0) & (c <= rank)
-            rank = rank - torch.where(take, c, 0)
-            left = left - take.long()
-            out.append(take)
-        return torch.stack(out[::-1], 1).to(self.code.dtype)
+    # -- the parts half of the code -------------------------------------------
+
+    def _parts(self, rows, n):
+        """Distinct proper substrings of forms ``rows`` [F] of length n: rows [F, E] and weights [F, E].
+
+        E = n(n+1)/2 - 1, level by level down to the leaves; a repeat within a
+        level, and every entry of a row < 0, weighs zero.
+        """
+        valid = rows >= 0
+        cur = rows.long().clamp_min(0)[:, None]
+        out, first = [], []
+        for size in range(2, n + 1):
+            cur = torch.cat((self.left[cur[:, :1]], self.right[cur]), 1).long().clamp_min(0)
+            earlier = torch.ones(size, size, dtype=torch.bool, device=rows.device).tril(-1)
+            seen = ((cur[:, :, None] == cur[:, None, :]) & earlier).any(-1)
+            out.append(cur)
+            first.append(~seen & valid[:, None])
+        return torch.cat(out, 1), torch.cat(first, 1)
+
+    def _quantise(self, code):
+        """Code in units of 1/SCALE; a power-of-two scale keeps float32 values exact."""
+        return (code * SCALE).round().long()
+
+    def _whole_mean(self, rows):
+        """Mean code [F, HALF] of the forms holding ``rows``; ``1 - step`` where none."""
+        count = self.whole_count[rows].to(self.code.dtype)[:, None]
+        mean = self.whole_sum[rows].to(self.code.dtype) / (count.clamp_min(1) * SCALE)
+        return torch.where(count > 0, mean, 1 - self.step)
+
+    def _place(self, rows, n, admitted):
+        """Put forms ``rows`` [F] of length n halfway between their parts' and wholes' means.
+
+        Each distinct part's whole sum takes the form's code when ``admitted``,
+        else its change; ``rows`` < 0 are skipped.
+        """
+        parts, weight = self._parts(rows, n)
+        w = weight.to(self.code.dtype)
+        part_mean = (self.code[parts, :HALF] * w[..., None]).sum(1) / w.sum(1, keepdim=True).clamp_min(1)
+        target = rows.long().clamp_min(0)
+        new = (part_mean + self._whole_mean(target)) / 2
+        change = self._quantise(new)
+        if not admitted:
+            change = change - self._quantise(self.code[target, :HALF])
+        keep = rows >= 0
+        new = torch.where(keep[:, None], new, self.code[target, :HALF])
+        self.code[:, :HALF].index_copy_(0, target, new)
+        flat = parts.reshape(-1)
+        self.whole_sum.index_add_(0, flat, (change[:, None, :] * weight[..., None]).reshape(-1, HALF))
+        if admitted:
+            self.whole_count.index_add_(0, flat, weight.reshape(-1).to(self.whole_count.dtype))
+
+    def _first_seen(self, rows):
+        """``rows`` [P] with each repeat after its first place set to -1 (sort, fixed shape)."""
+        order = torch.argsort(rows, stable=True)
+        ranked = rows[order]
+        repeat = F.pad(ranked[1:] == ranked[:-1], (1, 0), value=False)
+        return torch.where(repeat.scatter(0, order, repeat), -1, rows)
+
+    @torch.no_grad()
+    def recentre(self, data, lengths):
+        """Recentre every form of the units, level by level from length 2, each form once a level."""
+        cur = self._leaves(data, lengths)
+        for n in range(2, data.shape[1] + 1):
+            cur = self._level(cur)
+            self._place(self._first_seen(cur[:, :data.shape[1] - n + 1].reshape(-1)), n, False)
 
     @torch.no_grad()
     def admit_forms(self, data, lengths):
         """Admit every unit with the substrings it lacks, shortest first; returns the unit rows.
 
-        A new row's parts half is made as it is admitted; the wholes half is
-        then pushed from each unit's longest substrings down to its leaves.
-        A full table raises before the level that would overflow is written;
-        levels already admitted stay (each is a complete set of parts).
+        A new row is placed by its parts and wholes as it is admitted, and
+        added to the whole sums of its parts. A full table raises before the
+        level that would overflow is written; levels already admitted stay
+        (each is a complete set of parts).
         """
         cur = self._leaves(data, lengths)
         unit = torch.where(lengths == 1, cur[:, 0], -1)
-        levels, grown = [], False
-        try:
-            for n in range(2, data.shape[1] + 1):
-                a, b = cur[:, :-1], cur[:, 1:]
-                missing = (a >= 0) & (b >= 0) & (self.find(a, b) < 0)
-                keys = torch.unique(a[missing] * self.capacity + b[missing])
-                new = int(keys.numel())
-                if new:
-                    first = int(self.used)
-                    if first + new > self.capacity:
-                        raise RuntimeError(
-                            f'FormLinks full: {first} rows in use, {new} more of length {n}, '
-                            f'capacity {self.capacity}. Raise PartSpace <formCapacity>.')
-                    lo, hi = keys // self.capacity, keys % self.capacity
-                    self.left[first:first + new] = lo.to(self.left.dtype)
-                    self.right[first:first + new] = hi.to(self.right.dtype)
-                    self.length[first:first + new] = n
-                    rows = torch.arange(first, first + new, device=keys.device)
-                    self.code[first:first + new, :HALF] = torch.maximum(
-                        self.code[lo, :HALF], self.code[hi, :HALF]) + self._increment(rows)
-                    self.used.fill_(first + new)
-                    self.sort_pairs()
-                    grown = True
-                cur = self._level(cur)
-                levels.append(cur)
-                unit = torch.where(lengths == n, cur[:, 0], unit)
-        finally:
-            if grown:
-                self._push_wholes(levels)
+        for n in range(2, data.shape[1] + 1):
+            a, b = cur[:, :-1], cur[:, 1:]
+            missing = (a >= 0) & (b >= 0) & (self.find(a, b) < 0)
+            keys = torch.unique(a[missing] * self.capacity + b[missing])
+            new = int(keys.numel())
+            if new:
+                first = int(self.used)
+                if first + new > self.capacity:
+                    raise RuntimeError(
+                        f'FormLinks full: {first} rows in use, {new} more of length {n}, '
+                        f'capacity {self.capacity}. Raise PartSpace <formCapacity>.')
+                lo, hi = keys // self.capacity, keys % self.capacity
+                self.left[first:first + new] = lo.to(self.left.dtype)
+                self.right[first:first + new] = hi.to(self.right.dtype)
+                self.length[first:first + new] = n
+                self.used.fill_(first + new)
+                self.sort_pairs()
+                self._place(torch.arange(first, first + new, device=keys.device), n, True)
+            cur = self._level(cur)
+            unit = torch.where(lengths == n, cur[:, 0], unit)
         return unit
-
-    def _push_wholes(self, levels):
-        """Raise each part's wholes half to its wholes' plus their increment, longest first."""
-        for rows in reversed(levels):
-            rows = rows[rows >= 0].unique()
-            src = self.code[rows, HALF:] + self._increment(rows)
-            for link in (self.left, self.right):
-                index = link[rows].long()[:, None].expand(-1, HALF)
-                self.code[:, HALF:].scatter_reduce_(0, index, src, 'amax')
 
     @torch.no_grad()
     def sort_pairs(self):
