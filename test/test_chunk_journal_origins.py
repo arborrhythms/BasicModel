@@ -10,8 +10,23 @@ import pytest
 import torch
 
 from Memory import STMChunks as chunks
-from ChunkJournal import IDENTITY, LEAVES, RECORD_WIDTH, RESOLVED, SOURCE, capture, empty_scope
+from ChunkJournal import IDENTITY, LEAVES, RECORD_WIDTH, RESOLVED, SOURCE, capture, empty_scope, identity_origins
 from chunk_fixtures import Walk, choice, context
+
+
+def test_identity_origins_keep_first_shift_last_position_and_latest_handle():
+    ids = torch.tensor([9, 22, 14, 17])
+    # A pending token, a durable concept, and two locally introduced names.
+    known = torch.tensor([[2, 7, 0], [1, 22, 1], [0, 0, 0], [0, 0, 0]])
+    metadata = torch.zeros(5, 12, dtype=torch.long)
+    metadata[:, IDENTITY-2] = torch.tensor([9, 9, 14, 14, 17])
+    metadata[:, SOURCE-2] = torch.tensor([-4, -3, -3, -4, 5])
+    metadata[:, RESOLVED-2] = torch.tensor([0, 1, 0, 1, 1])
+    selected = torch.tensor([[0, 0, 17, -1], [0, 0, 17, -1]])
+    result, leaves = identity_origins(ids, known, metadata, selected, torch.tensor([False, True]),
+                                      torch.tensor([2, 3, 2, 6]))
+    assert result.tolist() == [[2, 7, 0], [1, 22, 1], [4, 2, 0], [3, 1, 1]]
+    assert leaves.tolist() == [0, 1, 3, 0]
 
 
 def _packed(*, owner=None, identity=None, metadata=True):

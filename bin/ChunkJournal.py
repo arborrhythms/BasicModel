@@ -419,6 +419,44 @@ def publication_sources(records, identities, held_ids, timelines, stack, referen
     return torch.stack((at, left, right, seat), -1)
 
 
+def identity_origins(identities, known, metadata, selected, journalled, positions):
+    """Locate each new identity's introducing shift or operation in this stream."""
+    from Meaning import require_sentence_tensor
+    if not len(identities):
+        return known, torch.zeros_like(positions)
+    # A trailing empty record is the address of a missing shift or operation.
+    metadata = torch.nn.functional.pad(metadata, (0, 0, 0, 1))
+    member = identities[:, None] == metadata[:, IDENTITY-2]
+    sources = metadata[:, SOURCE-2]
+    shifted = member & (sources < 0)
+    sequence = torch.arange(len(metadata), device=identities.device)
+    first = torch.where(shifted, sequence, len(metadata)-1).amin(-1)
+    has_shift = first < len(metadata)-1
+    words = -sources[first]-1
+    introduced = journalled & (selected[:, 3] < 0) & (selected[:, 2] == identities[:, None])
+    actions = torch.nn.functional.pad(introduced, (0, 1), value=True).int().argmax(-1)
+    local = known[:, 0] == 0
+    require_sentence_tensor((~local | has_shift | (actions < len(journalled))).all(),
+                            'local identity in reading has no introducing operation in its journal', RuntimeError)
+    resolved = (member & (metadata[:, RESOLVED-2] != 0)).any(-1)
+    new = torch.stack((torch.where(has_shift, 4, 3), torch.where(has_shift, words, actions),
+                       torch.where(has_shift, metadata[first, RESOLVED-2], resolved)), -1)
+    origins = torch.where(local[:, None], new, known)
+    # Pending tokens mark every shifted mention. A new local identity only
+    # marks its first shift. Later identities win when several name a leaf.
+    pending = (known[:, 0] == 2) & (known[:, 2] == 0)
+    marks = shifted & (pending[:, None] | (local[:, None] & (first[:, None] == sequence)))
+    handles = torch.arange(1, len(identities)+1, device=identities.device)
+    tickets = torch.where(marks, handles[:, None], 0).amax(0)
+    # The final reading position owns a repeated source address.
+    seats = torch.arange(len(positions), device=positions.device)
+    same = (sources[:, None] < 0) & (-sources[:, None]-1 == positions)
+    target = torch.nn.functional.pad(torch.where(same, seats, -1), (0, 1), value=-1).amax(-1)
+    target = torch.where(target >= 0, target, len(positions))
+    leaves = positions.new_zeros(len(positions)+1).scatter_reduce(0, target, tickets, 'amax')[:-1]
+    return origins, leaves
+
+
 def capture(owner, state, scope, records, values, *, batch, positions, columns, actions):
     """Translate the kept journal to closing handles, after the tensor walk.
 
@@ -426,73 +464,42 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     read from chunks or the existing numerical journal, never replayed.
     """
     from IdentityRows import allocator
+    from Meaning import require_sentence_tensor
     pool = owner.mtm
     alloc = allocator(owner)
     row = records[batch]
     operation = (actions[:,0] == 1) | (actions[:,0] == 2)
     valid_column = (columns >= 0) & (columns < row.shape[0])
-    if bool((operation & ~valid_column).any()):
-        invalid = (operation & ~valid_column).nonzero().flatten().tolist()
-        raise ValueError(f'identity journal operations have invalid columns at actions {invalid}')
+    require_sentence_tensor((~operation | valid_column).all(), 'identity journal operations have invalid columns')
     journalled = operation & valid_column
     # SHIFT and transpose have no identity transaction. The safe gather
     # address is not their provenance, including for identity enumeration.
     selected = row.index_select(0,torch.where(journalled,columns,0))
     selected = torch.where(journalled[:,None],selected,0)
     metadata = torch.cat((row[:,12:24],row[:,24:36],scope[batch,:,2:]),0)
-    ids = []
-    for member in metadata[:,IDENTITY-2].tolist():
-        if member > 0 and member not in ids:
-            ids.append(member)
-    for member in selected[:,(2,3,4,6)].reshape(-1).tolist():
-        if member > 0 and member not in ids:
-            ids.append(member)
+    mentioned = torch.cat((metadata[:, IDENTITY-2], selected[:, (2, 3, 4, 6)].reshape(-1)))
+    ids = list(dict.fromkeys(member for member in mentioned.tolist() if member > 0))
     ids.sort(key=lambda identity: pool.token_of(identity) is None)
-    handles = {identity:i+1 for i,identity in enumerate(ids)}
-    origins = row.new_zeros(len(ids),3)
+    known = []
     actual,alternative = [],[]
     identity_ids = row.new_tensor(ids)
-    publications = publication_sources(row, identity_ids, state[chunks.IDENTITY][batch],
+    publications = (publication_sources(row, identity_ids, state[chunks.IDENTITY][batch],
         state[chunks.TIMELINE][batch], state[chunks.STACK][batch], state[chunks.REFS][batch, :, 0, 0]).tolist()
-    pos = {int(position):index for index,position in enumerate(positions.tolist())}
-    leaves = row.new_zeros(len(positions))
-    for identity in ids:
-        index = handles[identity]-1
-        members = metadata[metadata[:,IDENTITY-2] == identity]
+        if ids else ())
+    for index, identity in enumerate(ids):
         token = pool.token_of(identity)
-        introduction = None
         if token is not None:
             entry = pool.entries[token]
             # Candidate counters are pool keys, never LTM occurrence addresses
             # (in particular, candidate zero is a valid retained candidate).
-            origins[index] = row.new_tensor((5 if entry.order is not None else 2,
-                token[-1], not entry.pending))
-            if entry.pending and entry.order is None:
-                for shifted in members[members[:,SOURCE-2] < 0]:
-                    source = pos.get(-int(shifted[SOURCE-2])-1)
-                    if source is not None:
-                        leaves[source] = index+1
+            known.append((5 if entry.order is not None else 2, token[-1], not entry.pending))
         elif identity in alloc.concepts and identity not in alloc.retired:
             # A durable symbol can be recalled without a current MTM token.
             # Its first bind in this journal is a use, not an introduction;
             # the closing must keep that symbol even if its chunk is evicted.
-            origins[index] = row.new_tensor((1, identity, 1))
+            known.append((1, identity, 1))
         else:
-            shifted = members[members[:,SOURCE-2] < 0]
-            if len(shifted):
-                source = int(shifted[0,SOURCE-2])
-                word = -source-1
-                introduction = pos.get(word)
-                if introduction is not None:
-                    leaves[introduction] = index+1
-                origins[index] = row.new_tensor((4,word,int(shifted[0,RESOLVED-2])))
-            else:
-                introduced = (journalled & (selected[:,2] == identity)
-                              & (selected[:,3] < 0)).nonzero().flatten()
-                if not len(introduced):
-                    raise RuntimeError(f'local identity {identity} has no introducing operation in its journal')
-                action = int(introduced[0])
-                origins[index] = row.new_tensor((3,action,int(members[:,RESOLVED-2].any()) if len(members) else 0))
+            known.append((0, 0, 0))
         base = (pool.value_of(token).to(values) if token is not None else values.new_zeros(values.shape[-1]//3))
         branch = (pool.value_of(token, timeline=len(pool.entries[token].timelines)-1).to(values)
                   if token is not None and len(pool.entries[token].timelines)>1 else base)
@@ -506,6 +513,8 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
                                   torch.maximum(operands[left], operands[right]))
         actual.append(pair[0])
         alternative.append(pair[1])
+    origins, leaves = identity_origins(identity_ids, row.new_tensor(known).reshape(-1, 3),
+                                       metadata, selected, journalled, positions)
     events = selected[:, 2:8].clone()
     original = events[:, (0, 1, 2, 4)]
     keys = torch.cat((row.new_zeros(1), identity_ids))
@@ -533,9 +542,7 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     restore = journalled & (writes[:, 0, 0] >= 0)
     earlier = action_at(writes[:, 0, 5])
     invalid = restore & (earlier < 0)
-    if bool(invalid.any()):
-        column = int(writes[invalid, 0, 5][0])
-        raise ValueError(f'idea restoration reads an earlier event outside this reading: column {column}')
+    require_sentence_tensor(~invalid.any(), 'idea restoration reads an earlier event outside this reading')
     writes[:, 0, 5] = torch.where(restore, earlier, writes[:, 0, 5])
     writes = torch.where(journalled[:,None,None],writes,-1)
     return dict(identity_ids=identity_ids,identity_origins=origins,identity_values=torch.stack(actual) if actual else values.new_zeros(0,width),
