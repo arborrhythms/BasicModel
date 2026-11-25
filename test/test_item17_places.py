@@ -6,6 +6,45 @@ import os
 
 import torch
 
+
+def test_each_nominated_place_keeps_only_its_prefix(monkeypatch):
+    from types import SimpleNamespace
+    import Places
+    from BasicPercepts import BasicPercepts
+
+    basic = BasicPercepts(None, 2, 1, 8)
+    owner = SimpleNamespace(basic_percepts=basic, nominates=lambda key, reading: True,
+                            reading=lambda b: b)
+    c = torch.zeros(2, 3, 4)
+    c[..., 0] = torch.tensor([[.2500001, .4, .2500002], [.4, .2500003, .5]])
+    has = torch.tensor([[True, True, True], [False, True, True]])
+    what = torch.tensor([[[1., 0., .3], [.5, .5, 1.], [.5, 1., .2]],
+                         [[0., 1., .9], [0., 1., .7], [.6, .8, .6]]])
+    bank = SimpleNamespace(registry=object(), token=has, identity_width=2)
+    monkeypatch.setattr(Places, 'readings', lambda bank: (c, has, what))
+    observed = []
+    def admit(owner, plus, minus, kept):
+        observed.append((plus.clone(), minus.clone(), None if kept is None else kept.clone()))
+        return len(observed)
+    monkeypatch.setattr(Places, 'admit', admit)
+    cones = {}
+    for iteration in range(2):
+        expected = []
+        for b, k in has.nonzero().tolist():
+            wire, content = c[b, k], what[b, k]
+            key = tuple(round(x, 6) for x in wire.tolist())
+            plus, minus, kept = cones.get(key, (wire, 1 - wire, content))
+            entry = torch.minimum(plus, wire), torch.minimum(minus, 1 - wire), torch.cat((
+                torch.minimum(kept[:2], content[:2]), torch.maximum(kept[2:], content[2:])))
+            cones[key] = entry
+            expected.append((*entry[:2], entry[2] if entry[2][:2].any() else None))
+        observed.clear()
+        assert Places.meet(owner, bank) == list(range(1, len(expected) + 1))
+        torch.testing.assert_close(observed, expected, rtol=0, atol=0)
+        torch.testing.assert_close(basic.place_cones, cones, rtol=0, atol=0)
+        what = what.flip(1)
+        basic.half()  # Input observations keep their binary32 coordinates.
+
 #: The reading lesson's sentences (the trial's), minimal sentences first.
 LESSON = ('This is Felix.', 'What is this?', 'That is Ciao.', 'What is that?',
           'Here is Felix.', 'Who is here?', 'There is Ciao.', 'Who is there?',

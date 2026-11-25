@@ -649,7 +649,11 @@ class BasicPercepts(nn.Module):
         self.runs = {}
         # A place's row: its kept where wires (on their two lanes) and the
         # what it keeps (:mod:`Places`); the cones met at each band.
-        self.place_rows, self.place_cones = {}, {}
+        self.place_rows, self._place_cone_rows = {}, {}
+        # Store binary32 observations even when a model casts its parameters
+        # to a lower precision. These live counts and cones expire on restore.
+        self.register_buffer('_place_cone_bits', torch.zeros(0, 2 * WHERE_WIRES + self.width,
+                             dtype=torch.int32), persistent=False)
         # Each row's kept value and weight on the where wires and on the when
         # wires of an attended percept. They are learned, so the module that
         # learns them registers them (``PartSpace.place_entries``); the
@@ -877,6 +881,21 @@ class BasicPercepts(nn.Module):
         if word is not None:
             self.words[int(word)] = row
         return row
+
+    @property
+    def place_cones(self):
+        """The accumulated cones, keyed by the same place as MTM's count."""
+        values = self._place_cone_bits.view(torch.float32)
+        return {key: values[row].split((WHERE_WIRES, WHERE_WIRES, self.width))
+                for key, row in self._place_cone_rows.items()}
+
+    def place_cone_storage(self, needed):
+        if needed > len(self._place_cone_bits):
+            old = self._place_cone_bits
+            grown = old.new_zeros((max(needed, 16, 2 * len(old)), old.shape[1]))
+            grown[:len(old)].copy_(old)
+            self._place_cone_bits = grown
+        return self._place_cone_bits.view(torch.float32)
 
     def reserve_place(self, plus, minus, what=None):
         """A row of the first Pi whose entries are on the where wires: on
@@ -1863,7 +1882,8 @@ class BasicPercepts(nn.Module):
         places = state.get('places', [-1] * len(state['occurrences']))
         place_rows = dict(state.get('place_rows', ()))
         self.places.fill_(-1)
-        self.place_rows, self.place_cones = {}, {}
+        self.place_rows, self._place_cone_rows = {}, {}
+        self._place_cone_bits.zero_()
         learned = self.where_entries.detach().clone()
         for row, ((parts, wholes), place) in enumerate(zip(state['occurrences'], places)):
             if row in place_rows:

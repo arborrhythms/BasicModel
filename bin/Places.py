@@ -38,6 +38,16 @@ def readings(bank):
     return wires, has, what
 
 
+def cone_prefixes(points, predecessors, parts_end, rounds):
+    """Meet the observations of each place through the current visit, in parallel."""
+    for _ in range(rounds):
+        before = points.index_select(0, predecessors)
+        points = torch.cat((torch.minimum(points[:, :parts_end], before[:, :parts_end]),
+                            torch.maximum(points[:, parts_end:], before[:, parts_end:])), 1)
+        predecessors = predecessors.index_select(0, predecessors)
+    return points
+
+
 def meet(owner, bank):
     """Count the occurrences of a sentence's bank at their places and
     nominate a place's row on the count that nominates a form."""
@@ -46,27 +56,59 @@ def meet(owner, bank):
         return []
     c, has, what = readings(bank)
     iw = bank.identity_width
-    cones = basic.place_cones
+    c = c.detach().float()
+    width, readings_per_page = c.shape[-1], c.shape[1]
+    # MTM keys use Python's six-decimal rounding of each binary32 wire.
+    # Only those keys and their occupancy are needed to link visits.
+    keys = torch.cat((has[..., None], c), -1).tolist()
+    visits, positions, prior_rows, predecessors = [], [], [], []
+    last, depth = {}, {}
+    for b, page in enumerate(keys):
+        for k, (occupied, *wires) in enumerate(page):
+            if not occupied:
+                continue
+            key = tuple(round(v, 6) for v in wires)
+            at = len(visits)
+            if key in last:
+                before = last[key]
+            elif key in basic._place_cone_rows:
+                prior_rows.append(basic._place_cone_rows[key])
+                before = -len(prior_rows)
+            else:
+                before = at
+            depth[key] = depth.get(key, 0) + int(before != at)
+            predecessors.append(before)
+            visits.append((b, key))
+            positions.append(b * readings_per_page + k)
+            last[key] = at
+    if not visits:
+        return []
+
+    registry = basic._place_cone_rows
+    for key in last:
+        if key not in registry:
+            registry[key] = len(registry)
+    storage = basic.place_cone_storage(len(registry))
+    observations = torch.cat((c, 1 - c, what.detach().float()), -1).flatten(0, 1)
+    seats = torch.tensor(positions, dtype=torch.long, device=c.device)
+    points = observations.index_select(0, seats)
+    if prior_rows:
+        points = torch.cat((points, storage.index_select(0, seats.new_tensor(prior_rows))), 0)
+    parents = seats.new_tensor([len(visits) - 1 - p if p < 0 else p for p in predecessors]
+                               + list(range(len(visits), len(points))))
+    points = cone_prefixes(points, parents, 2 * width + iw, max(depth.values()).bit_length())
+    storage.index_copy_(0, seats.new_tensor([registry[key] for key in last]),
+                        points.index_select(0, seats.new_tensor(list(last.values()))))
+    # A nomination sees only its own prefix. Later visits have already been
+    # folded into storage, but cannot teach an earlier nominated percept.
+    chosen = [at for at, (b, key) in enumerate(visits)
+              if owner.nominates(('place', key), owner.reading(b))]
     made = []
-    # Place nomination consumes host keys in presentation order. Transfer the
-    # observed rows together, retaining only a single row for each new cone.
-    observed = has.nonzero()
-    b_at, k_at = observed.unbind(1)
-    payload = torch.cat((c, what), -1)[b_at, k_at].detach().float().cpu()
-    width = c.shape[-1]
-    for (b, _), values in zip(observed.tolist(), payload, strict=True):
-        code, seen = values[:width], values[width:]
-        key = tuple(round(v, 6) for v in code.tolist())
-        held = cones.get(key)
-        if held is None:
-            cones[key] = (code.clone(), 1 - code, seen.clone())
-        else:
-            plus, minus, kept = held
-            kept = torch.cat((torch.minimum(kept[:iw], seen[:iw]), torch.maximum(kept[iw:], seen[iw:])))
-            cones[key] = (torch.minimum(plus, code), torch.minimum(minus, 1 - code), kept)
-        if not owner.nominates(('place', key), owner.reading(b)):
-            continue
-        plus, minus, kept = cones[key]
+    if not chosen:
+        return made
+    nominated = points.index_select(0, seats.new_tensor(chosen)).cpu()
+    for point in nominated.unbind():
+        plus, minus, kept = point.split((width, width, basic.width))
         row = admit(owner, plus, minus, kept if bool(kept[:iw].any()) else None)
         if row is not None:
             made.append(row)

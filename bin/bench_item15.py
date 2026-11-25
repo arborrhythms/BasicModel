@@ -321,6 +321,14 @@ def main():
             # Older readers stored this mask as a set of observed bytes.
             # Record its actual contents so allocation changes remain comparable.
             for name, module in model.named_modules():
+                if type(module).__name__ == 'BasicPercepts' and hasattr(module, 'place_cones'):
+                    from BasicPercepts import WHERE_WIRES
+                    cones = module.place_cones
+                    buffers[f'{name}._place_cone_keys'] = torch.tensor(
+                        list(cones), device='cpu', dtype=torch.float64).reshape(-1, WHERE_WIRES)
+                    buffers[f'{name}._place_cone_bits'] = (torch.stack(
+                        [torch.cat(lanes) for lanes in cones.values()]).cpu().view(torch.int32) if cones else
+                        torch.empty(0, 2 * WHERE_WIRES + module.width, dtype=torch.int32, device='cpu'))
                 if type(module).__name__ == 'WordIdentity' and not hasattr(module, '_witness_counts'):
                     from WordIdentity import text_of
                     counts = torch.full((module.store._capacity,), -1, dtype=torch.long, device='cpu')
