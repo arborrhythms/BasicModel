@@ -831,7 +831,8 @@ class BasicPercepts(nn.Module):
     def _entries(self, rows, like):
         """Each row's where and when entries, each ``[R, wires, 2]``, read at
         zero or above."""
-        index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
+        index = torch.as_tensor(rows if torch.is_tensor(rows) else list(rows),
+                                dtype=torch.long, device=self.where_entries.device)
         lanes = lambda e, n: held_entries(e.index_select(0, index)).to(like).reshape(-1, 2, n).transpose(1, 2)
         return lanes(self.where_entries, WHERE_WIRES), lanes(self.when_entries, WHEN_WIRES)
 
@@ -876,7 +877,8 @@ class BasicPercepts(nn.Module):
         meanings, ``[rows, columns]``: its where entries' first lane, its
         when entries' first lane, then their second lanes, as many as
         ``columns`` holds (none where it holds none)."""
-        index = torch.as_tensor(list(rows), dtype=torch.long, device=self.where_entries.device)
+        index = torch.as_tensor(rows if torch.is_tensor(rows) else list(rows),
+                                dtype=torch.long, device=self.where_entries.device)
         where = held_entries(self.where_entries.detach().index_select(0, index))
         when = held_entries(self.when_entries.detach().index_select(0, index))
         full = torch.cat((where[:, :WHERE_WIRES], when[:, :WHEN_WIRES],

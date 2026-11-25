@@ -65,9 +65,15 @@ class Evaluation:
             return None
         identity, timeline = witness[1:]
         concepts = self.concepts
-        if (concepts is None or index >= len(concepts.values) or not bool(concepts.valid[index])
-                or not bool((concepts.identities[index] == identity) & (concepts.timelines[index] == timeline))):
-            raise ValueError(f'held-concept refresh reads outside the initial/published concepts: seat {index}, identity {identity}, timeline {timeline}')
+        message = 'held-concept refresh reads outside the initial/published concepts'
+        if concepts is None or index >= len(concepts.values):
+            raise ValueError(f'{message}: seat {index}, identity {identity}, timeline {timeline}')
+        from Meaning import require_sentence_tensor
+        valid = concepts.valid[index] & (concepts.identities[index] == identity) & (concepts.timelines[index] == timeline)
+        try:
+            require_sentence_tensor(valid, message)
+        except ValueError:
+            raise ValueError(f'{message}: seat {index}, identity {identity}, timeline {timeline}') from None
         value = concepts.values[index]
         if relative:
             from RowTime import compared

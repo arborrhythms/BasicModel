@@ -15808,7 +15808,7 @@ class ConceptualSpace(Space):
         from CandidateGrowth import read_streams
         return read_streams(self, lambda: self._reverse_presence(field, observed, inventory_rows), axis=1)
 
-    def _reverse_presence(self, field, observed, inventory_rows):
+    def _reverse_presence(self, field, observed, inventory_rows, bound_store=None):
         """Select cases by pi against the field, or choose without a field.
 
         Higher orders descend through sigma cases. Intersections are expanded
@@ -15824,7 +15824,7 @@ class ConceptualSpace(Space):
                 observed=None if observed is None else observed[:, b:b+1],
                 inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
         from Layers import thing_lanes, sigma_transpose, seat_lanes
-        store = self._concept_field_store(addresses)
+        store = self._concept_field_store(addresses) if bound_store is None else bound_store
         S, B, E = store.nOutput, field.shape[1], field.shape[2]
         result = field[:S].clone()
         source = None
@@ -15843,8 +15843,13 @@ class ConceptualSpace(Space):
             inferred = seat_lanes(matrix, things, S)
             return torch.maximum(value, inferred.reshape(S, B, E, 2))
 
-        higher = torch.tensor([int(row) >= 0 and self._row_order(int(row)) > 0
-                               for row in addresses.tolist()], device=field.device)
+        from Meaning import require_sentence_tensor
+        require_sentence_tensor((addresses < self.nVectors).all(),
+                                'concept row is outside the constructed inventory', IndexError)
+        higher = addresses.to(field.device) >= self._order_caps()[0]
+        if source is not None and not (result.requires_grad or source.requires_grad):
+            from Layers import observed_case_closure
+            return observed_case_closure(store, result, source, higher)
         for _ in range(S):
             previous = result
             source_field = result * higher[:, None, None, None]

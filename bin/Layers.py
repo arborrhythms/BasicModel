@@ -6610,8 +6610,11 @@ class ConceptualAttentionLayer(SparseLayer):
         if not self._thing_columns:
             return super().bind(inventory_rows)
         device = self._device()
-        addresses = (inventory_rows if isinstance(inventory_rows, range) else
-                     torch.as_tensor(inventory_rows).reshape(-1).tolist())
+        if isinstance(inventory_rows, range) or (
+                isinstance(inventory_rows, (list, tuple)) and all(type(row) is int for row in inventory_rows)):
+            addresses = inventory_rows
+        else:
+            addresses = torch.as_tensor(inventory_rows).reshape(-1).tolist()
         size = len(addresses)
         lookup = {}
         for seat, row in enumerate(addresses):
@@ -6657,6 +6660,7 @@ class ConceptualAttentionLayer(SparseLayer):
         view._thing_columns = True
         view._things = [thing for thing, _, _ in specs]
         view._thing_seats = member_seats.view(T, members)
+        view._has_member_seats = any(seat >= 0 for seat in seats)
         return view
 
     def forward(self, options):
@@ -7004,16 +7008,48 @@ def seat_lanes(view, things, size):
     lanes reach the seats of the concepts it holds (the symbols' Pi read
     back), the greatest where several reach one seat."""
     seats = view._thing_seats
-    T = seats.shape[0]
-    result = things.new_zeros(size, *things.shape[1:])
-    held = seats >= 0
-    if not T or not bool(held.any()):
-        return result
-    slot = torch.arange(T, device=seats.device)[:, None].expand_as(seats)[held]
-    target = seats[held]
-    source = things[:T].index_select(0, slot)
-    return result.scatter_reduce(0, target.reshape(-1, *([1] * (source.ndim - 1))).expand_as(source),
-                                 source, reduce='amax', include_self=True)
+    if not view._has_member_seats:
+        return things.new_zeros(size, *things.shape[1:])
+    # Padded entries reduce to a discarded seat. They never share a tie
+    # (or its derivative) with a real seat, even when all evidence is zero.
+    T, members = seats.shape
+    source = things[:T, None].expand(T, members, *things.shape[1:]).flatten(0, 1)
+    target = torch.where(seats >= 0, seats, size).reshape(-1, *([1] * (source.ndim - 1)))
+    result = things.new_zeros(size + 1, *things.shape[1:])
+    return result.scatter_reduce(0, target.expand_as(source), source, reduce='amax', include_self=True)[:size]
+
+
+def observed_case_closure(view, field, observed_things, higher):
+    """The bounded reverse read for an observed, detached field, with fixed-size edges."""
+    size, batch, extent, _ = field.shape
+    if not size:
+        return field.clone()
+    if view.values is None or not view.nnz or not view._has_member_seats:
+        return field.clamp_min(0)
+    rows, cols = view._indices(field.device)
+    seats = view._thing_seats
+    # The final column is the bias. It has no member seat to receive a request.
+    by_thing = torch.cat((seats, seats.new_full((1, seats.shape[1]), -1)))
+    targets = by_thing.index_select(0, cols)
+    weights = view.values.detach().to(field)
+    live = (weights != 0) & ~view._missing_sources
+    targets = torch.where(live[:, None] & (targets >= 0), targets, size)
+    source = observed_things.index_select(0, cols)
+    negative = (weights < 0)[:, None, None]
+    result = field.reshape(size, batch * extent, 2)
+    sink = result.new_zeros(1, batch * extent, 2)
+    # Each simple path can visit either lane of each source row once. Returning
+    # to the same row and lane cannot increase a min along that path. The
+    # released reader also caps the number of descents at the inventory size.
+    rounds = min(size, 2 * len(set(view._rows)) + 1)
+    for _ in range(rounds):
+        request = (result * higher[:, None, None]).index_select(0, rows)
+        request = torch.minimum(torch.where(negative, request.flip(-1), request), source)
+        lanes = request[:, None].expand(-1, targets.shape[1], -1, -1).flatten(0, 1)
+        index = targets.reshape(-1, 1, 1).expand_as(lanes)
+        result = torch.cat((result.clamp_min(0), sink)).scatter_reduce(
+            0, index, lanes, reduce='amax', include_self=True)[:size]
+    return result.reshape_as(field)
 
 
 def thing_priorities(view, seat_priority):

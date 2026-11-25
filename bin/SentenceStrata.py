@@ -111,9 +111,9 @@ class IdeaStack(STM0):
                 return OCCURRENCE, reference[2]
         return super()._reference_value(reference)
 
-    def _keep_working(self, row, meaning):
+    def _keep_working(self, row, meaning, reference):
         # An unkept path must not deposit pending bindings in the live MTM.
-        reference = self.referent_of(row)
+        reference = self._decode_referent(*reference)
         self.working[self.row_name(row)] = replace(meaning,
             role_refs=(reference, *meaning.role_refs[1:]),
             sentence_kind=meaning.sentence_kind or 'idea').metadata()

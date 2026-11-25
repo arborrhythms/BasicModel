@@ -53,6 +53,19 @@ class FeatureTable:
                     percepts.append(percept)
                     members.append(member)
             self.towers.append((indices(percepts), indices(members)))
+        # Place definitions change when this inventory changes. Transfer their
+        # kept columns together here, then gather only the requested rows.
+        place_rows = sorted(basic.place_rows)
+        self.place_ids = indices(place_rows)
+        if place_rows:
+            values = torch.zeros(len(place_rows), basic.width, device='cpu', dtype=torch.float32)
+            for seat, row in enumerate(place_rows):
+                what = basic.place_rows[row][2]
+                if what is not None:
+                    values[seat] = what
+            self.place_values = values.to(basic.value_codes)
+        else:
+            self.place_values = None
         self.revision = revision
 
     def codes(self, basic, percepts, band=0):
@@ -62,8 +75,9 @@ class FeatureTable:
         (``BasicPercepts.place_code``)."""
         if not len(percepts):
             return basic.value_codes.new_empty(0, basic.width + int(band))
-        if bool(((percepts < 0) | (percepts >= len(basic.index))).any()):
-            raise ValueError('unavailable basic percept reference')
+        from Meaning import require_sentence_tensor
+        require_sentence_tensor(((percepts >= 0) & (percepts < len(basic.index))).all(),
+                                'unavailable basic percept reference')
         lookup = percepts.new_full((len(basic.occurrences),), -1)
         lookup[percepts] = torch.arange(len(percepts), device=percepts.device)
         blocks = []
@@ -83,12 +97,11 @@ class FeatureTable:
         result = torch.cat(blocks, -1)
         # A place's row has no parts and no wholes to be read from: its what
         # is the what it keeps.
-        for n, row in enumerate(percepts.tolist()):
-            if row in basic.place_rows:
-                what = basic.place_rows[row][2]
-                result[n] = 0. if what is None else what.to(result)
+        if self.place_values is not None:
+            seats = torch.searchsorted(self.place_ids, percepts.contiguous()).clamp_max(len(self.place_ids) - 1)
+            result = torch.where((self.place_ids[seats] == percepts)[:, None], self.place_values[seats], result)
         if band:
-            result = torch.cat((result, basic.place_code(percepts.tolist(), band).to(result)), -1)
+            result = torch.cat((result, basic.place_code(percepts, band).to(result)), -1)
         return result
 
     def forms(self, owner, record, rows, fallback, band=0):

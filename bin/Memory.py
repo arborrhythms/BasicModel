@@ -2431,7 +2431,7 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             from MemoryActivity import written
             written(self,row,surprise)
             if meaning is not None:
-                self._keep_working(row,meaning)
+                self._keep_working(row,meaning,reference)
         from MemoryActivity import written_complete
         written_complete(self, range(first,len(self)))
         return first
@@ -2439,7 +2439,7 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
     def append_idea(self,point,**kwargs):
         return self.append_meaning(ConceptualMeaning.from_description(self._fit(point)),**kwargs)
 
-    def _keep_working(self,row,meaning):
+    def _keep_working(self,row,meaning,reference):
         owner=self.owner()
         if owner is not None:
             owner.mtm.hold_pending(self.occurrence_of(row),meaning)
@@ -2734,7 +2734,8 @@ class LTM1(_CountedRows, nn.Module):
             return True
         ref = getattr(self, '_occurrence_store', None)
         store = None if ref is None else ref()
-        return store is not None and bool(store.episodic_concepts[:len(store)].eq(row).any())
+        return (store is not None and store.episodic_capacity > 0 and len(store) > 0
+                and bool(store.episodic_concepts[:len(store)].eq(row).any()))
 
     @property
     def revision(self):
@@ -2909,8 +2910,10 @@ class LTM1(_CountedRows, nn.Module):
             if symbol is not None:
                 row = int(symbol)
             elif self.allocate is None:
-                free = self.ref_kinds[:, 0].eq(0).nonzero().flatten().tolist()
-                row = next((cid for cid in free if cid > 0 and not self._reserved_handle(cid)), None)
+                # find() synchronized the live endpoint index above. Preserve
+                # first-free order, including holes left by retention.
+                row = next((cid for cid in range(1, self.capacity)
+                            if cid not in self._endpoints and not self._reserved_handle(cid)), None)
                 if row is None:
                     raise OverflowError('LTM1 capacity exhausted; forgetting is required')
             else:
@@ -3238,9 +3241,9 @@ class STM0(IdeaRows):
         if '_next_row_name' in self.__dict__:
             self._next_row_name = name + 1
 
-    def _keep_working(self,row,meaning):
-        super()._keep_working(row,meaning)
-        reference=self.referent_of(row)
+    def _keep_working(self,row,meaning,reference):
+        super()._keep_working(row,meaning,reference)
+        reference=self._decode_referent(*reference)
         self.working[self.row_name(row)]=replace(meaning,
             role_refs=(reference,*meaning.role_refs[1:]),
             sentence_kind=meaning.sentence_kind or 'idea').metadata()

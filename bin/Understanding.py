@@ -121,8 +121,8 @@ class Reading:
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:
-        # Validate shapes before indexing, then collect the independent
-        # value predicates in a single transfer per input device.
+        # Validate shapes before indexing, then submit one device assertion
+        # per input device. Read individual diagnostics only for a bad input.
         checks = {}
 
         def require(valid, message):
@@ -223,11 +223,16 @@ class Reading:
                     or selected.dtype != torch.bool):
                 raise ValueError('case selections must align to the open reading actions')
             require(in_range(tests, 0, 1), 'case selections must align to the open reading actions')
+        from Meaning import require_sentence_tensor
         for group in checks.values():
-            verdicts = torch.stack([valid for valid, _ in group]).tolist()
-            for ok, (_, message) in zip(verdicts, group, strict=True):
-                if not ok:
-                    raise ValueError(message)
+            verdicts = torch.stack([valid for valid, _ in group])
+            try:
+                require_sentence_tensor(verdicts.all(), 'invalid reading tensor values')
+            except ValueError:
+                for ok, (_, message) in zip(verdicts.tolist(), group, strict=True):
+                    if not ok:
+                        raise ValueError(message) from None
+                raise
         forms = self.lexical_forms
         if forms is None:
             forms = (None,) * int(self.rows.numel())

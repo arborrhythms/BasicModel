@@ -580,8 +580,9 @@ class PerceptExpectation(nn.Module):
             rows, keys = rows.detach(), keys.detach()
             if keys.shape != (batch, len(rows), self.width):
                 raise ValueError('percept forecast bank has a different native width')
-            if bool(((rows < 0) | (rows >= len(self.known))).any()):
-                raise ValueError('percept forecast key exceeds constructed inventory')
+            from Meaning import require_sentence_tensor
+            require_sentence_tensor(((rows >= 0) & (rows < len(self.known))).all(),
+                                    'percept forecast key exceeds constructed inventory')
             probability = self.predictor(keys, context).sigmoid()[..., 0]
             probability = probability * history.known[rows].to(probability)[None]
             total = total + torch.einsum('bn,bnd->bd', probability, keys)

@@ -84,6 +84,34 @@ def test_native_case_staging_uses_existing_sigma_and_allocates_nothing():
     torch.testing.assert_close(fold_cases(selected),expected)
 
 
+def test_observed_reverse_closure_matches_signed_sparse_descent_under_fullgraph():
+    from Layers import observed_case_closure, thing_lanes
+    from test_cs_sparse_weights import _cs, _mint_row
+    cs = _cs(nS=24, order=2)
+    a, b = (_mint_row(cs, 0, i) for i in (101, 102))
+    mid, top = _mint_row(cs, 1, 103), _mint_row(cs, 2, 104)
+    cs.add_concept_edge(mid, a, .7, negated=True)
+    cs.add_concept_edge(mid, b, 0.)
+    cs.add_concept_edge(top, mid, .4)
+    cs.add_concept_edge(top, b, .6)
+    for seats in ([top, a, b, mid], [top, mid, -1, a]):
+        addresses = torch.tensor(seats)
+        view = cs._concept_field_store(addresses)
+        field = torch.arange(32, dtype=torch.float32).reshape(4, 2, 2, 2).remainder(7) / 6
+        observed = field.flip((0, 2))
+        # The gradient-bearing reader is the sparse reference with exact
+        # convergence and its original tie pullback.
+        expected = cs.cs_reverse_presence(field.clone().requires_grad_(), observed=observed,
+                                          inventory_rows=addresses, stream_batch=False)
+        source = thing_lanes(view, observed.reshape(4, 4, 2))
+        bias = source.new_zeros(1, 4, 2)
+        bias[..., 0] = 1
+        source = torch.cat((source, bias))
+        higher = addresses >= cs._order_caps()[0]
+        compiled = torch.compile(observed_case_closure, backend='eager', fullgraph=True)
+        torch.testing.assert_close(compiled(view, field, source, higher), expected.detach(), rtol=0, atol=0)
+
+
 def test_compound_structural_face_reads_only_the_selected_cases():
     from Language import CompoundLayer, invoke_structural_face
     from Queries import StructuralGrammarContext, ConceptualSpaceCapability
