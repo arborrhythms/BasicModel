@@ -21173,7 +21173,7 @@ class BasicModel(BaseModel):
                     index = word_slots[w]
                     from ModelAttention import forecast_percept, observe_percept
                     forecast = forecast_percept(self, gate)
-                    payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub)
+                    payload, sub = perceive(words[:, w:w + 1], gate[:, None], index, None, sub, word_column=w)
                     payload, sym = symbolize(payload, empty_feedback, index, None, sym)
                     payload = observe_percept(self,forecast,payload,sub,w,gate)
                     cache[w] = (index, payload, sub[3:9] if native_support else (), gate)
@@ -21420,7 +21420,7 @@ class BasicModel(BaseModel):
                     index = word_slots[word]
                     lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
                              torch.stack((rows,torch.zeros_like(rows)),-1).to(words))
-                    path_forecast.arrive(index,rows,lanes)
+                    path_forecast.arrive(word, rows, lanes)
                     old = cached.get(word)
                     fresh = rows if old is None else rows & ~old[3]
                     if old is None or bool(fresh.any()):
@@ -21429,7 +21429,8 @@ class BasicModel(BaseModel):
                         else:
                             forecast = forecast_percept(self, fresh, history=native_path.history)
                         if shared_sources is None:
-                            payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
+                            payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub,
+                                                    word_column=word)
                         else:
                             # Both physical folds precede the row gate, the
                             # conceptual read and this candidate's forecast.
@@ -22209,7 +22210,7 @@ class BasicModel(BaseModel):
             return (ps.synthesize_word_parts(local_ids, local_mask, local_offsets),
                     ws.compute_word_property_event(local_properties))
 
-        def stage_cs_sub(_word, row_gate, index, _live, current_cs_sub, *, sources=None):
+        def stage_cs_sub(_word, row_gate, index, _live, current_cs_sub, *, sources=None, word_column=None):
             """IS(w) -> {PS(w),WS(w)} -> CSSub(w), with peer-only reads."""
             del _word, _live
             part, whole = word_sources(index) if sources is None else sources
@@ -22798,8 +22799,8 @@ class BasicModel(BaseModel):
                 choose_operation = compile_word_brick(choose_operation, initial_phase=compose_choice_phase)
                 apply_language_choice = compile_word_brick(apply_language_choice)
         if sentence_transactions and not canonical:
-            def stage_cs_sub(word, gate, index, live, current_sub):
-                p = int(index)
+            def stage_cs_sub(word, gate, index, live, current_sub, *, word_column=None):
+                p = int(index) if word_column is None else word_column
                 result = self._per_word_body_step(word, p, gate,
                     self._per_word_contributions, active_host=True, _pipeline_stage_a=True)
                 event, orders, row, activation = self._peer_stage_b(result, p, None, cache_only=True)
