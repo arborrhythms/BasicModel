@@ -20613,11 +20613,12 @@ class BasicModel(BaseModel):
         entries = []
         for b, source in enumerate(chosen):
             program, native = source['entries'][b], admitted[b]
-            if program is None or not bool(view['mask'][b]):
+            # Admission already omitted every absent or incomplete stream.
+            if native is None or program is None:
+                if native is None and program is not None and bool(view['mask'][b]):
+                    raise ValueError('a completed trial lost its reading at admission')
                 entries.append(None)
                 continue
-            if native is None:
-                raise ValueError('a completed trial lost its reading at admission')
             references = program.reference_ids
             if references is not None and native.reference_ids is not None:
                 references = torch.where(references == program.concept_ids,
@@ -20628,7 +20629,7 @@ class BasicModel(BaseModel):
                                   and references is not None else program.reference_values)))
         view['entries'] = tuple(entries)
         comprehensions = [None if source.get('comprehensions') is None or admitted[b] is None
-            or source['comprehensions'][b] is None or not bool(view['mask'][b])
+            or source['comprehensions'][b] is None
             else source['comprehensions'][b].admitted(admitted[b])
             for b, source in enumerate(chosen)]
         view['comprehensions'] = tuple(comprehensions)
@@ -20637,7 +20638,7 @@ class BasicModel(BaseModel):
         self._publish_sentence_scratch(state)
         placements = []
         for b, program in enumerate(entries):
-            if bool(active[b]):
+            if program is not None:
                 kept_field = self.languageSpace.parts_of_speech.observe_kept(program,
                     self.languageSpace._compose_binary_rules, self.languageSpace._compose_unary_rules,
                     field=kept_field, stream=b, placements=placements)
