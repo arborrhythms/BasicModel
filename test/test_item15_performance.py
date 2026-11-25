@@ -702,3 +702,27 @@ def test_mixed_native_winners_replay_only_their_own_observations_and_gradients()
         col = (index % 2) ^ winner
         torch.testing.assert_close(guess.grad[winner], (guess[winner] - raw[winner, col]) / 2)
         assert not guess.grad[1-winner].any()
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires a Metal device')
+def test_metal_trust_radius_matches_binary64_rounding_under_fullgraph():
+    import math
+    from TrustRadius import gain_bits, metal_radius
+    from torch._dynamo.testing import CompileCounterWithBackend
+    counts = torch.tensor([0, 1, 2, 3, 7, 32, 113, 120, 2**24 + 1, 2**53 + 3, 2**63 - 1],
+                          device='cpu')
+    bits = torch.tensor([0, 1, 3, 2**23 - 1, 2**23, 0x3f800000, 0x7f7fffff], dtype=torch.int32,
+                        device='cpu')
+    agreements = torch.cat((bits.view(torch.float32), torch.tensor([1.974835753440857], device='cpu')))
+    views = counts.repeat_interleave(len(agreements))
+    inputs = agreements.repeat(len(counts))
+    counter = CompileCounterWithBackend('inductor')
+    compiled = torch.compile(metal_radius, backend=counter, fullgraph=True)
+    for horizon in (3., 10.7):
+        bits = gain_bits(horizon)
+        gains = torch.tensor((*bits, *([bits[-1]] * (512 - len(bits)))), device='mps')
+        expected = torch.tensor([a / n * -math.expm1(-n / horizon) if n else 0.
+                                 for a, n in zip(inputs.tolist(), views.tolist())], device='cpu')
+        actual = compiled(views.to('mps'), inputs.to('mps'), gains).cpu()
+        assert torch.equal(actual.view(torch.int32), expected.view(torch.int32))
+    assert counter.frame_count == 1

@@ -102,7 +102,7 @@ def main():
                   steps=[])
     record['explore_paths_override'] = args.explore_paths
     record['source_files'] = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-                              for p in sorted((ROOT / 'bin').glob('*.py'))}
+                              for p in sorted((ROOT / 'bin').iterdir()) if p.suffix in ('.py', '.metal')}
 
     def save():
         (args.output / 'timing.json').write_text(json.dumps(record, indent=2) + '\n')

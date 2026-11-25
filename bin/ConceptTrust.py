@@ -35,6 +35,9 @@ class ConceptTrust(nn.Module):
         self.register_buffer('known', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
         self.register_buffer('allocated', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
         self.register_buffer('read_objects', torch.zeros(len(bank.W), dtype=torch.bool, device=bank.W.device))
+        self.register_buffer('_gain_bits', None, persistent=False)
+        self._gain_horizon = None
+        self._prepare_gain_table()
         self._deferred_word_views = None
         if isinstance(bank.W, nn.Parameter):
             import weakref
@@ -90,12 +93,40 @@ class ConceptTrust(nn.Module):
 
 
     @torch.no_grad()
+    def _prepare_gain_table(self):
+        from TrustRadius import gain_bits
+        table = gain_bits(self.trust_views)
+        self._gain_bits = None if table is None else self.views.new_tensor(table)
+        self._gain_horizon = self.trust_views
+
+    @torch.no_grad()
     def refresh(self, identity):
         from Memory import NULL_CONCEPT
-        if not self.tracks(identity) or identity == NULL_CONCEPT or self.owner.is_frozen(identity):
+        if identity == NULL_CONCEPT or self.owner.is_frozen(identity):
             return
         row = self.owner._concept_row_of(identity)
         if row is None:
+            return
+        if self.agreement.dtype == torch.float32 and self.agreement.device.type in ('cpu', 'mps'):
+            from TrustRadius import metal_radius
+            if self._gain_horizon != self.trust_views:
+                self._prepare_gain_table()
+            if self._gain_bits is not None:
+                views, agreement = self.views[row:row + 1], self.agreement[row:row + 1]
+                if agreement.device.type == 'mps':
+                    radius = metal_radius(views, agreement, self._gain_bits)
+                else:
+                    gain = self._gain_bits.view(torch.float64)[views.clamp(0, len(self._gain_bits) - 1)]
+                    radius = (agreement.double() / views.clamp_min(1) * gain).float()
+                    radius = torch.where(views == 0, 0., radius)
+                active = self.known[row:row + 1] & (views >= 0)
+                if not self.tracked:
+                    active = active & self.allocated[row:row + 1]
+                length = self.lengths[row:row + 1, 0]
+                length.copy_(torch.where(active, torch.where(self.read_objects[row:row + 1], 1., radius), length))
+                self.project([row], active=active)
+                return
+        if not self.tracks(identity):
             return
         views = int(torch.where(self.known[row], self.views[row], -1))
         if views < 0:
@@ -109,7 +140,7 @@ class ConceptTrust(nn.Module):
         self.project([row])
 
     @torch.no_grad()
-    def project(self, rows=None):
+    def project(self, rows=None, *, active=None):
         bank = self.owner.similarity_codebook
         if rows is None:
             rows = self.allocated.nonzero().flatten()
@@ -140,7 +171,7 @@ class ConceptTrust(nn.Module):
             higher = rows >= self.owner._order_caps()[0]
             percept = values[:, :derived.percept_event_width]
             values[:, :derived.percept_event_width] = torch.where(higher[:, None], 0., percept)
-        bank.W[rows] = values
+        bank.W[rows] = values if active is None else torch.where(active[:, None], values, bank.W[rows])
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
         if prefix+'read_objects' not in state:
