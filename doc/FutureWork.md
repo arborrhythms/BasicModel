@@ -2358,6 +2358,12 @@ Animus, and Augustine", and a fourth, Basho, differs only in its speech.
   using its higher-order logic (and possibly continues learning)". It differs
   from Animus in having once had symbols: what it learned with them is still
   in its weights and its memory when the higher orders are turned off.
+  The Not is removed in it at every order (Alec, 2026-11-24: "Add also the
+  removal of NOT at all orders to Augustine"): no concept's lanes are
+  exchanged anywhere, so every concept it has is a positive one, with a
+  positive meaning and no negation, and it speaks only of what is
+  ([Logic](Logic.md): "the removal of the NOT is exactly what is necessary
+  to speak only of the good in Augustine's sense").
 - **Basho** is "the basic model that only speaks using basic level
   grammar": it "writes without using any relations, only ideas". "I think
   that is still permitting higher-order and thus negation, but the grammar
@@ -2372,7 +2378,9 @@ to select will help demonstration of the architecture."
 
 To specify: the grammatical change that defines Animus, as a setting of the
 model and not a second code path; the switch that turns the higher orders off
-in a trained model, and whether Augustine goes on learning after it; how
+in a trained model, the removal of the Not at every order in Augustine once
+the Not is one weight that exchanges a concept's lanes (the item 1.4 plan,
+§10), and whether Augustine goes on learning after it; how
 a user selects a personality; and the measurements on which the four are
 compared.
 

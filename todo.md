@@ -2068,6 +2068,28 @@ generation is expected at this stage and is recorded, not tuned away.
    design and its order of work are in
    [the item 1.5 plan](doc/plans/2026-11-14-item1-5.md) ("The explore
    paths as rows of the batch").
+- **1.4. Verbs in the field of concepts** (after items 1.6 and 1.5;
+   [the item 1.4 plan](doc/plans/2026-11-23-item1-4-verbs-in-the-field.md)).
+   **Added 2026-11-24 (Alec: "Please add this work to 1.4. I am not clear
+   that the intensity XOR will work until it is completed."):** evidence
+   at order zero is positive, with no evidence against and no negation
+   there; the Not is one weight that exchanges a concept's two lanes; a
+   Sigma of any order ranges over the basic percepts and symbols of every
+   order beneath it (the plan's §10). It removes what tells against a row
+   in the first Pi and the Not of order zero, which both stopping gates
+   run through, so it begins with the proof that signed weights on
+   positive rows give every concept the value it has. Waiting on it: the
+   XOR of intensities, the name formed by MTM, and the order of two words
+   through grammar training (item 1.6 plan, §44).
+   **Documentation to do with it (Alec, 2026-11-24):** the import of
+   positive concepts at the various orders. A concept with no exchange of
+   its lanes is a monotone function of positive evidence; say in
+   [Logic](doc/Logic.md), [Orders](doc/Orders.md) and
+   [Philosophy](doc/Philosophy.md) what that means at order zero (a
+   percept present), at order one (a noun, a name, a kind) and above, what
+   a mind of positive concepts alone can and cannot think, and how it
+   bears on the named variants ([FutureWork](doc/FutureWork.md), Animus
+   and Augustine).
 - **1. Compiler work.** *Built by Claude, side by side with item 0.5 on
    Codex (Alec, 2026-11-09): the generated math corpus, its generator and its
    frozen manifest are item 0.5's; the comparison of compiled and eager runs
