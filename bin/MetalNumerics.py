@@ -95,3 +95,18 @@ def _backward(ctx, grad, saved_grad):
 
 
 clock_code.register_autograd(_backward, setup_context=_setup)
+
+
+@torch.library.custom_op('basicmodel::metal_pair_statistics', mutates_args=(), device_types='mps')
+def pair_statistics(old: torch.Tensor, observation: torch.Tensor, value: torch.Tensor,
+                    gathered: torch.Tensor, steps: torch.Tensor, penalty: torch.Tensor) -> torch.Tensor:
+    result = old.new_empty((old.shape[0], 5))
+    if result.numel():
+        shader('pair_statistics').pair_statistics(result, old.contiguous(), observation.contiguous(),
+            value.contiguous(), gathered.contiguous(), steps.contiguous(), penalty, threads=[len(old)])
+    return result
+
+
+@pair_statistics.register_fake
+def _(old, observation, value, gathered, steps, penalty):
+    return old.new_empty((old.shape[0], 5))

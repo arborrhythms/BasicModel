@@ -19,8 +19,6 @@ import itertools
 
 import torch
 
-from CandidateMatrix import CandidateMatrix, pair_gradient
-from util import TheXMLConfig
 
 #: Presence at or above which a concept or a thing is present at a look.
 PRESENT = .5
@@ -58,7 +56,7 @@ class GrowthTrial:
         return other
 
     def fork_matrices(self, held):
-        return dict(pi=held['pi'].fork(),
+        return dict(pi=self.owner.mtm.candidate_relations(self.path, self.stream, source=held['pi'], pairs=True),
                     sigma=self.owner.mtm.candidate_relations(self.path, self.stream, source=held['sigma']))
 
     @contextmanager
@@ -231,12 +229,13 @@ def matrices(owner):
     else:
         trial = None
     if held is None:
-        room = int(TheXMLConfig.get('architecture.candidateCapacity', default=64))
         if not hasattr(pool, '_candidate_relations'):
             pool.reserve_relation_trials(0, 0, owner.similarity_codebook.W.device)
         sigma = (pool.candidate_relations() if trial is None else pool.candidate_relations(
             trial.path, trial.stream, source=pool._candidate_relations))
-        held = dict(pi=CandidateMatrix(room), sigma=sigma)
+        pi = (pool.candidate_relations(pairs=True) if trial is None else pool.candidate_relations(
+            trial.path, trial.stream, source=pool._candidate_pairs, pairs=True))
+        held = dict(pi=pi, sigma=sigma)
         if trial is None:
             pool.candidates = held
         else:
@@ -271,19 +270,21 @@ def pi_step(owner, present):
     order = owner._concept_allocator.order_of
     held = matrices(owner)['pi']
     found = sorted(cid for cid, value in present.items() if value >= PRESENT)
-    for left, right in itertools.combinations(found, 2):
-        if (order(left) == order(right) >= 0 and (left, right) not in held
-                and (left, right) not in pair_rows(owner) and table.fit(left, right) is None):
-            held.offer((left, right))
-    gradients = {key: pair_gradient(held.value(key),
-                                    held.meet(key, present.get(key[0], 0.), present.get(key[1], 0.)))
-                 for key in list(held.entries) if max(present.get(key[0], 0.), present.get(key[1], 0.)) > 0}
-    promoted, _ = held.step(gradients)
     rows = pair_rows(owner)
-    for key, _ in promoted:
-        if key not in rows:
-            rows.append(key)
-    return [key for key, _ in promoted]
+    nominations = [(left, right) for left, right in itertools.combinations(found, 2)
+                   if order(left) == order(right) >= 0 and (left, right) not in rows
+                   and table.fit(left, right) is None]
+    occupied = held._known_count()
+    if not nominations and occupied == 0:
+        return []
+    pairs = held.refs.new_tensor(nominations).reshape(-1, 2)
+    promoted = held.observe_pairs(pairs, held.refs.new_tensor(list(present)),
+                                  held.activity.new_tensor(list(present.values())))
+    if occupied == 0 and held.hold > 1:
+        return []
+    written = held.publish(promoted)
+    rows.extend(key for key in written if key not in rows)
+    return written
 
 
 def pair_rows(owner):

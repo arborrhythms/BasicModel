@@ -1222,25 +1222,30 @@ class MediumTermMemory(MemoryStore):
         dtype = torch.float32 if device.type == 'mps' else torch.float64
         if base is None:
             self._candidate_relations = MTM1(room, strength=penalty()).to(device=device, dtype=dtype)
-            self._candidate_relations._remember_count(0)
-            self._relation_trials = []
-        if self._candidate_relations.refs.device != device:
-            occupied = self._candidate_relations._known_count()
-            self._candidate_relations.to(device=device, dtype=dtype)
-            if occupied is not None:
-                self._candidate_relations._remember_count(occupied)
-            self._relation_trials.clear()
+            self._candidate_pairs = MTMPairRows(room, strength=penalty()).to(device=device, dtype=dtype)
+            self._relation_trials, self._pair_trials = [], []
+            for pool in (self._candidate_pairs, self._candidate_relations):
+                pool._remember_count(0)
         required = streams * trials
-        for _ in range(len(self._relation_trials), required):
-            self._relation_trials.append(MTM1(room, strength=self._candidate_relations.strength).to(
-                device=device, dtype=dtype))
+        for pool, seats in ((self._candidate_relations, self._relation_trials),
+                            (self._candidate_pairs, self._pair_trials)):
+            if pool.refs.device != device:
+                occupied = pool._known_count()
+                pool.to(device=device, dtype=dtype)
+                if occupied is not None:
+                    pool._remember_count(occupied)
+                seats.clear()
+            for _ in range(len(seats), required):
+                seats.append(type(pool)(room, strength=pool.strength).to(device=device, dtype=dtype))
         self._relation_trial_width = streams
 
-    def candidate_relations(self, path=None, stream=None, *, source=None):
+    def candidate_relations(self, path=None, stream=None, *, source=None, pairs=False):
+        pool, seats = ((self._candidate_pairs, self._pair_trials) if pairs else
+                       (self._candidate_relations, self._relation_trials))
         if path is None or stream is None:
-            return self._candidate_relations if source is None else source.fork()
-        held = self._relation_trials[path * self._relation_trial_width + stream]
-        held.reset_from(self._candidate_relations if source is None else source)
+            return pool if source is None else source.fork()
+        held = seats[path * self._relation_trial_width + stream]
+        held.reset_from(pool if source is None else source)
         return held
 
     def staging_store(self, durable):
@@ -3305,7 +3310,7 @@ class MTM1(LTM1):
         self.register_buffer('totals', self.refs.new_zeros(3), persistent=False)
 
     def fork(self):
-        other = MTM1(self.capacity - 1, strength=self.strength, hold=self.hold).to(self.activity)
+        other = type(self)(self.capacity - 1, strength=self.strength, hold=self.hold).to(self.activity)
         other.reset_from(self)
         return other
 
@@ -3347,6 +3352,9 @@ class MTM1(LTM1):
             used = used | take
         self.ref_kinds[1:].copy_(torch.where(used[:, None], SYMBOL, 0))
 
+    def offer_magnitudes(self):
+        return self.activity[1:].abs()
+
     def offer_read_pairs(self, offers):
         """Seat this look's distinct nominations, each backed by a read symbol.
 
@@ -3362,7 +3370,7 @@ class MTM1(LTM1):
         used = self.ref_kinds[1:, 0] != 0
         matches = (offers[:, None] == refs).all(-1) & used
         absent = (offers[:, 0] >= 0) & ~matches.any(-1)
-        weight, steps, age = self.activity[1:].abs(), self.read_count[1:], self.entered_at[1:]
+        weight, steps, age = self.offer_magnitudes(), self.read_count[1:], self.entered_at[1:]
         weakest = weight == weight.amin()
         weakest &= steps == steps.masked_fill(~weakest, torch.iinfo(steps.dtype).max).amin()
         victim = age.masked_fill(~weakest, torch.iinfo(age.dtype).max).argmin().view(1)
@@ -3465,6 +3473,136 @@ class MTM1(LTM1):
         values = torch.stack((self.activity, self.held, self.read_count, self.gathered), 1)[live].tolist()
         return {str(tuple(pair)): dict(value=value, held=int(held), steps=int(steps), gathered=gathered)
                 for pair, (value, held, steps, gathered) in zip(pairs, values, strict=True)}
+
+
+class MTMPairRows(MTM1):
+    """Two symbols seen together, with their meeting and marginal masses in MTM."""
+    def __init__(self, capacity, *, strength, hold=3):
+        super().__init__(capacity, strength=strength, hold=hold)
+        room = 16 * capacity
+        self.register_buffer('tally_refs', self.refs.new_full((room, 2), -1), persistent=False)
+        self.register_buffer('tally_time', self.refs.new_zeros(room), persistent=False)
+        self.register_buffer('tally_clock', self.refs.new_zeros(()), persistent=False)
+        import struct
+        threshold, = struct.unpack('=q', struct.pack('=d', self.strength))
+        self.register_buffer('penalty_bits', self.refs.new_tensor(threshold), persistent=False)
+        # A double on CPU and its IEEE bits on Metal occupy the same bytes.
+        # Keep the entries integral so moving the model never casts them.
+        self.register_buffer('mass_bits', self.refs.new_zeros(room, 3), persistent=False)
+        self.register_buffer('gradient_bits', self.refs.new_zeros(self.capacity - 1), persistent=False)
+        self.register_buffer('value_bits', self.refs.new_zeros(self.capacity - 1), persistent=False)
+
+    def reset_from(self, source):
+        super().reset_from(source)
+        for name in ('tally_refs', 'tally_time', 'tally_clock', 'mass_bits', 'gradient_bits', 'value_bits'):
+            getattr(self, name).copy_(getattr(source, name))
+
+    def offer_magnitudes(self):
+        return self.value_bits.abs()
+
+    @staticmethod
+    def _double(bits):
+        return torch.where(bits < 0, -bits.abs().view(torch.float64), bits.abs().view(torch.float64))
+
+    @staticmethod
+    def _bits(value):
+        return torch.where(value < 0, -value.abs().view(torch.long), value.abs().view(torch.long))
+
+    def diagnostic_tallies(self):
+        active = self.tally_time > 0
+        ordered = self.tally_time[active].argsort()
+        pairs = self.tally_refs[active][ordered].tolist()
+        masses = self._double(self.mass_bits[active][ordered].cpu()).tolist()
+        return {str(tuple(pair)): values for pair, values in zip(pairs, masses, strict=True)}
+
+    def diagnostic_entries(self):
+        live = self.ref_kinds[1:, 0] != 0
+        pairs = self.refs[1:][live].tolist()
+        bits = torch.stack((self.value_bits, self.gradient_bits), -1)[live].cpu()
+        counts = torch.stack((self.held[1:], self.read_count[1:]), -1)[live].tolist()
+        return {str(tuple(pair)): dict(value=v, held=h, steps=n, gathered=g)
+                for pair, (v, g), (h, n) in zip(pairs, self._double(bits).tolist(), counts, strict=True)}
+
+    def _tally_seats(self, read):
+        """Resolve all reads in admission order, including a re-read after LRU eviction."""
+        pairs = self.refs[1:]
+        match = (pairs[:, None] == self.tally_refs).all(-1) & (self.tally_time > 0)
+        known = match.any(1)
+        old_seat = match.long().argmax(1)
+        touched = (match & read[:, None]).any(0)
+        age = self.tally_time[old_seat]
+        # Between two reads of a key, the LRU keeps it exactly while fewer
+        # than room distinct other keys were touched. Count prior occupants
+        # newer than this one, plus earlier reads outside that set.
+        prior = self.entered_at[1:, None] > self.entered_at[None, 1:]
+        extra = prior & read & (~known | (age <= age[:, None]))
+        newer = (self.tally_time > age[:, None]).sum(-1)
+        survives = known & (newer + extra.sum(-1) < len(self.tally_time))
+        new = read & ~known
+        insertion = self.entered_at[1:].argsort(stable=True)
+        number = (new[insertion].long().cumsum(0) - 1).clamp_min(0)
+        priority = self.tally_time.masked_fill(touched, torch.iinfo(age.dtype).max)
+        spare = priority.argsort(stable=True)
+        new_seat = torch.empty_like(insertion).scatter(0, insertion, spare[number])
+        seats = torch.where(known, old_seat, new_seat)
+        # Invert the assignment with a fixed shape. Inactive candidates
+        # cannot overwrite a live seat even when their default seat is zero.
+        take = read[:, None] & (seats[:, None] == torch.arange(len(self.mass_bits), device=pairs.device))
+        source = take.long().argmax(0)
+        occupied = take.any(0)
+        times = torch.empty_like(insertion).scatter(0, insertion, read[insertion].long().cumsum(0))
+        updated_time = self.tally_clock + times[source]
+        self.tally_clock.add_(read.sum())
+        self.tally_refs.copy_(torch.where(occupied[:, None], pairs[source], self.tally_refs))
+        return seats, survives, source, occupied, updated_time
+
+    def observe_pairs(self, offers, symbols, presence):
+        """Step the candidates and their co-occurrence tallies as one device operation."""
+        age = self.entered_at[1:].clone()
+        self.offer_read_pairs(offers)
+        used = self.ref_kinds[1:, 0] != 0
+        pairs = self.refs[1:]
+        left, right = ((pairs[..., None] == symbols) * presence).sum(-1).unbind(-1)
+        read = used & ((left > 0) | (right > 0))
+        seats, survives, source, occupied, updated_time = self._tally_seats(read)
+        observation = torch.stack((torch.minimum(left, right), left, right), -1)
+        old = torch.where(survives[:, None], self.mass_bits[seats], 0)
+        fresh = age != self.entered_at[1:]
+        value = self.value_bits.masked_fill(fresh, 0)
+        gathered = self.gradient_bits.masked_fill(fresh, 0)
+        steps, held = self.read_count[1:], self.held[1:]
+        steps.add_(read)
+        if presence.device.type != 'mps':
+            masses = self._double(old) + observation.double()
+            meet, a, b = masses.unbind(-1)
+            denominator = torch.maximum(a, b)
+            ratio = meet / torch.where(denominator > 0, denominator, 1.)
+            grad = self._double(value) - (2 * ratio - 1).clamp_min(0.)
+            total = self._double(gathered) + grad
+            mean = total / steps.clamp_min(1).double()
+            size = (mean.abs() - self.strength).clamp_min(0.)
+            updated = self._bits(torch.where(mean > 0, -size, size))
+            masses, total = self._bits(masses), self._bits(total)
+        else:
+            from MetalNumerics import pair_statistics
+            outputs = pair_statistics(old, observation, value, gathered, steps, self.penalty_bits)
+            masses, total, updated = outputs[:, :3], outputs[:, 3], outputs[:, 4]
+        self.mass_bits.copy_(torch.where(occupied[:, None], masses[source], self.mass_bits))
+        self.gradient_bits.copy_(torch.where(read, total, gathered))
+        value = torch.where(read, updated, value)
+        self.value_bits.copy_(value)
+        held.add_(read & (value != 0))
+        promoted = read & (value != 0) & (held >= self.hold)
+        forgotten = read & (value == 0) & (held > 0)
+        kept_time = torch.where(promoted.index_select(0, source), 0, updated_time)
+        self.tally_time.copy_(torch.where(occupied, kept_time, self.tally_time))
+        self.totals[1].add_(promoted.sum())
+        self.totals[2].add_(forgotten.sum())
+        used = used & ~(promoted | forgotten)
+        self.ref_kinds[1:].copy_(torch.where(used[:, None], SYMBOL, 0))
+        self.count.copy_(used.sum())
+        order = self.entered_at[1:].masked_fill(~promoted, torch.iinfo(steps.dtype).max).argsort(stable=True)
+        return torch.where(promoted[order, None], pairs[order], -1)
 
 
 class STM1(LTM1):

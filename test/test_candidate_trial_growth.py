@@ -254,3 +254,32 @@ def test_departures_inherit_one_opening_in_independent_mtm_slots(monkeypatch):
         slots.append(held)
     assert observed == [0]
     assert len({pool.refs.data_ptr() for pool in slots}) == 4
+
+
+def test_native_pair_candidates_preserve_lru_tallies_and_admission_order():
+    import itertools
+    import random
+    from CandidateMatrix import CandidateMatrix, pair_gradient
+    from Memory import MTMPairRows
+    for device in ('cpu', 'mps') if torch.backends.mps.is_available() else ('cpu',):
+        rng = random.Random(614)
+        oracle = CandidateMatrix(3, strength=.2)
+        native = MTMPairRows(3, strength=.2).to(device=device, dtype=torch.float32 if device == 'mps' else torch.float64)
+        symbols = torch.arange(14, device=device)
+        for _ in range(240):
+            presence = rng.choices([0., 0., .25, .5, .75, 1.], k=len(symbols))
+            offers = list(itertools.combinations([i for i, v in enumerate(presence) if v >= .5], 2))
+            for key in offers:
+                oracle.offer(key)
+            gradients = {key: pair_gradient(entry.value, oracle.meet(key, presence[key[0]], presence[key[1]]))
+                         for key, entry in oracle.entries.items() if any(presence[i] for i in key)}
+            kept, _ = oracle.step(gradients)
+            results = native.observe_pairs(native.refs.new_tensor(offers).reshape(-1, 2),
+                                           symbols, native.activity.new_tensor(presence))
+            assert native.publish(results) == [key for key, value in kept]
+            assert native.counts() == oracle.counts()
+            assert list(native.diagnostic_tallies().items()) == [(str(key), value) for key, value in oracle.tallies.items()]
+            state = native.diagnostic_entries()
+            assert state.keys() == {str(k) for k in oracle.entries}
+            for key, entry in oracle.entries.items():
+                assert state[str(key)] == pytest.approx(vars(entry), abs=1e-7)

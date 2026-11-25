@@ -449,7 +449,8 @@ def main():
                     return {name: dict(counts=matrix.counts(),
                                 entries=matrix.diagnostic_entries() if hasattr(matrix, 'diagnostic_entries') else
                                     {str(k): vars(v).copy() for k, v in matrix.entries.items()},
-                                tallies={str(k): v.copy() for k, v in getattr(matrix, 'tallies', {}).items()})
+                                tallies=matrix.diagnostic_tallies() if hasattr(matrix, 'diagnostic_tallies') else
+                                    {str(k): v.copy() for k, v in getattr(matrix, 'tallies', {}).items()})
                             for name, matrix in (getattr(pool, 'candidates', None) or {}).items()}
                 finally:
                     inspecting_growth = False
