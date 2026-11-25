@@ -1,7 +1,9 @@
 """The table of forms agrees with a host dictionary of spellings and runs on the device without host reads."""
 import copy
+import math
 import os
 import random
+import time
 from collections import Counter
 
 import pytest
@@ -136,16 +138,19 @@ def test_state_dict_restores_the_table():
     table.close(*_pack(words[:5], 'cpu'))
     state = table.state_dict()
     assert set(state) == {'left', 'right', 'length', 'count', 'used', 'pair_keys', 'pair_rows', 'code',
-                          'part_sum', 'part_count', 'border', 'whole_sum', 'whole_count'}
+                          'part_sum', 'part_count', 'border', 'whole_sum', 'whole_count', 'mean', 'log_var'}
     restored = FormLinks(table.capacity, LONGEST, 0)
     restored.load_state_dict(state)
     data, lengths = _pack(_sentences(rng, words), 'cpu')
     for got, want in zip(restored.recognise(data, lengths), table.recognise(data, lengths)):
         assert torch.equal(got, want)
     assert torch.equal(restored.count, table.count) and int(restored.used) == int(table.used)
-    names = ('code', 'part_sum', 'part_count', 'border', 'whole_sum', 'whole_count', 'pair_keys', 'pair_rows')
+    names = ('code', 'part_sum', 'part_count', 'border', 'whole_sum', 'whole_count', 'pair_keys', 'pair_rows',
+             'mean', 'log_var')
     for name in names:
         assert torch.equal(getattr(restored, name), getattr(table, name)), name
+    noise = table.order_noise(64, torch.Generator().manual_seed(0))
+    assert torch.equal(restored.order_loss(64, noise=noise), table.order_loss(64, noise=noise))
     table.close(*_pack(words[5:9] + [b'qqqzz'], 'cpu'))
     restored.close(*_pack(words[5:9] + [b'qqqzz'], 'cpu'))
     for name in names:
@@ -306,7 +311,7 @@ def test_insert_captures_whole_and_reads_nothing_on_the_host(device, monkeypatch
     torch._dynamo.reset()
     got = torch.compile(captured.insert, fullgraph=True, backend='eager')(*batch)
     assert torch.equal(got, want)
-    for name, buffer in eager.named_buffers():
+    for name, buffer in list(eager.named_buffers()) + list(eager.named_parameters()):
         assert torch.equal(getattr(captured, name), buffer), name
 
 
@@ -576,3 +581,293 @@ def test_sweep_leaves_no_stale_sum_and_keeps_links_and_counts(device):
             if name != 'code':
                 assert torch.equal(getattr(table, name), value), name
     assert stale and torch.equal(table.code[:LEAVES], kept['code'][:LEAVES]), 'stale before; bytes never move'
+
+
+def test_kl_closed_form_equals_torch_distributions():
+    g = torch.Generator().manual_seed(0)
+    mf, mg = torch.randn(50, 64, generator=g), torch.randn(50, 64, generator=g)
+    lf, lg = torch.randn(50, 64, generator=g) - 3, torch.randn(50, 64, generator=g) - 2
+    D = torch.distributions
+    want = D.kl_divergence(D.Independent(D.Normal(mf.double(), (lf.double() / 2).exp()), 1),
+                           D.Independent(D.Normal(mg.double(), (lg.double() / 2).exp()), 1))
+    assert torch.allclose(FormLinks.kl(mf.double(), lf.double(), mg.double(), lg.double()), want, rtol=1e-10)
+
+
+def test_a_new_form_takes_the_mixture_moments_of_its_links_and_holds_them():
+    table = FormLinks(1024, LONGEST, 0, margin=2000., gamma=500., start_var=5e-5, inside_at=1000.)
+    row = int(table.insert(*_pack([b'ab'], 'cpu'))[0])
+    a, b = table.mean.detach()[97], table.mean.detach()[98]
+    var = table.log_var.detach()[97].exp()
+    assert torch.allclose(table.mean.detach()[row], (a + b) / 2)
+    assert torch.allclose(table.log_var.detach()[row].exp(), var + ((a - b) / 2).square())
+    part, whole = torch.tensor([97, 98]), torch.tensor([row, row])
+    d, inside = table.inside(part, whole)
+    back, back_inside = table.inside(whole, part)
+    assert bool((d == 0).all() & inside.all()), d
+    assert bool((back > table.margin).all() & ~back_inside.any()), back
+    untouched = table.mean.detach()[row + 1:].abs().sum() + (table.log_var.detach()[row + 1:] - math.log(5e-5)).abs().sum()
+    assert float(untouched) == 0
+
+
+def _density_table(device, mix=(1, 1, 1)):
+    table = FormLinks(8192, LONGEST, 0, order_mix=mix)
+    table.insert(*_pack(_vocabulary(random.Random(20)) + HARD, 'cpu'))
+    return table.to(device)
+
+
+@pytest.mark.parametrize('device', DEVICES)
+def test_order_loss_captures_whole_and_reads_nothing_on_the_host(device, monkeypatch):
+    dev = _device(device)
+    table = _density_table(dev)
+    noise = table.order_noise(512, torch.Generator(device=dev).manual_seed(1))
+    want = table.order_loss(512, noise=noise)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('read a tensor on the host')
+
+    with monkeypatch.context() as patch, _NoHostScalar():
+        for method in ('item', 'tolist', '__bool__'):
+            patch.setattr(torch.Tensor, method, forbidden)
+        eager = table.order_loss(512, noise=noise)
+    torch._dynamo.reset()
+    got = torch.compile(table.order_loss, fullgraph=True, backend='eager')(512, noise=noise)
+    assert torch.equal(eager, want) and torch.allclose(got, want) and float(want.detach()) > 0
+    got.backward()
+    assert table.mean.grad is not None and table.log_var.grad is not None
+
+
+def test_gradients_reach_only_the_rows_sampled():
+    table = _density_table('cpu', mix=(0, 1, 1))
+    spelled = _host_spellings(table)
+    row_of = {s: r for r, s in enumerate(spelled)}
+    word = b'mississippi'
+    allowed = {row_of[word[i:j]] for i in range(len(word)) for j in range(i + 1, len(word) + 1)}
+    assert table.mean.grad is None and table.log_var.grad is None
+    table.order_loss(256, generator=torch.Generator().manual_seed(2), wholes=torch.tensor([row_of[word]])).backward()
+    touched = set(((table.mean.grad != 0).any(1) | (table.log_var.grad != 0).any(1)).nonzero().flatten().tolist())
+    assert touched and touched <= allowed, touched - allowed
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires Metal')
+def test_cpu_and_metal_agree_on_the_order_loss():
+    cpu = _density_table('cpu')
+    metal = copy.deepcopy(cpu).to('mps')
+    for step in range(3):
+        noise = cpu.order_noise(1024, torch.Generator().manual_seed(step))
+        a, b = cpu.order_loss(1024, noise=noise), metal.order_loss(1024, noise=noise.to('mps'))
+        assert torch.allclose(b.cpu(), a, rtol=1e-4), (float(a), float(b))
+        with torch.no_grad():
+            for m in (cpu, metal):
+                m.mean.add_(torch.randn(m.mean.shape, generator=torch.Generator().manual_seed(9)).to(m.mean.device) * .05)
+
+
+# -- density order embedding --------------------------------------------------
+
+def _eval_pairs(spelled, row_of, wholes, rng, count_rows):
+    """Balanced pairs over ``wholes``: true (part, whole), and as many false, a third each reversed, sibling, random."""
+    true, rev, sib, ran = [], [], [], []
+    for w in wholes:
+        s = spelled[w]
+        subs = sorted({s[i:j] for i in range(len(s)) for j in range(i + 1, len(s) + 1)} - {s})
+        p = rng.choice(subs)
+        true.append((row_of[p], w))
+        rev.append((w, row_of[p]))
+        for _ in range(50):
+            a, b = rng.choice(subs), rng.choice(subs)
+            if a not in b and b not in a:
+                sib.append((row_of[a], row_of[b]))
+                break
+        while True:
+            r = rng.randrange(count_rows)
+            if spelled[r] not in s:
+                ran.append((r, w))
+                break
+    third = len(true) // 3
+    return {'true': true, 'reversed': rev[:third], 'sibling': sib[:third], 'random': ran[:third]}
+
+
+def _distances(table, pairs, device):
+    with torch.no_grad():
+        f = torch.tensor([p for p, _ in pairs], device=device)
+        g = torch.tensor([w for _, w in pairs], device=device)
+        return table.divergence(f, g).cpu()
+
+
+def _tune(table, val, device):
+    """Threshold on d with the best balanced accuracy on ``val`` (true against the three false kinds together)."""
+    pos = _distances(table, val['true'], device)
+    neg = torch.cat([_distances(table, val[k], device) for k in ('reversed', 'sibling', 'random')])
+    candidates = torch.cat((pos, neg, torch.tensor([0., float('inf')]))).unique()
+    best, at = -1., 0.
+    for t in candidates[:: max(1, len(candidates) // 2000)].tolist():
+        acc = .5 * float((pos <= t).float().mean()) + .5 * float((neg > t).float().mean())
+        if acc > best:
+            best, at = acc, t
+    return at
+
+
+def _accuracy(table, pairs, t, device):
+    out = {k: float(((_distances(table, v, device) <= t) == (k == 'true')).float().mean()) for k, v in pairs.items()}
+    out['balanced'] = .5 * out['true'] + .5 * sum(out[k] for k in ('reversed', 'sibling', 'random')) / 3
+    return out
+
+
+def _shape_report(table, spelled, row_of, words, rng, t, device):
+    """Closeness by shared substrings, words told apart, spread of coordinates, log-det by length, distinctness."""
+    mean, log_var = table.mean.detach().cpu().double(), table.log_var.detach().cpu().double()
+    items = rng.sample(words, 400)
+    rows = torch.tensor([row_of[w] for w in items])
+    subs = [{a[p:q] for p in range(len(a)) for q in range(p + 2, len(a) + 1)} for a in items]
+    m, lv = mean[rows], log_var[rows]
+    kl = FormLinks.kl(m[:, None], lv[:, None], m[None], lv[None])
+    sym = (kl + kl.T) / 2
+    unit = m / m.norm(dim=1, keepdim=True)
+    cosine = unit @ unit.T
+    buckets = {}
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            shared = len(subs[i] & subs[j])
+            key = '0' if shared == 0 else '1-2' if shared <= 2 else '3-5' if shared <= 5 else '6+'
+            buckets.setdefault(key, []).append((float(sym[i, j]), float(cosine[i, j])))
+    close = {k: (len(v), sum(a for a, _ in v) / len(v), sum(b for _, b in v) / len(v))
+             for k, v in sorted(buckets.items(), key=lambda kv: ['0', '1-2', '3-5', '6+'].index(kv[0]))}
+    others = rows[torch.randperm(len(rows), generator=torch.Generator().manual_seed(3))]
+    d_other = _distances(table, list(zip(rows.tolist(), others.tolist())), device)
+    d_other = d_other[rows != others]
+    three = [r for r, s in enumerate(spelled) if len(s) == 3]
+    own, lack = [], []
+    for w in items:
+        mine = [w[i:i + 3] for i in range(len(w) - 2)]
+        if not mine:
+            continue
+        own.append((row_of[rng.choice(mine)], row_of[w]))
+        while True:
+            r = rng.choice(three)
+            if spelled[r] not in w:
+                lack.append((r, row_of[w]))
+                break
+    d_own, d_lack = _distances(table, own, device), _distances(table, lack, device)
+    all_words = torch.tensor([row_of[w] for w in words])
+    std = mean[all_words].std(0)
+    eig = torch.linalg.eigvalsh(torch.cov(mean[all_words].T)).clamp_min(0)
+    used = int(table.used)
+    length = table.length.cpu()[:used]
+    logdet = log_var[:used].sum(1)
+    by_length = {n: float(logdet[length == n].mean()) for n in (1, 2, 3, 4, 6, 8, 12, 16) if bool((length == n).any())}
+    distinct = torch.unique(torch.cat((mean[:used], log_var[:used]), 1), dim=0).shape[0]
+    return {'close': close,
+            'word_vs_other': (float(d_other.median()), float((d_other <= t).float().mean())),
+            'own3_vs_lack3': (float(d_own.median()), float(d_lack.median()),
+                              float((d_own <= t).float().mean()), float((d_lack > t).float().mean())),
+            'coord_std': (float(std.min()), float(std.median()), float(std.max())),
+            'participation': float(eig.sum() ** 2 / eig.square().sum()),
+            'logdet_by_length': by_length, 'distinct': (distinct, used)}
+
+
+def density_experiment(count=3000, margin=2000., gamma=500., start_var=5e-5, mix=(1, 1, 1), lr=1e-2, steps=3000,
+                       sample=2048, report_at=(0, 300, 1000, 3000), new_steps=200, device='cpu', seed=0, quiet=False):
+    """Fit ``order_loss`` alone on dictionary forms, then insert 10% more words untrained; print what is measured."""
+    say = (lambda *a: None) if quiet else print
+    dev = torch.device(device)
+    rng = random.Random(seed)
+    words = _dictionary(count)
+    rng.shuffle(words)
+    base, late = words[:count * 9 // 10], words[count * 9 // 10:]
+    table = FormLinks(1 << 17, 24, 0, margin=margin, gamma=gamma, start_var=start_var, order_mix=mix).to(dev)
+    for i in range(0, len(base), 500):
+        table.insert(*_pack(base[i:i + 500], dev))
+    spelled = _host_spellings(table)
+    row_of = {s: r for r, s in enumerate(spelled)}
+    forms = list(range(LEAVES, len(spelled)))
+    rng.shuffle(forms)
+    held = forms[:len(forms) // 20]
+    train = forms[len(forms) // 20:]
+    train_wholes = torch.tensor(sorted(train), device=dev)
+    val = _eval_pairs(spelled, row_of, train[:1500], rng, len(spelled))
+    seen = _eval_pairs(spelled, row_of, train[1500:3000], rng, len(spelled))
+    unseen = _eval_pairs(spelled, row_of, held, rng, len(spelled))
+    optimizer = torch.optim.Adam([table.mean, table.log_var], lr=lr)
+    gen = torch.Generator(device=dev).manual_seed(seed)
+    report = {'setting': dict(margin=margin, gamma=gamma, start_var=start_var, mix=mix, lr=lr), 'curve': []}
+    say(f"\n== m {margin:g}, gamma {gamma:g}, var {start_var:g}, mix S1/S2/S4 {mix}, lr {lr:g}; "
+        f"{len(base)} words, {len(spelled) - LEAVES} forms, {len(held)} wholes never trained as wholes, device {device}")
+    start, losses = time.perf_counter(), []
+    for step in range(steps + 1):
+        if step in report_at:
+            t = _tune(table, val, dev)
+            acc = _accuracy(table, seen, t, dev), _accuracy(table, unseen, t, dev)
+            report['curve'].append((step, t) + acc)
+            say(f"step {step:5d} ({time.perf_counter() - start:5.1f} s, loss {sum(losses[-50:]) / max(1, len(losses[-50:])):8.1f}): "
+                f"threshold {t:9.2f}")
+            for label, a in zip(('trained wholes', 'held-out wholes'), acc):
+                say(f"    {label}: " + ', '.join(f'{k} {v:.3f}' for k, v in a.items()))
+        if step == steps:
+            break
+        optimizer.zero_grad(set_to_none=True)
+        loss = table.order_loss(sample, noise=table.order_noise(sample, gen), wholes=train_wholes)
+        loss.backward()
+        optimizer.step()
+        if step % 10 == 0:
+            losses.append(float(loss.detach()))
+    t = report['curve'][-1][1]
+    shape = _shape_report(table, spelled, row_of, base, rng, t, dev)
+    report['shape'] = shape
+    say('closeness of whole words by shared substrings of length >= 2 (pairs, mean symmetric KL, cosine of means): '
+        + '; '.join(f'{k}: {n}, {a:.1f}, {c:.3f}' for k, (n, a, c) in shape['close'].items()))
+    say(f"word against another word: median d {shape['word_vs_other'][0]:.1f}, inside at the threshold "
+        f"{shape['word_vs_other'][1]:.3f} (a word against itself: d 0)")
+    o = shape['own3_vs_lack3']
+    say(f"own three-letter part / one it lacks: median d {o[0]:.1f} / {o[1]:.1f}; right at the threshold {o[2]:.3f} / {o[3]:.3f}")
+    say(f"coordinate std of word means min/median/max {shape['coord_std'][0]:.4f} / {shape['coord_std'][1]:.4f} / "
+        f"{shape['coord_std'][2]:.4f}; participation ratio {shape['participation']:.1f} of 64")
+    say('log-det of variance by length: ' + ', '.join(f'{n}: {v:.0f}' for n, v in shape['logdet_by_length'].items()))
+    say(f"distinct (mean, log_var): {shape['distinct'][0]} of {shape['distinct'][1]}")
+    # Incremental: 10% more words, no training, then a few steps around the new forms only.
+    before = int(table.used)
+    old_mean, old_var = table.mean.detach()[:before].clone(), table.log_var.detach()[:before].clone()
+    for i in range(0, len(late), 500):
+        table.insert(*_pack(late[i:i + 500], dev))
+    spelled = _host_spellings(table)
+    row_of = {s: r for r, s in enumerate(spelled)}
+    new_rows = list(range(before, len(spelled)))
+    pairs = _eval_pairs(spelled, row_of, new_rows, rng, len(spelled))
+    inc = [('inserted, untrained', _accuracy(table, pairs, t, dev))]
+    new_wholes = torch.tensor(new_rows, device=dev)
+    optimizer = torch.optim.Adam([table.mean, table.log_var], lr=lr)
+    for _ in range(new_steps):
+        optimizer.zero_grad(set_to_none=True)
+        table.order_loss(sample, noise=table.order_noise(sample, gen), wholes=new_wholes).backward()
+        optimizer.step()
+    inc.append((f'after {new_steps} steps around them', _accuracy(table, pairs, t, dev)))
+    moved_mean = (table.mean.detach()[:before] - old_mean).abs().amax(1)
+    moved_var = (table.log_var.detach()[:before] - old_var).abs().amax(1)
+    report['incremental'] = inc
+    report['old_moved'] = (float((moved_mean > 0).float().mean()), float(moved_mean.median()), float(moved_mean.max()),
+                           float(moved_var.max()))
+    say(f"incremental: {len(late)} words, {len(new_rows)} new forms; threshold kept at {t:.2f}")
+    for label, acc in inc:
+        say(f'  {label}: ' + ', '.join(f'{k} {v:.3f}' for k, v in acc.items()))
+    say(f"  old forms moved by the steps around the new: {report['old_moved'][0]:.4f} of rows; |d mean| median "
+        f"{report['old_moved'][1]:.2e}, max {report['old_moved'][2]:.3f}; |d log_var| max {report['old_moved'][3]:.3f}")
+    return report
+
+
+SWEEP = [dict(margin=2000., gamma=500., start_var=5e-5), dict(margin=100., gamma=3., start_var=2e-4)]
+MIXES = [(1, 1, 1), (3, 0, 0), (1, 1, 2)]
+
+
+@pytest.mark.slow
+def test_density_order_embedding_fit_on_the_dictionary():
+    """Report only: the paper's settings and negative mixes, fitted by ``order_loss`` alone."""
+    device = 'mps' if torch.backends.mps.is_available() else 'cpu'
+    rows = []
+    for setting in SWEEP:
+        for mix in MIXES:
+            r = density_experiment(mix=mix, device=device, **setting)
+            rows.append(r)
+    print('\nsetting | trained wholes: balanced / true / reversed / sibling / random | held-out wholes balanced | incremental untrained / trained')
+    for r in rows:
+        seen, unseen = r['curve'][-1][2:]
+        print(r['setting'], ' / '.join(f"{seen[k]:.3f}" for k in ('balanced', 'true', 'reversed', 'sibling', 'random')),
+              '| held-out', f"{unseen['balanced']:.3f}",
+              '|', ' / '.join(f"{a['balanced']:.3f}" for _, a in r['incremental']))

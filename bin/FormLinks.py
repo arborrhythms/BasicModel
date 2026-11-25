@@ -1,4 +1,6 @@
 """The table of forms: a form of length n is one row linking its first and last n-1 bytes."""
+import math
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -10,6 +12,7 @@ HALF = 64  # width of each half of a code: parts half, then wholes half
 LEAF_BITS = 8  # coordinates set in a byte's direction
 LEAF_SEED = 1  # fixes the byte directions
 SCALE = 2.0 ** 32  # fixed point of the running sums: integer adds are exact in any order
+DENSITY_SEED = 2  # fixes the byte means of the density embedding
 
 
 class FormLinks(nn.Module):
@@ -45,9 +48,20 @@ class FormLinks(nn.Module):
       and number of the forms holding the row, exact at all times; a moved
       or inserted form's change reaches its distinct parts through the same
       overlap rule, top-down (``_spread``).
+
+    Density order embedding (Athiwaratkun and Wilson 2018): each row is a
+    diagonal Gaussian, ``mean`` and ``log_var`` [capacity, HALF], learned.
+    A part lies inside its whole: ``KL(part || whole)`` is small, the
+    reverse large. A byte's mean is a fixed random unit vector, its variance
+    ``start_var``. A form at insertion takes the moments of the equal mixture
+    of its two links' Gaussians (``_cover``). ``order_loss`` is the paper's
+    margin loss on sampled pairs; ``inside`` the thresholded test. Defaults:
+    the paper's two-coordinate setting (margin 100, gamma 3, start variance
+    2e-4), and ``inside_at`` tuned on held-out dictionary pairs.
     """
 
-    def __init__(self, capacity, longest, threshold=3, step=1 / 16):
+    def __init__(self, capacity, longest, threshold=3, step=1 / 16, margin=100., gamma=3.,
+                 start_var=2e-4, inside_at=90., order_mix=(1, 1, 1)):
         super().__init__()
         self.capacity, self.longest = int(capacity), int(longest)
         self.threshold, self.step = int(threshold), float(step)
@@ -77,6 +91,17 @@ class FormLinks(nn.Module):
         self.register_buffer('border', torch.full((self.capacity,), -1, dtype=torch.int32))
         self.register_buffer('whole_sum', torch.zeros(self.capacity, HALF, dtype=torch.int64))
         self.register_buffer('whole_count', torch.zeros(self.capacity, dtype=torch.int32))
+        self.margin, self.gamma, self.inside_at = float(margin), float(gamma), float(inside_at)
+        self.order_mix = tuple(int(c) for c in order_mix)
+        if len(self.order_mix) != 3 or min(self.order_mix) < 0 or self.order_mix[1] > 1:
+            raise ValueError(f'FormLinks order_mix is (S1, S2, S4) counts with S2 at most 1, got {order_mix}')
+        if not start_var > 0:
+            raise ValueError(f'FormLinks start_var must be positive, got {start_var}')
+        mean = torch.zeros(self.capacity, HALF)
+        leaf = torch.randn(LEAVES, HALF, generator=torch.Generator().manual_seed(DENSITY_SEED))
+        mean[:LEAVES] = leaf / leaf.norm(dim=1, keepdim=True)
+        self.mean = nn.Parameter(mean)
+        self.log_var = nn.Parameter(torch.full((self.capacity, HALF), math.log(start_var)))
 
     # -- find ---------------------------------------------------------------
 
@@ -443,6 +468,7 @@ class FormLinks(nn.Module):
             self.part_count.index_copy_(0, rows, torch.where(keep, C, self.part_count[rows].long()).to(torch.int32))
             self.border.index_copy_(0, rows, torch.where(keep, u.reshape(-1), self.border[rows].long()).to(torch.int32))
             self.code[:, :HALF].index_copy_(0, rows, x)
+            self._cover(rows, fresh)
             own[n] = torch.cat((torch.where(fresh[:, None], self._quantise(x), 0), fresh[:, None].long()), 1)
             cur = F.pad(row, (0, n - 1), value=-1)
             levels.append(cur)
@@ -535,3 +561,118 @@ class FormLinks(nn.Module):
             self.code[:, :HALF].index_copy_(0, rows, x)
             own[n] = F.pad(self._quantise(x) - self._quantise(old), (0, 1))
         self._spread(levels, own)
+
+    # -- density order embedding -------------------------------------------------
+
+    def _cover(self, rows, fresh):
+        """Gaussians of the ``fresh`` among ``rows``: the moments of the equal mixture of their two links'.
+
+        mean = (m_L + m_R) / 2; var = (v_L + v_R) / 2 + ((m_L - m_R) / 2)^2 per coordinate.
+        """
+        L = self.left[rows].long().clamp_min(0)
+        R = self.right[rows].long().clamp_min(0)
+        mL, mR = self.mean[L], self.mean[R]
+        var = (self.log_var[L].exp() + self.log_var[R].exp()) / 2 + ((mL - mR) / 2).square()
+        keep = fresh[:, None]
+        self.mean.index_copy_(0, rows, torch.where(keep, (mL + mR) / 2, self.mean[rows]))
+        self.log_var.index_copy_(0, rows, torch.where(keep, var.log(), self.log_var[rows]))
+
+    @staticmethod
+    def kl(mean_f, log_var_f, mean_g, log_var_g):
+        """KL(f || g) [...] of diagonal Gaussians, summed over the last axis."""
+        return .5 * (log_var_g - log_var_f - 1 + torch.exp(log_var_f - log_var_g)
+                     + (mean_f - mean_g).square() * torch.exp(-log_var_g)).sum(-1)
+
+    def divergence(self, f, g):
+        """Thresholded ``max(0, KL(f || g) - gamma)`` [N] of rows ``f`` (specific), ``g`` (general)."""
+        f, g = f.long(), g.long()
+        return F.relu(self.kl(self.mean[f], self.log_var[f], self.mean[g], self.log_var[g]) - self.gamma)
+
+    def inside(self, part_rows, whole_rows):
+        """Thresholded divergence [N] of each part in its whole, and whether it is at most ``inside_at``."""
+        d = self.divergence(part_rows, whole_rows)
+        return d, d <= self.inside_at
+
+    def _walk(self, start, steps, coins):
+        """Row reached from ``start`` [N] by ``steps`` [N] links; link t is left where ``coins[:, t] < 1/2``."""
+        cur = start
+        for t in range(coins.shape[1]):
+            link = torch.where(coins[:, t] < .5, self.left[cur], self.right[cur]).long().clamp_min(0)
+            cur = torch.where(t < steps, link, cur)
+        return cur
+
+    def _down(self, whole, u, coins):
+        """A part of each ``whole`` by a walk of 1..n-1 links (``u`` uniform picks the number)."""
+        n = self.length[whole].long()
+        steps = 1 + (u * (n - 1)).long().clamp_max((n - 2).clamp_min(0))
+        return self._walk(whole, steps, coins)
+
+    def _holds(self, g, f, longest):
+        """Whether row f's spelling occurs in row g's (equal included), by spelling both [N]."""
+        gb, gn = self.spell(g, longest)
+        fb, fn = self.spell(f, longest)
+        i = torch.arange(longest, device=g.device)
+        at = (i[:, None] + i[None, :]).clamp_max(longest - 1)
+        match = (gb[:, at] == fb[:, None, :]) | (i[None, None, :] >= fn[:, None, None])
+        return (match.all(-1) & (i[None, :] <= (gn - fn)[:, None])).any(-1)
+
+    def order_noise(self, sample_size, generator=None):
+        """Uniforms [sample_size, C] for one ``order_loss`` sample (C fixed by ``longest`` and ``order_mix``)."""
+        s1, _, s4 = self.order_mix
+        walk = self.longest - 1
+        width = 2 + walk + 2 * s1 + s4 * (1 + walk)
+        return torch.rand(sample_size, width, generator=generator, device=self.mean.device)
+
+    def order_loss(self, sample_size, generator=None, noise=None, wholes=None):
+        """The margin loss ``d(part, whole) + sum relu(margin - d(false pair))`` over a sample, per true pair.
+
+        True pair: a whole drawn uniformly from rows in use of length >= 2
+        (or from ``wholes`` [N], rows of length >= 2), its part by a walk of
+        k links, k uniform in 1..n-1, each link left or right with even odds:
+        the part of length n-k at offset i has probability
+        ``C(k, i) / (2^k (n-1))``. Walks stop at ``longest - 1`` links.
+        False pairs by ``order_mix`` (S1, S2, S4) per true pair: S1 a row
+        uniform over rows in use in place of the part or the whole (even
+        odds), dropped where the spellings show the part inside the whole;
+        S2 the pair reversed; S4 the part and a second walk from the same
+        whole, dropped where either spelling holds the other. A pair with a
+        row longer than ``longest`` is dropped from the false pairs. Fixed
+        shape, no host read; ``noise`` from ``order_noise`` (a generator is
+        not capturable).
+        """
+        if noise is None:
+            noise = self.order_noise(sample_size, generator)
+        s1, s2, s4 = self.order_mix
+        walk = self.longest - 1
+        used = self.used
+        if wholes is None:
+            span = used - LEAVES
+            whole = LEAVES + (noise[:, 0] * span).long().clamp_max(span - 1)
+        else:
+            whole = wholes.long()[(noise[:, 0] * wholes.shape[0]).long().clamp_max(wholes.shape[0] - 1)]
+        part = self._down(whole, noise[:, 1], noise[:, 2:2 + walk])
+        real = self.length[whole] >= 2
+        loss = (self.divergence(part, whole) * real).sum()
+        at = 2 + walk
+        specific, general, checked = [], [], []
+        for _ in range(s1):
+            other = (noise[:, at + 1] * used).long().clamp_max(used - 1)
+            swap = noise[:, at] < .5
+            specific.append(torch.where(swap, other, part))
+            general.append(torch.where(swap, whole, other))
+            at += 2
+        for _ in range(s4):
+            specific.append(part)
+            general.append(self._down(whole, noise[:, at], noise[:, at + 1:at + 1 + walk]))
+            at += 1 + walk
+        if specific:
+            f, g = torch.cat(specific), torch.cat(general)
+            short = (self.length[f] <= self.longest) & (self.length[g] <= self.longest)
+            held = self._holds(g, f, self.longest)
+            count = s1 * sample_size
+            held = torch.cat((held[:count], held[count:] | self._holds(f[count:], g[count:], self.longest)))
+            ok = real.repeat(s1 + s4) & short & ~held
+            loss = loss + (F.relu(self.margin - self.divergence(f, g)) * ok).sum()
+        if s2:
+            loss = loss + (F.relu(self.margin - self.divergence(whole, part)) * real).sum()
+        return loss / sample_size
