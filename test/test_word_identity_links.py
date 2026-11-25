@@ -61,6 +61,34 @@ def test_new_links_follow_visible_seats_and_only_earlier_admissions():
     torch.testing.assert_close(compiled(surface, query), expected)
 
 
+def test_admission_reuses_the_opening_cover_until_a_new_constituent_is_learned(monkeypatch):
+    import torch
+    from BasicPercepts import pack_disjoint_units
+
+    prior = tuple(bytes([value]) for value in b'shopingx') + ('é'.encode(), b'ping')
+    native, *_ = coded(prior)
+    reference, *_ = coded(prior)
+    words = (b'sh', b'shopping', b'xxx', 'xé'.encode())
+    surface = torch.tensor([list(b'/'.join(words))])
+    stops = [sum(map(len, words[:i + 1])) + i for i in range(len(words))]
+    spans = torch.tensor([[(stop - len(word), stop) for word, stop in zip(words, stops)]])
+    ids, counts, extents = native.sentence_cover(surface, spans, -1)
+    parts, _ = pack_disjoint_units(ids, counts, extents, -1, max(map(len, words)))
+    links, covers = native.observed_definitions(surface, spans,
+        [(word, 0, i) for i, word in enumerate(words)], parts)
+    reruns = []
+    original = native.ordered_cover
+    def observed(word):
+        reruns.append(word)
+        return original(word)
+    monkeypatch.setattr(native, 'ordered_cover', observed)
+    for word in words:
+        reference.admit(word)
+        native.admit(word, links=links[word], opening=covers[word])
+        assert native.store.part_groups == reference.store.part_groups
+    assert reruns == [b'shopping']
+
+
 def test_extent_read_joins_attested_parts_and_preserves_both_property_lanes(monkeypatch):
     import torch
     identity, basic, book, _ = coded((b'calaba', b'cabala', b'aba', b'ab', 'café'.encode()))

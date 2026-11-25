@@ -11589,11 +11589,13 @@ class PartSpace(Space):
                     # once. Repeated observations use the first visible seat's
                     # native row, including repeats within a writing stream.
                     assigned = [-1] * form_rows.numel()
-                    links = identity.observed_links(compact, layout, new_units.values())
+                    complete = ((located_parts >= 0) | ~part_mask).all(-1, keepdim=True)
+                    links, covers = identity.observed_definitions(
+                        compact, layout, new_units.values(), torch.where(complete, located_parts, -1))
                     for source, (raw, _, _) in new_units.items():
                         if raw not in identity.word_rows:
                             with identity.record_repairs(repairs, raw):
-                                identity.admit(raw, links=links[raw])
+                                identity.admit(raw, links=links[raw], opening=covers[raw])
                         assigned[source] = identity.word_rows[raw]
                     observed = discovery_sources >= 0
                     if hiding:

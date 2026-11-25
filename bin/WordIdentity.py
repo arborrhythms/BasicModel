@@ -454,39 +454,61 @@ class WordIdentity(nn.Module):
             start = end
         return result
 
-    def retain_spelling(self, raw):
+    def retain_spelling(self, raw, *, opening=None):
         """Keep ordered native references on a form and on its non-element parts."""
         groups = self.store.part_groups
         row = self.word_rows[raw]
-        if len(text_of(raw)) < 2:
+        text = text_of(raw)
+        if len(text) < 2:
             return
-        children = []
-        cover = self.ordered_cover(raw)
-        if self.nested.get(raw) and not isinstance(cover[0][0], bytes):
-            # Explicit overlapping definitions from older checkpoints use
-            # their original reconstruction rule on the output boundary.
+        if self.nested.get(raw):
+            cover = self.ordered_cover(raw)
+            if not isinstance(cover[0][0], bytes):
+                # Older overlapping definitions retain their original inverse.
+                return
+            groups[row] = tuple(self.word_rows[part] for part, _, _ in cover)
+            self.store._canonical_group_cache = None
             return
-        for part, _, _ in cover:
-            if isinstance(part, bytes):
-                child = self.word_rows[part]
-            else:
-                child = self.atoms[part]
-                if len(part[1]) > 1 and child not in groups:
-                    groups[child] = tuple(self.atoms[('part', char)] for char in part[1])
-            children.append(child)
-        groups[row] = tuple(children)
+        children = ()
+        if opening is not None:
+            # The observed seats already contain the disjoint cover. A prior
+            # admission or this form's collision repair can introduce a new
+            # proper constituent after that read. Only then retile the form.
+            children, first_new_rank = opening
+            if any(1 < len(run) < len(text) and ('part', run) in self.words[raw]
+                   for run in self._parts_since(first_new_rank)):
+                children = ()
+        if not children:
+            children = tuple(self.atoms[part] for part, _, _ in self.ordered_cover(raw))
+        for child in children:
+            if child not in groups:
+                part = text_of(self._fixed_bytes[child])
+                if len(part) > 1:
+                    groups[child] = tuple(self.atoms['part', char] for char in part)
+        groups[row] = children
         self.store._canonical_group_cache = None
+
+    def _parts_since(self, rank):
+        from itertools import islice
+        return islice(reversed(self.added), len(self.added) - rank)
 
     def observed_links(self, surface, spans, observations):
         """Both directions of byte containment for one batch of new forms, in admission order."""
+        links, _ = self.observed_definitions(surface, spans, observations)
+        return links
+
+    def observed_definitions(self, surface, spans, observations, parts=None):
+        """Publish new links and the opening's ordered part seats in one admission packet."""
         from BasicPercepts import proper_byte_runs
         # Ordinals below -1 name visible, newly observed forms. Existing
         # forms use physical word rows. -1 is a part without its own word.
         grouped = {}
         words = []
+        positions = []
         for word, page, seat in observations:
             grouped.setdefault(len(word), []).append((len(words), page, seat))
             words.append(word)
+            positions.append((page, seat))
         prior = self._occurrences(surface.device, False)
         if prior is None:
             prior = self._occurrences(surface.device, True)
@@ -503,6 +525,7 @@ class WordIdentity(nn.Module):
         names = torch.cat(addresses)
         links = [(set(), set()) for _ in words]
         matches, order = [], []
+        children = [[] for _ in words]
         for observed, ordinal in new_groups:
             directions = []
             for group in groups:
@@ -517,10 +540,20 @@ class WordIdentity(nn.Module):
             directions = torch.cat(matches)
             query, other = directions.nonzero(as_tuple=True)
             records = torch.stack((torch.cat(order)[query], names[other], directions[query, other]), 1)
+            if parts is not None:
+                pages, seats = spans.new_tensor(positions).T
+                rows = parts[pages, seats]
+                targets = torch.arange(len(words), device=rows.device)[:, None].expand_as(rows)
+                cover = torch.stack((targets, rows, torch.zeros_like(rows)), -1)
+                records = torch.cat((records, cover.flatten(0, 1)))
             for target, name, direction in records.tolist():
-                word = words[-2 - name] if name < -1 else self._fixed_bytes[name]
-                links[target][0 if direction > 0 else 1].add(word)
-        return dict(zip(words, links, strict=True))
+                if direction:
+                    word = words[-2 - name] if name < -1 else self._fixed_bytes[name]
+                    links[target][0 if direction > 0 else 1].add(word)
+                elif name >= 0:
+                    children[target].append(name)
+        return (dict(zip(words, links, strict=True)),
+                {word: (tuple(group), len(self.added)) for word, group in zip(words, children, strict=True)})
 
     def _link(self, raw, links=None):
         """Link a new stored form to the stored forms it holds as a run (its
@@ -1102,7 +1135,7 @@ class WordIdentity(nn.Module):
         self.basic.follow_forms(changed, new)
         return changed
 
-    def admit(self, raw, *, links=None):
+    def admit(self, raw, *, links=None, opening=None):
         raw = bytes(raw)
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
@@ -1126,7 +1159,7 @@ class WordIdentity(nn.Module):
                 index = torch.tensor([self.order[word] for word in carriers], device='cpu')
                 self._packed[index] = self._pack(torch.stack([self.code(word) for word in carriers]))
             self._keep(self._settle(carriers + [raw]), new=raw)
-            self.retain_spelling(raw)
+            self.retain_spelling(raw, opening=opening)
         return self.parts(raw)
 
     def admit_part(self, run):
