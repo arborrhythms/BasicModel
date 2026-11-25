@@ -1,6 +1,6 @@
 # Item 1.5: Codex / Claude work split
 
-**Ownership update, November 25.** Claude owns the remaining implementation across both halves and Codex reviews the result. The [completion handoff](2026-11-25-item1-5-claude-completion.md) records the two branch tips, the word-identity regression and the outstanding gates. The split below records the earlier allocation.
+**Ownership update, November 25.** Claude owns the remaining implementation across both halves and Codex reviews the result. The [completion handoff](2026-11-25-item1-5-claude-completion.md) records the restored word-nomination behavior, the perceptual-parts experiment and the outstanding gates. The split below records the earlier allocation.
 
 Requested by Alec on November 25. Split the remaining implementation at the
 handoff from located percepts to grammatical selection. These are two
