@@ -11329,7 +11329,8 @@ class PartSpace(Space):
             if simple_parts:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
                     delivered_layout[:, :word_capacity], -1, identify=True,
-                    unseen_elements=not getattr(upstream_vspace, '_ascii_delivery', False))
+                    unseen_elements=not getattr(upstream_vspace, '_ascii_delivery', False), report_elements=True)
+                *prepared_parts, element_codes = prepared_parts
             if prepared_parts is None:
                 unit_spans_rows = delivered_layout.detach().tolist()
             else:
@@ -11337,10 +11338,11 @@ class PartSpace(Space):
                 all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
                 form_rows = F.pad(observation_keys(prepared_parts[3]),
                                   (0, delivered_layout.shape[1] - counts_device.shape[1]), value=-1)
-                records = torch.cat((delivered_layout, all_counts[..., None], form_rows[..., None]), -1).tolist()
-                unit_spans_rows = [[(lo, hi) for lo, hi, _, _ in row] for row in records]
-                prepared_counts = [[n for _, _, n, _ in row[:word_capacity]] for row in records]
-                recognized_units = [[form for _, _, _, form in row[:word_capacity]] for row in records]
+                records = torch.cat((delivered_layout, all_counts[..., None], form_rows[..., None],
+                                     element_codes[..., None]), -1).tolist()
+                unit_spans_rows = [[(lo, hi) for lo, hi, _, _, _ in row] for row in records]
+                prepared_counts = [[n for _, _, n, _, _ in row[:word_capacity]] for row in records]
+                recognized_units = [[form for _, _, _, form, _ in row[:word_capacity]] for row in records]
         staged_rows, cover_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         part_capacity = 3
@@ -11378,7 +11380,18 @@ class PartSpace(Space):
         prepare = getattr(self, '_omission_prepare', None)
         omission = None if prepare is None else prepare(units, prepared_parts, prepared_counts)
         hiding = omission is not None and 'bytes' in omission
-        hidden_rows = omission['bytes'].tolist() if hiding else None
+        hidden_rows = None
+        if hiding:
+            hidden = omission['bytes'][:, :byte_count]
+            if prepared_parts is not None and simple_parts:
+                from BasicPercepts import visible_missing_elements
+                flat, _, extents, _ = prepared_parts
+                missing = visible_missing_elements(compact[:, :byte_count], flat, extents, hidden)
+                observations = torch.stack((hidden, missing), -1).tolist()
+                hidden_rows = [[flag for flag, _ in row] for row in observations]
+                alphabet = dict.fromkeys(chr(code) for row in observations for _, code in row if code >= 0)
+            else:
+                hidden_rows = hidden.tolist()
         changed = ([[any(mask[lo:hi]) for lo, hi in spans[:word_capacity]]
                     for mask, (_, spans) in zip(hidden_rows, units, strict=True)] if hiding else None)
         visible_rows = []
@@ -11419,27 +11432,10 @@ class PartSpace(Space):
                             identity.observe_nested(unit)
         located_parts = None
         if layout is not None and simple_parts:
-            # Register only observed characters. Cuts can split UTF-8, so decode
-            # each actual unit with the same surrogate handling as WordIdentity.
-            from WordIdentity import text_of
-            if hiding:
-                # Only unfilled, visible seats may create an atom. An omitted
-                # byte inside a known part never licenses a new element.
-                flat, _, extents, _ = prepared_parts
-                starts, ends = extents.unbind(-1)
-                unseen = (flat < 0) & (ends > starts)
-                missing_widths = torch.zeros_like(compact[:, :byte_count])
-                if byte_count:
-                    unseen = unseen & ~omission['bytes'].gather(1, starts)
-                    missing_widths.scatter_add_(1, starts, (ends - starts) * unseen)
-                alphabet = dict.fromkeys(text_of(raw[start:start + size])
-                    for (raw, _), row in zip(units, missing_widths.tolist(), strict=True)
-                    for start, size in enumerate(row) if size)
-            else:
-                alphabet = dict.fromkeys(char for b, (raw, spans) in enumerate(units)
-                                         for w, (lo, hi) in enumerate(spans[:word_capacity])
-                                         if recognized_units is None or recognized_units[b][w] < 0
-                                         for char in text_of(raw[lo:hi]))
+            # The cover read the element at each position within its learned
+            # cut. Only new native names reach the existing identity writer.
+            if not hiding:
+                alphabet = dict.fromkeys(chr(record[4]) for row in records for record in row if record[4] >= 0)
             missing_atoms = [('part', char) for char in alphabet if ('part', char) not in identity.atoms]
             for atom in missing_atoms:
                 identity._atom(atom)

@@ -350,13 +350,15 @@ def _utf8_boundaries(raw, remaining, *, with_stride=False):
 
 
 def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False,
-                         form_rows=None, unseen_elements=False):
+                         form_rows=None, unseen_elements=False, report_elements=False):
     """Tile each ordered unit with its longest proper part at each surviving start."""
     batch, width = raw.shape
     units = spans.shape[1]
     recognized = None if form_rows is None else spans.new_full((batch, units), -1)
     if not units or not width:
         result = rows.new_full((batch, width), padding), spans.new_zeros(batch, units), spans.new_zeros(batch, width, 2)
+        if report_elements:
+            return *result, recognized, rows.new_full((batch, width), -1)
         return result if form_rows is None else (*result, recognized)
     pos = torch.arange(width, device=raw.device).expand(batch, -1).contiguous()
     lo, hi = spans.unbind(-1)
@@ -369,6 +371,8 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
     else:
         boundaries = _utf8_boundaries(raw, torch.where(live, right - pos, 0)) if escaped_elements else None
         stride = torch.ones_like(pos)
+    element_stride = stride
+    known_elements = torch.zeros_like(live) if report_elements else None
     address = torch.full_like(pos, padding)
     base = 0
     for group in spellings:
@@ -383,6 +387,9 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
                 index = hit.to(torch.int32).argmax(-1) + base + offset
                 proper = (size < right[:, :count] - left[:, :count]) | (ranks[index] < 0)
                 matched = hit.any(-1)
+                if report_elements and size <= 4:
+                    known = matched & (ranks[index] < 0) & (element_stride[:, :count] == size)
+                    known_elements = known_elements | F.pad(known, (0, size - 1))
                 if form_rows is not None:
                     # A full-unit hit is already present in this comparison.
                     # Its native name can count an exposure without becoming
@@ -415,15 +422,23 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
     take = order.clamp_max(width - 1)
     extents = torch.stack((order, successor.gather(1, take)), -1)
     result = torch.where(valid, address.gather(1, take), padding), counts, torch.where(valid[..., None], extents, 0)
+    if report_elements:
+        # A taught proper part can exist before its individual letters. Find
+        # those letters inside it too, before choosing the disjoint operands.
+        missing = live & ~known_elements
+        if recognized is not None:
+            missing = missing & (recognized.gather(1, parent) < 0)
+        if unseen_elements:
+            missing = missing & boundaries[:, :width]
+            codes = _element_codepoints(raw, pos, element_stride)
+        else:
+            codes = raw.long()  # the input boundary certified ASCII
+        return *result, recognized, torch.where(missing, codes, -1)
     return result if form_rows is None else (*result, recognized)
 
 
-def fill_new_elements(raw, flat, extents, codepoints, rows):
-    """Install newly admitted UTF-8 element addresses at the cover's unfilled seats."""
-    if not len(codepoints):
-        return flat
-    start, end = extents.unbind(-1)
-    length = end - start
+def _element_codepoints(raw, start, length):
+    """Decode an element at each supplied position, respecting learned cuts."""
     padded = F.pad(raw.to(dtype=torch.long), (0, 3))
     first = padded.gather(1, start)
     # A non-ASCII single byte exposed by an invalid or cut sequence has
@@ -433,6 +448,28 @@ def fill_new_elements(raw, flat, extents, codepoints, rows):
     for offset in (1, 2, 3):
         prefix = (prefix << 6) | (padded.gather(1, start + offset) & 63)
         element = torch.where(length == offset + 1, prefix, element)
+    return element
+
+
+def visible_missing_elements(raw, ids, extents, hidden):
+    """Unseated element code at its visible start or -1 at every other byte."""
+    if not raw.shape[1]:
+        return ids.new_full(raw.shape, -1)
+    starts, stops = extents.unbind(-1)
+    lengths = stops - starts
+    codes = _element_codepoints(raw, starts, lengths)
+    visible = (ids < 0) & (lengths > 0) & ~hidden.gather(1, starts)
+    events = torch.where(visible, codes + 1, 0)
+    return torch.zeros_like(raw, dtype=torch.long).scatter_add(1, starts, events) - 1
+
+
+def fill_new_elements(raw, flat, extents, codepoints, rows):
+    """Install newly admitted UTF-8 element addresses at the cover's unfilled seats."""
+    if not len(codepoints):
+        return flat
+    start, end = extents.unbind(-1)
+    length = end - start
+    element = _element_codepoints(raw, start, length)
     seat = torch.searchsorted(codepoints, element).clamp_max(len(codepoints) - 1)
     use = (flat < 0) & (length > 0) & (length <= 4) & (codepoints[seat] == element)
     return torch.where(use, rows[seat], flat)

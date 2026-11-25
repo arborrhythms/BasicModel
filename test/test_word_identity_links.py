@@ -234,14 +234,35 @@ def test_disjoint_cover_decodes_utf8_within_each_cut_when_escaped_bytes_are_know
 
 def test_new_element_seats_match_rereading_every_utf8_cut():
     import torch
-    from BasicPercepts import fill_new_elements
-    from WordIdentity import text_of
+    from BasicPercepts import disjoint_occurrences, fill_new_elements, visible_missing_elements
+    from WordIdentity import text_of, bytes_of
     identity, *_ = coded((b'ab',))
+    identity.admit_part('中🙂')
     raw = 'abé中🙂z'.encode() + bytes((0xff, 0xc0, 0xaf))
     cuts = [(lo, hi) for lo in range(len(raw)) for hi in range(lo + 1, len(raw) + 1)]
     surface = torch.tensor(list(raw)).expand(len(cuts), -1)
     spans = torch.tensor(cuts)[:, None]
-    flat, counts, extents, forms = identity.sentence_cover(surface, spans, -1, identify=True, unseen_elements=True)
+    keys, rows, _, ranks, forms = identity._occurrences(surface.device, False)
+    compiled = torch.compile(disjoint_occurrences, backend='eager', fullgraph=True)
+    flat, counts, extents, forms, observed = compiled(surface, spans, keys, rows, ranks, -1,
+        form_rows=forms, unseen_elements=True, report_elements=True)
+    expected = torch.full_like(surface, -1)
+    for b, (lo, hi) in enumerate(cuts):
+        start = lo
+        for char in text_of(raw[lo:hi]):
+            if ('part', char) not in identity.atoms:
+                expected[b, start] = ord(char)
+            start += len(bytes_of(char))
+    torch.testing.assert_close(observed, expected)
+    hidden = (torch.arange(len(raw)) % 3 == 0).expand_as(surface)
+    visible = torch.compile(visible_missing_elements, backend='eager', fullgraph=True)
+    found = visible(surface, flat, extents, hidden)
+    wanted = torch.full_like(surface, -1)
+    for b, seats in enumerate(extents.tolist()):
+        for k, (lo, hi) in enumerate(seats):
+            if lo < hi and flat[b, k] < 0 and not hidden[b, lo]:
+                wanted[b, lo] = ord(text_of(raw[lo:hi]))
+    torch.testing.assert_close(found, wanted)
     missing = sorted({char for lo, hi in cuts for char in text_of(raw[lo:hi])
                       if ('part', char) not in identity.atoms})
     table = flat.new_tensor([(ord(char), identity._atom(('part', char))) for char in missing]).T.contiguous()
