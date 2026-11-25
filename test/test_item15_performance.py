@@ -754,3 +754,16 @@ def test_metal_trust_radius_matches_binary64_rounding_under_fullgraph():
         actual = compiled(views.to('mps'), inputs.to('mps'), gains).cpu()
         assert torch.equal(actual.view(torch.int32), expected.view(torch.int32))
     assert counter.frame_count == 1
+
+
+def test_group_centroids_keep_raw_occurrences_and_distinct_placed_members():
+    from MereologicalCodes import member_centroids
+    codes = torch.tensor([[3., 4.], [0., 0.], [2., -1.], [-4., 3.]])
+    members = torch.tensor([[2, 0, 2], [2, 3, 3], [1, 0, 1]])
+    ordered = torch.tensor([[0, 2], [2, 3], [0, 1]])
+    placed = torch.tensor([True, True, True, False])
+    expected = torch.stack((
+        torch.stack([torch.nn.functional.normalize(codes[row], dim=0) for row in (0, 2)]).sum(0) / 2,
+        codes[[2, 3, 3]].mean(0),
+        torch.stack([torch.nn.functional.normalize(codes[row], dim=0) for row in (0, 1)]).sum(0) / 2))
+    torch.testing.assert_close(member_centroids(codes, placed, members, ordered), expected, atol=0, rtol=0)

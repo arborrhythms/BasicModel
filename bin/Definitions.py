@@ -43,42 +43,61 @@ class DefinitionIndex:
         self._identities = {}
         store = self._store()
         store.refresh_effective()
-        for row in store.indices().tolist():
-            self.add(row)
+        # Only an explicitly named pair can define a word. Look up those
+        # typed endpoints in LTM1, preserving the physical read order even
+        # when compaction has left holes or reused a relation handle.
+        allocator = self._allocator()
+        named = []
+        for word in allocator.named_identities.keys() & allocator.word_descriptions.keys():
+            if word > 0:
+                for obj in allocator.named_identities[word]:
+                    row = store.find(obj, word) if obj > 0 else None
+                    if row is not None:
+                        named.append((row, obj, word))
+        self._index_named(sorted(named))
         self._revision = store.effective_revision
 
     def add(self, row):
         store = self._store()
         store.refresh_effective()
-        obj, word = store.refs[row].tolist()
-        allocator = self._allocator()
-        value = allocator.word_descriptions.get(word)
-        if (value is None or obj not in allocator.named_identities.get(word, ())
-                or 'definition' not in store.readings(
-                row, lambda ref: allocator.symbol_types.get(ref[1], ()) if ref[0] == store.SYMBOL else ())):
-            return  # Only interpret.define names a pair; a generic Part chain does not.
-        if word <= 0 or obj <= 0 or word == obj:
-            raise ValueError('DEF requires distinct native word and object identities')
-        # Naming retains the lexical identity even before its binding has
-        # enough authority to denote an object.
-        self._descriptions[word] = value
-        if value.get('identity_key') is not None:
-            self._identities[value['identity_key']] = word
-        for form in value['forms']:
-            self._forms[form_key(form)] = word
-        for parts in value['parts']:
-            self._units[tuple(parts)] = word
-        from ConceptTrust import definition_threshold
-        # Rebuilding this derived index is not an evidential access. Its
-        # result and the store's activity must be independent of cache state.
-        if float(store.effective_plus[row]) < definition_threshold():
+        (_, obj), (_, word) = store.references(row)
+        self._index_named(((row, obj, word),))
+
+    def _index_named(self, named):
+        store, allocator = self._store(), self._allocator()
+        bindings = []
+        for row, obj, word in named:
+            value = allocator.word_descriptions.get(word)
+            if (value is None or obj not in allocator.named_identities.get(word, ())
+                    or 'definition' not in store.readings(
+                        row, lambda ref: allocator.symbol_types.get(ref[1], ()) if ref[0] == store.SYMBOL else ())):
+                continue
+            if word <= 0 or obj <= 0 or word == obj:
+                raise ValueError('DEF requires distinct native word and object identities')
+            # A name can be known before it is trusted as a denotation.
+            self._descriptions[word] = value
+            if value.get('identity_key') is not None:
+                self._identities[value['identity_key']] = word
+            for form in value['forms']:
+                self._forms[form_key(form)] = word
+            for parts in value['parts']:
+                self._units[tuple(parts)] = word
+            bindings.append((row, obj, word))
+        if not bindings:
             return
-        if (word, obj) in self._rows and self._rows[word, obj] != row:
-            raise ValueError('duplicate word DEF object row')
-        self._object_table = None
-        self._rows[word, obj] = row
-        self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
-        self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
+        from ConceptTrust import definition_threshold
+        threshold = definition_threshold()
+        rows = store.refs.new_tensor([row for row, _, _ in bindings])
+        strengths = store.effective_plus.index_select(0, rows).tolist()
+        for (row, obj, word), strength in zip(bindings, strengths, strict=True):
+            if strength < threshold:
+                continue
+            if (word, obj) in self._rows and self._rows[word, obj] != row:
+                raise ValueError('duplicate word DEF object row')
+            self._object_table = None
+            self._rows[word, obj] = row
+            self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
+            self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
 
     @property
     def word_ids(self):

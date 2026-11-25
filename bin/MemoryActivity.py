@@ -39,15 +39,20 @@ def written(store, row, surprise=-1.):
 
 @torch.no_grad()
 def accessed(store, rows):
-    rows = torch.as_tensor(rows, device=store.activity.device, dtype=torch.long).reshape(-1).unique()
+    if type(rows) is int:
+        rows = (rows,)
+    elif isinstance(rows, range) or (isinstance(rows, (list, tuple)) and all(type(row) is int for row in rows)):
+        rows = sorted(set(rows))
+    else:
+        rows = torch.as_tensor(rows, device=store.activity.device, dtype=torch.long).reshape(-1).unique().tolist()
     journal = _reads.get()
     if journal is not None:
         reads = journal.setdefault(_stream.get(), {})
-        for row in rows.tolist():
+        for row in rows:
             previous = reads.get((store,row),ReadEffect())
             reads[store,row] = ReadEffect(previous.count+1, previous.written)
     else:
-        apply({None: {(store,int(row)): ReadEffect(1) for row in rows.tolist()}})
+        apply({None: {(store,int(row)): ReadEffect(1) for row in rows}})
 
 
 @torch.no_grad()
@@ -89,13 +94,14 @@ def select(states, winners):
     if all(state is None for state in states):
         return None
     selected = {}
-    for stream, choice in enumerate(winners.tolist()):
+    choices = winners.tolist()
+    for stream, choice in enumerate(choices):
         state = states[choice] or {}
         if stream in state:
             selected[stream] = dict(state[stream])
     # A batch-wide read is performed once if any selected path used it.
     common = {}
-    for choice in set(winners.tolist()):
+    for choice in set(choices):
         for key, effect in (states[choice] or {}).get(None, {}).items():
             previous = common.get(key,ReadEffect())
             common[key] = ReadEffect(max(previous.count,effect.count), previous.written or effect.written)
@@ -113,10 +119,13 @@ def apply(journal):
             counts[key] = ReadEffect(previous.count+effect.count, previous.written or effect.written)
     promote = {}
     for (store, row), effect in counts.items():
-        value = float(store.activity[row])
-        if value == 1. and not effect.written:
-            continue
-        store.activity[row] = min(1., value + effect.count * store.activity_config.step)
+        # The writer has already installed a bounded activity. Only a read
+        # adds to it. A newly written row still goes through consolidation.
+        if effect.count or not effect.written:
+            value = float(store.activity[row])
+            if value == 1. and not effect.written:
+                continue
+            store.activity[row] = min(1., value + effect.count * store.activity_config.step)
         promote.setdefault((store,effect.written), []).append(row)
     for (store,written_now), rows in promote.items():
         _promote(store, rows, written_now=written_now)

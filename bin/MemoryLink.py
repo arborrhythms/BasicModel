@@ -110,19 +110,31 @@ def menu(owner, occurrence, candidates, *, value, where, when, stream, projected
         candidates.setdefault(key, dict(value=pool.value_of(key, live_candidate=True),
             token=key, role=0, position=(sum(entry.when - other.when > 0
                 for other in pool.entries.values()), 0)))
-    legal = {}
+    offered, by_width = [], {}
     for key, record in candidates.items():
         if not candidate_eligible(owner, key, record, kind=site.kind, order=order, stream=stream):
             continue
         if projected is not None and (site.kind, key) in projected:
             record = dict(record, value=projected[site.kind, key])
-        coordinates(record['value'])  # Preserve carrier validation before eligibility.
-        a, b = match(value.detach().to(query), record['value'].detach().to(query),
-                     codebook=None if site.kind == 'percept' else owner.similarity_codebook)
-        if bool((a == 1) | (b == 1)):
-            legal[key] = dict(record, content=record['value'].detach().to(query))
+        coordinates(record['value'])  # Validate every offered carrier before filtering.
+        content = record['value'].detach().to(query)
+        by_width.setdefault(content.numel(), []).append(len(offered))
+        offered.append((key, dict(record, content=content)))
+    # Older LTM occurrences can have narrower carriers. Preserve each actual
+    # reduction width and the original order in the policy's candidate menu.
+    coverages = [None] * len(offered)
+    for indices in by_width.values():
+        values = torch.stack([offered[i][1]['content'] for i in indices])
+        inside, contains = match(value.detach().to(query), values,
+                                 codebook=None if site.kind == 'percept' else owner.similarity_codebook)
+        for i, pair in zip(indices, torch.stack((inside, contains), -1).unbind(), strict=True):
+            coverages[i] = pair
+    passed = (torch.stack(coverages) == 1).any(-1).tolist() if offered else ()
+    legal = {key: record for (key, record), keep in zip(offered, passed, strict=True) if keep}
+    matched = [pair for pair, keep in zip(coverages, passed, strict=True) if keep]
     choices, features, logits = resolver.score_order(value, query, value, 0, legal,
-        stream=stream, where=where, when=when, percept=site.kind == 'percept', member_order=order)
+        stream=stream, where=where, when=when, percept=site.kind == 'percept', member_order=order,
+        matched=matched)
     return choices, features, logits
 
 

@@ -10,6 +10,18 @@ from torch import nn
 from torch.nn import functional as F
 
 
+def member_centroids(codes, placed, members, ordered):
+    """Read raw member means until every member has a placement witness.
+
+    Once placed, each distinct concept contributes its normalized direction
+    in identity order, including when a group lists the same member twice.
+    """
+    vectors = codes[members]
+    directions = F.normalize(codes[ordered], dim=-1)
+    established = directions.sum(-2) / ordered.shape[-1]
+    return torch.where(placed[members].all(-1, keepdim=True), established, vectors.mean(-2))
+
+
 def placement_step(q, context, weights, negatives, *, rate=.1, negative_weight=1.):
     """One meet-ratio subgradient step, in the positive conceptual coordinates."""
     gradient = torch.zeros_like(q)
@@ -161,28 +173,46 @@ class MereologicalCodes(nn.Module):
         codes = self.placement.detach().clone()
         placed = self.placement_witnesses > 0
         targets, memberships = {}, {}
-        for movers, members, group_key in groups:
+        groups_by_shape = {}
+        for movers, members, _ in groups:
             if not members:
                 continue
             orders = {self.owner._row_order(int(row)) for row in (*movers, *members)}
             if len(orders) != 1:
                 raise ValueError('placement groups cannot cross orders')
-            if bool(placed[list(members)].all()):
-                from ConceptHierarchy import group_centroid
-                centroid = group_centroid(self.owner,
-                    [self.owner.concept_id_at_row(row) for row in members], key=group_key)
-            else:
-                centroid = codes[list(members)].mean(0)
+            # Raw means count every occurrence. The hierarchy's established
+            # centroid counts each named member once in canonical order.
+            identities = {self.owner.concept_id_at_row(row) for row in members}
+            ordered = (() if None in identities else
+                       tuple(self.owner._concept_row_of(cid) for cid in sorted(identities)))
+            if not ordered or None in ordered:
+                from Meaning import require_sentence_tensor
+                require_sentence_tensor(~placed[list(members)].all(), 'a hierarchy member needs a seated concept')
+                ordered = (members[0],)
+            elif len({self.owner._concept_allocator.order_of(cid) for cid in identities}) != 1:
+                from Meaning import require_sentence_tensor
+                require_sentence_tensor(~placed[list(members)].all(), 'a centroid belongs to exactly one order')
+            shape = len(members), len(ordered)
+            group = groups_by_shape.setdefault(shape, [])
+            index = len(group)
+            group.append((members, ordered))
             for row in movers:
-                targets.setdefault(row, []).append(centroid)
+                targets.setdefault(row, []).append((shape, index))
                 memberships.setdefault(row, set()).update(members)
+        centers = {}
+        for shape, group in groups_by_shape.items():
+            indices = self.placement_witnesses.new_tensor(
+                [(*members, *ordered) for members, ordered in group], dtype=torch.long)
+            members, ordered = indices.split(shape, dim=-1)
+            centers[shape] = member_centroids(codes, placed, members, ordered)
         for row, contexts in targets.items():
             if self.owner.is_frozen(self.owner.concept_id_at_row(row)):
                 continue
             selected = codes.new_zeros(len(codes))
             selected[list(memberships[row])] = 1.
             negatives = self._negatives(row, selected, placed, key)
-            self.placement[row] = self.placement_step(codes[row], torch.stack(contexts),
+            directions = torch.stack([centers[shape][i] for shape, i in contexts])
+            self.placement[row] = self.placement_step(codes[row], directions,
                 codes.new_ones(len(contexts)) / len(contexts), codes[negatives])
             self.placement_witnesses[row] += 1
             self.placement_dirty[row] = True

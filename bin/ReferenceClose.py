@@ -618,7 +618,7 @@ class ReferenceClose(nn.Module):
             member_order=member_order,percept_collections=percept_collections)
 
     def score_order(self, content, predicate, cue, role, individuals, *, member_order,
-                    stream=None, asserted=(), where=None, when=None, percept=False, percept_collections=()):
+                    stream=None, asserted=(), where=None, when=None, percept=False, percept_collections=(), matched=None):
         """Score an already eligible pool in its one declared geometry."""
         from IdentityRows import form_region
         raw_content = content
@@ -629,7 +629,7 @@ class ReferenceClose(nn.Module):
         contradicts = self.exclusion_query(order=member_order)
         constraints = (content, *(self.coordinates(value) for value in asserted))
         choices, features = [], []
-        for identity,candidate in individuals.items():
+        for index, (identity, candidate) in enumerate(individuals.items()):
             if percept_collections and not (isinstance(identity, tuple) and identity[:1] == ('bp',)):
                 continue
             value = coordinate_read(candidate['content']).to(content)
@@ -642,10 +642,12 @@ class ReferenceClose(nn.Module):
                 membership = torch.stack([read_collection(self.components.owner,
                     value.reshape(1,1,-1), edges)[0,0,0] for edges in percept_collections]).amax()
                 candidate_coverage = request_coverage = membership
+            elif matched is not None:
+                candidate_coverage, request_coverage = matched[index].unbind()
             else:
                 candidate_coverage,request_coverage = match(raw_content.detach().to(content),
                     candidate['content'].detach().to(content), codebook=codebook)
-            if not bool((candidate_coverage == 1) | (request_coverage == 1)):
+            if matched is None and not bool((candidate_coverage == 1) | (request_coverage == 1)):
                 continue
             form = (content.sum()*0 if region is None else match(region.to(value),
                 candidate['content'].detach().to(value), codebook=codebook)[0])

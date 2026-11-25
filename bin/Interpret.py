@@ -323,12 +323,19 @@ class InterpretLayer(GrammarLayer):
             raise ValueError('lexical rows must align with their atom bank')
         if word_ids is not None and tuple(word_ids.shape) != tuple(rows.shape):
             raise ValueError('observed lexical identities must align with their rows')
-        words = None if word_ids is None else word_ids.detach().reshape(-1).tolist()
-        mapped = []
-        for index, row in enumerate(rows.detach().reshape(-1).tolist()):
-            word_row = form_row(row, None if words is None else words[index])
-            mapped.append(-1 if word_row is None else word_row)
-        mapped = rows.new_tensor(mapped).reshape(rows.shape)
+        if word_ids is not None:
+            # The observed lexical identity names the word directly. Its
+            # coordinates are read only for a seated object above order zero.
+            from Meaning import require_sentence_tensor
+            require_sentence_tensor((rows < owner.nVectors).all(),
+                                    'concept row is outside the constructed inventory', IndexError)
+            words = word_ids.to(rows)
+            word_rows = owner._concept_allocator.layer(0).concept_rows(words)
+            mapped = torch.where((rows >= owner._order_caps()[0]) & (words > 0), word_rows, -1)
+        else:
+            # A free read can use only an unambiguous name of this object.
+            mapped = [form_row(row, None) for row in rows.detach().reshape(-1).tolist()]
+            mapped = rows.new_tensor([-1 if row is None else row for row in mapped]).reshape_as(rows)
         if not bool((mapped >= 0).any()):
             return atoms
         options = (dict(streams=True) if rows.ndim > 1 and stream is None else

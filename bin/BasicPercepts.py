@@ -1314,7 +1314,10 @@ class BasicPercepts(nn.Module):
                                             available_from=None if block_parts is None else block_parts.openings(rows),
                                             block=block_parts, addresses=rows)
             codes[..., :self.identity_width] = parts
-            held = torch.minimum(held, tight)
+            # A native alphabet can supply parts alone. In that layout the
+            # receiving field's wholes start at one until a property cuts them.
+            if self.property_width and catalog.shape[-1]:
+                held = torch.minimum(held, tight)
         elif identity is not None and O:
             text = raw.tolist()
             coded, index = {}, []
