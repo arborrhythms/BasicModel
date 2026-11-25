@@ -10753,10 +10753,17 @@ class SymbolExpectation(Layer):
             return
         if len(documents) != batch:
             raise ValueError("one document address is required per batch row")
-        for b, document in enumerate(documents):
-            if mask is None or bool(mask[b]):
+        changed = [(b, document) for b, document in enumerate(documents)
+                   if document != self._expectation_documents[b]]
+        if mask is None:
+            for b, document in changed:
                 self.begin_document(b, document)
-
+        elif changed:
+            rows = [b for b, _ in changed]
+            active = mask[rows].tolist() if torch.is_tensor(mask) else [mask[b] for b in rows]
+            for (b, document), live in zip(changed, active, strict=True):
+                if live:
+                    self.begin_document(b, document)
 
     def include_occurrence(self, b, occurrence, *, symbols=(), activations=()):
         """Admit a written cover to the ordinary recent situation, without a target."""

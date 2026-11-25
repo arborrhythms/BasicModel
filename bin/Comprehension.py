@@ -322,7 +322,7 @@ class Evaluation:
         # survive another write keep the three live operands for this action.
         frame = torch.stack((operands[0][0], operands[1][0] if len(operands) == 2 else value*0, value))
         self._frames[at].copy_(frame)
-        self.current_frame = frame
+        self.current_operation = frame, refs, order
         if self.held_writes is not None:
             for witness in self.held_writes[at]:
                 self.held.publish(witness,frame[:2],value,self._frames,physical)

@@ -109,8 +109,25 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
     frames = number('operation_values')
     if frames is None:
         raise ValueError('the open reading has no numerical operation journal')
-    identity_actions = None if program.identity_actions is None else program.identity_actions.tolist()
-    relation_actions = None if program.operation_relations is None else program.operation_relations.tolist()
+    # The grammar still consumes integral event flags. Read their existing
+    # columns together. Live references and denoted order come directly
+    # from the operator that just chose them.
+    events = (program.identity_actions, program.operation_relations,
+              number('operation_refs'), program.timeline_actions)
+    recorded = [value for value in events if value is not None]
+    if recorded:
+        rows = torch.cat(recorded, 1).tolist()
+        columns, offset = [], 0
+        for value in events:
+            if value is None:
+                columns.append(None)
+            else:
+                stop = offset + value.shape[1]
+                columns.append([row[offset:stop] for row in rows])
+                offset = stop
+        identity_actions, relation_actions, reference_actions, timeline_actions = columns
+    else:
+        identity_actions = relation_actions = reference_actions = timeline_actions = None
     origins = (program.identity_origins[:, :2].tolist()
                if identity_actions and program.identity_origins is not None else None)
     stack, introductions = [], {}
@@ -208,15 +225,18 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             raise ValueError('invalid clause derivation')
         operands = tuple(stack[-arity:])
         del stack[-arity:]
-        frame = frames[action] if numerics is None else numerics.current_frame
+        selected_refs = None if reference_actions is None else reference_actions[action].copy()
+        if numerics is None:
+            frame = frames[action]
+        else:
+            frame, operand_refs, denoted = numerics.current_operation
+            selected_refs[:len(operand_refs)] = operand_refs
         relation_rule = bool(getattr(catalog[local], 'relation_kind', None))
-        selected_refs = (None if number('operation_refs') is None else
-                         list(number('operation_refs')[action].tolist()))
         for role, (operand, actual) in enumerate(zip(operands, frame[:arity])):
             operand['value'] = actual
             if program.operation_relations is not None:
                 operand['has_point'] = not bool(relation_actions[action][role])
-            if number('operation_refs') is not None:
+            if selected_refs is not None:
                 selected = operand
                 while selected['children']:
                     headed = getattr(selected['rule'], 'head_role', 0)
@@ -315,8 +335,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
             parent['identity_handle'] = record[0]
             parent['identity_event'] = tuple(record)
             parent['identity_action'] = action
-        if number('timeline_actions') is not None:
-            stamp, alternative, origin, suppressed = number('timeline_actions')[action].tolist()
+        if timeline_actions is not None:
+            stamp, alternative, origin, suppressed = timeline_actions[action]
+            if numerics is not None:
+                stamp = denoted
             parent.update(order=stamp, timeline=bool(alternative), event_origin=origin-1,
                           suppressed_event=bool(suppressed), timeline_order=True)
         if getattr(program, 'close_references', False):
