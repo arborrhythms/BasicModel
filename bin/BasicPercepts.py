@@ -255,6 +255,22 @@ def spelling_occurrences(surface, spellings, groups, nominations, known, first_p
     return torch.where(learned[..., None], 0, spans), torch.where(learned[..., None], spans, 0), keys.sort(1).values
 
 
+def proper_byte_runs(wholes, parts):
+    """Which shorter byte sequences occur at any offset in each longer sequence."""
+    size = parts.shape[1]
+    if not size or size >= wholes.shape[1] or not len(wholes) or not len(parts):
+        return wholes.new_zeros((len(wholes), len(parts)), dtype=torch.bool)
+    windows = wholes.unfold(1, size, 1)
+    block = max(1, (1 << 22) // (windows.shape[1] * size))
+    # Bound the temporary equality grid even for a large inventory.
+    columns = max(1, block // min(block, len(wholes)))
+    found = []
+    for rows in windows.split(block):
+        matches = [(rows[:, :, None] == keys).all(-1).any(1) for keys in parts.split(columns)]
+        found.append(torch.cat(matches, 1))
+    return torch.cat(found)
+
+
 def part_starts(raw, spans, spellings):
     """First occurrence of each learned part within each span, or the surface width."""
     raw = raw.to(torch.uint8)

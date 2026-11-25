@@ -477,23 +477,67 @@ class WordIdentity(nn.Module):
         groups[row] = tuple(children)
         self.store._canonical_group_cache = None
 
-    def _link(self, raw):
+    def observed_links(self, surface, spans, observations):
+        """Both directions of byte containment for one batch of new forms, in admission order."""
+        from BasicPercepts import proper_byte_runs
+        # Ordinals below -1 name visible, newly observed forms. Existing
+        # forms use physical word rows. -1 is a part without its own word.
+        grouped = {}
+        words = []
+        for word, page, seat in observations:
+            grouped.setdefault(len(word), []).append((len(words), page, seat))
+            words.append(word)
+        prior = self._occurrences(surface.device, False)
+        if prior is None:
+            prior = self._occurrences(surface.device, True)
+        old_forms, _, _, _, old_rows = prior
+        groups, addresses = list(old_forms), [old_rows]
+        new_groups = []
+        for size, seats in grouped.items():
+            ordinal, page, seat = spans.new_tensor(seats).T
+            at = spans[page, seat, 0, None] + torch.arange(size, device=surface.device)
+            observed = surface[page[:, None], at].to(torch.uint8)
+            groups.append(observed)
+            addresses.append(-2 - ordinal)
+            new_groups.append((observed, ordinal))
+        names = torch.cat(addresses)
+        links = [(set(), set()) for _ in words]
+        matches, order = [], []
+        for observed, ordinal in new_groups:
+            directions = []
+            for group in groups:
+                if observed.shape[1] < group.shape[1]:
+                    directions.append(-proper_byte_runs(group, observed).T.to(torch.int8))
+                else:
+                    directions.append(proper_byte_runs(observed, group).to(torch.int8))
+            earlier = (names >= 0) | ((names < -1) & (-2 - names < ordinal[:, None]))
+            matches.append(torch.where(earlier, torch.cat(directions, 1), 0))
+            order.append(ordinal)
+        if matches:
+            directions = torch.cat(matches)
+            query, other = directions.nonzero(as_tuple=True)
+            records = torch.stack((torch.cat(order)[query], names[other], directions[query, other]), 1)
+            for target, name, direction in records.tolist():
+                word = words[-2 - name] if name < -1 else self._fixed_bytes[name]
+                links[target][0 if direction > 0 else 1].add(word)
+        return dict(zip(words, links, strict=True))
+
+    def _link(self, raw, links=None):
         """Link a new stored form to the stored forms it holds as a run (its
         parts among the forms) and to those that hold it (its holders), on
         both sides of each link."""
         text = bytes(raw)
-        self.inside[text] = {text[start:start + size] for size in range(1, len(text))
-                             for start in range(len(text) - size + 1)
-                             if text[start:start + size] in self.inside}
-        # A stored form that holds this one holds each of its parts and each
-        # of its characters, so its holders are among the holders of any of
-        # them: the shortest such list is read, and each candidate is
-        # checked for the run.
-        by_byte = self._forms_by_byte(text)
-        lists = [self.holders[run] for run in self.inside[text]]
-        lists.extend(by_byte[byte] for byte in set(text))
-        shortest = min(lists, key=len)
-        self.holders[text] = {word for word in shortest if word != text and text in word}
+        if links is None:
+            inside = {text[start:start + size] for size in range(1, len(text))
+                      for start in range(len(text) - size + 1)
+                      if text[start:start + size] in self.inside}
+            by_byte = self._forms_by_byte(text)
+            lists = [self.holders[run] for run in inside]
+            lists.extend(by_byte[byte] for byte in set(text))
+            shortest = min(lists, key=len)
+            holders = {word for word in shortest if word != text and text in word}
+            links = inside, holders
+        self.inside[text], self.holders[text] = links
         for run in self.inside[text]:
             self.holders[run].add(text)
         for holder in self.holders[text]:
@@ -1058,7 +1102,7 @@ class WordIdentity(nn.Module):
         self.basic.follow_forms(changed, new)
         return changed
 
-    def admit(self, raw):
+    def admit(self, raw, *, links=None):
         raw = bytes(raw)
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
@@ -1071,7 +1115,7 @@ class WordIdentity(nn.Module):
             if len(text) > 1 and text not in self.added:
                 self.added[text] = None
             self.words[raw] = self.atoms_of(raw)
-            self._link(raw)
+            self._link(raw, links)
             carriers = [holder for holder in sorted(self.holders[raw], key=self.order.__getitem__)
                         if own not in self.words[holder]] if len(text) > 1 else []
             for holder in carriers:

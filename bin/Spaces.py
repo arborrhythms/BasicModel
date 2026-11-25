@@ -11491,8 +11491,8 @@ class PartSpace(Space):
                         if form <= -2 and (changed is None or not changed[b][w]):
                             source = -2 - form
                             if source not in new_units:
-                                new_units[source] = raw[lo:hi]
-                            observe_new_form(new_units[source], b, lo)
+                                new_units[source] = raw[lo:hi], b, w
+                            observe_new_form(new_units[source][0], b, lo)
                 continue
             staged_words = []
             for word_index in range(word_capacity):
@@ -11589,10 +11589,11 @@ class PartSpace(Space):
                     # once. Repeated observations use the first visible seat's
                     # native row, including repeats within a writing stream.
                     assigned = [-1] * form_rows.numel()
-                    for source, raw in new_units.items():
+                    links = identity.observed_links(compact, layout, new_units.values())
+                    for source, (raw, _, _) in new_units.items():
                         if raw not in identity.word_rows:
                             with identity.record_repairs(repairs, raw):
-                                identity.admit(raw)
+                                identity.admit(raw, links=links[raw])
                         assigned[source] = identity.word_rows[raw]
                     observed = discovery_sources >= 0
                     if hiding:

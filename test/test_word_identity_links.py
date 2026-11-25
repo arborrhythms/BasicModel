@@ -31,6 +31,36 @@ def test_links_after_a_load_equal_the_look_through_every_stored_form():
     assert other.holders == holders and other.inside == inside
 
 
+def test_new_links_follow_visible_seats_and_only_earlier_admissions():
+    import torch
+    from BasicPercepts import proper_byte_runs
+    prior = (b'banana', b'an', b'\x80x', b'other')
+    identity, *_ = coded(prior)
+    words = (b'ana', b'nana', b'a', b'\x80', b'ananas', b'\x00a')
+    # A repeated occurrence on the second page is the observed seat. The
+    # alphabet can contain NUL and escaped bytes, including a one-byte form.
+    raw = b'/'.join(words)
+    starts = [sum(len(w) + 1 for w in words[:i]) for i in range(len(words))]
+    surface = torch.tensor([list(raw), list(b'!' + raw[:-1])], dtype=torch.uint8)
+    spans = torch.tensor([[(start, start + len(word)) for start, word in zip(starts, words)],
+                          [(1 + start, 1 + start + len(word)) for start, word in zip(starts, words)]])
+    observations = [(word, i % 2 if i + 1 < len(words) else 0, i) for i, word in enumerate(words)]
+    links = identity.observed_links(surface, spans, observations)
+    seen = set(prior)
+    for word in words:
+        inside, holders = links[word]
+        assert inside == {other for other in seen if other in word}
+        assert holders == {other for other in seen if word in other}
+        identity.admit(word, links=links[word])
+        seen.add(word)
+    assert (identity.holders, identity.inside) == through_every_form(identity)
+    compiled = torch.compile(proper_byte_runs, backend='eager', fullgraph=True)
+    query = torch.tensor([[97, 110], [110, 97], [0, 97]], dtype=torch.uint8)
+    expected = torch.tensor([[bytes(row) in bytes(page) for row in query.tolist()]
+                             for page in surface.tolist()])
+    torch.testing.assert_close(compiled(surface, query), expected)
+
+
 def test_extent_read_joins_attested_parts_and_preserves_both_property_lanes(monkeypatch):
     import torch
     identity, basic, book, _ = coded((b'calaba', b'cabala', b'aba', b'ab', 'café'.encode()))
