@@ -44,6 +44,8 @@ def test_referent_is_frozen_and_ambiguity_is_shared_with_reading():
         for frozen in (False, True):
             owner._online_learning_frozen = frozen
             assert owner.interpret.referent(name) == obj
+            assert owner.interpret.sentence_referents(torch.tensor([[name, -1], [-1, name]])).tolist() == [
+                [obj, -1], [-1, obj]]
             assert owner.mtm.state()['names'] == before['names']
             if not mandatory:
                 # Choosing a lexical/sign read still omits interpretation;
@@ -55,6 +57,9 @@ def test_referent_is_frozen_and_ambiguity_is_shared_with_reading():
     force_order(owner, other, 0)
     owner._csw_concept_row(0, other)
     owner._concept_allocator.named_identities[name].add(other)
+    assert owner.interpret.sentence_referents(torch.tensor([[-1]])).item() == -1
+    with pytest.raises(ValueError, match='ambiguous identity reading'):
+        owner.interpret.sentence_referents(torch.tensor([[-1], [name]]))
     for read in (owner.interpret.referent, owner.interpret.reading):
         with pytest.raises(ValueError, match='ambiguous identity reading'):
             read(name)

@@ -718,20 +718,49 @@ class InterpretLayer(GrammarLayer):
                     seen.add(token)
         return obj
 
+    def _remembered_referents(self, word):
+        remembered = self.remembered_objects(word)
+        alloc = self.owner._concept_allocator
+        return tuple(cid for cid in remembered if alloc.relate_idx.get(
+            ('part-kind', (alloc.parts.SYMBOL, cid), alloc.order_of(cid) + 1)) not in remembered)
+
+    def _ambiguous_referents(self, word, remembered):
+        form = self.owner._concept_allocator.word_descriptions.get(word, {}).get('forms', ())
+        return f'ambiguous identity reading for word {word} {form}: denotations {list(remembered)}'
+
     def referent(self, word, *, batch=0):
         """Resolve a word without learning, opening a token, or reading MTM."""
         word = int(word)
         objects = self.preferred(word, batch=batch)
         if objects:
             return objects[0]
-        remembered = self.remembered_objects(word)
-        alloc = self.owner._concept_allocator
-        remembered = tuple(cid for cid in remembered if alloc.relate_idx.get(
-            ('part-kind', (alloc.parts.SYMBOL, cid), alloc.order_of(cid) + 1)) not in remembered)
+        remembered = self._remembered_referents(word)
         if len(remembered) > 1:
-            form = alloc.word_descriptions.get(word, {}).get('forms', ())
-            raise ValueError(f'ambiguous identity reading for word {word} {form}: denotations {list(remembered)}')
+            raise ValueError(self._ambiguous_referents(word, remembered))
         return remembered[0] if remembered else word
+
+    def sentence_referents(self, words):
+        """Resolve all positive names on each page using its own expected objects."""
+        from Meaning import require_sentence_tensor
+        defined = self.owner.definitions
+        _, _, _, alternatives = defined.object_table(words.device)
+        resolved = (torch.stack([self.denoted_ids(row, batch=b) for b, row in enumerate(words)])
+                    if len(words) and alternatives else self.denoted_ids(words))
+        # A word can retain its name after the live definition has expired.
+        # Only those words need the fallback. A dormant ambiguous name has
+        # no effect until this sentence actually reads it.
+        remembered = []
+        for word in sorted(self.owner._concept_allocator.named_identities.keys() - set(defined.bound_words())):
+            names = self._remembered_referents(word)
+            if len(names) == 1:
+                remembered.append((word, names[0]))
+            elif len(names) > 1:
+                require_sentence_tensor((words != word).all(), self._ambiguous_referents(word, names))
+        if remembered:
+            keys, values = words.new_tensor(remembered).T.contiguous()
+            at = torch.searchsorted(keys.contiguous(), words.contiguous()).clamp_max(len(keys) - 1)
+            resolved = torch.where(keys[at] == words, values[at], resolved)
+        return resolved
 
     def reading(self, word, *, batch=0):
         """Identify a read site's object; a word with no object is given its

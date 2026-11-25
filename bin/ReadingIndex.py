@@ -14,7 +14,7 @@ def steps(reading):
 
 
 class ReadingIndex:
-    def __init__(self, actions, word_count, language):
+    def __init__(self, actions, word_count, language, *, padded=False):
         self.steps = []
         self.operands = []
         self.parents = []
@@ -22,6 +22,8 @@ class ReadingIndex:
         stack = []
         operations = actions.tolist()
         for at, (kind, local, word) in enumerate(operations):
+            if padded and kind < 0:
+                break
             self.parents.append(None)
             if kind == 0:
                 if word_count is not None and (not 0 <= word < word_count or word in self.word_actions):
@@ -38,6 +40,10 @@ class ReadingIndex:
             else:
                 if kind not in (1, 2):
                     raise ValueError('unknown sentence action')
+                if padded:
+                    rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
+                    if not 0 <= local < len(rules):
+                        raise ValueError('invalid selected reference rule')
                 if kind == 2 or getattr(language._compose_binary_rules[local], 'method_name', None) == 'bind':
                     offset = max(0, word) if kind == 2 else 0
                     position = len(stack) - 1 - offset

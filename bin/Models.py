@@ -13116,9 +13116,13 @@ class BasicModel(BaseModel):
                     from Interpret import leaf_readings
                     readings = leaf_readings(self.languageSpace, action_index, n, forced=False)
                     options['interpreted'] = tuple(value != 'no_op' for value in readings)
-                reference_ids, reference_orders = resolve(*args, **options)
-                if not bool((reference_orders >= 0).any()):
-                    reference_ids = reference_orders = None
+                from Language import LanguageSpace
+                if getattr(resolve, '__func__', None) is LanguageSpace.resolve_lexical_references:
+                    reference_ids, reference_orders = resolve(*args, **options, omit_empty=True)
+                else:
+                    reference_ids, reference_orders = resolve(*args, **options)
+                    if not bool((reference_orders >= 0).any()):
+                        reference_ids = reference_orders = None
             identity_record = {}
             if chunk_state is not None and transactions is not None:
                 from ChunkJournal import capture

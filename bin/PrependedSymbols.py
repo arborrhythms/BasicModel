@@ -89,28 +89,29 @@ def refresh_words(model, sentence):
     rows, orders = word_view(source, 'object_rows'), word_view(source, 'object_orders')
     grammar_rows = getattr(source, '_ar_grammar_object_rows', None)
     mixing = torch.is_tensor(grammar_rows)
-    positions = ((source._packed_sentence_ids == sentence) & (words > 0)
-                 & (references > 0)).nonzero().tolist()
-    changed = []
-    for batch, column in positions:
-        word = int(words[batch, column])
-        identity = owner.interpret.referent(word, batch=batch)
-        if identity is None or identity == int(references[batch, column]):
-            continue
-        row = owner._concept_row_of(identity)
-        if row is None:
-            row = owner._concept_row_of(word)
-        order = owner._row_order(row)
-        references[batch, column] = identity
-        if torch.is_tensor(rows):
-            rows[batch, column], orders[batch, column] = row, order
-        if mixing:
-            grammar_rows[batch, column] = row
-            source._ar_grammar_object_orders[batch, column] = order
-            source._ar_grammar_object_ids[batch, column] = owner.concept_id_at_row(row)
-        changed.append((batch, column, row))
-    if not changed:
+    active = (source._packed_sentence_ids == sentence) & (words > 0) & (references > 0)
+    identities = owner.interpret.sentence_referents(torch.where(active, words, -1))
+    changed = active & (identities != references)
+    if not bool(changed.any()):
         return
+    from Meaning import require_sentence_tensor
+    store = owner._concept_allocator.layer(0)
+    resolved = store.concept_rows(identities)
+    seated = resolved >= 0
+    selected = torch.where(seated, resolved, store.concept_rows(words))
+    require_sentence_tensor((~changed | (selected >= 0)).all(), 'unseated lexical reference')
+    ends = selected.new_tensor(owner._order_caps()).cumsum(0)
+    levels = torch.searchsorted(ends, selected.contiguous(), right=True)
+    references.copy_(torch.where(changed, identities, references))
+    if torch.is_tensor(rows):
+        rows.copy_(torch.where(changed, selected, rows))
+        orders.copy_(torch.where(changed, levels, orders))
+    if mixing:
+        grammar_rows.copy_(torch.where(changed, selected, grammar_rows))
+        levels_out = source._ar_grammar_object_orders
+        levels_out.copy_(torch.where(changed, levels, levels_out))
+        names = source._ar_grammar_object_ids
+        names.copy_(torch.where(changed, torch.where(seated, identities, words), names))
 
     def codes(selected, word_ids=None):
         values = owner.similarity_codebook.lookup_rows(selected.clamp_min(0), streams=True)
@@ -127,8 +128,8 @@ def refresh_words(model, sentence):
         # word-only inverse bank does not change when its referent changes.
         offset = bank.shape[1] // 2
         if not mixing:
-            for batch, column, row in changed:
-                bank[batch, offset + column] = row
+            objects = bank[:, offset:offset + words.shape[1]]
+            objects.copy_(torch.where(changed, selected, objects))
         lexical = torch.full_like(bank, -1)
         lexical[:, :words.shape[1]] = words
         if not mixing:

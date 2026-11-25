@@ -11738,22 +11738,25 @@ class LanguageSpace(nn.Module):
 
     @torch.compiler.disable
     def resolve_lexical_references(self, owner, word_rows, concept_ids, actions, *, leaf_orders=None, admit=True,
-                                   interpreted=None):
+                                   interpreted=None, omit_empty=False):
         """Resolve the selected grammar's reference orders at capture time.
 
         Each operand's stamp and operation supply the order, never its name.
         Existing associations are resolved first; an unassociated word can
         acquire testimony through interpret. Ambiguous associations stay unknown.
         """
-        refs = concept_ids.clone()
-        orders = refs.new_full(refs.shape, -1)
         if owner is None or not callable(getattr(owner, 'resolve_word_concept', None)):
-            return refs, orders
+            return (None, None) if omit_empty else (concept_ids.clone(), torch.full_like(concept_ids, -1))
         from ReferenceContext import reference_requests
         if leaf_orders is None:
             leaf_orders = concept_ids.new_tensor([
                 owner._concept_source_order(int(identity)) for identity in concept_ids])
         selected_requests = reference_requests(self, actions, leaf_orders=leaf_orders)
+        if omit_empty and not selected_requests:
+            return None, None
+        refs = concept_ids.clone()
+        orders = torch.full_like(refs, -1)
+        recorded = False
         for leaf, (order, mode) in selected_requests.items():
             if interpreted is not None and not interpreted[leaf]:
                 continue
@@ -11764,6 +11767,7 @@ class LanguageSpace(nn.Module):
                 # names the admitted kind; lowering changes order, not that
                 # source reference. The close resolves the separate request.
                 orders[leaf] = order
+                recorded = True
                 continue
             surface = owner.word_surface_for_row(int(word_rows[leaf]))
             if surface is None or not owner.word_concepts(surface):
@@ -11787,8 +11791,10 @@ class LanguageSpace(nn.Module):
                 # exists; ambiguity stays open in both trial and admission.
                 refs[leaf] = ((-1 if associated else int(concept_ids[leaf]))
                               if cid is None else cid)
-            orders[leaf] = order if cid is None else owner._concept_source_order(cid)
-        return refs, orders
+            resolved_order = order if cid is None else owner._concept_source_order(cid)
+            orders[leaf] = resolved_order
+            recorded |= resolved_order >= 0
+        return (None, None) if omit_empty and not recorded else (refs, orders)
 
     def program_meaning(self, entry, registry):
         """Recover one selected meaning from its owned compose program.

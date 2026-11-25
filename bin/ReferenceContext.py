@@ -4,7 +4,6 @@ This module has no memory reader or identity table. A caller may supply only
 live constituents and frames already admitted to the predictor's situation.
 """
 
-from ReadingIndex import steps as recorded_steps
 from dataclasses import dataclass, replace
 from typing import NamedTuple
 
@@ -199,44 +198,36 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
     A kept numerical journal optionally adds the selected native reference
     to each request. No identity is inferred from a word or its coordinates.
     """
-    requests, stack = {}, []
-    stamps = None if leaf_orders is None else leaf_orders.detach().cpu().tolist()
-    references = None if operation_refs is None else operation_refs.detach().cpu().tolist()
-    for action, (kind, local, word) in enumerate(recorded_steps(actions)):
-        if kind < 0:
-            break
-        if kind == 0:
-            stack.append(((word,), -1 if stamps is None else int(stamps[word])))
-            continue
-        if kind == 3:
-            stack[-2:] = reversed(stack[-2:])
-            continue
-        unary_position = max(0, word) if kind == 2 else 0
-        if unary_position:
-            stack.append(stack.pop(-1-unary_position))
-        arity = 2 if kind == 1 else 1
-        rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
-        if kind == 1 and 0 <= local < len(rules) and getattr(rules[local],'method_name',None) == 'bind':
-            arity = 1  # the right field operand is off the parse stack
-        if kind not in (1, 2) or not 0 <= local < len(rules) or len(stack) < arity:
-            raise ValueError('invalid selected reference rule')
-        operands = stack[-arity:]
-        del stack[-arity:]
-        rule = rules[local]
+    from ReadingIndex import ReadingIndex
+    index = actions if isinstance(actions, ReadingIndex) else getattr(actions, 'action_index', None)
+    if index is None:
+        values = actions if torch.is_tensor(actions) else actions.actions
+        index = ReadingIndex(values, None, language, padded=True)
+    catalogs = {1: language._compose_binary_rules, 2: language._compose_unary_rules}
+    rules = [(at, catalogs[kind][local]) for at, (kind, local, _) in enumerate(index.steps)
+             if kind in catalogs]
+    if not any(getattr(rule, 'reference_roles', ()) for _, rule in rules):
+        return {}
+
+    # The retained operands already encode transpositions, deep unary steps and
+    # off-stack binds. Read each head at its existing action address.
+    stamps = None if leaf_orders is None else leaf_orders.tolist()
+    references = None if operation_refs is None else operation_refs.tolist()
+    heads = {at: ((word,), -1 if stamps is None else stamps[word]) for word, at in index.word_actions.items()}
+    requests = {}
+    for at, rule in rules:
+        operands = [heads[child] for child in index.operands[at]]
         for role in getattr(rule, 'reference_roles', ()):
-            index = int(role[5:]) - 1
-            order, mode = binding_spec(rule, role, operands[index][1])
-            for leaf in operands[index][0]:
-                request = order, mode
-                if references is not None:
-                    request = (*request, int(references[action][index]))
+            arg = int(role[5:]) - 1
+            leaves, stamp = operands[arg]
+            request = binding_spec(rule, role, stamp)
+            if references is not None:
+                request = (*request, references[at][arg])
+            for leaf in leaves:
                 requests[leaf] = request
         head = getattr(rule, 'head_role', 0)
-        leaves = (operands[head - 1][0] if head else
-                  tuple(leaf for operand, _ in operands for leaf in operand))
-        stack.append((leaves, denoted_order(rule, tuple(stamp for _, stamp in operands), (), None)))
-        if unary_position:
-            stack.insert(len(stack)-1-unary_position, stack.pop())
+        leaves = operands[head - 1][0] if head else tuple(leaf for words, _ in operands for leaf in words)
+        heads[at] = leaves, denoted_order(rule, tuple(stamp for _, stamp in operands), (), None)
     return requests
 
 
