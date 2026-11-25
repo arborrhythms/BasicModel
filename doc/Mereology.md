@@ -741,7 +741,7 @@ join/meet/projection primitives above — also carries the unrelated
 `Mereology` mixin: the contemplative-awareness measure family (`Contiguous`,
 `Continuous`, `Peaceful`, `Area`, `Luminosity`), mixed into `BaseModel` first
 in MRO (`class BaseModel(Mereology, nn.Module)`, `bin/Models.py`). See
-[doc/research/three-surfaces.md](research/three-surfaces.md) for that
+[doc/three-surfaces.md](three-surfaces.md) for that
 geometry — the two share a file and a name, not an implementation.
 
 ### `isPart` as a Grammar Layer

@@ -1,5 +1,13 @@
 # Three parallel surfaces of grammar operations
 
+> This note describes the source as it was when it was written. The line
+> numbers in its links are of that time, and the links now go to the files.
+> Of what it names, these are no longer in the source: `forwardPi`,
+> `forwardSigma`, `reversePi`, `reverseSigma`, `ContiguousLayer` and
+> `_contiguous_layer`, `WholeSpace._op_for_rule`, `_apply_rules_to_pairs`
+> and `composeSyntax`. `NotLayer`, `IntersectionLayer` and `UnionLayer` are
+> now in `bin/Language.py`.
+
 A signal passing through `PerceptualSpace -> ConceptualSpace -> WholeSpace`
 encounters **three distinct surfaces** that each implement (some of) the
 grammar's operators. Right now they coexist; tasks can ride any of the three,
@@ -16,9 +24,9 @@ flags. Owns its own parameters; trains end-to-end via the task loss.
 
 | Space | Owns | forward call | reverse call | Other ops |
 |---|---|---|---|---|
-| `PerceptualSpace` | `SigmaLayer` (P -> sub-percept, [Spaces.py:5418-5422](../../bin/Spaces.py:5418)) | `forwardSigma(x)` | `reverseSigma(y)` (when `invertible`) | VQ-VAE codebook quantize via `self.quantize`; `l1_proximal`; `valid_mask` zeroing |
-| `ConceptualSpace` | `PiLayer` (concept fold, [Spaces.py:6558-6591](../../bin/Spaces.py:6558)) | `forwardPi(x)` ([Spaces.py:6630](../../bin/Spaces.py:6630)) | `reversePi(y)` | Optional attention head; `_active` masking |
-| `WholeSpace` | `SigmaLayer` (C -> S fold, [Spaces.py:6792-6809](../../bin/Spaces.py:6792)) | `forwardSigma(x)` ([Spaces.py:7503](../../bin/Spaces.py:7503)) | `reverseSigma(y)` (when `invertible`) | `l1_proximal`; codebook quantize via VQ-VAE; valid_mask zeroing |
+| `PerceptualSpace` | `SigmaLayer` (P -> sub-percept, [Spaces.py:5418-5422](../bin/Spaces.py)) | `forwardSigma(x)` | `reverseSigma(y)` (when `invertible`) | VQ-VAE codebook quantize via `self.quantize`; `l1_proximal`; `valid_mask` zeroing |
+| `ConceptualSpace` | `PiLayer` (concept fold, [Spaces.py:6558-6591](../bin/Spaces.py)) | `forwardPi(x)` ([Spaces.py:6630](../bin/Spaces.py)) | `reversePi(y)` | Optional attention head; `_active` masking |
+| `WholeSpace` | `SigmaLayer` (C -> S fold, [Spaces.py:6792-6809](../bin/Spaces.py)) | `forwardSigma(x)` ([Spaces.py:7503](../bin/Spaces.py)) | `reverseSigma(y)` (when `invertible`) | `l1_proximal`; codebook quantize via VQ-VAE; valid_mask zeroing |
 
 **forward / reverse:** Both used. Forward is the always-on data-flow direction;
 reverse is invoked by the reconstruction loss path (`runBatch.reconstruction`)
@@ -26,14 +34,14 @@ and by the AR rolling-cursor path.
 
 **compose / decompose:** *Not* called at this surface. PiLayer and SigmaLayer
 *do* expose `compose(left, right)` / `decompose(parent)` (binary tensor ops at
-[Layers.py:1573-1610](../../bin/Layers.py:1573)) but the spaces' forward pipelines
+[Layers.py:1573-1610](../bin/Layers.py)) but the spaces' forward pipelines
 use only the unary `forward` / `reverse`. The binary `compose` is reserved for
 chart drivers; only Surface 2 wraps and re-exposes them.
 
 ## Surface 2: GrammarLayer wrappers
 
 Each grammar operator wrapped as an `nn.Module` subclass of `GrammarLayer`
-([Layers.py:1669-1979](../../bin/Layers.py:1669)). Two roles:
+([Layers.py:1669-1979](../bin/Layers.py)). Two roles:
 - Provide a uniform `compose / decompose` contract for binary operators (the
   CKY chart driver was supposed to use this).
 - Provide a uniform `forward / reverse` for unary operators (some are used
@@ -41,11 +49,11 @@ Each grammar operator wrapped as an `nn.Module` subclass of `GrammarLayer`
 
 | Class | rule_name | arity | invertible | lossy | Wraps | Where instantiated | Where called |
 |---|---|---|---|---|---|---|---|
-| `NotLayer` | `not` | 1 | yes | no | (parameter-free bivector swap) | `WholeSpace.__init__` as `self.propositional_negation` ([Spaces.py:6820](../../bin/Spaces.py:6820)) | `WholeSpace.forward` mixes `act = p_neg * not(act) + (1-p_neg) * act` ([Spaces.py:7530-7533](../../bin/Spaces.py:7530)) — gated by `rule_probability("not(S)")` |
+| `NotLayer` | `not` | 1 | yes | no | (parameter-free bivector swap) | `WholeSpace.__init__` as `self.propositional_negation` ([Spaces.py:6820](../bin/Spaces.py)) | `WholeSpace.forward` mixes `act = p_neg * not(act) + (1-p_neg) * act` ([Spaces.py:7530-7533](../bin/Spaces.py)) — gated by `rule_probability("not(S)")` |
 | `NonLayer` | `non` | 1 | no | yes | (parameter-free `1 - |clamp(x,-1,1)|`) | Not currently constructed in any space | not invoked |
 | `IntersectionLayer` | `intersection` | 2 | yes | no | A `PiLayer` instance | not constructed by any space | dormant; `compose` / `decompose` defined but no external caller |
 | `UnionLayer` | `union` | 2 | yes | no | A `SigmaLayer` instance | not constructed by any space | dormant; `compose` / `decompose` defined but no external caller |
-| `ContiguousLayer` | `Contiguous` | 1 | no | yes | (parameter-free per-axis `amax`) | `WholeSpace.__init__` as `self._contiguous_layer` ([Spaces.py:6926](../../bin/Spaces.py:6926)) | `WholeSpace.forward` mixes `act = p_con * contiguous(act) + (1-p_con) * act` ([Spaces.py:7517-7522](../../bin/Spaces.py:7517)) — gated by `rule_probability("Contiguous(S)")` |
+| `ContiguousLayer` | `Contiguous` | 1 | no | yes | (parameter-free per-axis `amax`) | `WholeSpace.__init__` as `self._contiguous_layer` ([Spaces.py:6926](../bin/Spaces.py)) | `WholeSpace.forward` mixes `act = p_con * contiguous(act) + (1-p_con) * act` ([Spaces.py:7517-7522](../bin/Spaces.py)) — gated by `rule_probability("Contiguous(S)")` |
 
 **forward / reverse:** Used by NotLayer and ContiguousLayer in `WholeSpace.forward`
 (unary, gated by rule probability). The `IntersectionLayer` / `UnionLayer`
@@ -53,15 +61,15 @@ Each grammar operator wrapped as an `nn.Module` subclass of `GrammarLayer`
 
 **compose / decompose:**
 - Defined on every `GrammarLayer` subclass per the contract at
-  [Layers.py:1722-1751](../../bin/Layers.py:1722).
+  [Layers.py:1722-1751](../bin/Layers.py).
 - For arity-2 wrappers (Intersection/Union): delegate to inner `pi.compose` /
   `pi.decompose` and `sigma.compose` / `sigma.decompose`.
 - **No external code calls these.** Chart and space paths bypass them.
 - Only call sites in the entire codebase:
-  - `IntersectionLayer.compose` -> `self.pi.compose` ([Layers.py:1884](../../bin/Layers.py:1884))
-  - `IntersectionLayer.decompose` -> `self.pi.decompose` ([Layers.py:1888](../../bin/Layers.py:1888))
-  - `UnionLayer.compose` -> `self.sigma.compose` ([Layers.py:1922](../../bin/Layers.py:1922))
-  - `UnionLayer.decompose` -> `self.sigma.decompose` ([Layers.py:1926](../../bin/Layers.py:1926))
+  - `IntersectionLayer.compose` -> `self.pi.compose` ([Layers.py:1884](../bin/Layers.py))
+  - `IntersectionLayer.decompose` -> `self.pi.decompose` ([Layers.py:1888](../bin/Layers.py))
+  - `UnionLayer.compose` -> `self.sigma.compose` ([Layers.py:1922](../bin/Layers.py))
+  - `UnionLayer.decompose` -> `self.sigma.decompose` ([Layers.py:1926](../bin/Layers.py))
 
 These are wired but dead code paths from the chart's perspective. They were
 clearly built in anticipation of the chart driving them, but the chart never
@@ -74,7 +82,7 @@ MLP, depth embeddings, soft-chart parameters, and the per-rule **method
 table** mapping `rule_name` -> `*Forward` / `*Reverse` method on the layer
 itself.
 
-`_RULE_METHODS` ([Language.py:758-786](../../bin/Language.py:758)) maps each rule
+`_RULE_METHODS` ([Language.py:758-786](../bin/Language.py)) maps each rule
 name to a tuple `(forwardName, reverseName | None, is_binary)`. Methods like
 `notForward`, `intersectionForward`, `unionForward`, `liftForward`,
 `lowerForward`, etc. are defined on `SyntacticLayer` and reach for either
@@ -95,24 +103,24 @@ provides a Basis) or fall back to plain tensor primitives (`torch.min`,
 
 **forward / reverse:**
 - `SyntacticLayer.project(grammar, rule_id, left, right=None, ...)`
-  ([Language.py:860-880](../../bin/Language.py:860)) is the rule-execution entry
+  ([Language.py:860-880](../bin/Language.py)) is the rule-execution entry
   point: looks up the rule's method_name, finds the `*Forward` method, calls it.
 - `SyntacticLayer.reverse_project(grammar, rule_id, result, ...)` is the
   matching inverse, calling `*Reverse` when present (unbound when the rule is
   lossy).
 - Used by:
-  - `WholeSpace._op_for_rule` ([Spaces.py:7345](../../bin/Spaces.py:7345)) for
+  - `WholeSpace._op_for_rule` ([Spaces.py:7345](../bin/Spaces.py)) for
     shift/reduce-style rule firing on stack entries.
   - The legacy `_compose_vector` Phase-2 cascade and `_compose_vector_chart`
-    (greedy chart) paths via `_apply_rules_to_pairs` ([Language.py:1754-1768](../../bin/Language.py:1754)).
+    (greedy chart) paths via `_apply_rules_to_pairs` ([Language.py:1754-1768](../bin/Language.py)).
   - The new soft chart `_compose_chart_cky` via `_apply_rule_forward`
-    ([Language.py:1881-1909](../../bin/Language.py:1881)) — this is a
+    ([Language.py:1881-1909](../bin/Language.py)) — this is a
     **separate dispatch** (also through `_RULE_METHODS`) that does the marker-
     masking gate before calling the rule's `*Forward`.
 
 **compose / decompose:**
 - `SyntacticLayer.compose(data, subspace, grammar, target_count=None)`
-  ([Language.py:1402](../../bin/Language.py:1402)) is the **top-level entry
+  ([Language.py:1402](../bin/Language.py)) is the **top-level entry
   point** for the entire grammar pipeline. It dispatches to:
   - 2D `data.shape == [B, N]` activation -> `_compose_activation`
   - 3D `data.shape == [B, N, D]` vector mode -> `_compose_vector`, which then
@@ -124,9 +132,9 @@ provides a Basis) or fall back to plain tensor primitives (`torch.min`,
     3. `_compose_to_target` (when `target_count` is set) — pairwise reduction.
     4. Phase-2 cascading soft-weighted composition (default, the legacy path).
 - `SyntacticLayer.decompose` is the matching inverse, called from
-  `WholeSpace.decompose` ([Language.py:3939](../../bin/Language.py:3939)) on the
+  `WholeSpace.decompose` ([Language.py:3939](../bin/Language.py)) on the
   reverse pass.
-- The entire `WholeSpace.composeSyntax` ([Language.py:3917-3929](../../bin/Language.py:3917))
+- The entire `WholeSpace.composeSyntax` ([Language.py:3917-3929](../bin/Language.py))
   wraps this — that is the only caller into Surface 3's chart path.
 
 ## Where the three surfaces overlap
@@ -203,7 +211,7 @@ the symmetry with the rest of the project's vocabulary (`compose` /
 ops at one level of abstraction, named for what they do.
 
 If you want a rename, the migration is mechanical: `_fill_rule_list`
-([Language.py:189-220](../../bin/Language.py:189)) reads from a `rules_dict`
+([Language.py:189-220](../bin/Language.py)) reads from a `rules_dict`
 keyed by `'upward'` / `'downward'`; rename in `_apply_cfg_sections` and the
 section names in the cfg parser, plus the keys in `model.xml` /
 `MM_grammar.xml`. Maybe 15 lines of changes plus the XML files.

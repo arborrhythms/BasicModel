@@ -15,7 +15,7 @@ model-owned attributes (`self.wholeSpace`, `self.conceptualSpace`,
 `self.symbolSpace`, `self.bindingDepth`) via ``self``.  Mix in by
 inheriting *first*: ``class BaseModel(Mereology, nn.Module): ...``.
 
-See ``doc/research/three-surfaces.md`` and the
+See ``doc/three-surfaces.md`` and the
 ``2026-05-04-introspective-subsymbolic-handoff`` plan family for the
 geometric foundations.
 """
@@ -170,7 +170,7 @@ def project_codebook(codes, strings, iters=200):
 
 # ---------------------------------------------------------------------------
 # Higher-order-concept shape descriptors -- consumed by hoc_shape /
-# Contiguous / Continuous (see basicmodel/doc/research/three-surfaces.md
+# Contiguous / Continuous (see basicmodel/doc/three-surfaces.md
 # and the 2026-05-04 spec at plans/.../sparkling-peach.md). These are
 # pure data records; the math lives on Mereology.hoc_shape.
 # ---------------------------------------------------------------------------

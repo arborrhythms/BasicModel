@@ -2625,7 +2625,7 @@ class GrammarLayer(Layer):
     surface_schema   = T4_BINARY_JUXTAPOSE
 
     # Chart authority registration -- Surface-3 wiring (see
-    # doc/research/three-surfaces.md). When a SyntacticLayer registers
+    # doc/three-surfaces.md). When a SyntacticLayer registers
     # itself as the class-level authority, every GrammarLayer instance
     # constructed afterwards adds itself to the authority's roster, and
     # its `gated_run(x, fn, *args)` helper consults the authority
