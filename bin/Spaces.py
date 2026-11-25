@@ -9799,13 +9799,13 @@ class InputSpace(Space):
 
         B, W, _ = embedded.shape
         active = active.to(device=embedded.device, dtype=torch.bool)
-        with torch.no_grad():
-            any_pos = active.any(dim=0)
-            if bool(any_pos.any().item()):
-                self._valid_len_host = int(
-                    any_pos.nonzero().max().item()) + 1
-            else:
-                self._valid_len_host = 0
+        source = getattr(ps, '_forward_input', None) or {}
+        if source.get('word_active_mask') is ps._serial_word_active_mask and source.get('unit_spans') is not None:
+            # The ladder emits one active slot per delivered interval in order.
+            self._valid_len_host = min(W, max(map(len, source['word_intervals']), default=0))
+        else:
+            slots = torch.arange(1, W + 1, device=active.device)
+            self._valid_len_host = int(torch.where(active, slots, 0).amax()) if active.numel() else 0
 
         self._ar_embedded = embedded
         self._ar_embedded_N = embedded
@@ -11614,10 +11614,7 @@ class PartSpace(Space):
         flat_part_spans = part_spans.reshape(batch, -1, 2)
         flat_seed = part_events.reshape(
             batch, word_capacity * part_capacity, part_events.shape[-1])
-        # The rendering and legacy aggregation APIs consume Python intervals.
-        flat_tile_spans = [[spans[w] if member < count else (-1, -1)
-                            for w, count in enumerate(lengths) for member in range(part_capacity)]
-                           for (_, spans), lengths in zip(units, counts, strict=True)]
+        flat_tile_spans = torch.where(part_mask[..., None], slots[:, :, None], -1).reshape(batch, -1, 2)
         self._embedded_input = word_event
         self._last_tokens = host_tokens
         self._serial_word_major = True
@@ -12394,7 +12391,7 @@ class PartSpace(Space):
         if (spans_2d is not None and pid_grid is not None
                 and tuple(pid_grid.shape[:2]) == (B, N)
                 and len(spans_2d) == B):
-            tile_spans = spans_2d
+            tile_spans = spans_2d.tolist() if torch.is_tensor(spans_2d) else spans_2d
         else:
             tile_spans = None
         decoded = None                       # legacy full decode, materialized lazily
@@ -14330,11 +14327,18 @@ class ConceptualSpace(Space):
         N = int(pid_2d.shape[1]) if pid_2d.dim() == 2 else 0
         if N == 0:
             return
-        pid_host = pid_2d.detach().reshape(B, N).tolist()
         grouped = (torch.is_tensor(word_groups)
                    and tuple(word_groups.shape) == tuple(pid_2d.shape))
-        grp_host = (word_groups.detach().reshape(B, N).tolist()
-                    if grouped else None)
+        if torch.is_tensor(tile_spans) and grouped:
+            layout = torch.cat((pid_2d, word_groups, tile_spans.reshape(B, 2*N)), 1).tolist()
+            pid_host = [row[:N] for row in layout]
+            grp_host = [row[N:2*N] for row in layout]
+            tile_spans = [list(zip(row[2*N::2], row[2*N+1::2], strict=True)) for row in layout]
+        else:
+            pid_host = pid_2d.detach().reshape(B, N).tolist()
+            grp_host = word_groups.tolist() if grouped else None
+            if torch.is_tensor(tile_spans):
+                tile_spans = tile_spans.tolist()
         # Capacity rejection must follow the word's byte extent, not merely
         # its ordinal group index.  WholeSpace analyses TYPE runs, so one word
         # (for example ``abc1``) can occupy several WS spans.  Keep the old

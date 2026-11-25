@@ -246,7 +246,17 @@ def reading_witnesses(surface, ids, events, signatures, discard, clipped, attent
             torch.where(selected & present.gather(1, index), seat, -1))
 
 
-def mixing_word_witnesses(model, raw, ids, spans, attention):
+def witnessed_columns(witnesses, starts, active, width):
+    """Address a disjoint native part by its first byte in the delivered page."""
+    at = torch.where(active & (starts >= 0) & (starts < width), starts, width)
+    seats = torch.arange(starts.shape[1], device=starts.device).expand_as(at)
+    columns = starts.new_full((len(starts), width + 1), -1)
+    columns.scatter_reduce_(1, at, seats, 'amax')
+    lo, hi = witnesses[..., 0], witnesses[..., 1]
+    return torch.where(hi > lo, columns.gather(1, lo.clamp(0, width)), -1)
+
+
+def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=None):
     """Translate located byte evidence once for the existing MTM word writer."""
     from Spaces import _analysis_property_signature
     rows = raw.reshape(len(raw), -1)
@@ -267,9 +277,13 @@ def mixing_word_witnesses(model, raw, ids, spans, attention):
     # Unit records preserve source order, including several events covering
     # the same span. The byte column belongs to the input, not to a tiling.
     events = torch.stack((seats, ids), -1)
+    if grammar_starts is not None:
+        columns = witnessed_columns(units, grammar_starts, model.inputSpace._word_active_mask, surface.shape[1])
+        units = torch.cat((units, columns[..., None]), dim=-1)
     fields = (units.flatten(1), events.flatten(1), surface)
     records = torch.cat(fields, 1).tolist()
-    event_offset = units.shape[1] * 4
+    stride = units.shape[-1]
+    event_offset = units.shape[1] * stride
     byte_offset = event_offset + events.shape[1] * 2
     extents, observations = [], []
     for b, record in enumerate(records):
@@ -280,7 +294,7 @@ def mixing_word_witnesses(model, raw, ids, spans, attention):
                 grouped.setdefault(seat, []).append(((offset - event_offset) // 2, part))
         data = bytes(record[byte_offset:])
         located = []
-        for seat, offset in enumerate(range(0, event_offset, 4)):
+        for seat, offset in enumerate(range(0, event_offset, stride)):
             lo, hi, lexical, bits = record[offset:offset + 4]
             if lo >= hi:
                 continue
@@ -288,7 +302,8 @@ def mixing_word_witnesses(model, raw, ids, spans, attention):
             if lexical:
                 members = grouped[seat]
                 wholes = tuple(row for row in range(min(int(model.wholeSpace.nVectors), 63)) if bits & (1 << row))
-                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], members[-1][0], wholes))
+                column = members[-1][0] if grammar_starts is None else record[offset + 4]
+                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], column, wholes))
         extents.append(located)
     return extents, observations
 

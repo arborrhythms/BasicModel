@@ -11141,9 +11141,16 @@ class BasicModel(BaseModel):
                     end = offset + len(str(token).encode('latin1', 'replace'))
                     spans[b, i] = spans.new_tensor((offset, end))
                     offset = end
+        offsets = getattr(self.inputSpace, '_ar_word_part_offsets', None)
+        disjoint = (torch.is_tensor(offsets) and offsets.ndim == 3
+                    and torch.is_tensor(fi.get('word_active_mask'))
+                    and fi.get('word_active_mask') is getattr(self.inputSpace, '_word_active_mask', None)
+                    and fi.get('unit_spans') is not None and fi.get('sentence_bytes') is not None
+                    and fi.get('word_texts') is not None)
         if torch.is_tensor(fi.get('unit_spans')) and torch.is_tensor(fi.get('sentence_bytes')):
             from WordSurfaces import mixing_word_witnesses
-            extents, observations = mixing_word_witnesses(self, raw, ids, spans, attention)
+            extents, observations = mixing_word_witnesses(self, raw, ids, spans, attention,
+                grammar_starts=offsets[:, :, 0] if disjoint else None)
         else:
             extents, observations = BasicModel._legacy_word_witnesses(self, raw, ids, spans, attention)
         grammar_words = []
@@ -11156,7 +11163,10 @@ class BasicModel(BaseModel):
                                       object_id, object_row, object_order))
         # Even an entirely unadmitted reading owns a fresh, empty bank.
         # No previous sentence's candidates may survive this boundary.
-        self._stage_reading_grammar_references(grammar_words, fi)
+        if disjoint:
+            self._stage_reading_grammar_references(grammar_words, fi, True)
+        else:
+            self._stage_reading_grammar_references(grammar_words, fi)
         width = max(map(len, extents), default=0)
         if not width:
             return
@@ -11256,7 +11266,7 @@ class BasicModel(BaseModel):
         isp._ar_grammar_leaf_mask = leaves.to(active.device)
         if attention is not None:isp._ar_grammar_leaf_mask &= attention.accepted
 
-    def _stage_reading_grammar_references(self, words, percepts):
+    def _stage_reading_grammar_references(self, words, percepts, witnessed=False):
         """Stage admitted word codes and separate comprehension referents.
 
         Both are resolved at the eager boundary. Grammar and its inverse read
@@ -11278,18 +11288,22 @@ class BasicModel(BaseModel):
         offsets = getattr(isp, '_ar_word_part_offsets', None)
         texts = percepts.get('word_texts')
         word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and texts is not None
-        if word_major:
+        active_host = starts = None
+        if word_major and not witnessed:
             active_host, starts = torch.stack((active.long(), offsets[:, :, 0])).tolist()
-        else:
-            active_host, starts = active.tolist(), None
+        elif not witnessed:
+            active_host = active.tolist()
         loop_spans = percepts.get('part_spans')
-        if (torch.is_tensor(loop_spans)
+        if (not witnessed and torch.is_tensor(loop_spans)
                 and (not word_major or any(row is None for row in texts))):
             loop_spans = loop_spans[:, :W].tolist()
         else:
             loop_spans = None
         for b, lo, hi, form, native_last, word_id, object_id, row, object_order in words:
-            if word_major and texts[b] is not None:
+            if witnessed:
+                columns = ([native_last] if 0 <= native_last < len(texts[b])
+                           and texts[b][native_last] == form else [])
+            elif word_major and texts[b] is not None:
                 columns = [p for p in range(W) if active_host[b][p]
                            and starts[b][p] == lo and p < len(texts[b])
                            and texts[b][p] == form]
@@ -11308,7 +11322,7 @@ class BasicModel(BaseModel):
                 word_rows[b, p] = word_row
                 word_orders[b, p] = owner._row_order(word_row)
                 lexical_forms[word_row] = form
-            if active_host[b][p] and row is not None:
+            if row is not None and (witnessed or active_host[b][p]):
                 # The bind journal retains a transient MTM token. Its grammar
                 # leaf still refers to the word occupying the conceptual row.
                 word_ids[b, p] = int(word_id)
