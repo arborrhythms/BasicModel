@@ -1,7 +1,7 @@
 """Plan semantic compression from the kept journal; never retain its derivation."""
 import torch
 from dataclasses import replace
-from ClauseRow import Composition
+from ClauseRow import Composition, source_evidence
 from Meaning import ConceptualMeaning
 from Memory import OCCURRENCE, SYMBOL, RELATION, NULL_CONCEPT
 from Spaces import _concept_alloc_of
@@ -23,7 +23,6 @@ class PartClosing:
         self.relation_dependencies = set()
         self.time = None
         self.content_key = None
-        self.source_trust = 1.
         self.staged_points = {}
 
     def _working_reference(self, reference):
@@ -194,14 +193,14 @@ class PartClosing:
         """
         if self.working is None:
             raise ValueError('semantic staging requires a private working store')
-        self.source_trust = min(1., abs(float(trust)))
+        source_weight = max(-1., min(1., float(trust)))
         nodes = self.prepare_clause(clause)
         roots = {}
         for value in nodes:
             if not self.keeps(value, clause):
                 continue
             sentence = value is clause
-            pair = value.evidence if trust >= 0 else value.evidence[::-1]
+            pair = source_evidence(value.evidence, source_weight)
             entry = self.close(value, pair=pair, sentence=sentence, force=not sentence)
             roots[id(value)] = entry
             record = self.prepare(value)
@@ -210,8 +209,7 @@ class PartClosing:
                 event = ConceptualMeaning.from_description(point,
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
                     extension=getattr(value.identity.get('result_composition'), 'extension', ()))
-                self.working.append_meaning(event,
-                    evidence=tuple(pole*self.source_trust for pole in pair))
+                self.working.append_meaning(event, evidence=pair)
             if record.get('mention'):
                 mention = entry
                 if entry[0] != OCCURRENCE:
@@ -555,7 +553,7 @@ class PartClosing:
         return self.occurrence_order(clause, context=context)
 
     def _write(self,record,*,pair=(0.,0.),sentence=False,metadata=None,
-               stream=-1,surprise=-1.,force=False,from_trust=False,retained=None):
+               stream=-1,surprise=-1.,force=False,retained=None):
         term = record['value']
         forced_occurrence = (force or (sentence and record.get('selected_reference') is not None)) and (
             term.binding is not None or record.get('mention'))
@@ -574,7 +572,6 @@ class PartClosing:
                 and (not children or term.operation not in (*self._assertions, 'change', 'verb'))):
             result = self._working_reference(record['reference'])
         elif self.entry_kind(record, sentence=sentence, force=force) == OCCURRENCE:
-            pair = tuple(pole * self.source_trust for pole in pair)
             stm_idea = None
             if retained is not None:
                 source, (kind, name) = retained
@@ -595,9 +592,6 @@ class PartClosing:
                            for child, head in zip(children, retained_children, strict=True))
             if term.operation == 'whole':
                 left, right = right, left
-            if from_trust and metadata is not None and not metadata.polarity:
-                pair = pair[::-1]
-            pair = tuple(pole * self.source_trust for pole in pair)
             row = self._pair(left, right, pair, surprise)
             self.edges.append(row)
             if term.operation == 'define':
@@ -638,9 +632,9 @@ class PartClosing:
         return result
 
     def close(self,clause,*,pair=(0.,0.),sentence=False,
-              stream=-1,surprise=-1.,force=False,from_trust=False,retained=None):
+              stream=-1,surprise=-1.,force=False,retained=None):
         record = self._planned[id(self._terms[id(clause)])]
         result = self._write(record,pair=pair,sentence=sentence,
             metadata=clause.meaning,stream=stream,surprise=surprise,
-            force=force, from_trust=from_trust, retained=retained)
+            force=force, retained=retained)
         return result

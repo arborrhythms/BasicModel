@@ -15,7 +15,7 @@ def store_and_clause():
     from part_fixtures import native_store
     store, _ = native_store(points=torch.eye(4), capacity=8, order_limit=3)
     point = torch.tensor([.2, .4, .6, .8])
-    return store, Clause(ConceptualMeaning.from_description(point), point=point)
+    return store, Clause(ConceptualMeaning.from_description(point), point=point, evidence=(1., 0.))
 
 
 def test_source_authority_enters_the_positive_pole():
@@ -76,9 +76,10 @@ def test_embedded_identification_does_not_grant_source_authority():
                      evidence=(.9, .3), order=2)
     with store.clause_assertions(trust=.7):
         row = store.write_clause(parent)
-    assert row == 0 and len(store) == 1
-    assert store.row(row)['trust'] == pytest.approx(.7)
-    assert store.row(row)['evidence'] == pytest.approx((.7, 0.))
+    assert row == 0 and len(store) == 2
+    assert store.row(row)['evidence'] == pytest.approx((.63, 0.))
+    assert store.row(row + 1)['evidence'] == pytest.approx((0., .21))
+    torch.testing.assert_close(store.slots[row], store.slots[row + 1])
     assert not len(store.parts)
 
 
@@ -142,14 +143,14 @@ def test_luminosity_view_reads_signed_testimony_from_the_pair():
         store.write_clause(replace(clause, evidence=(.8, .6)))
     light = TruthLayer(4, max_truths=8)
     light.attach_ltm(store)
-    assert light.sync_from_ltm() == 1
-    assert light._trusts == pytest.approx([-.3])
-    assert light.luminosity() == pytest.approx(-.15)
+    assert light.sync_from_ltm() == 2
+    assert light._trusts == pytest.approx([.18, -.24])
+    assert light.luminosity() == pytest.approx((.18 - .24 - min(.18, .24)) * clause.point.mean().item())
     with store.clause_assertions(trust=.9):
         store.write_clause(clause)
     light.sync_from_ltm()
-    assert light._trusts == pytest.approx([-.3, .9])
-    assert store.trust[:2].tolist() == pytest.approx([-.3, .9])
+    assert light._trusts == pytest.approx([.18, -.24, .9])
+    assert store.trust[:3].tolist() == pytest.approx([.18, -.24, .9])
 
 
 def test_native_sentence_carries_paired_identification_to_its_row(tmp_path, monkeypatch):

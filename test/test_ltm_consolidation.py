@@ -79,6 +79,7 @@ def _make_model(config, *, stateless=None, identified_input=True):
         from dataclasses import replace
         original_write = m.symbolSpace.ltm_store.write_clause
         def identified(clause, **kwargs):
+            kwargs['evidence'] = (.8, 0.)
             return original_write(replace(clause, evidence=(.8, 0.)), **kwargs)
         if identified_input:
             m.symbolSpace.ltm_store.write_clause = identified
@@ -161,10 +162,10 @@ class TestProvisioning(unittest.TestCase):
         store = m.symbolSpace.ltm_store
         rows = list(range(3))
         self.assertEqual(len(rows), 3)
-        # Each row's trust is OVERWRITTEN with the XML trust.
-        self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
-        self.assertAlmostEqual(store.row(rows[1])["trust"], 0.8, places=5)
-        self.assertAlmostEqual(store.row(rows[2])["trust"], 0.7, places=5)
+        # The controlled reading supplies .8 evidence for each assertion.
+        self.assertAlmostEqual(store.row(rows[0])["trust"], .8 * .9, places=5)
+        self.assertAlmostEqual(store.row(rows[1])["trust"], .8 * .8, places=5)
+        self.assertAlmostEqual(store.row(rows[2])["trust"], .8 * .7, places=5)
         assert rows == sorted(rows)
         assert [store.row_name(row) for row in rows] == sorted(store.row_name(row) for row in rows)
 
@@ -194,7 +195,7 @@ class TestProvisioning(unittest.TestCase):
         self.assertGreaterEqual(len(store), 3)
         rows = list(range(3))
         self.assertEqual(len(rows), 3)
-        self.assertAlmostEqual(store.row(rows[0])["trust"], 0.9, places=5)
+        self.assertAlmostEqual(store.row(rows[0])["trust"], .8 * .9, places=5)
 
     def test_provision_noop_when_gate_off(self):
         m = _make_model(_OFF_CONFIG)
@@ -610,7 +611,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertTrue(bool((m._stm_post_depth == 1).all()))
         (ending,), = endings
         retained = store.row(ending)
-        self.assertAlmostEqual(retained['evidence'][0], .9, places=6)
+        self.assertAlmostEqual(retained['evidence'][0], .8 * .9, places=6)
         self.assertEqual(retained['evidence'][1], 0.)
         if isinstance(ending, int):
             self.assertGreaterEqual(ending, before)
@@ -636,8 +637,8 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         self.assertLess(max(provisioned), min(user_rows))
         r0 = store.row(user_rows[0])
         r1 = store.row(user_rows[1])
-        self.assertAlmostEqual(r0["trust"], 0.9, places=5)
-        self.assertAlmostEqual(r1["trust"], -0.5, places=5)
+        self.assertAlmostEqual(r0["trust"], .8 * .9, places=5)
+        self.assertAlmostEqual(r1["trust"], .8 * -.5, places=5)
         self.assertGreater(float(r0['meaning'].roles[0].norm()), 0.0,
                            "real parse, not a placeholder")
 
@@ -655,7 +656,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
             for i in range(len(store))))
         self.assertIn(store.occurrence_of(3), tl._sources)
         self.assertIn(store.occurrence_of(4), tl._sources)
-        self.assertIn(0.9, [round(t, 5) for t in tl._trusts if t is not None])
+        self.assertIn(.72, [round(t, 5) for t in tl._trusts if t is not None])
         # Serve surface: score / clarifications / assessment are cached on
         # the model exactly as the legacy path did.
         self.assertIsInstance(m._last_truth_score, float)
@@ -677,7 +678,7 @@ class TestRuntimeUserIngestion(unittest.TestCase):
         m.store_truths([{'content': 'hello there', 'trust': .7}])
         torch.testing.assert_close(store.trust[:len(previous)], previous, rtol=0, atol=0)
         self.assertEqual(len(store), len(previous)+1)
-        self.assertAlmostEqual(float(store.trust[len(previous)]), .7, places=5)
+        self.assertAlmostEqual(float(store.trust[len(previous)]), .8 * .7, places=5)
         self.assertEqual(int(tl.count), int(store.trust[:len(store)].ne(0).sum()))
         self.assertIn(store.occurrence_of(len(previous)), tl._sources)
 

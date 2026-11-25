@@ -7,10 +7,18 @@ import torch
 
 
 @pytest.fixture
-def truth_model(eager_reading):
+def truth_model(eager_reading, monkeypatch):
     from test_ltm_consolidation import _make_model, _SERIAL_CONFIG
     model = _make_model(_SERIAL_CONFIG, identified_input=False)
     model._ltm_provisioned = True
+    model._fixture_read_pairs = []
+    store = model.symbolSpace.ltm_store
+    write = store.write_clause
+    def record_read(clause, **kwargs):
+        if store.__dict__.get('_clause_assertion') is not None:
+            model._fixture_read_pairs.append(tuple(clause.evidence))
+        return write(clause, **kwargs)
+    monkeypatch.setattr(store, 'write_clause', record_read)
     try:
         yield model
     finally:
@@ -20,7 +28,7 @@ def truth_model(eager_reading):
 
 @pytest.mark.parametrize('model_trust', (0., .25, 1.))
 @pytest.mark.parametrize('writer', ('store_truths', 'provision_ltm'))
-def test_50_authority_keeps_its_signed_trust_independently_of_model_trust(truth_model, monkeypatch, model_trust, writer):
+def test_50_source_weights_the_parsed_evidence_independently_of_model_trust(truth_model, monkeypatch, model_trust, writer):
     from util import TheXMLConfig
     model = truth_model
     model.trust = model_trust
@@ -36,7 +44,9 @@ def test_50_authority_keeps_its_signed_trust_independently_of_model_trust(truth_
             if key == 'architecture.truthSet' else get(key, *args, **kwargs))
         assert model.provision_ltm() == len(values)
     assert len(store) == len(values)
-    assert [store.row(index)['trust'] for index in range(len(store))] == pytest.approx(values)
+    assert all(0 < support < 1 and against == 0 for support, against in model._fixture_read_pairs)
+    expected = [weight * pair[0] for weight, pair in zip(values, model._fixture_read_pairs, strict=True)]
+    assert [store.row(index)['trust'] for index in range(len(store))] == pytest.approx(expected)
     assert all(bool(store.episodic_values[index].any()) for index in range(len(store)))
 
 
@@ -54,7 +64,7 @@ def test_52_resubmission_appends_without_changing_trust_or_summing_existence(tru
     model.store_truths(entries)
     before = store.trust[:len(store)].clone()
     first = existence(store, matches(store, meanings[-1].extension))[0]
-    assert tuple(first) == pytest.approx((.3, 0.))
+    assert tuple(first) == pytest.approx((.3 * model._fixture_read_pairs[-1][0], 0.))
     model.store_truths(entries)
     assert len(store) == 2 * len(before)
     torch.testing.assert_close(store.trust[:len(before)], before, rtol=0, atol=0)
@@ -104,7 +114,8 @@ def test_54_truth_view_reads_nonzero_trust_and_reports_without_saved_sources(tru
     truth.sync_from_ltm()
     selected = store.trust[:len(store)].ne(0).nonzero().flatten().tolist()[-truth.max_truths:]
     assert truth._sources == [store.occurrence_of(row) for row in selected]
-    assert truth._trusts == pytest.approx([.8, -.6])
+    first, second = model._fixture_read_pairs
+    assert truth._trusts == pytest.approx([.8 * first[0], -.6 * second[0]])
     score, contradictions = truth.consistency(return_report=True)
     assert contradictions and float(score) < 1
     assert truth.suggest_clarifications()
@@ -124,7 +135,7 @@ def test_55_served_truths_run_the_activity_pass_before_writing_under_pressure(tr
     model.store_truths([dict(content='hello', trust=.3)])
     assert int(store.forget_passes) == before + 1
     assert len(store) == math.floor(config.low_water * store.capacity) + 1
-    assert store.row(len(store)-1)['trust'] == pytest.approx(.3)
+    assert store.row(len(store)-1)['trust'] == pytest.approx(.3 * model._fixture_read_pairs[-1][0])
 
 
 @pytest.mark.parametrize('conversation', (False, True))

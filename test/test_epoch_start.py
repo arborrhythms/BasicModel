@@ -60,12 +60,12 @@ def test_provisioned_symbol_relation_keeps_its_own_evidence_across_epochs():
     model = model_for(store._concept_owner(), store)
     begin(model)
     with store.clause_assertions(trust=.7):
-        row = store.write_clause(part_clause())
+        row = store.write_clause(part_clause(), evidence=(1., 0.))
     assert row[0] == 'sym'
     begin(model)
     assert store.row(row)['evidence'] == pytest.approx((.7, 0.))
     with store.clause_assertions(trust=-.2):
-        assert store.write_clause(part_clause()) == row
+        assert store.write_clause(part_clause(), evidence=(1., 0.)) == row
     begin(model)
     assert store.row(row)['evidence'] == pytest.approx((.7, .2))
 

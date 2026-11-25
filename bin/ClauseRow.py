@@ -12,6 +12,16 @@ class ClauseCapacityError(OverflowError):
     """A complete kept clause will not fit in the remaining LTM0 rows."""
 
 
+def source_evidence(pair, weight):
+    """Weight the reader's two evidence lanes once at the memory boundary."""
+    if weight < 0:
+        pair = pair[1], pair[0]
+    magnitude = abs(weight)
+    if magnitude == 1:
+        return pair
+    return tuple(pole * magnitude for pole in pair)
+
+
 def predicate_identity(name):
     """A stable slot address for a grammar operation, never an inventory row.
 
@@ -438,20 +448,15 @@ class ClauseRows:
         if stm_head is None and stm_idea is not None:
             stm_head = stm_idea[0], (OCCURRENCE, stm_idea[1])
         closing.episode = episode
-        closing.source_trust = 1. if trust is None else min(1., abs(float(trust)))
+        source_weight = 1. if trust is None else float(trust)
         nodes = closing.prepare_clause(clause)
         closing.preflight()
         needed, staged_needed, reserved = 0, 0, {}
         def admitted_pair(value, sentence):
-            pair = tuple(value.evidence if evidence is None or not sentence else evidence)
-            from_trust = sentence and authority is not None
-            if from_trust:
-                pair = (1., 0.) if trust >= 0 else (0., 1.)
-            elif trust is not None and trust < 0:
-                pair = pair[::-1]
-            return pair, from_trust
+            pair = value.evidence if evidence is None or not sentence else evidence
+            return source_evidence(tuple(pair), source_weight)
         def idea_count(pair):
-            return max(1, sum(pole * closing.source_trust > 0 for pole in pair))
+            return max(1, sum(pole > 0 for pole in pair))
         def reserve(record, sentence=False, force=False, pair=(0., 0.)):
             nonlocal needed
             term = record['value']
@@ -481,7 +486,7 @@ class ClauseRows:
             if closing.keeps(value, clause):
                 record = closing._planned[id(closing._terms[id(value)])]
                 force = not sentence
-                pair, _ = admitted_pair(value, sentence)
+                pair = admitted_pair(value, sentence)
                 entry_kind = reserve(record, sentence, force, pair)
                 if sentence:
                     root_kind = entry_kind
@@ -510,23 +515,16 @@ class ClauseRows:
         # Keep the outer semantic entry and each located mention distinct.
         # A root already compressed to an occurrence supplies its own address;
         # an open chain or symbol also needs a phrase occurrence for its request.
-        outer_pair, outer_from_trust = None, False
         for position, value in enumerate(nodes):
             sentence = value is clause
             if not closing.keeps(value, clause):
                 continue
-            pair, from_trust = admitted_pair(value, sentence)
-            if sentence:
-                outer_pair, outer_from_trust = pair, from_trust
+            pair = admitted_pair(value, sentence)
             record = closing._planned[id(closing._terms[id(value)])]
             force = not sentence
             entry = closing.close(value,pair=pair,sentence=sentence,stream=stream,force=force,
-                from_trust=from_trust,surprise=surprise if sentence else -1.,
+                surprise=surprise if sentence else -1.,
                 retained=stm_head if sentence else None)
-            if sentence:
-                # Record this source's assertion, never a prior source's merged pair.
-                pair = tuple(pole * closing.source_trust for pole in pair)
-                outer_pair = pair
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
@@ -535,10 +533,9 @@ class ClauseRows:
                 compacted = ConceptualMeaning.from_description(point,
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},
                     extension=getattr(value.identity.get('result_composition'), 'extension', ()))
-                event_pair = pair if sentence else tuple(pole * closing.source_trust for pole in pair)
                 from EpisodicMemory import for_meaning
                 event_episode = for_meaning(self, compacted) if compacted.extension else None
-                event_row = staged.append_meaning(compacted,evidence=event_pair,entry=event_episode)
+                event_row = staged.append_meaning(compacted,evidence=pair,entry=event_episode)
                 event_occurrences[id(value)] = staged.occurrence_of(event_row)
                 closing.occurrence_groups[staged.occurrence_of(event_row)] = tuple(
                     staged.occurrence_of(index) for index in range(event_row, len(staged)))

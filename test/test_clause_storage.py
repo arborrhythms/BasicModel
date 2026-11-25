@@ -102,7 +102,7 @@ def test_recursive_absolute_clauses_compress_to_one_sentence_idea():
     middle = idea_clause(children=(inner,))
     outer = idea_clause(children=(middle,))
     with store.clause_assertions(trust=.7):
-        assert store.write_clause(outer) == 0
+        assert store.write_clause(outer, evidence=(1., 0.)) == 0
     assert store.ideas().tolist() == [0]
     assert store.trust[:1].tolist() == pytest.approx([.7])
     assert not hasattr(store, 'refs')

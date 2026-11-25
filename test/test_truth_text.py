@@ -37,8 +37,8 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
     from test_clause_storage import clause_store
     store, points = clause_store()
     meaning = ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool))
-    fields = [Clause(meaning, point=torch.ones(4), refs=(1, 2, -1)),
-              Clause(meaning, relation='part', refs=(1, 3, 2))]
+    fields = [Clause(meaning, point=torch.ones(4), refs=(1, 2, -1), evidence=(1., 0.)),
+              Clause(meaning, relation='part', refs=(1, 3, 2), evidence=(1., 0.))]
     for field in fields:
         with store.clause_assertions(trust=.8, ) as rows:
             store.write_clause(field)
@@ -51,3 +51,15 @@ def test_supplied_trust_preserves_both_possible_grammatical_fields():
         assert store.row(row)['trust'] == pytest.approx(.8)
     assert store.ideas().tolist() == [0]
     assert store.relations().tolist() == [store.parts.find(1, 2)]
+
+
+@pytest.mark.parametrize(('evidence', 'weight', 'stored'), [
+    ((.9, .3), .7, (.63, .21)), ((.9, .3), -.7, (.21, .63)),
+    ((.9, .3), 0., (0., 0.)), ((0., 0.), 1., (0., 0.)),
+])
+def test_relation_retains_both_scaled_lanes(evidence, weight, stored):
+    from test_clause_storage import clause_store, part_clause
+    store, _ = clause_store()
+    with store.clause_assertions(trust=weight):
+        _, row = store.write_clause(part_clause(), evidence=evidence)
+    assert (float(store.parts.truth_plus[row]), float(store.parts.truth_minus[row])) == pytest.approx(stored)
