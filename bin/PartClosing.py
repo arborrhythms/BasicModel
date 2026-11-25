@@ -132,7 +132,9 @@ class PartClosing:
         return Composition(terms[1].point, tuple(terms), operation=clause.relation, order=clause.order)
 
     def prepare(self, clause):
-        term = self._terms.setdefault(id(clause), self.clause_term(clause))
+        term = self._terms.get(id(clause))
+        if term is None:
+            self._terms[id(clause)] = term = self.clause_term(clause)
         record = self._plan_term(term)
         # A direct absolute field is already a completed idea, unless its
         # semantic binding explicitly declares a pending name or open slot.

@@ -481,6 +481,7 @@ class ClauseRows:
                 result = RELATION
             reserved[id(term)] = result
             return result
+        events = {}
         for value in nodes:
             sentence = value is clause
             if closing.keeps(value, clause):
@@ -494,7 +495,9 @@ class ClauseRows:
                 # request still names the phrase's own located occurrence.
                 if record.get('mention') and entry_kind != OCCURRENCE:
                     needed += 1
-                if closing.event_point(value, entry_kind) is not None:
+                point = closing.event_point(value, entry_kind)
+                events[id(value)] = entry_kind, point
+                if point is not None:
                     staged_needed += idea_count(pair)
         # A thought's private construction stays in that thought until it is
         # retained. Only the owning sentence store can release results to MTM.
@@ -528,7 +531,9 @@ class ClauseRows:
             row = location(entry)
             rows[id(value)] = row
             occurrences[id(value)] = self.occurrence_of(row)
-            point = closing.event_point(value, entry[0])
+            planned_kind, point = events[id(value)]
+            if entry[0] != planned_kind:
+                point = closing.event_point(value, entry[0])
             if point is not None:
                 compacted = ConceptualMeaning.from_description(point,
                     bindings={'_relations': (entry[1],)} if entry[0] == RELATION else {},

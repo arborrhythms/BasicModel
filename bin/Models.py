@@ -6918,18 +6918,17 @@ class BasicModel(BaseModel):
                      for row in batch] for batch in selected_rows]
         identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
         if identity is not None:
+            from Meaning import require_sentence_tensor
             addresses = [(b, j) for b, batch in enumerate(surfaces) for j, raw in enumerate(batch) if raw]
-            checks = []
-            if addresses:
-                stream, slot = selected.new_tensor(addresses).unbind(1)
-                decoded = identity.read_forms(sparse_forms[stream, slot, :identity.width])
-                for (b, j), actual in zip(addresses, decoded, strict=True):
-                    raw = surfaces[b][j]
-                    checks.append(dict(word=raw.decode('utf8', 'surrogateescape'), error=int(actual != raw)))
-            self._last_rung0_identity_audit = dict(identified_words=len(checks),
-                errors=sum(item['error'] for item in checks), rows=checks)
-            if self._last_rung0_identity_audit['errors']:
-                raise RuntimeError('rung-zero reconstruction identity audit failed')
+            witnesses = [surfaces[b][j] for b, j in addresses]
+            stream, slot = selected.new_tensor(addresses).reshape(-1, 2).unbind(1)
+            actual = identity.form_seats(sparse_forms[stream, slot, :identity.width])
+            expected = selected.new_tensor([
+                identity.order[raw] if raw in identity.word_rows and
+                identity.store.bytes_for(identity.word_rows[raw]) == raw else -1 for raw in witnesses])
+            failed = (actual < 0) | (actual != expected)
+            self._rung0_identity_result = witnesses, failed
+            require_sentence_tensor(~failed.any(), 'rung-zero reconstruction identity audit failed', RuntimeError)
         # Retain raw bytes for the named-part lesson. Native whole and word
         # readers use the compact support/presence captured by the same read.
         from WordSurfaces import stage as stage_surfaces
@@ -6954,6 +6953,16 @@ class BasicModel(BaseModel):
         self._sentence_primed_bank = replace(self._sentence_primed_bank,
             form_wholes=candidate_wholes(self.wholeSpace, self._sentence_primed_bank, owner=owner))
         self._sentence_priming_written = True
+
+    @property
+    def _last_rung0_identity_audit(self):
+        result = getattr(self, '_rung0_identity_result', None)
+        if result is None:
+            return None
+        witnesses, failed = result
+        rows = [dict(word=raw.decode('utf8', 'surrogateescape'), error=int(error))
+                for raw, error in zip(witnesses, failed.tolist(), strict=True)]
+        return dict(identified_words=len(rows), errors=sum(row['error'] for row in rows), rows=rows)
 
     @torch.no_grad()
     def _describe_claim(self, store, row):
@@ -13011,7 +13020,17 @@ class BasicModel(BaseModel):
         if chunk_state is not None and transactions is not None:
             from ChunkJournal import identity_activity
             identities = identity_activity(chunk_scope[:len(sizes)], transactions[:len(sizes)])[:, None]
-        metadata = torch.cat((sizes, floors, identities, positions), 1).tolist()
+        header = torch.cat((sizes, floors, identities, positions), 1)
+        # The interpreter still dispatches Python rules. Export all streams'
+        # selected operations with the source positions it already consumes.
+        # On a retained walk the existing index already owns those records.
+        need_index = kept_entries is None or any(entry is None for entry in kept_entries)
+        if need_index:
+            host = torch.cat((header, actions.flatten(1)), 1).cpu()
+            host_actions = host[:, header.shape[1]:].reshape_as(actions)
+            metadata = host[:, :header.shape[1]].tolist()
+        else:
+            metadata = header.tolist()
         lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
         entries = []
         for b, (n, L, name_floor, may_have_identities, *source_positions) in enumerate(metadata):
@@ -13069,7 +13088,8 @@ class BasicModel(BaseModel):
             from ReadingIndex import ReadingIndex
             kept = None if kept_entries is None else kept_entries[b]
             action_index = (kept.action_index if kept is not None else
-                            ReadingIndex(acts[:L], n, self.languageSpace))
+                            ReadingIndex(acts[:L], n, self.languageSpace,
+                                         records=host_actions[b, :L].tolist()))
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)

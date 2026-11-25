@@ -70,13 +70,13 @@ def steps(reading):
 
 
 class ReadingIndex:
-    def __init__(self, actions, word_count, language, *, padded=False):
+    def __init__(self, actions, word_count, language, *, padded=False, records=None):
         self.steps = []
         self.operands = []
         self.parents = []
         self.word_actions = {}
         stack = []
-        operations = actions.tolist()
+        operations = actions.tolist() if records is None else records
         for at, (kind, local, word) in enumerate(operations):
             if padded and kind < 0:
                 break

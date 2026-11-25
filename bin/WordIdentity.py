@@ -1297,12 +1297,29 @@ class WordIdentity(nn.Module):
         return None if row is None else self.store.bytes_for(row)
 
     def read_forms(self, forms):
-        """Translate a bank of native codes at one byte-output boundary."""
+        """Translate the selected seats at the external byte-output boundary."""
+        return [None if seat < 0 else self.store.bytes_for(self.word_rows[self._ordered[seat]])
+                for seat in self.form_seats(forms).tolist()]
+
+    def form_seats(self, forms):
+        """Match each exact code in the occupied device bank. Ambiguous parts have no seat."""
         full = self.property_width > 0 and forms.shape[-1] >= self.total
         width = self.total if full else self.width
-        keys = pack_coordinates(forms[:, :width], 8).to(torch.uint8).cpu().numpy()
-        rows = (self._row_for_key(key.tobytes(), full) for key in keys)
-        return [None if row is None else self.store.bytes_for(row) for row in rows]
+        visible = forms[..., :width]
+        if (visible.shape[-1] + 7) // 8 != (width + 7) // 8:
+            return forms.new_full(forms.shape[:-1], -1, dtype=torch.long)
+        query = pack_coordinates(torch.nn.functional.pad(visible, (0, width - visible.shape[-1])), 64)
+        count = len(self._ordered)
+        if not count:
+            return query.new_full(query.shape[:-1], -1)
+        bank = self._packed[:count, :query.shape[-1]].to(query.device)
+        difference = query[..., None, :] ^ bank
+        if width % 64:
+            last = (difference[..., -1] & ((1 << (width % 64)) - 1)) == 0
+            matched = last if difference.shape[-1] == 1 else last & (difference[..., :-1] == 0).all(-1)
+        else:
+            matched = (difference == 0).all(-1)
+        return torch.where(matched.sum(-1) == 1, matched.long().argmax(-1), -1)
 
     def spelling_row(self, rows):
         """Native form addressed by the fold of these parts and their tightest whole."""

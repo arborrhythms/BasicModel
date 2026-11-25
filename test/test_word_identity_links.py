@@ -6,6 +6,24 @@ from test_item17_code import WORDS, coded
 EXTRA = (b'a', b'ab', b'ba', b'bab', b'abc', b'cab', b'ar', b'arch', b'h', b'he', b'there is', b'cat cats')
 
 
+def test_device_form_seats_read_repaired_codes_and_reject_ambiguous_parts():
+    import torch
+    from WordIdentity import WordIdentity
+    from Layers import RadixLayer
+    identity = WordIdentity(RadixLayer(83, initial_cap=280), pair_dim=65, property_width=18)
+    for raw in (b'aab', b'baa', b'bab', b'baab'):
+        identity.admit(raw)
+    codes = torch.stack([identity.code(raw) for raw in identity.words])
+    for width in (7, 64, 65, 83):
+        queries = torch.cat((codes[:, :width], torch.zeros_like(codes[:1, :width])))
+        assert identity.read_forms(queries) == [identity.read(q) for q in queries]
+    # Two rows can disagree in the property lanes of the same packed limb.
+    bank = identity._packed
+    bank[1, 0] = bank[0, 0]
+    bank[1, 1] = (bank[1, 1] & -2) | (bank[0, 1] & 1)
+    assert identity.form_seats(codes[:1, :65]).item() == -1
+
+
 def through_every_form(identity):
     words = list(identity.words)
     holders = {t: {w for w in words if w != t and t in w} for t in words}
