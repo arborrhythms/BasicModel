@@ -46,11 +46,15 @@ def main():
                         help='probe fullgraph capture of the entire normal input sentence on one training update')
     parser.add_argument('--strict-region', metavar='MODULE:FUNCTION',
                         help='probe one model function with strict Dynamo capture on its actual training inputs')
+    parser.add_argument('--region-backend', choices=('eager', 'inductor'),
+                        help='compiler backend for --strict-region (default eager)')
     parser.add_argument('--compile-percept-fold', action='store_true',
                         help='also compile the live whole/part fold for a native step comparison')
     parser.add_argument('--source', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--source-revision', help='revision of an archived --source without Git metadata')
     args = parser.parse_args()
+    if args.region_backend and not args.strict_region:
+        parser.error('--region-backend requires --strict-region')
     if args.training_seconds is not None and (not args.lesson or args.training_seconds <= 0):
         parser.error('--training-seconds needs --lesson and a positive training time')
     if args.dispatch_census and (args.lesson or args.corpus):
@@ -282,10 +286,11 @@ def main():
                 for parent in parents:
                     target = getattr(target, parent)
                 record['strict_region'] = args.strict_region
+                record['region_backend'] = args.region_backend or 'eager'
             original_method = inspect.getattr_static(target, name)
             descriptor = isinstance(original_method, (classmethod, staticmethod))
             method = torch.compile(original_method.__func__ if descriptor else original_method,
-                                   backend=args.strict_sentence or 'eager', fullgraph=True)
+                                   backend=args.strict_sentence or args.region_backend or 'eager', fullgraph=True)
             record['probe_calls'] = 0
             def probe(*inputs, **options):
                 record['probe_calls'] += 1
@@ -529,7 +534,7 @@ def main():
             if args.dispatch_census:
                 from torch.utils._python_dispatch import TorchDispatchMode
                 counters = {'update': Counter(), 'sentence': Counter()}
-                waits, wait_calls = Counter(), Counter()
+                waits, wait_calls, wait_sites = Counter(), Counter(), {}
                 sentence_seconds = 0.
 
                 def measured_sentence(*a, **kw):
@@ -567,6 +572,14 @@ def main():
                                     result = func(*args, **kwargs)
                                     waits[key] += time.perf_counter() - start
                                     wait_calls[key] += 1
+                                    frame = sys._getframe(1)
+                                    while frame is not None:
+                                        code = frame.f_code
+                                        if code.co_filename.startswith(source_directory) and code.co_filename != __file__:
+                                            site = f'{Path(code.co_filename).name}:{code.co_name}:{frame.f_lineno}'
+                                            wait_sites.setdefault(key, Counter())[site] += 1
+                                            break
+                                        frame = frame.f_back
                                     return result
                         return func(*args, **kwargs)
 
@@ -576,7 +589,7 @@ def main():
                 # Includes queued device work waited for by these calls. No
                 # extra synchronization is inserted in the measured sentence.
                 record['host_dispatch_wall'] = dict(sentence_seconds=sentence_seconds,
-                    seconds_by_source=waits, calls_by_source=wait_calls)
+                    seconds_by_source=waits, calls_by_source=wait_calls, calls_by_model_site=wait_sites)
             if args.allocations:
                 with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU],
                                             profile_memory=True) as memory:

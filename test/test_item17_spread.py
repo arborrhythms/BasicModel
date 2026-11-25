@@ -25,6 +25,32 @@ def graph(concepts, symbols, edges):
 OWNER = SimpleNamespace(_order_caps=lambda: (4, 4, 4))
 
 
+def test_definition_depth_bounds_both_directions_and_rechecks_a_changed_topology():
+    from dataclasses import replace
+    store = SimpleNamespace(_rows=[1, 2, 2], _cols=[0, 1, 3], bias_column=lambda: 3,
+                            column_rows={0: (0,), 1: (0, 1), 2: (2,)}.__getitem__)
+    topology = object()
+    depth = ConceptSpread.definition_depth(store, 3, topology)
+    assert depth == 4
+    # Two definitions above an observed concept, a candidate pair above
+    # the top definition, and the percept and part beneath the first concept.
+    edges = [(1, 3), (3, 0), (2, 4), (4, 0), (4, 1), (5, 2), (5, 0), (0, 6), (6, 7)]
+    parent, child = torch.tensor(edges).T
+    weights = torch.linspace(.1, .9, len(edges), requires_grad=True)
+    full = Structure(parent, child, weights, child == 1, 3, 3, 1, 1, ('p',))
+    bounded = replace(full, upper_depth=depth + 1)
+    sources = torch.linspace(0., .9, 12).reshape(3, 2, 2)
+    for percepts in (None, sources[:1].flip(-1)):
+        def observe(g):
+            flow = ConceptSpread._flow(g, sources, percepts, 16, native=True)
+            read = ConceptSpread._read_stage(g, flow, 'concepts')
+            return (*flow[:3], read, torch.autograd.grad(read.sum(), weights)[0])
+        torch.testing.assert_close(observe(bounded), observe(full), rtol=0, atol=0)
+    store._rows.append(0)
+    store._cols.append(2)
+    assert ConceptSpread.definition_depth(store, 3, object()) is None
+
+
 def present(n, at, value=1.):
     observed = torch.zeros(n, 1, 2)
     observed[at, 0, 0] = value

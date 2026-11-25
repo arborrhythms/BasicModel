@@ -49,6 +49,7 @@ class Structure:
     percepts: int
     parts: int
     part_keys: tuple
+    upper_depth: int | None = None
 
     @property
     def size(self):
@@ -68,31 +69,58 @@ def rule_order(owner, row):
     return tuple(value.argsort(descending=True, stable=True).tolist())
 
 
+def definition_depth(store, size, topology):
+    """Upper bound on concept → symbol → member hops, or None for a cycle."""
+    cached = store.__dict__.get('_definition_depth')
+    if cached is not None and cached[0] is topology:
+        return cached[1]
+    parents, remaining = {}, {}
+    for target, column in zip(store._rows, store._cols, strict=True):
+        if 0 <= target < size and column != store.bias_column():
+            for source in store.column_rows(column):
+                parents.setdefault(source, set()).add(target)
+                remaining.setdefault(target, set()).add(source)
+    # A node with no definition starts at height zero. Each completed
+    # definition adds two hops, including the intervening symbol.
+    ready = list(parents.keys() - remaining.keys())
+    height = 0
+    while ready:
+        following = []
+        for source in ready:
+            for target in parents.get(source, ()):
+                remaining[target].remove(source)
+                if not remaining[target]:
+                    del remaining[target]
+                    following.append(target)
+        if following:
+            height += 2
+        ready = following
+    result = None if remaining else height
+    store.__dict__['_definition_depth'] = topology, result
+    return result
+
+
 def _store_edges(owner, V, device):
     """The symbols' Pi and the kinds' Sigma over every inventory row."""
     from Spaces import _concept_alloc_of
-    alloc = getattr(owner, '_concept_allocator', None)
-    if alloc is None:
-        edges = []
-        return _pair_edges(owner, V, edges, device), edges
     from CandidateGrowth import visible_store
-    store = visible_store(_concept_alloc_of(owner).layer(0))
-    if not getattr(store, '_thing_columns', False) or store.values is None or not store.nnz:
-        edges = []
-        return _pair_edges(owner, V, edges, device), edges
-    T, symbol, member, positions, targets, sources = store.spread_indices(V, device)
-    if not T:
-        edges = []
-        return _pair_edges(owner, V, edges, device), edges
+    store = (None if getattr(owner, '_concept_allocator', None) is None else
+             visible_store(_concept_alloc_of(owner).layer(0)))
     edges = []
-    edges.append((symbol, member, torch.ones(len(member), device=device),
-                  torch.zeros(len(member), dtype=torch.bool, device=device)))
-    value = store.values.to(device).index_select(0, positions)
-    live = value.ne(0).nonzero().flatten()
-    written = value.index_select(0, live)
-    edges.append((targets.index_select(0, live), sources.index_select(0, live),
-                  written.abs(), written < 0))
-    return T + _pair_edges(owner, V + T, edges, device), edges
+    T, height = 0, 0
+    if getattr(store, '_thing_columns', False) and store.values is not None and store.nnz:
+        T, symbol, member, positions, targets, sources = store.spread_indices(V, device)
+        if T:
+            edges.append((symbol, member, torch.ones(len(member), device=device),
+                          torch.zeros(len(member), dtype=torch.bool, device=device)))
+            value = store.values.to(device).index_select(0, positions)
+            live = value.ne(0).nonzero().flatten()
+            written = value.index_select(0, live)
+            edges.append((targets.index_select(0, live), sources.index_select(0, live),
+                          written.abs(), written < 0))
+            height = definition_depth(store, V, store.inventory_indices(V, device))
+    pairs = _pair_edges(owner, V + T, edges, device)
+    return T + pairs, edges, None if height is None else height + int(bool(pairs))
 
 
 def _pair_edges(owner, start, edges, device):
@@ -117,7 +145,7 @@ def structure(owner, device=None):
     V = int(owner.nVectors)
     sigma = getattr(owner, 'order_zero', None)
     device = owner._expected_knowing.device if device is None else device
-    T, edges = _store_edges(owner, V, device)
+    T, edges, height = _store_edges(owner, V, device)
     R, P, keys = 0, 0, ()
     if sigma is not None and sigma.nnz:
         R = int(sigma.nInput)
@@ -147,7 +175,7 @@ def structure(owner, device=None):
         parent = child = torch.zeros(0, dtype=torch.long, device=device)
         weight = torch.zeros(0, device=device)
         negated = torch.zeros(0, dtype=torch.bool, device=device)
-    return Structure(parent, child, weight, negated, V, T, R, P, keys)
+    return Structure(parent, child, weight, negated, V, T, R, P, keys, height)
 
 
 def union(*values):
@@ -187,22 +215,18 @@ def _flow(graph, observed, percepts, depth, *, native=False):
     row = weight.new_zeros(N).index_add(0, graph.parent, weight).clamp_min(tiny)
     up_share = weight / fan.index_select(0, graph.child)
     down_share = weight / row.index_select(0, graph.parent)
-    # With no symbols, the only edges are concept -> percept -> part.
-    # Two passes exhaust the chain. When sources contain only concepts
-    # there is no upward message on either edge.
-    bounded = native and not graph.symbols
-    rounds = min(2, depth) if bounded else depth
-    check_convergence = not bounded and not torch.compiler.is_compiling()
-    for _ in range(0 if bounded and percepts is None else rounds):
-        nxt = _carry(union(source, up), graph.child, graph.parent, up_share, graph.negated, N)
-        if check_convergence and torch.equal(nxt, up):
-            break
-        up = nxt
-    for _ in range(rounds):
-        nxt = _carry(union(source, up, down), graph.parent, graph.child, down_share, graph.negated, N)
-        if check_convergence and torch.equal(nxt, down):
-            break
-        down = nxt
+    # After the longest path, each node already sees its final inputs.
+    # Concept-only sources need no upward passes through parts or percepts.
+    # An unbounded or externally supplied graph retains the full depth.
+    upper = 0 if native and not graph.symbols else graph.upper_depth
+    down_rounds = up_rounds = depth
+    if upper is not None:
+        down_rounds = min(depth, upper + int(bool(graph.percepts)) + int(bool(graph.parts)))
+        up_rounds = down_rounds if percepts is not None else min(depth, upper)
+    for _ in range(up_rounds):
+        up = _carry(union(source, up), graph.child, graph.parent, up_share, graph.negated, N)
+    for _ in range(down_rounds):
+        down = _carry(union(source, up, down), graph.parent, graph.child, down_share, graph.negated, N)
     return source, up, down, fan, row
 
 
