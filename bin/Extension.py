@@ -70,9 +70,18 @@ def _stored_values(owner, ids, values):
     """Read declared members once across the whole batch and reading axis."""
     from Meaning import require_sentence_tensor
     active = values.detach().reshape(len(ids), -1).any(1) if len(ids) else ids.bool()
-    require_sentence_tensor(~(active & (ids == 0)).any(), 'invalid tagged relation reference')
     active = active & (ids >= 0)
-    parents, children = owner._concept_allocator.symbolic_part_edges()
+    read_edges = getattr(owner._concept_allocator, 'symbolic_part_edges', None)
+    if read_edges is None:
+        # An external field may supply its own membership reader and name
+        # domain. Ask it once per active name, including a zero-based one.
+        from ConceptHierarchy import members
+        links = [(name, member) for name in sorted(set(ids[active].tolist()))
+                 for member in members(owner, name)]
+        parents, children = ids.new_tensor(links).reshape(-1, 2).T.contiguous()
+    else:
+        require_sentence_tensor(~(active & (ids == 0)).any(), 'invalid tagged relation reference')
+        parents, children = read_edges()
     if len(parents):
         start = torch.searchsorted(parents, ids.contiguous())
         count = torch.searchsorted(parents, ids.contiguous(), right=True) - start
