@@ -9103,3 +9103,155 @@ there is no concept of "1" without a place to be pooled, and
 
 *Not built.* It is a step of its own, and it replaces parts of steps T2
 and E and the rule of step D3.
+
+## 46. Step V: an alphabet of intensity, combined as letters are (Alec and Claude, 2026-11-24; the text for the implementer is 46.3)
+
+### 46.1 What was agreed
+
+Alec, after §45: "Call the variable intensityPartSigma. Please build it now
+(after agreement). How does this affect how we think about letter parts,
+if we want to treat them identically? We wouldn't have a dynamic VQ,
+instead we have a character set. And that character set forms the atoms
+that get spatially combined. So perhaps the codebook should be a one pixel
+wide VQ always, and adjacent pixels get combined exactly the way that
+letters do? Which model maps better to the visual cortex and the local
+receptive field that becomes increasingly global?"
+
+Claude's answer, which he accepted ("Ok. Set 256 intensity levels as a
+default. Wholes/properties can be sets of allowable values, as now. Build
+now."):
+
+- *One algorithm.* Text's atoms are its character set, given; intensity's
+  are a codebook of one pixel, learned, since intensity is continuous. An
+  atom's place is on its occurrence in both. A run of letters is a form, a
+  Pi over its parts in order, nominated when it recurs; adjacent atoms of
+  intensity form a part the same way. What ends a run is a space in text,
+  and background and the aperture in an image.
+- *The cortex.* A codebook of sprites at one scale is one stage, V1 as a
+  learned dictionary of patches. Atoms combined level by level is the
+  hierarchy: simple cells conjoin local inputs, complex cells pool over
+  position, and the alternation repeats with receptive fields growing,
+  which is Pi then Sigma repeated; the same alphabet at every place is the
+  `.what` kept apart from the `.where`; and a Gaussian whose width grows
+  with the level is how local becomes global.
+- *The place is not put into the code* ([1 0] of §45): with `.what` and
+  `.where` apart, a 1 at the first place is already other than a 1 at the
+  second, and the aperture keeps the readout from merging them.
+
+### 46.2 What it builds, and its certificates
+
+1. *The alphabet.* A codebook over the intensity of one pixel, with
+   `architecture.intensityPartCardinality` levels, 256 by default, on the
+   sorted line of values. It is learned by vector quantization: a level
+   moves toward the intensities that fall to it, and the levels stay in
+   order. Before any learning the levels lie evenly on 0..1, so that each
+   step of an eight-bit pixel is a level. It stands in the place of the
+   cuts of the percept's bins given beforehand (36.2, point 1); a code in
+   the percept's cube remains the coarser image of a level, and levels are
+   compared by their values (31.9).
+2. *An atom's basic percept* is a row over a part and a whole taken from
+   the alphabet: the level, and the set of values allowed to it. A whole,
+   or property, is a set of allowable values, as now. Its centroid is its
+   level. It is nominated when it recurs, and read for and against as a
+   form is (36.1).
+3. *Combined as letters are.* Adjacent atoms within the aperture are a
+   part, its parts in order, nominated when it recurs. This is step E's
+   thing, bounded now by background and by the aperture.
+4. *`architecture.intensityPartSigma`* is the width in places of the
+   Gaussian aperture about a part's centre: a part holds the places nearer
+   its centre than that width, each weighed by the Gaussian in what reads
+   for and against it. At one, a part is one place. At nothing, its
+   default, there is no limit and a part is a whole run, as built. It
+   takes the place of `intensityWhereWidth`, which goes. The aperture is
+   the limit on whatever reaches across places: on the Pi that combines,
+   and on the pooling of a concept over its readings at the output
+   (`OutputSpace.read_field`). The XOR configurations set it to one;
+   `NumericPercepts.pooled` goes.
+5. *A Pi is formed for every concept:* a concept MTM promotes is promoted
+   alone to its symbol of the next order, of any modality. It stands in
+   the place of the rule for text alone (`FamiliarTier.promoted_alone`).
+6. *Not built:* levels of combination above the first, where the aperture
+   is to widen; a cut entering a codebook only when it recurs, which is
+   kept as an idea for every modality.
+
+In `test/test_item16_alphabet.py`, each printing what it measured:
+
+| | Certificate | Passes when |
+|---|---|---|
+| A1 | The alphabet | By default it has 256 levels in order on 0..1 and each eight-bit step falls to a level of its own; the key sets another number; no number is in the code |
+| A2 | Learned | Intensities presented about a value move the level they fall to toward their mean, and the levels stay in order |
+| A3 | An atom's row | Its part is its level and its whole the set of values allowed to it; its centroid is its level; a value met once has no row promoted, and met as often as nominates it has one |
+| A4 | The aperture | At one, no part is wider than a place and no concept is pooled across places at the output; at three, a part's places lie nearer its centre than three; at nothing, a part is a whole run |
+| A5 | XOR | The stopping gate, `test/numeric_xor.py`'s certificate and `test_concept_output.py` whole pass with their assertions as they are, with `pooled` gone |
+| A6 | A Pi for every concept | A concept of a word and a concept of an intensity, each promoted, each has its symbol of the next order |
+| A7 | What stood | V, S, C, E, F, G and N of this item pass, or are ported where a point above makes an assertion false, each listed |
+| A8 | The corpus (a measure) | Categories 1 and 2: for each value, the number of atoms' rows its steps make; and step D2's N7 again. Reported |
+
+### 46.3 Text for the implementer
+
+~~~
+Item 1.6, step V: an alphabet of intensity, combined as letters are. Read
+§46 of doc/plans/2026-11-18-item1-6-felt-math-world.md whole (46.2 is what
+you build), then §45 and §36 (the owner's words there are the authority),
+§37 (step T2), §41 (step E), §31.9 and §37.9 (why NumericPercepts.pooled
+exists), §39 (step D3, promoted_alone), and H.5. Then the source:
+bin/BasicPercepts.py (the table of values, value_code, perceive by
+region, value_pi, value_bank, read_values, the things of step E),
+bin/NumericPercepts.py, bin/ImagePercepts.py, bin/Places.py,
+OutputSpace.read_field in bin/Spaces.py, bin/FamiliarTier.py
+(promoted_alone and where MTM promotes a concept), and whatever vector
+quantization the source already has (search quantize, VectorQuantize,
+codebook, ema); use it if it serves and say which.
+
+Keep tmp/item1-6/alphabet_progress.md current after each step.
+
+1. Points 1 and 2 of §46.2. One key, intensityPartCardinality, in
+   data/model.xml and data/model.xsd, 256, beside whereAxes. No default
+   in code; data/BasicModel.xml gains nothing. Say how a level is learned,
+   what keeps the order, and where the alphabet is saved in a model's
+   state.
+2. Points 3 and 4. The key intensityWhereWidth is renamed
+   intensityPartSigma in data/model.xml, data/model.xsd, the three XOR
+   configurations and the source; its default sets no limit and the XOR
+   configurations keep one. Apply the limit in OutputSpace.read_field's
+   pooling over readings, for a model whose key sets one, so that nothing
+   changes where the key sets none; then remove NumericPercepts.pooled.
+   Say exactly what the readout does with a concept whose readings lie at
+   places farther apart than the aperture.
+3. Point 5: the general rule in the place of the one for text alone. Both
+   stopping gates must pass untouched; if a passing test of the text
+   modality changes its outcome, stop and report which and why.
+4. test/test_item16_alphabet.py: A1 to A8.
+5. Port a test only where a point of §46.2 makes its assertion false
+   (the regions of 64 bins, the key's name, a value's concept without a
+   symbol, the runs of step E under an aperture), and list each with old
+   and new. test/test_item16_naming.py's N3 to N6 stay marked as they
+   are; if one now passes, say so and leave the mark for the reviewer. No
+   other assertion is weakened, skipped or marked; no seed is chosen.
+   Neither stopping gate, nor anything a gate uses, is touched.
+6. Run with the bounded runner, RUN_TRAINED and RUN_SLOW unset: both
+   stopping gates, test/test_mm_xor.py, test/test_concept_output.py,
+   every test/test_item16_*.py, test/test_item17_echo.py,
+   test/test_item17_symbols.py, test/test_item18_places.py,
+   test/test_item18_scalar.py, test/test_what_spacetime.py, the files of
+   tmp/item1-6/values_run4_files.txt, and every test file that names
+   read_field, promoted_alone, nominate_symbol or intensityWhereWidth. No
+   test that passes in the sweep of the finished branch (its outcomes are
+   named in your prompt) may fail, apart from those known to fail by
+   chance.
+7. No standing doc and nothing under doc/. Nothing removed is deleted but
+   moved to /tmp/item1-6-2026-11-24/.
+8. Return as tmp/item1-6/section47.md, headed "## 47. Step V: the
+   return": files changed and why; the alphabet, its learning and its
+   state; what the readout does under the aperture; each certificate with
+   what it printed, A8's numbers in full; the XOR certificate before and
+   after; every test ported; what the general rule changed for the text
+   modality; what in §46.2 could not be built as written and what you
+   built. You do not stop on a question of design: propose, build, mark
+   it. Stop only if a gate, the XOR certificate or "without the
+   intersection" cannot pass with its assertion as it is, and then say
+   exactly where it fails and what you tried.
+
+Do not run git and do not commit: Claude commits what it has reviewed.
+Nothing is pushed.
+~~~
