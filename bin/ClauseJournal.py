@@ -14,6 +14,16 @@ from ClauseRow import Clause, Composition, ClausePredicate, predicate_point, pre
 from Meaning import ConceptualMeaning
 
 
+def word_columns(program, refs, orders):
+    """Read the fixed word addresses once for this formula's two consumers."""
+    columns = (refs, program.concept_ids, program.word_ids,
+               getattr(program, 'reference_relations', None), getattr(program, 'identity_leaves', None),
+               orders, getattr(program, 'reference_orders', None),
+               getattr(program, 'staged_object_rows', None), getattr(program, 'staged_object_ids', None))
+    values = iter(torch.stack([column.reshape(-1) for column in columns if column is not None]).tolist())
+    return tuple(next(values) if column is not None else None for column in columns)
+
+
 def finish_clause(language, program, *, meaning=None, depth=1, registry=None):
     """Finish the read's existing journal without changing its numerical work."""
     reader = _finish_clause(language, program, meaning=meaning, depth=depth, registry=registry)
@@ -72,15 +82,13 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                   torch.where(program.reference_orders >= 0, program.reference_orders, orders))
     # The carried address identifies the referent; the leaf keeps its own
     # captured content. Site eligibility comes from its reading and position.
-    refs = (program.reference_ids if program.reference_ids is not None else program.concept_ids) if numerics is None else numerics.native_ids
-    # A word keeps its lexical identity across this formula. Numerical
-    # reference decisions below still read their live, per-action operands.
-    columns = (refs, program.concept_ids, program.word_ids, program.reference_relations,
-               program.identity_leaves, orders if numerics is None else None, program.reference_orders)
-    present = [column.reshape(-1) for column in columns if column is not None]
-    host_columns = iter(torch.stack(present).tolist())
-    opening_refs, concepts, word_ids, relations, handles, initial_orders, requested_orders = (
-        next(host_columns) if column is not None else None for column in columns)
+    if numerics is None:
+        refs = program.reference_ids if program.reference_ids is not None else program.concept_ids
+        columns = word_columns(program, refs, orders)
+    else:
+        refs = numerics.native_ids
+        columns = numerics.word_columns
+    opening_refs, concepts, word_ids, relations, handles, initial_orders, requested_orders = columns[:7]
     native_ids = set(opening_refs) - {-1, 0}
     store_ref = getattr(getattr(registry, 'space', None), '_clause_store_ref', None)
     store = store_ref() if callable(store_ref) else None

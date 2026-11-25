@@ -139,6 +139,8 @@ class Evaluation:
         self.native_ids = self.ids.clone()
         self.orders = (torch.full_like(self.ids, -1) if program.leaf_orders is None
                        else program.leaf_orders.clone())
+        from ClauseJournal import word_columns
+        self.word_columns = word_columns(program, self.native_ids, self.orders)
         self._frames = (torch.zeros_like(program.operation_values) if store is None
                         else store.operation_rows(program.operation_values))
         self.held_writes = None if program.held_writes is None else program.held_writes.tolist()
@@ -173,17 +175,18 @@ class Evaluation:
     def leaf(self, word):
         program, owner = self.program, self.owner
         value = program.leaves[word]
-        original = identity = int(program.concept_ids[word])
-        lexical = -1 if program.word_ids is None else int(program.word_ids[word])
+        _, concepts, word_ids, _, _, orders, _, staged_rows, staged_ids = self.word_columns
+        original = identity = concepts[word]
+        lexical = -1 if word_ids is None else word_ids[word]
         if (lexical > 0 and program.interpret_forced and
-                (program.staged_object_rows is None or int(program.staged_object_rows[word]) >= 0)):
+                (staged_rows is None or staged_rows[word] >= 0)):
             identity = owner.interpret.referent(lexical, batch=self.stream)
             row = owner._concept_row_of(identity)
-            if identity == lexical and program.staged_object_ids is not None:
-                pending = int(program.staged_object_ids[word])
+            if identity == lexical and staged_ids is not None:
+                pending = staged_ids[word]
                 if pending > 0:
                     identity = pending
-                    row = int(program.staged_object_rows[word])
+                    row = staged_rows[word]
             if row is None or row < 0:
                 raise ValueError('comprehension referent has no staged conceptual row')
             atoms = owner.similarity_codebook.lookup_rows(row, stream=self.stream)
@@ -197,7 +200,7 @@ class Evaluation:
             order = owner._row_order(row)
             self.orders[word] = order
         else:
-            order = int(self.orders[word])
+            order = orders[word]
         self.leaves[word] = value
         self.ids[word] = identity
         self.native_ids[word] = self.native_leaf_reference(identity, original)
