@@ -6558,7 +6558,8 @@ class ConceptualAttentionLayer(SparseLayer):
     def _thing_spec(self, position):
         """``(thing, member rows, complete)`` of a column: ``complete`` is
         false where a member of a symbol has no row."""
-        key = (self.symbol_table.revision, len(self._tensor_rows), self._room)
+        key = (id(self.symbol_table), self.symbol_table.revision,
+               id(self._tensor_rows), len(self._tensor_rows), self._room)
         cache = self.__dict__.get('_thing_specs')
         if cache is None or cache[0] != key:
             cache = self.__dict__['_thing_specs'] = (key, {})
@@ -6569,6 +6570,29 @@ class ConceptualAttentionLayer(SparseLayer):
             complete = thing is None or len(rows) == len(self.symbol_table.members(int(thing[1]))) > 0
             found = cache[1][position] = (thing, rows, complete)
         return found
+
+    def spread_indices(self, size, device):
+        """The sparse inventory addresses for expectation, shared across its looks."""
+        parent_rows, _ = self._indices(device)
+        stamp = (self.symbol_table.revision, len(self._tensor_rows), self._room, size)
+        held = self.__dict__.get('_spread_indices')
+        if (held is not None and held[0] is parent_rows and held[1] is self.symbol_table
+                and held[2] is self._tensor_rows and held[3] == stamp):
+            return held[4]
+        # Bind once per structural edit. Keep only addresses so every look
+        # reads the current weights and starts its own autograd graph.
+        with torch.no_grad():
+            view = self.bind(range(size))
+            seats = view._thing_seats.to(device)
+            count = seats.shape[0]
+            columns, members = ((seats >= 0) & view._thing_complete.to(device)[:, None]).nonzero(as_tuple=True)
+            rows, sources = view._indices(device)
+            live = ((sources < count) & ~view._missing_sources.to(device)).nonzero().flatten()
+            result = (count, size + columns, seats[columns, members],
+                      view._inventory_edges.to(device).index_select(0, live),
+                      rows.index_select(0, live), size + sources.index_select(0, live))
+        self.__dict__['_spread_indices'] = parent_rows, self.symbol_table, self._tensor_rows, stamp, result
+        return result
 
     def _edge_sources(self, column):
         if not self._thing_columns:

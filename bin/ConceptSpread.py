@@ -80,26 +80,18 @@ def _store_edges(owner, V, device):
     if not getattr(store, '_thing_columns', False) or store.values is None or not store.nnz:
         edges = []
         return _pair_edges(owner, V, edges, device), edges
-    view = store.bind(range(V))
-    seats = view._thing_seats.to(device)
-    T = int(seats.shape[0])
+    T, symbol, member, positions, targets, sources = store.spread_indices(V, device)
     if not T:
         edges = []
         return _pair_edges(owner, V, edges, device), edges
     edges = []
-    complete = view._thing_complete.to(device)
-    held = (seats >= 0) & complete[:, None]
-    symbol = torch.arange(T, device=device)[:, None].expand_as(seats)[held]
-    member = seats[held]
-    edges.append((V + symbol, member, torch.ones(len(member), device=device),
+    edges.append((symbol, member, torch.ones(len(member), device=device),
                   torch.zeros(len(member), dtype=torch.bool, device=device)))
-    rows, cols = view._indices(device)
-    value = view.values.to(device)
-    keep = (cols < T) & (value != 0)
-    missing = getattr(view, '_missing_sources', None)
-    if missing is not None and len(missing):
-        keep &= ~missing.to(device)
-    edges.append((rows[keep], V + cols[keep], value[keep].abs(), value[keep] < 0))
+    value = store.values.to(device).index_select(0, positions)
+    live = value.ne(0).nonzero().flatten()
+    written = value.index_select(0, live)
+    edges.append((targets.index_select(0, live), sources.index_select(0, live),
+                  written.abs(), written < 0))
     return T + _pair_edges(owner, V + T, edges, device), edges
 
 

@@ -211,10 +211,10 @@ class InterpretLayer(GrammarLayer):
             candidates = matching or candidates
             if len(candidates) == 1:
                 return candidates
-        scores = self._expected_objects(batch)
+        scores = InterpretLayer._expected_objects(self, batch)
         if scores is None:
             return (max(candidates, key=lambda cid: (cs._concept_source_order(cid), -cid)),)
-        return (int(self._preferred_id(candidates, scores)),)
+        return (int(InterpretLayer._preferred_id(self, candidates, scores)),)
 
     def _expected_objects(self, batch):
         expected = getattr(self.owner, '_expected_knowing', None)
