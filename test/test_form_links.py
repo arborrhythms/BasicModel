@@ -216,6 +216,25 @@ def test_insert_equals_the_host_admission():
     assert bool((keys[1:] > keys[:-1]).all()) and bool((table.pair_keys[used - LEAVES:] == UNUSED_KEY).all())
 
 
+
+def test_a_static_bound_on_the_units_changes_nothing():
+    """Reading with the levels bounded at the longest unit makes the same table; a unit above the bound raises."""
+    rng = random.Random(15)
+    words = _vocabulary(rng) + [b'abab', b'aaaa', b'abcabcabc', b'aabaa']
+    full, bounded = FormLinks(8192, 32), FormLinks(8192, 32)
+    for batch in (words[:30], words[30:], words[::7]):
+        data, lengths = _pack(batch, 'cpu')
+        data = torch.nn.functional.pad(data, (0, 32 - data.shape[1]))
+        top = 1 << (int(lengths.max()) - 1).bit_length()
+        assert torch.equal(full.read(data, lengths), bounded.read(data, lengths, longest=top))
+        rows = torch.arange(LEAVES, int(full.used))
+        full.recentre_rows(rows[:40], data, lengths)
+        bounded.recentre_rows(rows[:40], data, lengths, top)
+    for name in ('code', 'part_sum', 'whole_sum', 'whole_count', 'count', 'pair_keys', 'left', 'right', 'border', 'used'):
+        assert torch.equal(getattr(full, name), getattr(bounded, name)), name
+    with pytest.raises(RuntimeError, match='longer than its bound'):
+        bounded.read(*_pack([b'abcdefgh'], 'cpu'), longest=4)
+
 HARD = [b'abab', b'aaaa', b'banana', b'mississippi', b'abcabcabc', b'aabaa', b'aaa', b'abaaba', b'aabaab']
 
 

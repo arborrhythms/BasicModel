@@ -192,14 +192,21 @@ class FormLinks(nn.Module):
 
     # -- count (post-sentence reset) ------------------------------------------
 
-    def _unit_rows(self, data, lengths):
-        """Row of each whole unit [U], counted or not (-1 where unknown or empty)."""
+    def _unit_rows(self, data, lengths, longest=None):
+        """Row of each whole unit [U], counted or not (-1 where unknown or empty).
+
+        ``longest``: a static bound on the units' lengths; levels above it are not built.
+        """
         cur = self._leaves(data, lengths)
         unit = torch.where(lengths == 1, cur[:, 0], -1)
-        for n in range(2, data.shape[1] + 1):
+        for n in range(2, self._top(data, longest) + 1):
             cur = self._level(cur)
             unit = torch.where(lengths == n, cur[:, 0], unit)
         return unit
+
+    def _top(self, data, longest):
+        """The longest level a call builds: the data's width, or the caller's static bound below it."""
+        return data.shape[1] if longest is None else min(data.shape[1], int(longest))
 
     def rows_of(self, data, lengths):
         """Row of each whole unit [U]; -1 where unknown, empty or below the threshold."""
@@ -216,11 +223,14 @@ class FormLinks(nn.Module):
         self.count.index_add_(0, unit.clamp_min(0), known.to(self.count.dtype))
 
     @torch.no_grad()
-    def read(self, data, lengths, admit=True):
-        """Row of each whole unit [U] (-1 where unknown or empty); with ``admit``, insert what the units lack and count them first."""
+    def read(self, data, lengths, admit=True, longest=None):
+        """Row of each whole unit [U] (-1 where unknown or empty); with ``admit``, insert what the units lack and count them first.
+
+        ``longest``: a static bound on the units' lengths (see ``insert``).
+        """
         if not admit:
-            return self._unit_rows(data, lengths)
-        unit = self._insert(data, lengths)[0]
+            return self._unit_rows(data, lengths, longest)
+        unit = self._insert(data, lengths, longest)[0]
         self._raise(unit)
         return unit
 
@@ -396,24 +406,27 @@ class FormLinks(nn.Module):
         self.pair_rows.copy_(rows_out[:cap])
 
     @torch.no_grad()
-    def insert(self, data, lengths):
+    def insert(self, data, lengths, longest=None):
         """Insert every unit with the substrings it lacks, shortest first; returns the unit rows [B].
 
         Fixed shape, no host read. A new row is placed at the centroid of its
         parts and its wholes, and added to the whole sums of its parts; the
         part sums of every form of the units are refreshed. A full table
-        raises by a device assertion.
+        raises by a device assertion. ``longest``, a static Python bound on
+        the units' lengths, limits the levels built; a unit above it raises
+        by a device assertion.
         """
-        return self._insert(data, lengths)[0]
+        return self._insert(data, lengths, longest)[0]
 
-    def _insert(self, data, lengths):
-        total = data.shape[1]
+    def _insert(self, data, lengths, longest=None):
+        total = self._top(data, longest)
+        torch._assert_async((lengths <= total).all(), 'FormLinks: a unit is longer than its bound')
         cur = self._leaves(data, lengths)
         unit = torch.where(lengths == 1, cur[:, 0], -1)
         levels, nexts, own, added = [cur], [self._next_same(cur, 1)], {}, []
         before = self.used.clone()
         for n in range(2, total + 1):
-            width = total - n + 1
+            width = data.shape[1] - n + 1
             a, b = cur[:, :width], cur[:, 1:width + 1]
             found = self.find(a, b)
             key = torch.where((a >= 0) & (b >= 0), a * self.capacity + b, UNUSED_KEY)
@@ -453,14 +466,15 @@ class FormLinks(nn.Module):
         self._recentre(levels)
 
     @torch.no_grad()
-    def recentre_rows(self, rows, data, lengths):
+    def recentre_rows(self, rows, data, lengths, longest=None):
         """Recentre only ``rows`` (any shape; -1 and bytes stay), each once.
 
         A row goes halfway between its kept part centroid (``part_sum`` /
         ``part_count`` as stored) and its kept whole centroid. Every row must
         occur in ``data`` [B, L] (``lengths`` [B]); the move reaches the whole
         sums of the row's distinct parts by ``_spread`` over the level table
-        of ``data``. Fixed shape, no host read.
+        of ``data``, built up to ``longest`` (a static bound on the rows'
+        lengths). Fixed shape, no host read.
         """
         ordered = torch.sort(torch.where(rows.reshape(-1) >= LEAVES, rows.reshape(-1).long(), -1)).values
         safe, keep = ordered.clamp_min(0), ordered >= 0
@@ -471,7 +485,7 @@ class FormLinks(nn.Module):
         delta = self._quantise(x) - self._quantise(old)
         self.code[:, :HALF].index_copy_(0, safe, x)
         levels = [self._leaves(data.long(), lengths)]
-        for _ in range(1, min(self.longest, data.shape[1])):
+        for _ in range(1, min(self.longest, self._top(data, longest))):
             levels.append(self._level(levels[-1]))
         own = {}
         for n in range(2, len(levels) + 1):

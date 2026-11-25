@@ -11073,6 +11073,8 @@ class PartSpace(Space):
                 "no identity and table of forms to read parts through")
         import Meronomy
         P = table.longest
+        # The host's static bound on the units' lengths, staged before the sentence.
+        top = min(P, int(getattr(self, '_staged_unit_longest', None) or P))
         compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
         L = compact.shape[1]
         layout = Meronomy.sentence_unit_spans(
@@ -11083,8 +11085,8 @@ class PartSpace(Space):
         suffix = layout[:, W:]
         sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
         # A longer form is read only once it has a store row.
-        rows, _ = table.recognise(compact, compact.new_full((batch,), L), P)
-        longer = torch.arange(P, device=rows.device)[None, :, None] > 0
+        rows, _ = table.recognise(compact, compact.new_full((batch,), L), top)
+        longer = torch.arange(rows.shape[1], device=rows.device)[None, :, None] > 0
         rows = torch.where(longer & (self.form_part_rows[rows.clamp_min(0)] < 0), -1, rows)
         parts, extents, counts = table.cover(compact, slots, P, rows)
         positions = torch.arange(P, device=compact.device)
@@ -11117,10 +11119,11 @@ class PartSpace(Space):
         at = (slots[..., :1] + positions[:width]).clamp(0, L - 1).reshape(batch, -1)
         unit_bytes = compact.gather(1, at).reshape(batch * W, width)
         admit = not getattr(self, "_online_learning_frozen", False)
-        form_rows = table.read(unit_bytes, torch.where(visible, extent, 0).reshape(-1), admit=admit).reshape(batch, W)
+        form_rows = table.read(unit_bytes, torch.where(visible, extent, 0).reshape(-1),
+                               admit=admit, longest=top).reshape(batch, W)
         if admit:
             table.recentre_rows(torch.cat((torch.where(pid_grid >= 0, parts, -1).flatten(), form_rows.flatten())),
-                                compact, compact.new_full((batch,), L))
+                                compact, compact.new_full((batch,), L), top)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)
         if getattr(self, "_mereology_raise", False):

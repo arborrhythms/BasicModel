@@ -8593,6 +8593,24 @@ class BasicModel(BaseModel):
         if delivery is not None and seat is not None:
             seat(delivery[1])
             self._delivery_seated = delivery[0]
+            self._delivery_longest = self._longest_unit(delivery[1])
+
+    def _longest_unit(self, surfaces):
+        """The longest stretch between two cuts of the delivered surfaces (a unit or a gap), to a power of two.
+
+        A static bound on the units the table of forms reads; the table checks it on the device.
+        """
+        cut = getattr(self.inputSpace, '_unit_span_fn', None)
+        longest = 1
+        for surface in surfaces:
+            raw = surface.encode('utf-8', 'surrogateescape')
+            edges = {0, len(raw)}
+            if cut is not None:
+                for lo, hi in cut(raw):
+                    edges.update((lo, hi))
+            edges = sorted(edges)
+            longest = max(longest, *(b - a for a, b in zip(edges, edges[1:])), 1)
+        return 1 << (longest - 1).bit_length()
 
     @_sentence_query_mask
     def _execute_input_sentence(self, input_data, executor=None):
@@ -13688,6 +13706,8 @@ class BasicModel(BaseModel):
             if getattr(self, '_delivery_seated', None) is None and hasattr(ps, 'seat_bytes'):
                 # No delivery was seated before the sentence; its surfaces were read here.
                 ps.seat_bytes(getattr(self.inputSpace, '_analyse_surfaces', None) or ())
+            ps._staged_unit_longest = (getattr(self, '_delivery_longest', None)
+                                       if getattr(self, '_delivery_seated', None) is not None else None)
             self._delivery_seated = None
             from Omission import prepare as prepare_omission
             object.__setattr__(self.perceptualSpace, '_omission_prepare',
@@ -13697,6 +13717,7 @@ class BasicModel(BaseModel):
             finally:
                 ps._staged_unit_spans = None
                 ps._staged_unit_bytes = None
+                ps._staged_unit_longest = None
                 object.__setattr__(self.perceptualSpace, '_omission_prepare', None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
             if target_only:
