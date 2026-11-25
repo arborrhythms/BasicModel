@@ -3,7 +3,6 @@
 These addresses are coordinates, never keys into a content codebook. The
 registry is model-local so constructing another model cannot move a slice.
 """
-from functools import cached_property
 from types import MappingProxyType
 
 import torch
@@ -18,15 +17,17 @@ class WhereRegistry:
                 raise ValueError('where ranges require unique names and nonnegative capacities')
             slices[name] = (end, end + capacity)
             end += capacity
+        # A plain dict for the captured reader; a mapping proxy breaks capture.
+        self._ranges = slices
         self.slices = MappingProxyType(slices)
         self.capacity = end
         from Spaces import WhereEncoding
         self.encoding = WhereEncoding(nWhere=4, nWhen=4).set_capacity(end)
         self.axes = ((0, self.encoding.nDim),)
+        self.code = self._wires()
 
-    @cached_property
-    def code(self):
-        """Build the fixed differentiable wire table on its first reader.
+    def _wires(self):
+        """The fixed differentiable wire table, built with the registry.
 
         Pure address arithmetic uses only the quadrature encoding. A model
         reading the wires shares one gradient leaf outside its optimizer.
@@ -60,7 +61,7 @@ class WhereRegistry:
         return copied
 
     def intervals(self, name, indices):
-        start, end = self.slices[name]
+        start, end = self._ranges[name]
         valid = indices >= 0
         torch._assert_async((~valid | (indices < end - start)).all(),
                             'occurrence exceeds its configured where-space capacity')

@@ -21,6 +21,8 @@ class Omission(nn.Module):
         self.register_buffer('rates', torch.zeros(2))
         self.register_buffer('accuracies', torch.zeros(2, 2))
         self.register_buffer('observations', torch.zeros(2, 2, dtype=torch.long))
+        # Whether the last draw drew nothing without a random number.
+        self.idle = True
 
     @staticmethod
     def rate(visible, omitted, target, limit):
@@ -37,7 +39,8 @@ class Omission(nn.Module):
         empty = torch.zeros_like(valid)
         protected = torch.full((len(valid),), -1, device=valid.device, dtype=torch.long)
         # This branch consumes no RNG, including when explicitly disabled.
-        if not training or self.target == 1 or not bool(self.rates.any()):
+        self.idle = not training or self.target == 1 or not bool(self.rates.any())
+        if self.idle:
             return Draw(torch.zeros_like(words), empty, protected)
         from WalkTrials import departure_at
         protected = departure_at(words)
@@ -115,15 +118,18 @@ def prepare(model, surface, spans, cover):
     isp._finalize_sentence_word_layout(active)
     sentences = isp._packed_sentence_ids
     forms, words, protected = torch.zeros_like(valid), torch.zeros_like(active), {}
+    idle = getattr(policy.draw, '__func__', None) is Omission.draw
     for sid in range(isp._packed_sentence_slot_mask.shape[1]):
         draw = model.omission.draw(valid & (sentences == sid)[..., None], training=model.training)
+        idle = idle and policy.idle
         forms |= draw.forms
         words |= draw.words
         protected[sid] = draw.protected
     raw_target = model._staged_concepts_in.detach().clone()
     model._omission_prepared = dict(raw=raw_target, units=units,
         draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
-    if bool(forms.any()):
+    if not idle:
+        # The covered bytes at fixed shape; the stage decides whether any form was hidden.
         model._omission_prepared['bytes'] = covered_bytes(extents, forms, raw_target.shape[-1])
     return model._omission_prepared
 
@@ -185,6 +191,9 @@ def stage(model):
     if not model.word_brackets:
         return
     prepared = model.__dict__.pop('_omission_prepared')
+    # Hiding is the host act of a drawn form.
+    if 'bytes' in prepared and not bool(prepared['draw'].forms.any()):
+        del prepared['bytes']
     valid = isp._ar_word_part_mask
     draw = prepared.get('draw')
     can_hide = draw is not None
