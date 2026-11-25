@@ -248,6 +248,15 @@ def test_type_family_snapshot_uses_learned_membership_and_row_local_priming():
     assert result.families.tolist() == [0, 1, 2]
 
 
+def test_primed_family_cutoff_preserves_row_order_and_cold_seats():
+    from Generative import primed_family_rows
+    heat = torch.tensor([[3., 1., 3., float('nan'), 3.], [1., float('inf'), 0., 5., 1.]])
+    groups = (torch.tensor([0, 2, 4]), torch.tensor([1, 3]), torch.empty(0, dtype=torch.long))
+    ranked = torch.compile(primed_family_rows, fullgraph=True, backend='eager')
+    assert ranked(heat, groups, 2).tolist() == [[0, 2, -1, -1, -1, -1], [-1, -1, 1, 3, -1, -1]]
+    assert ranked(heat, groups, 0).shape == (2, 0)
+
+
 def determiner_language(words):
     from Language import LowerLayer
     rules = [SimpleNamespace(determiner_mode=mode, key=i) for i, mode in enumerate(('mint', 'bind'))]

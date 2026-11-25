@@ -534,6 +534,18 @@ class LiveConstituents:
         self.valid.copy_(valid)
 
 
+def primed_family_rows(heat, members, limit):
+    """Rank each page's active members, breaking equal heat by physical row."""
+    groups = []
+    for seats in members:
+        values = heat.index_select(1, seats)
+        active = values > 1
+        order = values.masked_fill(~active, -torch.inf).argsort(dim=1, descending=True, stable=True)[:, :limit]
+        chosen = torch.where(active.gather(1, order), seats[order], -1)
+        groups.append(torch.nn.functional.pad(chosen, (0, limit - chosen.shape[1]), value=-1))
+    return torch.cat(groups, 1)
+
+
 @torch.no_grad()
 def primed_type_families(space, heat, *, limit):
     """Snapshot existing types by family, without minting or reading episodes.
@@ -548,25 +560,22 @@ def primed_type_families(space, heat, *, limit):
     B, _ = heat.shape
     book = space.similarity_codebook
     width = book.W.shape[-1]
-    rows = heat.new_full((B, 3 * int(limit)), -1, dtype=torch.long)
     components = getattr(space, 'components', None)
     nouns = set(() if components is None else components.individual_ids)
     verbs = set(() if components is None else components.verbs.ids)
-    for b in range(B):
-        grouped = [[], [], []]
-        for row in (heat[b] > 1).nonzero().flatten().tolist():
-            identity = space.concept_id_at_row(row)
-            if identity is None:
-                continue
+    layers = getattr(getattr(space, '_concept_allocator', None), '_layers', None)
+    occupied = (range(heat.shape[1]) if layers is None else
+                sorted({row for layer in layers.values() for row in layer._tensor_row_keys
+                        if 0 <= row < heat.shape[1]}))
+    grouped = [[], [], []]
+    for row in occupied:
+        identity = space.concept_id_at_row(row)
+        if identity is not None:
             family = 0 if identity in nouns else 1 if identity in verbs else 2
-            if family == 2 and space._row_order(row) <= 0:
-                continue
-            grouped[family].append(row)
-        for family, candidates in enumerate(grouped):
-            candidates.sort(key=lambda row: (-float(heat[b, row]), row))
-            candidates = candidates[:int(limit)]
-            if candidates:
-                rows[b, family * limit:family * limit + len(candidates)] = rows.new_tensor(candidates)
+            if family < 2 or space._row_order(row) > 0:
+                grouped[family].append(row)
+    members = tuple(torch.tensor(group, device=heat.device, dtype=torch.long) for group in grouped)
+    rows = primed_family_rows(heat, members, int(limit))
     valid = rows >= 0
     if bool(valid.any()):
         codes = book.lookup_rows(rows.clamp_min(0),streams=True).detach()
