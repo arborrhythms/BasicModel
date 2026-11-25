@@ -5,7 +5,6 @@ import torch
 from types import SimpleNamespace
 
 import Spaces
-from Layers import RadixLayer
 from PerceptProperties import PrimitiveProperties
 from test_cs_sparse_weights import _cs
 from nomination_fixtures import recurrent_interpretation
@@ -53,27 +52,6 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     for concept in (0, 1):
         _, lanes = order_zero_expected(cs, concept, presence)
         torch.testing.assert_close(result[concept, 0, 0], lanes.to(result), atol=1e-5, rtol=1e-5)
-
-
-def test_part_literals_keep_order_multiplicity_and_location_in_canonical_ids():
-    store = RadixLayer(4, initial_cap=16)
-    a, b, x = [store.insert(s) for s in (b'a', b'b', b'x')]
-    ab, aa, ba = [store.insert(s) for s in (b'ab', b'aa', b'ba')]
-    # A literal matches the canonical retained ids, not another tiling of its bytes.
-    ids = torch.tensor([[a, b, x], [ab, x, -1], [b, a, x], [a, a, x]])
-    parts = torch.tensor([[[0, 1], [1, 2], [2, 3]],
-                          [[0, 2], [2, 3], [0, 0]],
-                          [[0, 1], [1, 2], [2, 3]],
-                          [[0, 1], [1, 2], [2, 3]]])
-    spans = torch.tensor([[[0, 3], [1, 3], [0, 4]]]).expand(4, -1, -1)
-    pair = Spaces.PartSpace.part_memberships(store, [(a, b), (a, a), (b, a), ab],
-                                            ids, parts, spans, 4)
-    torch.testing.assert_close(pair[:, :, 0, 0], torch.tensor(
-        [[True, False, False, False], [False, False, False, True],
-         [False, False, True, False], [False, True, False, False]]))
-    assert not pair[:, :, 1, 0].any()  # no start outside the candidate span
-    assert not pair[:, :, 2, 1].any()  # missing observation cannot deny a part
-    assert pair[:, :, 0, 1].equal(~pair[:, :, 0, 0])
 
 
 def test_witnesses_write_alternatives_without_conjoining_their_literals():

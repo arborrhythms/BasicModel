@@ -26,20 +26,16 @@ def lesson_words():
     return tuple(dict.fromkeys(word.encode() for word in words))
 
 
-def lesson_store(extra=EXTRA, *, suffix=True):
-    """The store with the lesson's words, ``cats`` by a suffix lesson, and
+def lesson_store(extra=EXTRA):
+    """The store with the lesson's words, ``cat`` and ``cats``, and
     ``extra``; ``cat`` and ``caat`` (and ``cat`` and ``act``) have to be
     told apart."""
     from Layers import RadixLayer
     from WordIdentity import WordIdentity
     store = RadixLayer(64, initial_cap=1024)
     identity = WordIdentity(store)
-    for word in lesson_words() + tuple(extra):
-        identity.observe_nested(word)
-    if suffix:
-        with identity.nested_lesson(b's'):
-            identity.observe_nested(b'cat')
-            identity.observe_nested(b'cats')
+    for word in lesson_words() + tuple(extra) + (b'cat', b'cats'):
+        identity.observe_forms([word])
     return store, identity
 
 

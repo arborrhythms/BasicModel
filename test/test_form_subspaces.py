@@ -384,10 +384,9 @@ def test_native_lesson_certificate(tmp_path, monkeypatch, eager_reading):
     try:
         identity = model.perceptualSpace.percept_store.identity
         # The forms are words from the reading in which MTM nominates them.
-        with identity.nested_lesson('s'):
-            for _ in range(model._concept_owner().concept_mint_count):
-                model.forward(model.inputSpace.prepInput(['cat cats']))
-                model.End()
+        for _ in range(model._concept_owner().concept_mint_count):
+            model.forward(model.inputSpace.prepInput(['cat cats']))
+            model.End()
         cb = model._concept_owner().similarity_codebook
         report = cb.mereology.containment_audit()
         for group in ('tower0', 'tower1', 'cross', 'order0'):

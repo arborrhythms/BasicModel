@@ -9791,12 +9791,8 @@ class InputSpace(Space):
 
         B, W, _ = embedded.shape
         active = active.to(device=embedded.device, dtype=torch.bool)
-        source = getattr(ps, '_forward_input', None) or {}
-        if source.get('word_active_mask') is ps._serial_word_active_mask and source.get('unit_spans') is not None:
-            # The ladder emits one active slot per delivered interval in order.
-            self._valid_len_host = min(W, max(map(len, source['word_intervals']), default=0))
-        else:
-            self._valid_len_host = int(occupied_width(active))
+        # The ladder emits one active slot per delivered interval in order.
+        self._valid_len_host = min(W, max(map(len, ps._forward_input['word_intervals']), default=0))
 
         self._ar_embedded = embedded
         self._ar_embedded_N = embedded
@@ -10790,78 +10786,6 @@ class PartSpace(Space):
         """Resolve recurrent formations; a first witness keeps its ordered ids."""
         return self.percept_store.canonical_parts(part_ids)
 
-    @staticmethod
-    def part_memberships(store, features, part_ids, part_spans, spans, length, *, return_support=False):
-        """Containment of ids or ordered id groups in the canonical tiling.
-
-        Groups preserve order, repetition and adjacency. A negative pole
-        requires an observed span without the literal; missing input is unknown.
-        No byte reconstruction or alternate tiling participates in this read.
-        Optional support marks the actual matching native tiles, independently
-        of the extent-wide containment value.
-        """
-        valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
-        overlap = (torch.minimum(spans[..., 1, None], part_spans[:, None, :, 1])
-                   - torch.maximum(spans[..., 0, None], part_spans[:, None, :, 0])).clamp_min(0)
-        size = spans[..., 1] - spans[..., 0]
-        complete = ((overlap * valid[:, None]).sum(-1) == size) & (size > 0)
-        identity = getattr(store, 'identity', None)
-        atom_ids = set(identity.atoms.values()) if identity is not None else set()
-        identity_ids = atom_ids | (set(identity.word_rows.values()) if identity is not None else set())
-        literals = [tuple(map(int, literal)) if isinstance(literal, (list, tuple)) else (int(literal),)
-                    for literal in features]
-        atom_witnesses = None
-        if any(ids and identity_ids.issuperset(ids) for ids in literals):
-            # Byte descent is still the observed witness. Read its parts
-            # (characters and added parts); their order in the bank has no
-            # evidential significance.
-            atom_witnesses = []
-            event_count = part_ids.shape[1]
-            records = torch.cat((torch.cat((part_ids[..., None], part_spans), -1),
-                                 F.pad(spans, (1, 0), value=-1)), 1).tolist()
-            for row in records:
-                events = row[:event_count]
-                values = []
-                for _, start, end in row[event_count:]:
-                    raw = b''.join(store.bytes_for(pid) for pid, a, z in events
-                                   if pid >= 0 and start <= a < z <= end)
-                    parts = (identity.words.get(raw) or identity.atoms_of(raw)) if raw else ()
-                    members = ({*identity.parts(raw), identity.word_rows[raw]} if raw in identity.words else
-                               {identity.atoms[a] for a in parts if a in identity.atoms})
-                    values.append(members)
-                atom_witnesses.append(values)
-        pairs, supports = [], []
-        for ids in literals:
-            count = part_ids.shape[1] - len(ids) + 1
-            present = torch.zeros_like(complete)
-            support = torch.zeros(*complete.shape, part_ids.shape[1],
-                                  dtype=torch.bool, device=part_ids.device) if return_support else None
-            if ids and identity_ids.issuperset(ids):
-                present = complete.new_tensor([[set(ids) <= members for members in row]
-                                               for row in atom_witnesses]).reshape_as(complete) & complete
-                if return_support:
-                    support = present[..., None] & valid[:, None] & (overlap > 0)
-            elif count > 0 and ids:
-                match = valid[:, :count].clone()
-                for offset, pid in enumerate(ids):
-                    match &= valid[:, offset:offset + count] & (part_ids[:, offset:offset + count] == pid)
-                    if offset:
-                        match &= (part_spans[:, offset - 1:offset - 1 + count, 1]
-                                  == part_spans[:, offset:offset + count, 0])
-                contained = ((part_spans[:, None, :count, 0] >= spans[..., 0, None])
-                             & (part_spans[:, None, len(ids) - 1:len(ids) - 1 + count, 1]
-                                <= spans[..., 1, None]))
-                witnesses = match[:, None] & contained
-                present = witnesses.any(-1)
-                if return_support:
-                    for offset in range(len(ids)):
-                        support[..., offset:offset + count] |= witnesses
-            pairs.append(torch.stack((present, ~present & complete), -1))
-            if return_support:
-                supports.append(support)
-        result = torch.stack(pairs)
-        return (result, torch.stack(supports)) if return_support else result
-
     def _ensure_radix_atomic_bytes(self, batch_tokens):
         """Pre-seed every byte needed by this eager lexical batch.
 
@@ -11277,6 +11201,19 @@ class PartSpace(Space):
                 "serial word-major ladder requires a positive outer word "
                 "capacity")
         ps = self.percept_store
+        # The model's eager stem stages the sentence's unit layout and bytes;
+        # the store's identity reads the parts. Neither has a host substitute.
+        unit_spans_rows = getattr(self, "_staged_unit_spans", None)
+        byte_slab = getattr(self, '_staged_unit_bytes', None)
+        if not (torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab)):
+            raise RuntimeError(
+                "PartSpace._embed_ladder_word_major: no staged unit layout; "
+                "the model stages unit spans and bytes before the stem")
+        identity = getattr(ps, 'identity', None)
+        if identity is None:
+            raise RuntimeError(
+                "PartSpace._embed_ladder_word_major: the percept store has "
+                "no identity to read parts through")
         host_tokens = getattr(upstream_vspace, "_host_tokens", None)
         if host_tokens is None:
             host_tokens = upstream_vspace.whatEncoding.decode_tokens(what_buf)
@@ -11294,13 +11231,9 @@ class PartSpace(Space):
         # ``[B, W, P]`` width is batch-dynamic in the eager stem, exactly as
         # the radix stem's was), and the compiled loop's fixed-capacity
         # staging keeps its fail-loud contract for a unit it cannot lay out.
-        unit_spans_rows = getattr(self, "_staged_unit_spans", None)
-
         import Meronomy
-        byte_slab = getattr(self, '_staged_unit_bytes', None)
-        identity = getattr(ps, 'identity', None)
-        simple_parts = identity is not None and not identity.nested and identity._marker_pattern is None
-        layout = prepared_parts = prepared_counts = None
+        simple_parts = not identity.nested
+        prepared_parts = prepared_counts = None
         discovery_sources = first_names = None
         admit = not getattr(self, "_online_learning_frozen", False)
 
@@ -11314,95 +11247,63 @@ class PartSpace(Space):
             seats = torch.arange(forms.numel(), device=dev).reshape_as(forms)
             return source, visible & (source == seats)
 
-        if torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab):
-            compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
-            layout = Meronomy.sentence_unit_spans(
-                compact, unit_spans_rows,
-                include_gaps=not self._serial_object_meta)
-            # Legacy reporting and omission still consume host intervals. When
-            # the alphabet is known, gather their counts in the same transfer.
-            delivered_layout = layout[:, :byte_count]
-            if simple_parts:
-                prepared_parts = identity.sentence_cover(compact[:, :byte_count],
-                    delivered_layout[:, :word_capacity], -1, identify=True,
-                    unseen_elements=not getattr(upstream_vspace, '_ascii_delivery', False), report_elements=True)
-                *prepared_parts, element_codes = prepared_parts
-            if prepared_parts is None:
-                unit_spans_rows = delivered_layout.detach().tolist()
-            else:
-                counts_device = prepared_parts[1]
-                all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
-                columns = [delivered_layout, all_counts[..., None], element_codes[..., None]]
-                if admit:
-                    discovery_sources, first = first_occurrences(prepared_parts[3])
-                    columns.append(F.pad(first, (0, delivered_layout.shape[1] - first.shape[1]))[..., None])
-                records = torch.cat(columns, -1).tolist()
-                unit_spans_rows = [[(event[0], event[1]) for event in row] for row in records]
-                prepared_counts = [[event[2] for event in row[:word_capacity]] for row in records]
-                if admit:
-                    first_names = [(b, w) for b, row in enumerate(records)
-                                   for w, event in enumerate(row[:word_capacity]) if event[4]]
+        compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
+        layout = Meronomy.sentence_unit_spans(
+            compact, unit_spans_rows,
+            include_gaps=not self._serial_object_meta)
+        # Legacy reporting and omission still consume host intervals. When
+        # the alphabet is known, gather their counts in the same transfer.
+        delivered_layout = layout[:, :byte_count]
+        if simple_parts:
+            prepared_parts = identity.sentence_cover(compact[:, :byte_count],
+                delivered_layout[:, :word_capacity], -1, identify=True,
+                unseen_elements=not getattr(upstream_vspace, '_ascii_delivery', False), report_elements=True)
+            *prepared_parts, element_codes = prepared_parts
+        if prepared_parts is None:
+            unit_spans_rows = delivered_layout.detach().tolist()
+        else:
+            counts_device = prepared_parts[1]
+            all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
+            columns = [delivered_layout, all_counts[..., None], element_codes[..., None]]
+            if admit:
+                discovery_sources, first = first_occurrences(prepared_parts[3])
+                columns.append(F.pad(first, (0, delivered_layout.shape[1] - first.shape[1]))[..., None])
+            records = torch.cat(columns, -1).tolist()
+            unit_spans_rows = [[(event[0], event[1]) for event in row] for row in records]
+            prepared_counts = [[event[2] for event in row[:word_capacity]] for row in records]
+            if admit:
+                first_names = [(b, w) for b, row in enumerate(records)
+                               for w, event in enumerate(row[:word_capacity]) if event[4]]
         staged_rows, cover_extents, word_texts_rows = [], [], []
-        native_rows, native_spans = [], []
         part_capacity = 3
-        # Rung-0 admission by recurrence (fold-ladder plan, contract 4,
-        # step D-0): a unit seen ``chunk_promotion_threshold`` times gets a
-        # row of its own, seeded with its rung-0 code (the max over its
-        # atom rows).  The row is the unit's CATEGORY; the atoms stay bytes
-        # (the witness).  Queued rows are committed at the boundary flush;
-        # nothing is admitted while online learning is frozen (evaluation).
-        hits = self.__dict__.setdefault("_unit_hits", {})
-        threshold = max(1, int(getattr(self, "chunk_promotion_threshold", 2) or 2))
         units = []
         for b, raw in enumerate(raw_rows):
-            spans = None
-            if unit_spans_rows is not None and b < len(unit_spans_rows):
-                spans = [(int(s0), int(e0)) for (s0, e0) in unit_spans_rows[b]
-                         if int(e0) > int(s0) and int(e0) <= len(raw)]
-            if layout is None and not spans:
-                spans = [(int(s0), int(e0)) for (s0, e0) in Meronomy.percept_spans(raw)]
-            if layout is None and not getattr(self, '_serial_object_meta', False):
-                # The analysis may omit separator runs from its property
-                # wholes. Perception still owns those bytes. Preserve the
-                # chosen cuts and insert each uncovered span as one unit;
-                # the mixing grammar separately excludes whitespace leaves.
-                complete, cursor = [], 0
-                for start, end in sorted(spans):
-                    if start > cursor:
-                        complete.append((cursor, start))
-                    complete.append((start, end))
-                    cursor = end
-                if cursor < len(raw):
-                    complete.append((cursor, len(raw)))
-                spans = complete
+            spans = [(int(s0), int(e0)) for (s0, e0) in unit_spans_rows[b]
+                     if int(e0) > int(s0) and int(e0) <= len(raw)]
             units.append((raw,spans))
         prepare = getattr(self, '_omission_prepare', None)
         omission = None if prepare is None else prepare(units, prepared_parts, prepared_counts)
         hiding = omission is not None and 'bytes' in omission
         hidden_rows = None
         if hiding:
+            # Omission draws over the sentence cover, so a hidden byte has one.
             hidden = omission['bytes'][:, :byte_count]
-            if prepared_parts is not None and simple_parts:
-                from BasicPercepts import visible_missing_elements
-                flat, _, extents, forms = prepared_parts
-                missing = visible_missing_elements(compact[:, :byte_count], flat, extents, hidden)
-                columns = [hidden, missing]
-                if admit:
-                    # Admission and omission share a host catalog update. Include
-                    # the first visible seat with its already-required byte report.
-                    hidden_forms = omission['draw'].forms[:, :forms.shape[1]].any(-1)
-                    discovery_sources, first = first_occurrences(forms, hidden_forms)
-                    columns.append(F.pad(first, (0, hidden.shape[1] - first.shape[1])))
-                observations = torch.stack(columns, -1).tolist()
-                hidden_rows = [[event[0] for event in row] for row in observations]
-                alphabet = dict.fromkeys(chr(event[1]) for row in observations for event in row if event[1] >= 0)
-                if admit:
-                    first_names = [(b, w) for b, row in enumerate(observations)
-                                   for w, event in enumerate(row[:forms.shape[1]]) if event[2]]
-            else:
-                hidden_rows = hidden.tolist()
-        changed = ([[any(mask[lo:hi]) for lo, hi in spans[:word_capacity]]
-                    for mask, (_, spans) in zip(hidden_rows, units, strict=True)] if hiding else None)
+            from BasicPercepts import visible_missing_elements
+            flat, _, extents, forms = prepared_parts
+            missing = visible_missing_elements(compact[:, :byte_count], flat, extents, hidden)
+            columns = [hidden, missing]
+            if admit:
+                # Admission and omission share a host catalog update. Include
+                # the first visible seat with its already-required byte report.
+                hidden_forms = omission['draw'].forms[:, :forms.shape[1]].any(-1)
+                discovery_sources, first = first_occurrences(forms, hidden_forms)
+                columns.append(F.pad(first, (0, hidden.shape[1] - first.shape[1])))
+            observations = torch.stack(columns, -1).tolist()
+            hidden_rows = [[event[0] for event in row] for row in observations]
+            alphabet = dict.fromkeys(chr(event[1]) for row in observations for event in row if event[1] >= 0)
+            if admit:
+                first_names = [(b, w) for b, row in enumerate(observations)
+                               for w, event in enumerate(row[:forms.shape[1]]) if event[2]]
         visible_rows = []
         for b, (raw, _) in enumerate(units):
             hidden = None if hidden_rows is None else hidden_rows[b]
@@ -11414,10 +11315,9 @@ class PartSpace(Space):
         null_pid = ps.get_id(b"\x00")
         if null_pid is None:
             null_pid = ps.insert(b"\x00")
-        # An explicit suffix lesson teaches the marker against this presentation.
-        # Ordinary openings read the part inventory available on entry.
-        prior_parts = len(identity.added) if identity is not None else 0
-        prior_forms = len(identity.words) if identity is not None else 0
+        # An opening reads the part inventory available on entry.
+        prior_parts = len(identity.added)
+        prior_forms = len(identity.words)
         sentence_rows = getattr(self, '_staged_sentence_rows', None)
         track_parts = batch > 1 or (sentence_rows is not None and any(len(row) > 1 for row in sentence_rows))
         sentence_starts = None if sentence_rows is None else [
@@ -11430,17 +11330,8 @@ class PartSpace(Space):
                 readers = new_forms.setdefault(text_of(unit), {})
                 readers[stream] = min(readers.get(stream, offset), offset)
 
-        teaching_marker = identity is not None and identity._marker_pattern is not None
-        if teaching_marker and admit:
-            for b, (raw, spans) in enumerate(units):
-                for w, (lo, hi) in enumerate(spans[:word_capacity]):
-                    if changed is None or not changed[b][w]:
-                        unit = raw[lo:hi]
-                        observe_new_form(unit, b, lo)
-                        with identity.record_repairs(repairs, unit):
-                            identity.observe_nested(unit)
         located_parts = None
-        if layout is not None and simple_parts:
+        if simple_parts:
             # The cover read the element at each position within its learned
             # cut. Only new native names reach the existing identity writer.
             if not hiding:
@@ -11508,52 +11399,25 @@ class PartSpace(Space):
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
             word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
-            if layout is None:
-                native_rows.append([(-1 if hidden_rows is not None and hidden_rows[b][i]
-                                     else int(ps.get_id(bytes([value])))) for i, value in enumerate(visible)])
-                native_spans.append([(i, i+1) for i in range(len(raw))])
             if located_parts is not None:
                 continue
+            # A form with recorded nested wholes is read by its ordered cover.
             staged_words = []
             for word_index in range(word_capacity):
                 if word_index < len(spans):
                     start, end = spans[word_index]
-                    stop = end
-                    hidden = changed is not None and changed[b][word_index]
-                    unit = raw[start:stop]
-                    if identity is not None and admit and not teaching_marker and not hidden:
+                    unit = raw[start:end]
+                    if admit:
                         form = identity.word_rows.get(unit, unit)
                         observed_forms.append(form)
                         if isinstance(form, bytes):
                             observe_new_form(form, b, start)
-                    if identity is not None:
-                        cover = (omission['plans'][b][word_index]['cover'] if hidden
-                                 else identity.ordered_cover(unit))
-                        pids = []
-                        for i, (part, lo, hi) in enumerate(cover):
-                            if hidden and bool(omission['draw'].forms[b, word_index, i]):
-                                pid = -1
-                            elif isinstance(part, bytes):
-                                pid = identity.word_rows[part]
-                            else:
-                                pid = identity._atom(part)
-                            pids.append(pid)
-                            cover_extents.append((b, word_index, i, start + lo, start + hi))
-                    else:
-                        pids = [(-1 if hidden_rows is not None and hidden_rows[b][i]
-                                 else int(ps.get_id(bytes([raw[i]])))) for i in range(start, stop)]
+                    pids = []
+                    for i, (part, lo, hi) in enumerate(identity.ordered_cover(unit)):
+                        pids.append(identity.word_rows[part] if isinstance(part, bytes)
+                                    else identity._atom(part))
+                        cover_extents.append((b, word_index, i, start + lo, start + hi))
                     part_capacity = max(part_capacity, len(pids))
-                    if (identity is None and admit and not hidden and len(unit) >= 2
-                            and ps.get_id(unit) is None
-                            and unit not in getattr(ps, "_pending_promotions", {})):
-                        hits[unit] = hits.get(unit, 0) + 1
-                        if hits[unit] >= threshold:
-                            with torch.no_grad():
-                                init = ps._basis.lookup_rows(
-                                    torch.tensor(pids, dtype=torch.long)
-                                ).clamp(0.0, 1.0).amax(dim=0).detach()
-                            ps._promote_or_queue(unit, init_vector=init)
-                            hits.pop(unit, None)
                     staged_words.append(pids)
                 else:
                     staged_words.append([])
@@ -11573,22 +11437,13 @@ class PartSpace(Space):
                 form_rows = form_rows.masked_fill(omission['draw'].forms[:, :form_rows.shape[1]].any(-1), -1)
         positions = torch.arange(part_capacity, device=dev)
         part_mask = positions < lengths[..., None]
-        if layout is None:
-            slots = pid_grid.new_tensor([spans[:word_capacity] + [(0, 0)] * max(0, word_capacity - len(spans))
-                                         for _, spans in units])
-            sentence_truncated = torch.tensor([len(spans) > word_capacity for _, spans in units],
-                                              dtype=torch.bool, device=dev)
-        else:
-            slots = layout[:, :word_capacity]
-            slots = torch.nn.functional.pad(slots, (0, 0, 0, word_capacity - slots.shape[1]))
-            suffix = layout[:, word_capacity:]
-            sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
+        slots = layout[:, :word_capacity]
+        slots = torch.nn.functional.pad(slots, (0, 0, 0, word_capacity - slots.shape[1]))
+        suffix = layout[:, word_capacity:]
+        sentence_truncated = (suffix[..., 1] > suffix[..., 0]).any(1)
         word_active = slots[..., 1] > slots[..., 0]
         if located_parts is not None:
             members = located_extents
-        elif identity is None:
-            starts = slots[..., :1] + positions
-            members = torch.stack((starts, starts + 1), -1)
         else:
             members = pid_grid.new_zeros(*pid_grid.shape, 2)
             if cover_extents:
@@ -11600,7 +11455,7 @@ class PartSpace(Space):
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
-        if identity is not None and admit and not teaching_marker:
+        if admit:
             if observed_forms:
                 identity.observe_forms(observed_forms, repairs=repairs)
             if located_parts is not None:
@@ -11656,30 +11511,23 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
         }
-        if track_parts and identity is not None and (len(identity.words) > prior_forms or len(identity.added) > prior_parts or repairs):
+        if track_parts and (len(identity.words) > prior_forms or len(identity.added) > prior_parts or repairs):
             self._forward_input['block_parts'] = identity.block_part_visibility(
                 prior_parts, new_forms, batch, dev, sentence_starts=sentence_starts, repairs=repairs,
                 prior_forms=prior_forms)
-        if layout is not None:
-            from FieldReverse import byte_rows
-            width = byte_count
-            surface = compact[:, :width]
-            self._forward_input['element_input'] = True
-            self._forward_input['sentence_bytes'] = (surface.masked_fill(omission['bytes'][:, :width], 0)
-                                                     if hiding else surface)
-            self._forward_input['unit_spans'] = slots
-            seen = surface != 0
-            eligible = seen if not hiding else seen & ~omission['bytes'][:, :width]
-            self._forward_input['native_indices'] = torch.where(eligible, byte_rows(ps)[surface], -1)
-            places = torch.arange(width, device=dev)
-            limits = torch.stack((places, places + 1), -1)
-            self._forward_input['native_part_spans'] = torch.where(seen[..., None], limits, 0)
-        else:
-            native_capacity = max(map(len, native_rows), default=0)
-            self._forward_input['native_indices'] = torch.tensor(
-                [row + [-1]*(native_capacity-len(row)) for row in native_rows], dtype=torch.long, device=dev)
-            self._forward_input['native_part_spans'] = torch.tensor(
-                [row + [(0,0)]*(native_capacity-len(row)) for row in native_spans], dtype=torch.long, device=dev).reshape(batch, native_capacity, 2)
+        from FieldReverse import byte_rows
+        width = byte_count
+        surface = compact[:, :width]
+        self._forward_input['element_input'] = True
+        self._forward_input['sentence_bytes'] = (surface.masked_fill(omission['bytes'][:, :width], 0)
+                                                 if hiding else surface)
+        self._forward_input['unit_spans'] = slots
+        seen = surface != 0
+        eligible = seen if not hiding else seen & ~omission['bytes'][:, :width]
+        self._forward_input['native_indices'] = torch.where(eligible, byte_rows(ps)[surface], -1)
+        places = torch.arange(width, device=dev)
+        limits = torch.stack((places, places + 1), -1)
+        self._forward_input['native_part_spans'] = torch.where(seen[..., None], limits, 0)
         return self.subspace
 
     def _embed_radix(self, upstream_vspace):
@@ -17050,16 +16898,6 @@ class ConceptualSpace(Space):
         return True
 
 
-
-    def recognized_word_rows(self):
-        """PS ``.what`` rows (percept ids) of the WORDS-registered words —
-        the reverse() candidate projection of the in-model label. ``None``
-        while nothing is recognized."""
-        reg = getattr(self, '_recognized_words', None)
-        if not reg:
-            return None
-        return torch.tensor(sorted({int(p) for p in reg.values()}),
-                            dtype=torch.long)
 
     def concept_of_percept(self, pid):
         model = getattr(self, '_model', None)

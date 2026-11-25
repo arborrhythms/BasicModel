@@ -11810,48 +11810,14 @@ class BasicModel(BaseModel):
                 and torch.is_tensor(active) and active.shape == part_ids.shape[:2]
                 and callable(getattr(store, "bytes_for", None))):
             native = (getattr(self.perceptualSpace, '_forward_input', None) or {}) if targets is None else targets['native']
-            if 'unit_spans' in native and (targets is not None or getattr(store, 'identity', None) is not None):
-                from WordSurfaces import bytes_at
-                surface = native['sentence_bytes']
-                if targets is not None and 'bytes' in targets:
-                    from Meronomy import delivered_bytes
-                    surface = delivered_bytes(targets['raw'][:, 0])[:, :surface.shape[1]]
-                isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
-                    surface, native['unit_spans'], active, self.word_surface_capacity)
-            else:
-                B, W = (int(v) for v in active.shape)
-                ids = part_ids.detach().to("cpu").tolist()
-                masks = part_mask.detach().to("cpu").tolist()
-                live = active.detach().to("cpu").tolist()
-                spellings = [[b""] * W for _ in range(B)]
-                pieces = {}
-                identity = getattr(store, 'identity', None)
-                texts = native.get('word_texts', ())
-                for b in range(B):
-                    for w in range(W):
-                        if not live[b][w]:
-                            continue
-                        if targets is not None:
-                            spellings[b][w] = targets['word_bytes'][b][w]
-                            continue
-                        chunks = []
-                        for pid, valid in zip(ids[b][w], masks[b][w]):
-                            if valid:
-                                if pid not in pieces:
-                                    pieces[pid] = store.bytes_for(pid)
-                                chunks.append(pieces[pid])
-                        raw = b"".join(chunks)
-                        if identity is not None:
-                            # Identity atoms are parts, not substrings. Targets
-                            # retain the separately staged input byte witness.
-                            raw = (str(texts[b][w]).encode('latin1')
-                                   if b < len(texts) and w < len(texts[b]) else b'')
-                        spellings[b][w] = raw
-                from WordSurfaces import stage as stage_surfaces
-                targets, valid, _, _ = stage_surfaces(spellings, self.word_surface_capacity,
-                    device=part_ids.device, with_support=False)
-                isp._ar_target_word_bytes = targets
-                isp._ar_target_word_mask = valid
+            # The word-major stem always stages the sentence bytes and spans.
+            from WordSurfaces import bytes_at
+            surface = native['sentence_bytes']
+            if targets is not None and 'bytes' in targets:
+                from Meronomy import delivered_bytes
+                surface = delivered_bytes(targets['raw'][:, 0])[:, :surface.shape[1]]
+            isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
+                surface, native['unit_spans'], active, self.word_surface_capacity)
         bank = lookup_view(isp, 'lookup_rows')
         if not torch.is_tensor(bank) or bank.dim() != 2:
             isp._ar_bank_bytes = None
@@ -11889,18 +11855,7 @@ class BasicModel(BaseModel):
         B, W = active.shape
         owner = self._concept_owner()
         percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
-        texts = percepts.get('word_texts')
-        tokens = percepts.get('tokens', ())
-        spans = percepts.get('part_spans')
-        raw = getattr(self, '_staged_concepts_in', None)
-        native_spans = percepts.get('unit_spans')
-        if native_spans is None and torch.is_tensor(spans) and torch.is_tensor(raw):
-            spans = spans.detach().cpu().tolist()
-            raw = raw.detach().cpu().reshape(B, -1).long().tolist()
-        else:
-            spans = raw = None
         surfaces = [[b''] * W for _ in range(B)]
-        targets = [[b''] * W for _ in range(B)]
         live = active.detach().cpu().tolist()
         for b, row in enumerate(rows.detach().cpu().tolist()):
             for w, concept_row in enumerate(row):
@@ -11909,24 +11864,6 @@ class BasicModel(BaseModel):
                 spelling = owner.word_surface_for_row(concept_row) if concept_row >= 0 else None
                 if spelling:
                     surfaces[b][w] = spelling
-                if native_spans is not None:
-                    continue
-                surface = None
-                if (texts is not None and b < len(texts) and texts[b] is not None
-                        and w < len(texts[b])):
-                    # Word-major stems preserve each input byte as one
-                    # Latin-1 character. This is a byte carrier, not Unicode.
-                    surface = texts[b][w].encode('latin1')
-                elif spans is not None and b < len(spans) and w < len(spans[b]):
-                    lo, hi = spans[b][w]
-                    if 0 <= lo < hi <= len(raw[b]):
-                        surface = bytes(raw[b][lo:hi])
-                elif b < len(tokens) and w < len(tokens[b]):
-                    surface = tokens[b][w]
-                if isinstance(surface, str):
-                    surface = surface.encode('utf-8')
-                if isinstance(surface, bytes):
-                    targets[b][w] = surface
         def tensor_bytes(values, lookahead=0):
             from WordSurfaces import stage as stage_surfaces
             data, valid, _, _ = stage_surfaces(values, self.word_surface_capacity,
@@ -11937,12 +11874,10 @@ class BasicModel(BaseModel):
         isp._ar_concept_lookup_sentence_ids = torch.where(
             rows >= 0, isp._packed_sentence_ids, torch.full_like(rows, -1))
         isp._ar_bank_bytes, isp._ar_bank_valid = tensor_bytes(surfaces, lookahead=1)
-        if native_spans is None:
-            isp._ar_target_word_bytes, isp._ar_target_word_mask = tensor_bytes(targets)
-        else:
-            from WordSurfaces import bytes_at
-            isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
-                percepts['sentence_bytes'], native_spans, active, self.word_surface_capacity)
+        # The word-major stem always stages the sentence bytes and spans.
+        from WordSurfaces import bytes_at
+        isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
+            percepts['sentence_bytes'], percepts['unit_spans'], active, self.word_surface_capacity)
 
     def _understanding_reconstruction_scope(self):
         """The retained reading paths always reconstruct their understanding.
@@ -18625,8 +18560,7 @@ class BasicModel(BaseModel):
         try:
             # Resolve against the CS that HOLDS the reverse index — the
             # autobind runs on a per-stage/terminal CS instance that may
-            # differ from ``self.conceptualSpace`` (multi-stage towers;
-            # same pattern as recognized_word_rows in the un-fold).
+            # differ from ``self.conceptualSpace`` (multi-stage towers).
             cs = self.conceptualSpace
             for _c in (list(getattr(self, "conceptualSpaces", []) or [])
                        or [cs]):

@@ -20,20 +20,6 @@ def test_first_witness_keeps_existing_parts(tmp_path):
     assert ps.percept_store._size == size
 
 
-def test_containment_reads_canonical_ids_without_expanding_bytes():
-    store = RadixLayer(4, initial_cap=16)
-    a, b, ab = [store.insert(s) for s in (b'a', b'b', b'ab')]
-    def forbidden(_):
-        raise AssertionError('the conceptual read must not expand percept bytes')
-    store.bytes_for = forbidden
-    ids = torch.tensor([[a, b], [ab, -1]])
-    parts = torch.tensor([[[0, 1], [1, 2]], [[0, 2], [0, 0]]])
-    extent = torch.tensor([[[0, 2]]]).expand(2, -1, -1)
-    pair = Spaces.PartSpace.part_memberships(
-        store, torch.tensor([a, ab]), ids, parts, extent, 2)
-    assert pair[:, :, 0, 0].tolist() == [[True, False], [False, True]]
-
-
 def test_inventory_outlives_the_eight_attended_rows():
     cs = with_own_codes(_cs(nS=64, order=3), range(100, 112))
     cs.outputShape[0] = 8

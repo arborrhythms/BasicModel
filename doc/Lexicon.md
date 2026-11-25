@@ -98,18 +98,10 @@ particular never causes a downcast from a known kind. A newly requested
 singleton keeps its source point during the trial and is admitted by the
 kept closing; the read never allocates (`ReferenceContext.resolve_order`).
 
-Sub-word structure is admitted one pattern at a time, only inside a named
-lesson. `WordIdentity.nested_lesson(marker)` permits one suffix pattern while
-the lesson runs, and `observe_nested` carves a witnessed word that ends with
-that marker into its stem and the marker once the stem itself has been
-witnessed ("walked" into "walk" + "ed" once "walk" has been seen; a stem
-witnessed later licenses an earlier marked word). With no marker named, every
-word stays whole, and an irregular form ("went") never nests. There is no
-vocabulary-wide search for shared letter runs, no prefix or infix admission
-and no token-count threshold: one generalization is admitted at a time.
-The permission is not a learned identity or a checkpoint setting, but parts
-already witnessed persist after the lesson ends. The word remains the unit of
-attention. A marker, free or nested inside a word, is one kind of leaf: which
+No lesson carves a word into a stem and a marker: every word stays whole and
+is read by its parts. A form whose vocabulary records nested wholes
+(`WordIdentity.nested`, restored with a checkpoint) is read by its ordered
+cover. The word remains the unit of attention. A marker, free or nested inside a word, is one kind of leaf: which
 selection it calls, and with what object, is learned by exposure and never
 declared, and no language is named or special-cased in code, configuration,
 fixtures or tests (Alec, 2026-10-19).

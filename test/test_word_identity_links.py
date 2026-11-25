@@ -179,7 +179,7 @@ def test_ordinary_spelling_observations_preserve_the_order_and_counts_of_learnin
     batched, *_ = coded(())
     forms = (b'cabala', b'aba', b'cabala', b'!', b'calaba', b'aba', b' ', b'caf\xc3\xa9', b'\xff')
     for raw in forms:
-        serial.observe_nested(raw)
+        serial.observe_forms([raw])
     batched.observe_forms(iter(forms))
     for name in ('words', 'word_rows', 'word_witnesses', 'nested', 'holders', 'inside'):
         assert getattr(serial, name) == getattr(batched, name), name

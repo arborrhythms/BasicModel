@@ -455,12 +455,9 @@ class TestStructureValid(unittest.TestCase):
             for row in self.identity.parts(word):
                 recorded += 1
                 inside += bool((codes[row] <= form).all())
-        print(dict(recorded_parts=recorded, inside=inside, added=dict(self.identity.added),
-                   nested={w.decode(): [p.decode() for p, _, _ in v]
-                           for w, v in self.identity.nested.items()}))
+        print(dict(recorded_parts=recorded, inside=inside, added=dict(self.identity.added)))
         self.assertEqual(inside, recorded)
         self.assertTrue(self.identity.added)
-        self.assertIn(b'cats', self.identity.nested)
 
     def test_a_form_inside_a_form_reads_wholly_inside(self):
         words = sorted(self.forms)

@@ -236,7 +236,7 @@ def run(args):
                 random.seed(SEED);np.random.seed(SEED);torch.manual_seed(SEED)
             parts=model.languageSpace.parts_of_speech
             identity=model.perceptualSpace.percept_store.identity
-            if identity.nested or identity._marker_pattern is not None:
+            if identity.nested:
                 raise ValueError('NP stage requires whole words with no marker lesson')
             save(args.out/'before.json',dict(loader_drift=drift,**tables(model,forms)))
             from GrammarLessons import _annotation_tree

@@ -77,7 +77,7 @@ def run(args):
         try:
             drift = restore_warmup(model, args.warmup, restore)
             identity = model.perceptualSpace.percept_store.identity
-            if identity._marker_pattern is not None or identity.nested:
+            if identity.nested:
                 raise ValueError('stage 4e restores whole words with no nested marker lesson')
             save(args.out/'start.json', dict(loader_drift=drift, lexical_orders=lexical_orders(model, forms)))
             from GrammarLessons import _annotation_tree
@@ -136,7 +136,7 @@ def run(args):
                 raw = model._last_sentence_field
                 if training and len(raw['trials']) != 2:
                     raise RuntimeError('stage 4e did not run both native trials')
-                if identity.nested or identity._marker_pattern is not None:
+                if identity.nested:
                     raise RuntimeError('stage 4e must not admit a nested marker pattern')
                 if training:
                     trajectory.finish_batch(len(progress)+1, epoch, batch, captured, raw['wins'])

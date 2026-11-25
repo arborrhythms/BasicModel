@@ -212,7 +212,6 @@ class WordIdentity(nn.Module):
         self.register_buffer('_witness_counts', torch.full((store._capacity,), -1,
             dtype=torch.long, device=store._basis.W.device), persistent=False)
         self.nested = {}
-        self._marker_pattern = None
         self.revision = 0
         from BasicPercepts import BasicPercepts
         self.basic = BasicPercepts(store, self.width, self.property_width,
@@ -1190,23 +1189,6 @@ class WordIdentity(nn.Module):
             atoms.update(self.part_atoms(part))
         return atoms
 
-    @contextmanager
-    def nested_lesson(self, marker):
-        """Permit admission of one suffix pattern for this lesson only.
-
-        The permission is not a learned identity or checkpoint setting.
-        Already witnessed parts persist when the lesson ends.
-        """
-        if not isinstance(marker, (str, bytes)) or not marker:
-            raise ValueError('a nested lesson names one nonempty marker')
-        if self._marker_pattern is not None:
-            raise ValueError('only one nested marker lesson may be active')
-        self._marker_pattern = bytes_of(marker) if isinstance(marker, str) else marker
-        try:
-            yield self
-        finally:
-            self._marker_pattern = None
-
     @property
     def word_witnesses(self):
         """Export the historical spelling-keyed counts at the checkpoint boundary."""
@@ -1230,43 +1212,6 @@ class WordIdentity(nn.Module):
                 form = self.word_rows[form]
             rows.append(form)
         self.observe_rows(self._witness_counts.new_tensor(rows))
-
-    def observe_nested(self, raw):
-        """Witness a form; record the lesson's marker after a known stem.
-
-        The record is read as the form's nested wholes (``parts``); a form's
-        code already holds its stem's and its marker's, so nothing is joined.
-        """
-        raw = bytes(raw)
-        self.admit(raw)
-        row = self.word_rows[raw]
-        if self._witness_counts[row] < 0:
-            return ()
-        self._witness_counts[row] += 1
-        marker = self._marker_pattern
-        if marker is None:
-            return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
-        nested = dict(self.nested)
-        # A new stem can license an earlier witnessed suffixed word. There
-        # is no vocabulary-wide substring search or token-count threshold.
-        for word in (raw, raw + marker):
-            row = self.word_rows.get(word)
-            if row is None or not word.endswith(marker) or self._witness_counts[row] <= 0:
-                continue
-            stem = word[:-len(marker)]
-            stem_row = self.word_rows.get(stem)
-            if stem_row is not None and word not in nested and self._witness_counts[stem_row] > 0:
-                nested[word] = ((stem, 0, len(stem)), (marker, len(stem), len(word)))
-        if nested != self.nested:
-            # Admit the named marker through the same native identity owner.
-            for parts in nested.values():
-                for part, _lo, _hi in parts:
-                    self.admit(part)
-            self.nested = nested
-            for word in nested:
-                self.retain_spelling(word)
-            self.revision += 1
-        return tuple((self.word_rows[part],lo,hi) for part,lo,hi in self.nested.get(raw,()))
 
     def row_for_form(self, form):
         """The row of the stored form whose code (:meth:`code`) this is. A
@@ -1361,7 +1306,6 @@ class WordIdentity(nn.Module):
         rows = self._witness_counts.new_tensor([self.word_rows[word] for word in words])
         self._witness_counts[rows] = self._witness_counts.new_tensor([counts.get(word, 0) for word in words])
         self.nested = value.get('nested', {})
-        self._marker_pattern = None
         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}
         self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})
         self._atom_rows, self._catalog = {}, {}

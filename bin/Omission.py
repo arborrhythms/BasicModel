@@ -103,33 +103,16 @@ def prepare(model, units, cover=None, counts=None):
         # Use the finalized part layout for the loss and observation counts.
         model._omission_prepared = dict(raw=model._staged_concepts_in.detach().clone(), units=units)
         return None
-    identity = getattr(ps.percept_store, 'identity', None)
+    if cover is None:
+        raise RuntimeError('omission draws over the sentence cover; this reading has none')
     width = int(ps._serial_word_capacity)
     device = model._staged_concepts_in.device
-    plans = None
-    if cover is not None:
-        from BasicPercepts import pack_disjoint_units
-        ids, lengths, extents, _ = cover
-        capacity = max(3, max((n for row in counts for n in row), default=0))
-        lengths = torch.nn.functional.pad(lengths, (0, width - lengths.shape[1]))
-        _, span_table = pack_disjoint_units(ids, lengths, extents, -1, capacity)
-        valid = torch.arange(capacity, device=device) < lengths[..., None]
-    else:
-        plans, capacity = [], 3
-        for raw, spans in units:
-            row = []
-            for lo, hi in spans[:width]:
-                word = raw[lo:hi]
-                members = () if identity is None else identity.ordered_cover(word)
-                parts = ([(lo+a, lo+z) for _, a, z in members] if identity is not None
-                         else [(i, i+1) for i in range(lo, hi)])
-                row.append(dict(cover=members, spans=parts))
-                capacity = max(capacity, len(parts))
-            plans.append(row)
-        spans = [[word['spans'] + [(0, 0)] * (capacity - len(word['spans'])) for word in row]
-                 + [[(0, 0)] * capacity] * (width - len(row)) for row in plans]
-        span_table = torch.tensor(spans, device=device, dtype=torch.long).reshape(len(units), width, capacity, 2)
-        valid = span_table[..., 1] > span_table[..., 0]
+    from BasicPercepts import pack_disjoint_units
+    ids, lengths, extents, _ = cover
+    capacity = max(3, max((n for row in counts for n in row), default=0))
+    lengths = torch.nn.functional.pad(lengths, (0, width - lengths.shape[1]))
+    _, span_table = pack_disjoint_units(ids, lengths, extents, -1, capacity)
+    valid = torch.arange(capacity, device=device) < lengths[..., None]
     active = valid.any(-1)
     isp._finalize_sentence_word_layout(active)
     sentences = isp._packed_sentence_ids
@@ -140,7 +123,7 @@ def prepare(model, units, cover=None, counts=None):
         words |= draw.words
         protected[sid] = draw.protected
     raw_target = model._staged_concepts_in.detach().clone()
-    model._omission_prepared = dict(raw=raw_target, units=units, plans=plans,
+    model._omission_prepared = dict(raw=raw_target, units=units,
         draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
     if bool(forms.any()):
         model._omission_prepared['bytes'] = covered_bytes(span_table, forms, raw_target.shape[-1])
@@ -234,7 +217,6 @@ def stage(model):
     model._omission_targets = prepared
     if not hiding:
         prepared.pop('units')
-        prepared.pop('plans', None)
         return
     values, native_valid = native_values(ps, prepared['units'])
     prepared.update(native_values=values, native_valid=native_valid)
@@ -255,7 +237,7 @@ def stage(model):
     # dataset/conversation provenance remains authoritative.
     from Occurrence import restage_presented
     restage_presented(model, model._staged_concepts_in)
-    prepared.pop('units'); prepared.pop('plans')
+    prepared.pop('units')
 
 
 def target(model):

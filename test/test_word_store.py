@@ -178,16 +178,6 @@ def _basis_op_index(reducer):
     return None, None
 
 
-def _recognized_rows(m):
-    for cs in (list(getattr(m, "conceptualSpaces", []) or [])
-               or [m.conceptualSpace]):
-        fn = getattr(cs, "recognized_word_rows", None)
-        r = fn() if callable(fn) else None
-        if r is not None and int(r.numel()) > 0:
-            return cs, r
-    return None, None
-
-
 @pytest.mark.slow
 def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     """Refined 1:1 (Alec): the part-aggregation (ONE promoted percept — the
@@ -256,8 +246,6 @@ def test_one_to_one_recognition_registers_under_words(tmp_path_factory):
     parts = cs.concept_parts(words_cid)
     assert ("sym", A_zebra) in parts
     assert ("sym", A_yak) not in parts
-    rows = cs.recognized_word_rows()
-    assert rows is not None and zebra_pid[0] in rows.tolist()
 
 
 @pytest.mark.slow
