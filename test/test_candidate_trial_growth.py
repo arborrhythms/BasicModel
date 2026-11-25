@@ -185,11 +185,76 @@ def test_each_fixation_path_grades_its_own_requests_against_the_shared_page():
     left, right = torch.autograd.grad(loss, costs)
     assert left[0] == right[1] == 0
     assert left[1] == right[0] > 0
+
+# The rule of a candidate pool, stated over plain records (dual averaging).
+# A candidate enters at nothing, room made by forgetting the weakest (least
+# |v|, then fewest reads, then the oldest). Each read adds its gradient to G
+# and sets v = -sign(G) * max(|G|/n - penalty, 0) over its n reads. One read
+# above nothing `hold` times in a row is promoted; one returned to nothing
+# after it held is forgotten. A pair's tally (the least of its two
+# presences, and each presence) outlives its candidate, the oldest dropped
+# past sixteen times the room; its worth is 2 * least ratio - 1.
+def _rule(capacity, strength, hold=3):
+    return dict(capacity=capacity, strength=strength, hold=hold, entries={}, tallies={},
+                entered=0, promoted=0, forgotten=0)
+
+
+def _offer(rule, key):
+    entries = rule['entries']
+    if key in entries:
+        return
+    if len(entries) >= rule['capacity']:
+        del entries[min(entries, key=lambda k: (abs(entries[k]['value']), entries[k]['steps']))]
+        rule['forgotten'] += 1
+    entries[key] = dict(value=0., held=0, steps=0, gathered=0.)
+    rule['entered'] += 1
+
+
+def _meet(rule, key, left, right):
+    tally = rule['tallies'].pop(key, None) or [0., 0., 0.]
+    tally[0] += min(float(left), float(right))
+    tally[1] += float(left)
+    tally[2] += float(right)
+    rule['tallies'][key] = tally
+    while len(rule['tallies']) > 16 * rule['capacity']:
+        del rule['tallies'][next(iter(rule['tallies']))]
+    meet, left, right = tally
+    return -1. if left <= 0. or right <= 0. else 2. * min(meet / left, meet / right) - 1.
+
+
+def _step(rule, gradients):
+    promoted = []
+    for key, gradient in gradients.items():
+        entry = rule['entries'].get(key)
+        if entry is None:
+            continue
+        entry['gathered'] += float(gradient)
+        entry['steps'] += 1
+        mean = entry['gathered'] / entry['steps']
+        size = max(abs(mean) - rule['strength'], 0.)
+        entry['value'] = -size if mean > 0 else size
+        if entry['value'] != 0.:
+            entry['held'] += 1
+            if entry['held'] >= rule['hold']:
+                promoted.append(key)
+                del rule['entries'][key]
+                rule['tallies'].pop(key, None)
+                rule['promoted'] += 1
+        elif entry['held']:
+            del rule['entries'][key]
+            rule['forgotten'] += 1
+    return promoted
+
+
+def _counts(rule):
+    return dict(entered=rule['entered'], promoted=rule['promoted'], forgotten=rule['forgotten'],
+                held=len(rule['entries']))
+
+
 def test_mtm_relation_slots_match_ordered_admission_eviction_and_promotion():
-    from CandidateMatrix import CandidateMatrix, substitution_gradient
     from Memory import MTM1
     native = MTM1(3, strength=.2, hold=3).double()
-    reference = CandidateMatrix(3, strength=.2, hold=3)
+    reference = _rule(3, .2, hold=3)
     for offers, expected, things in (
             ([(0, 4), (1, 4), (2, 5), (3, 6)], {0: .8, 1: .7, 3: .75}, {4: 1., 5: .5, 6: 1.}),
             ([(1, 4), (3, 6)], {1: .7, 3: .75}, {4: 1., 6: 1.}),
@@ -199,16 +264,16 @@ def test_mtm_relation_slots_match_ordered_admission_eviction_and_promotion():
             ([(2, 4)], {2: .4}, {4: 1.}),
             ([], {}, {4: 1.})):
         for key in offers:
-            reference.offer(key)
-        gradients = {key: substitution_gradient(expected.get(key[0], 0.), 0., things[key[1]])
-                     for key in reference.entries if key[1] in things}
-        promoted, _ = reference.step(gradients)
+            _offer(reference, key)
+        # A kind expected and not read, with its thing present.
+        promoted = _step(reference, {key: -max(expected.get(key[0], 0.), 0.) * things[key[1]]
+                                     for key in reference['entries'] if key[1] in things})
         result = native.observe(native.refs.new_tensor(offers).reshape(-1, 2),
             native.refs.new_tensor(list(expected)), native.activity.new_tensor(list(expected.values())),
             native.refs.new_tensor(list(things)), native.activity.new_tensor(list(things.values())))
-        assert [tuple(pair) for pair in result.tolist() if pair[0] >= 0] == [key for key, _ in promoted]
-        assert native.counts() == reference.counts()
-        assert native.diagnostic_entries() == {str(k): vars(v) for k, v in reference.entries.items()}
+        assert [tuple(pair) for pair in result.tolist() if pair[0] >= 0] == promoted
+        assert native.counts() == _counts(reference)
+        assert native.diagnostic_entries() == {str(k): v for k, v in reference['entries'].items()}
     private = native.fork()
     private.activity.fill_(.8)
     assert not torch.equal(native.activity, private.activity)
@@ -286,30 +351,31 @@ def test_departures_inherit_one_opening_in_independent_mtm_slots(monkeypatch):
 def test_native_pair_candidates_preserve_lru_tallies_and_admission_order():
     import itertools
     import random
-    from CandidateMatrix import CandidateMatrix, pair_gradient
     from Memory import MTMPairRows
     for device in ('cpu', 'mps') if torch.backends.mps.is_available() else ('cpu',):
         rng = random.Random(614)
-        oracle = CandidateMatrix(3, strength=.2)
+        oracle = _rule(3, .2)
         native = MTMPairRows(3, strength=.2).to(device=device, dtype=torch.float32 if device == 'mps' else torch.float64)
         symbols = torch.arange(14, device=device)
         for _ in range(240):
             presence = rng.choices([0., 0., .25, .5, .75, 1.], k=len(symbols))
             offers = list(itertools.combinations([i for i, v in enumerate(presence) if v >= .5], 2))
             for key in offers:
-                oracle.offer(key)
-            gradients = {key: pair_gradient(entry.value, oracle.meet(key, presence[key[0]], presence[key[1]]))
-                         for key, entry in oracle.entries.items() if any(presence[i] for i in key)}
-            kept, _ = oracle.step(gradients)
+                _offer(oracle, key)
+            # A pair's row against its worth: the gradient of half the
+            # squared difference, a worth below nothing read as nothing.
+            gradients = {key: entry['value'] - max(_meet(oracle, key, presence[key[0]], presence[key[1]]), 0.)
+                         for key, entry in oracle['entries'].items() if any(presence[i] for i in key)}
+            kept = _step(oracle, gradients)
             results = native.observe_pairs(native.refs.new_tensor(offers).reshape(-1, 2),
                                            symbols, native.activity.new_tensor(presence))
-            assert native.publish(results) == [key for key, value in kept]
-            assert native.counts() == oracle.counts()
-            assert list(native.diagnostic_tallies().items()) == [(str(key), value) for key, value in oracle.tallies.items()]
+            assert native.publish(results) == kept
+            assert native.counts() == _counts(oracle)
+            assert list(native.diagnostic_tallies().items()) == [(str(key), value) for key, value in oracle['tallies'].items()]
             state = native.diagnostic_entries()
-            assert state.keys() == {str(k) for k in oracle.entries}
-            for key, entry in oracle.entries.items():
-                assert state[str(key)] == pytest.approx(vars(entry), abs=1e-7)
+            assert state.keys() == {str(k) for k in oracle['entries']}
+            for key, entry in oracle['entries'].items():
+                assert state[str(key)] == pytest.approx(entry, abs=1e-7)
 
 
 def test_private_mtm_columns_remain_views_when_moved_and_reset():

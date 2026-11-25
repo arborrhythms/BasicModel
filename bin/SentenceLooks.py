@@ -388,7 +388,7 @@ class Looks:
             # MTM reads only kind rows. These are views of this look's
             # forecast and stay valid while other paths run.
             kind_forecast = None if prediction is None else (
-                forecasts.rows[forecasts.basic_count:], prediction[:, forecasts.order_zero_width:, 0])
+                forecasts.higher_rows, prediction[:, forecasts.order_zero_width:, 0])
             at_look(model, look_field, extent, rows, forecast=kind_forecast,
                     binding=nominees)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),

@@ -791,8 +791,10 @@ def test_live_tree_choice_keeps_the_same_structural_context_contract():
         conceptualSpace=SimpleNamespace(_model=model)))
     object.__setattr__(
         language, "_language_layer_ref", SimpleNamespace(operation_layer=reducer))
-    language._compose_binary_rules = (SimpleNamespace(head_role=1),)
+    language._compose_binary_rules = (SimpleNamespace(head_role=1, method_name='verb'),)
     language._compose_unary_rules = ()
+    from ChunkJournal import ChunkJournal
+    language.chunk_journal = ChunkJournal(language._compose_binary_rules, language._compose_unary_rules)
     buffer = torch.rand(1, 2, 4)
     from Memory import STMChunks as chunks
     state = chunks.empty(1,8,4)

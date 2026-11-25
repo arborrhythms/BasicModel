@@ -40,7 +40,8 @@ def action_rows(table, columns, operations, *, fill=0):
 
 def publication_value(kind, operands, result, prior):
     """The numerical rule shared by the read and its comprehension."""
-    kind = torch.as_tensor(kind, device=result.device)
+    kind = (kind.to(result.device) if torch.is_tensor(kind)
+            else result.new_full((), kind, dtype=torch.long))
     while kind.ndim < result.ndim:
         kind = kind.unsqueeze(-1)
     value = torch.where(kind == 1, prior, result)

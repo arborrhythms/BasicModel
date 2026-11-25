@@ -441,16 +441,19 @@ def update_flow(words, choice, binary_flow, unary_flow):
     """
     _, K, _ = words.shape
     result = words
-    if binary_flow and K >= 2:
-        mask = words.new_tensor(binary_flow, dtype=torch.long)[choice.local_op.clamp(0, len(binary_flow)-1)]
+    # The flows are the grammar's tables, already on the device.
+    binary_flow = torch.as_tensor(binary_flow, dtype=torch.long, device=words.device)
+    unary_flow = torch.as_tensor(unary_flow, dtype=torch.long, device=words.device)
+    if len(binary_flow) and K >= 2:
+        mask = binary_flow[choice.local_op.clamp(0, len(binary_flow)-1)]
         selected = (words[:, 1:2] * ((mask & 1) != 0)[:, None, None]
                     + words[:, :1] * ((mask & 2) != 0)[:, None, None])
         folded = torch.cat((selected, words[:, 2:], torch.zeros_like(words[:, :1])), 1)[:, :K]
         result = torch.where((choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True))[:, None, None], folded, words)
         swapped = torch.cat((words[:, :2].flip(1), words[:, 2:]), 1)
         result = torch.where((choice.applied & (choice.kind == 3))[:, None, None], swapped, result)
-    if unary_flow:
-        mask = words.new_tensor(unary_flow, dtype=torch.long)[choice.local_op.clamp(0, len(unary_flow)-1)]
+    if len(unary_flow):
+        mask = unary_flow[choice.local_op.clamp(0, len(unary_flow)-1)]
         clear = choice.applied & (choice.kind == 2) & (mask == 0)
         position = torch.arange(K, device=words.device)[None] == choice.position[:, None]
         result = torch.where(clear[:, None, None] & position[..., None], 0., result)

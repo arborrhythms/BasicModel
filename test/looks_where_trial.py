@@ -400,19 +400,21 @@ def cone_places(trial, banks, *, when=False):
 
 
 def candidate_offers(trial, banks):
-    """What ``CandidateMatrix`` offers from the where wires: each pair of the
-    wires' lanes tallied at every word token met, as a Pi's pair candidate.
-    Returns the pairs and their worth; the tally has no place in it."""
-    from CandidateMatrix import CandidateMatrix
+    """What a Pi's pair candidates offer from the where wires: each pair of
+    the wires' lanes tallied at every word token met. Returns the pairs and
+    their worth, ``2 * least - 1`` of the two ratios of what the pair met to
+    each lane's own presence; the tally has no place in it."""
     lanes = 2 * N_WHERE
-    matrix = CandidateMatrix(capacity=lanes * lanes)
-    worth = {}
+    tallies, worth = {}, {}
     for start, _, _, cp, cm in occurrences(trial, banks):
         v = torch.cat([cp[:N_WHERE], cm[:N_WHERE]])
         for i in range(lanes):
             for j in range(i + 1, lanes):
-                matrix.offer((i, j))
-                worth[(i, j)] = matrix.meet((i, j), v[i], v[j])
+                meet, left, right = tallies.get((i, j), (0., 0., 0.))
+                tallies[i, j] = meet, left, right = (meet + min(float(v[i]), float(v[j])),
+                                                     left + float(v[i]), right + float(v[j]))
+                worth[(i, j)] = (-1. if left <= 0. or right <= 0. else
+                                 2. * min(meet / left, meet / right) - 1.)
     return worth
 
 
@@ -474,7 +476,7 @@ def place_report(runs=3):
         print(f"  place {r['place']}: {r['occurrences']} occurrences of {r['forms']}; whats kept {r['whats']}")
     print('  rows nominated:', len(record), 'with no what:', sum(not r['whats'] for r in record))
     worth = candidate_offers(trial, taught)
-    print('CandidateMatrix over the where lanes: pairs', len(worth), 'worth from',
+    print('Pair candidates over the where lanes: pairs', len(worth), 'worth from',
           round(min(worth.values()), 3), 'to', round(max(worth.values()), 3), '(one tally for every place)')
     forms = []
     for when in (False, True):

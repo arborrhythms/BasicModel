@@ -214,10 +214,13 @@ def test_operation_runs_on_the_selected_occurrence_eager_and_compiled():
     second = torch.tensor([0., 0., 1., 0.])
     prior = torch.tensor([.2, .3, .4, .5])
     query = torch.nn.Parameter(prior.clone())
+    from ChunkJournal import ChunkJournal
+    rules = (SimpleNamespace(method_name='verb', reference_roles=('argin1',),
+                             reference_modes=(('argin1', 'particular'),)),)*2
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
                             _tree_layer=lambda arity: layer,
-                            _compose_binary_rules=(SimpleNamespace(reference_roles=('argin1',), reference_modes=(('argin1', 'particular'),)),)*2,
-                            _compose_unary_rules=(), _structural_context=lambda **kw: None,
+                            _compose_binary_rules=rules, _compose_unary_rules=(),
+                            chunk_journal=ChunkJournal(rules, ()), _structural_context=lambda **kw: None,
                             _reference_bank=ReferenceBank(torch.tensor([[5]]), prior[None, None], torch.tensor([[True]]),
                                                           torch.tensor([[False]]), query[None], torch.tensor([True])))
     owner._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(

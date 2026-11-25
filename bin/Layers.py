@@ -6537,9 +6537,7 @@ class ConceptualAttentionLayer(SparseLayer):
         """Raise the weight of the entry at ``position`` to at least
         ``weight``, keeping the option it reads."""
         value = self.values[int(position)]
-        floor = torch.as_tensor(weight, device=value.device, dtype=value.dtype)
-        magnitude = value.abs()
-        raised = torch.where(floor > magnitude, floor, magnitude)
+        raised = value.abs().clamp_min(weight)
         value.copy_(torch.where(value < 0, -raised, raised))
 
     def thing_rows(self, thing):
@@ -15378,7 +15376,8 @@ class Error:
         if side not in ('R', 'A'):
             raise ValueError('an error side must be R or A')
         error = torch.as_tensor(error)
-        baseline = torch.as_tensor(baseline, device=error.device, dtype=error.dtype).detach()
+        baseline = (baseline.to(device=error.device, dtype=error.dtype) if torch.is_tensor(baseline)
+                    else torch.full_like(error, baseline)).detach()
         error, baseline = torch.broadcast_tensors(error, baseline)
         valid = torch.ones_like(error, dtype=torch.bool)
         if mask is not None:
