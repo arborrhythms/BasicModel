@@ -6396,10 +6396,13 @@ class OperationSelectionLayer(nn.Module):
         self.register_buffer('_reference_leaf', torch.tensor([
             getattr(op, 'rule_name', None) in ('interpret', 'sign') for op in declared
         ], dtype=torch.bool), persistent=False)
-        self._unary_inverse_pairs = tuple(tuple(
+        self.register_buffer('_unary_inverse_pairs', torch.tensor(tuple(tuple(
             getattr(candidate, 'inverse_identity', None) is not None
             and getattr(candidate, 'inverse_identity', None) == getattr(previous, 'operation_identity', None)
-            for candidate in declared) for previous in declared)
+            for candidate in declared) for previous in declared), dtype=torch.bool), persistent=False)
+        self.register_buffer('_needs_cases', torch.tensor([
+            bool(getattr(getattr(op, 'gl', op), 'case_head_role', 0)) for op in self.ops
+        ], dtype=torch.bool), persistent=False)
         self.structural_ops = tuple(operator_is_structural(op) for op in self.ops)
         self.unary_structural_ops = tuple(operator_is_structural(op) for op in self.unary_ops)
         from Expectation import unit, positive
@@ -6843,9 +6846,7 @@ class OperationSelectionLayer(nn.Module):
             needs_reduction = required > 0
             deadline = required >= torch.as_tensor(rounds_left, device=x.device)
         if reference_data is None:
-            needs_cases = torch.tensor([bool(getattr(getattr(op, 'gl', op), 'case_head_role', 0))
-                                        for op in self.ops], device=x.device, dtype=torch.bool)
-            binary_scores = binary_scores.masked_fill(needs_cases[None, None], -torch.inf)
+            binary_scores = binary_scores.masked_fill(self._needs_cases[None, None], -torch.inf)
             unary_scores = unary_scores.masked_fill(self._reference_leaf.index_select(0, ui)[None, None], -torch.inf)
         if reference_data is not None:
             binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
@@ -6882,8 +6883,7 @@ class OperationSelectionLayer(nn.Module):
         binary_scores = binary_scores.masked_fill(swaps[None,None] & ~swap_legal[...,None], -torch.inf)
         unary_scores = unary_scores.masked_fill(~live[..., None] | deadline[:, None, None], -torch.inf)
         if previous_unary is not None and self.r_apply:
-            inverse = torch.tensor(self._unary_inverse_pairs, device=x.device, dtype=torch.bool)
-            excluded = inverse[previous_rule.clamp(0, self.r_apply - 1)]
+            excluded = self._unary_inverse_pairs[previous_rule.clamp(0, self.r_apply - 1)]
             excluded = excluded & (previous_rule >= 0)[..., None]
             excluded = excluded.index_select(-1, ui)
             unary_scores = unary_scores.masked_fill(excluded, -torch.inf)
@@ -11071,8 +11071,10 @@ class LanguageSpace(nn.Module):
             'ConceptualSpace', 'mtmCapacity')),), -1, dtype=torch.long), persistent=False)
         from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
         self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
-        self._occupation_binary_flow = tuple(flow_mask(rule) for rule in self._compose_binary_rules)
-        self._occupation_unary_flow = tuple(flow_mask(rule) for rule in self._compose_unary_rules)
+        self.register_buffer('_occupation_binary_flow', torch.tensor(
+            [flow_mask(rule) for rule in self._compose_binary_rules], dtype=torch.long), persistent=False)
+        self.register_buffer('_occupation_unary_flow', torch.tensor(
+            [flow_mask(rule) for rule in self._compose_unary_rules], dtype=torch.long), persistent=False)
         if self._compose_binary_rules or self._compose_unary_rules:
             self.language_layer.operation_layer.configure_arguments(self.parts_of_speech.arguments,
                 self._compose_binary_rules, self._compose_unary_rules)

@@ -85,10 +85,10 @@ class STMChunks:
     @staticmethod
     def at(state, position=0):
         """Physical index for a newest-first stack position; -1 when absent."""
-        position = torch.as_tensor(position, device=state[STMChunks.STACK].device)
-        if position.ndim == 0:
-            position = position.expand(state[STMChunks.STACK].shape[0])
-        match = state[STMChunks.STACK] == position[:, None]
+        # A number or a 0-d tensor is compared as it is, by broadcasting.
+        if torch.is_tensor(position) and position.ndim:
+            position = position[:, None]
+        match = state[STMChunks.STACK] == position
         return torch.where(match.any(-1), match.long().argmax(-1), -1)
 
 
@@ -3770,7 +3770,7 @@ class STM0(IdeaRows):
     def _write_point(self,row,point):
         # Functional replacement retains the live graph of the pinned tree.
         with torch.enable_grad():
-            self.slots=self.slots.index_copy(0,self.count.new_tensor([row]),point[None])
+            self.slots=self.slots.index_copy(0,self.count.new_full((1,),row),point[None])
         name = self.__dict__.get('_next_row_name')
         if name is None:
             name = int(self.names_issued)

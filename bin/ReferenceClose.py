@@ -228,7 +228,7 @@ class ReferenceClose(nn.Module):
                 self._matching_participants(predicate) if r == role]
         total = len(rows)
         count = sum(candidate == target for _, candidate in rows)
-        return predicate.new_tensor(count/total) if total else predicate.sum()*0
+        return predicate.new_full((), count/total) if total else predicate.sum()*0
 
     def expected_roles(self, predicate):
         rows = self._matching_participants(self.predicate_coordinates(predicate))
@@ -496,7 +496,7 @@ class ReferenceClose(nn.Module):
                                   codebook=owner.similarity_codebook)[1] +
                           int(predicate(member) == predicate(anchor)))
                           if member_space(identity,member) == member_space(identity,anchor)
-                          else member['content'].new_tensor(-torch.inf) for anchor in anchors]
+                          else member['content'].new_full((), -torch.inf) for anchor in anchors]
                 selected = identities[int(torch.stack(scores).argmax())]
                 partitions[selected].append(member)
             groups.pop(identity)
@@ -659,7 +659,7 @@ class ReferenceClose(nn.Module):
                          else owner._concept_source_order(identity))
             features.append(torch.stack((candidate_coverage,request_coverage,
                 self.prediction(candidate.get('token') or candidate.get('kind', identity),predicate,role),self.prime(value,stream,order),form,
-                content.new_tensor(candidate['role']/2),content.new_tensor(role/2),
+                content.new_full((), candidate['role']/2),content.new_full((), role/2),
                 *self.continuity(candidate, content, stream=stream, where=where, coordinate_read=coordinate_read))))
             choices.append(identity)
         phi = torch.stack(features).to(self.policy) if features else self.policy.new_empty((0,FEATURES))
@@ -673,7 +673,7 @@ class ReferenceClose(nn.Module):
         from RowTime import encoder
         if entry is None:
             return (zeros, *value.new_zeros(4), zeros,
-                    value.new_tensor(float(candidate.get('in_stm', False))))
+                    value.new_full((), float(candidate.get('in_stm', False))))
         mentions = entry.refinement.get('mentions', {})
         latest = max((count for member_stream, count in mentions.values() if member_stream == stream),
                      default=pool.closes.get(stream, 0)+1)

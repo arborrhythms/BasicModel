@@ -22533,14 +22533,14 @@ class BasicModel(BaseModel):
                     operation_refs = ChunkJournal.record_refresh(operation_refs,
                         journal_columns[:,round_index],refresh,round_active)
                 before = final_stm
-                journal_slot = index.new_tensor(round_index)
+                journal_slot = index.new_full((), round_index)
                 proposal = choose_operation(
                     # Waiting within the STM allowance is legal before the
                     # closing. Enforcing a final field here forces an early
                     # left fold (e.g. `what is` before its object arrives).
                     before, round_active, slots=torch.full_like(before[1], capacity - 1),
                     sample=False,
-                    allowance=torch.full_like(before[1], capacity - 1), rounds_left=index.new_tensor(3 - round_index),
+                    allowance=torch.full_like(before[1], capacity - 1), rounds_left=index.new_full((), 3 - round_index),
                     masked_action=self._compose_masked_action(slot, before[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, before[0]),
                     reference_scope=clause_state if sentence_transactions else None,
@@ -22624,11 +22624,11 @@ class BasicModel(BaseModel):
                     operation_refs = ChunkJournal.record_refresh(operation_refs,
                         journal_columns[:,3+closing_index],refresh,closing_active)
                 pre_closing = end_stm
-                journal_slot = index.new_tensor(3 + closing_index)
+                journal_slot = index.new_full((), 3 + closing_index)
                 proposal = choose_operation(
                     pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
                     sample=False,
-                    allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=index.new_tensor(closing_budget - closing_index), closing=True,
+                    allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=index.new_full((), closing_budget - closing_index), closing=True,
                     masked_action=self._compose_masked_action(slot, pre_closing[1]),
                     op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
                     reference_scope=clause_state if sentence_transactions else None,
