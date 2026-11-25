@@ -327,8 +327,9 @@ class Looks:
         field, rows = opened, self.present
         extent = live
         surprise = forecasts.latest if forecasts is not None else None
-        from CandidateGrowth import at_look
-        at_look(model, field, extent, rows)
+        from CandidateGrowth import at_look, at_opening
+        self.opening_growth = at_opening(model, field, extent, rows,
+            prior=None if self.prior is None else self.prior.opening_growth)
         self.fields.append(dict(field=field, extent=extent.clone(), active=rows.clone(), surprise=surprise))
         if bank is None:
             return state.reading()

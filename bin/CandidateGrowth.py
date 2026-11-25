@@ -396,6 +396,22 @@ def withheld_words(model, extent):
     return held
 
 
+def at_opening(model, field, extent, active, prior=None):
+    """All departures inherit this observation before their first fixation."""
+    trial = _current_trial.get()
+    if trial is None:
+        at_look(model, field, extent, active)
+        return None
+    if prior is None:
+        at_look(model, field, extent, active)
+        # Paths zero through explore_paths own the writable trial seats.
+        # The final reserved set holds the unchanged opening for siblings.
+        return trial.from_reading(path=model.explore_paths + 1)
+    trial.looks.extend(prior.looks)
+    trial.streams = {b: stream.from_reading(path=trial.path) for b, stream in prior.streams.items()}
+    return prior
+
+
 def at_look(model, field, extent=None, active=None, *, forecast=None):
     """The candidates' step at one look, in training. A pair is offered and
     weighed from what the sentence held at the look: its field, and the

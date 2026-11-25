@@ -219,3 +219,38 @@ def test_distinct_observed_nominations_match_serial_eviction():
         assert torch.equal(batched.observe(*args, read_pairs=True), expected)
         for name in ('refs', 'ref_kinds', 'entered_at', 'activity', 'held', 'read_count', 'totals', 'count'):
             assert torch.equal(getattr(batched, name), getattr(reference, name)), name
+
+
+def test_departures_inherit_one_opening_in_independent_mtm_slots(monkeypatch):
+    from test_item17_symbols import _small_space
+    owner, _, _, _ = _small_space()
+    owner.mtm.reserve_relation_trials(1, 4, owner.similarity_codebook.W.device)
+    model = SimpleNamespace(explore_paths=2)
+    observed = []
+    def look(*_):
+        trial = growth._current_trial.get()
+        observed.append(trial.path)
+        trial.looks.append({0: ('opening',)})
+        stream = growth.GrowthTrial(owner, path=trial.path, stream=0)
+        trial.streams[0] = stream
+        with stream.active():
+            pool = growth.matrices(owner)['sigma']
+            pair = pool.refs.new_tensor([[2, 4]])
+            pool.observe(pair, pair[:, 0], pool.activity.new_ones(1), pair[:, 1], pool.activity.new_ones(1))
+    monkeypatch.setattr(growth, 'at_look', look)
+    greedy = growth.GrowthTrial(owner, path=0)
+    with greedy.active():
+        opening = growth.at_opening(model, None, None, None)
+    slots = [opening.streams[0].candidates['sigma'], greedy.streams[0].candidates['sigma']]
+    slots[1].held.add_(5)
+    for path in (1, 2):
+        child = growth.GrowthTrial(owner, path=path)
+        with child.active():
+            assert growth.at_opening(model, None, None, None, prior=opening) is opening
+        assert child.looks == [{0: ('opening',)}]
+        held = child.streams[0].candidates['sigma']
+        assert torch.equal(held.held, slots[0].held) and int(held.held[1]) == 1
+        held.held.add_(path)
+        slots.append(held)
+    assert observed == [0]
+    assert len({pool.refs.data_ptr() for pool in slots}) == 4

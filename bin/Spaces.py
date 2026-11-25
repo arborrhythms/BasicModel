@@ -14137,7 +14137,7 @@ class ConceptualSpace(Space):
     def reserve_candidate_trials(self):
         model = self._model
         if model is not None and getattr(model, 'explore_paths', 0):
-            self.mtm.reserve_relation_trials(self.nStreams, 1 + model.explore_paths,
+            self.mtm.reserve_relation_trials(self.nStreams, 2 + model.explore_paths,
                                              self.similarity_codebook.W.device)
 
     def Reset(self, batch=None, hard=True):

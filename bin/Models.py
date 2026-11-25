@@ -21493,7 +21493,7 @@ class BasicModel(BaseModel):
             from CandidateGrowth import GrowthTrial
             growth = []
             if single and self.explore_paths:
-                pool.reserve_relation_trials(B, 1 + self.explore_paths, words.device)
+                pool.reserve_relation_trials(B, 2 + self.explore_paths, words.device)
             def trial_scope(*, reuse=False):
                 if not single or not self.explore_paths:
                     return nullcontext()
