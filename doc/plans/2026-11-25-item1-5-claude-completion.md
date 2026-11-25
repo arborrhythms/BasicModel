@@ -31,6 +31,8 @@ Two bookkeeping overlaps deserve a caller audit. At `18c16d0bf9` the native nomi
 
 ## Code review finding to resolve first
 
+**Introduced by Codex in `18c16d0bf9`.** Running the same CPU fixture on its immediate parent, `3990759140`, returned word 9 for both readings. On `18c16d0bf9` it returned 9 then 10. The later sync commit inherited the regression.
+
 **The same observed content can acquire a second word concept after catalog admission.** On `8ba76a92b8`, I used the CPU `grounded_model(pool=8)` fixture and read `love` with `recurrent_interpretation` on the four rows from `store.spell_out(b'love')`. This returned word **9**. I then called `identity.admit(b'love')` and repeated the same reading with the single row `identity.word_rows[b'love']` and the same whole properties. This returned word **10**. In this fixture the byte rows were `[0,1,2,3]` and the catalog parts were `[4,5,6,7,8]`. Exact tuple equality in `word_for_parts` and normalization against the *current* catalog make the recognition path sensitive to when a sequence entered the catalog. Preserve one word, its object associations and its inverse across that transition.
 
 The existing `test_word_group_becomes_a_recurrent_row_without_changing_its_read` stops earlier at its part-ID assertion on both `18c16d0bf9` and `8ba76a92b8`. Its later checks on membership evidence and absence of a second allocation are important. Keep its assertions intact. The passing `shopping` test covers an unrelated label and bidirectional naming. It exercises a different case. [Recognition](../../bin/Interpret.py) · [Recurrent-row regression](../../test/test_order0_percept_definitions.py) · [Definition tests](../../test/test_definition_rows.py)
