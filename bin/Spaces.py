@@ -9340,7 +9340,7 @@ class InputSpace(Space):
             raw = row.tobytes().rstrip(b'\0')
             used = max(used, len(raw))
             surfaces.append(raw.replace(b'\0', b'').decode('utf-8', errors='surrogateescape'))
-        self._staged_delivery = slab, surfaces, used
+        self._staged_delivery = slab, surfaces, used, all(surface.isascii() for surface in surfaces)
 
     def _lex_batch(self, input):
         """DELIVERY, not lexing (Alec 2026-07-12; restores the 2026-06-08
@@ -9406,8 +9406,9 @@ class InputSpace(Space):
         delivery = getattr(self, '_staged_delivery', None)
         self._staged_delivery = None
         self._delivered_length = None
+        self.subspace._ascii_delivery = False
         if delivery is not None and delivery[0] is host_slab:
-            self._analyse_surfaces, self._delivered_length = delivery[1:]
+            self._analyse_surfaces, self._delivered_length, self.subspace._ascii_delivery = delivery[1:]
         else:
             self._analyse_surfaces = []
             for b in range(batch):
@@ -11316,7 +11317,7 @@ class PartSpace(Space):
             if simple_parts:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
                     delivered_layout[:, :word_capacity], -1, identify=True,
-                    unseen_elements=any(not raw.isascii() for raw in raw_rows))
+                    unseen_elements=not getattr(upstream_vspace, '_ascii_delivery', False))
             if prepared_parts is None:
                 unit_spans_rows = delivered_layout.detach().tolist()
             else:
