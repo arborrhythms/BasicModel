@@ -11046,8 +11046,8 @@ class PartSpace(Space):
         the threshold and has a store row, else by its bytes
         (``FormLinks.cover``); ``P = form_links.longest`` parts a unit. Each
         part's store row is read from ``form_part_rows``. The visible units
-        are then inserted into the table and counted, and only the forms
-        returned as percepts and the units read are recentred. Nothing is
+        are then inserted into the table and counted, and the forms returned
+        as percepts and the units read take one pull step with their links. Nothing is
         read on the host and nothing is admitted to the store here.
         """
         what_buf = upstream_vspace.materialize(mode="what")
@@ -11110,7 +11110,7 @@ class PartSpace(Space):
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
         # Insert and count each visible unit, its bytes gathered at fixed width;
-        # then recentre only the forms returned as percepts and the units read.
+        # then the forms returned as percepts and the units read take one pull step.
         width = min(P, L)
         extent = (slots[..., 1] - slots[..., 0]).clamp_min(0)
         visible = word_active & (extent <= width)
@@ -11122,8 +11122,7 @@ class PartSpace(Space):
         form_rows = table.read(unit_bytes, torch.where(visible, extent, 0).reshape(-1),
                                admit=admit, longest=top).reshape(batch, W)
         if admit:
-            table.recentre_rows(torch.cat((torch.where(pid_grid >= 0, parts, -1).flatten(), form_rows.flatten())),
-                                compact, compact.new_full((batch,), L), top)
+            table.recentre_rows(torch.cat((torch.where(pid_grid >= 0, parts, -1).flatten(), form_rows.flatten())))
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)
         if getattr(self, "_mereology_raise", False):

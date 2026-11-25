@@ -3815,7 +3815,7 @@ class BaseModel(Mereology, nn.Module):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         forms = getattr(getattr(self, "perceptualSpace", None), "form_links", None)
         if forms is not None:
-            # The save's maintenance: refresh every form's kept sums and place.
+            # The save's maintenance: pull steps over every form.
             forms.sweep()
         optimizer = getattr(self, "_optimizer", None)
         optimizer_manifest = (

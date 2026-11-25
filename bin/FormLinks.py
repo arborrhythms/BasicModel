@@ -1,6 +1,4 @@
 """The table of forms: a form of length n is one row linking its first and last n-1 bytes."""
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,11 +6,9 @@ import torch.nn.functional as F
 LEAVES = 256
 # Sorts after every real pair key (a key is below capacity squared).
 UNUSED_KEY = torch.iinfo(torch.int64).max
-HALF = 64  # width of each half of a code: parts half, then wholes half
-LEAF_BITS = 8  # coordinates set in a byte's direction
-LEAF_SEED = 1  # fixes the byte directions
-SCALE = 2.0 ** 32  # fixed point of the running sums: integer adds are exact in any order
-DENSITY_SEED = 2  # fixes the byte means of the density embedding
+HALF = 64  # coordinates of a code written here; the rest stay zero
+SCALE = 2.0 ** 32  # fixed point of the holder sums: integer adds are exact in any order
+MASK32 = 0xFFFFFFFF
 
 
 class FormLinks(nn.Module):
@@ -26,49 +22,38 @@ class FormLinks(nn.Module):
     ``count`` is a row's readings as a whole unit; recognise returns a row
     only once its count reaches ``threshold`` (leaves always), else its parts.
 
-    ``code`` [capacity, 2*HALF]: the parts half of a leaf is ``step`` on
-    ``LEAF_BITS`` coordinates of its own; of a form, halfway between the
-    mean of its distinct proper substrings and the mean of the distinct
-    forms holding it (``1 - step`` everywhere when none holds it). Placed so
-    at insertion, recentred when read by ``close``. The wholes half is not
-    written here.
+    ``code`` [capacity, 2*HALF], first HALF coordinates: a byte sits at
+    ``step`` times its hashed point (``_points``) and never moves; a form
+    starts at its hashed point. A pull step moves a form ``rate`` of the way
+    to its target: with direct holders (forms it is a link of), the midpoint
+    of its links' mean and its holders' mean; with none,
+    ``clamp(1 - step + m - mean(m), 0, 1)`` for m its links' mean. Steps are
+    taken by the rows read (``recentre_rows``) and over the whole table at
+    a save (``sweep``, ``rounds`` steps).
 
-    Running sums in units of 1/SCALE (int64), by row:
-
-    - ``part_sum`` [capacity, HALF], ``part_count`` [capacity]: the codes and
-      number of the distinct proper substrings. With L, R the links, M the
-      middle (``right[L]``, none at length 2) and u = ``border``,
-      ``S(F) = S(L) + S(R) - S(M) + x(L) + x(R) - x(M) - x(u)``: the parts
-      of L and of R overlap in those of M plus u, the longest stretch that
-      begins and ends F and does not occur inside M (L itself when L == R).
-      Refreshed for every form of the units passed to ``insert`` or
-      ``close``, parts before wholes; a form not passed keeps the sum of
-      its parts' codes as they were when it was last passed.
-    - ``whole_sum`` [capacity, HALF], ``whole_count`` [capacity]: the codes
-      and number of the forms holding the row, exact at all times; a moved
-      or inserted form's change reaches its distinct parts through the same
-      overlap rule, top-down (``_spread``).
-
-    Density order embedding (Athiwaratkun and Wilson 2018): each row is a
-    diagonal Gaussian, ``mean`` and ``log_var`` [capacity, HALF], learned.
-    A part lies inside its whole: ``KL(part || whole)`` is small, the
-    reverse large. A byte's mean is a fixed random unit vector, its variance
-    ``start_var``. A form at insertion takes the moments of the equal mixture
-    of its two links' Gaussians (``_cover``). ``order_loss`` is the paper's
-    margin loss on sampled pairs; ``inside`` the thresholded test. Defaults:
-    the paper's two-coordinate setting (margin 100, gamma 3, start variance
-    2e-4), and ``inside_at`` tuned on held-out dictionary pairs.
+    ``holder_sum`` [capacity, HALF] (int64, units of 1/SCALE) and
+    ``holder_count`` [capacity]: the codes and number of a row's direct
+    holders, a holder counted once when both its links are the row. Kept by
+    adding each inserted form and each movement to its two links.
     """
 
-    def __init__(self, capacity, longest, threshold=3, step=1 / 16, margin=100., gamma=3.,
-                 start_var=2e-4, inside_at=90., order_mix=(1, 1, 1)):
+    def __init__(self, capacity, longest, threshold=3, step=1 / 16, rate=.1, rounds=2000):
         super().__init__()
         self.capacity, self.longest = int(capacity), int(longest)
         self.threshold, self.step = int(threshold), float(step)
+        self.rate, self.rounds = float(rate), int(rounds)
         if self.capacity <= LEAVES:
             raise ValueError(f'FormLinks capacity must exceed {LEAVES}, got {self.capacity}')
         if self.longest < 1:
             raise ValueError(f'FormLinks longest must be positive, got {self.longest}')
+        if self.threshold < 0:
+            raise ValueError(f'FormLinks threshold must not be negative, got {self.threshold}')
+        if not 0 < self.step < .5:
+            raise ValueError(f'FormLinks step must lie in (0, 1/2), got {self.step}')
+        if not 0 < self.rate <= 1:
+            raise ValueError(f'FormLinks rate must lie in (0, 1], got {self.rate}')
+        if self.rounds < 0:
+            raise ValueError(f'FormLinks rounds must not be negative, got {self.rounds}')
         self.register_buffer('left', torch.full((self.capacity,), -1, dtype=torch.int32))
         self.register_buffer('right', torch.full((self.capacity,), -1, dtype=torch.int32))
         length = torch.zeros(self.capacity, dtype=torch.int32)
@@ -78,30 +63,29 @@ class FormLinks(nn.Module):
         self.register_buffer('used', torch.tensor(LEAVES, dtype=torch.int64))
         self.register_buffer('pair_keys', torch.full((self.capacity,), UNUSED_KEY, dtype=torch.int64))
         self.register_buffer('pair_rows', torch.arange(self.capacity, dtype=torch.int64))
-        if self.threshold < 0:
-            raise ValueError(f'FormLinks threshold must not be negative, got {self.threshold}')
-        if not 0 < self.step < .5:
-            raise ValueError(f'FormLinks step must lie in (0, 1/2), got {self.step}')
         code = torch.zeros(self.capacity, 2 * HALF)
-        noise = torch.rand(LEAVES, HALF, generator=torch.Generator().manual_seed(LEAF_SEED))
-        code[:LEAVES, :HALF].scatter_(1, noise.topk(LEAF_BITS, 1).indices, self.step)
+        code[:LEAVES, :HALF] = self.step * self._points(torch.arange(LEAVES))
         self.register_buffer('code', code)
-        self.register_buffer('part_sum', torch.zeros(self.capacity, HALF, dtype=torch.int64))
-        self.register_buffer('part_count', torch.zeros(self.capacity, dtype=torch.int32))
-        self.register_buffer('border', torch.full((self.capacity,), -1, dtype=torch.int32))
-        self.register_buffer('whole_sum', torch.zeros(self.capacity, HALF, dtype=torch.int64))
-        self.register_buffer('whole_count', torch.zeros(self.capacity, dtype=torch.int32))
-        self.margin, self.gamma, self.inside_at = float(margin), float(gamma), float(inside_at)
-        self.order_mix = tuple(int(c) for c in order_mix)
-        if len(self.order_mix) != 3 or min(self.order_mix) < 0 or self.order_mix[1] > 1:
-            raise ValueError(f'FormLinks order_mix is (S1, S2, S4) counts with S2 at most 1, got {order_mix}')
-        if not start_var > 0:
-            raise ValueError(f'FormLinks start_var must be positive, got {start_var}')
-        mean = torch.zeros(self.capacity, HALF)
-        leaf = torch.randn(LEAVES, HALF, generator=torch.Generator().manual_seed(DENSITY_SEED))
-        mean[:LEAVES] = leaf / leaf.norm(dim=1, keepdim=True)
-        self.mean = nn.Parameter(mean)
-        self.log_var = nn.Parameter(torch.full((self.capacity, HALF), math.log(start_var)))
+        self.register_buffer('holder_sum', torch.zeros(self.capacity, HALF, dtype=torch.int64))
+        self.register_buffer('holder_count', torch.zeros(self.capacity, dtype=torch.int32))
+
+    @staticmethod
+    def _mul32(x, c):
+        """``x * c`` mod 2^32 for x below 2^32, in two 16-bit halves of c so no int64 product overflows."""
+        low = x * (c & 0xFFFF)
+        high = ((x * (c >> 16)) & 0xFFFF) << 16
+        return (low + high) & MASK32
+
+    @classmethod
+    def _points(cls, rows):
+        """Uniform point [N, HALF] in [0, 1) of each row: lowbias32 of ``row * HALF + coordinate``, top 24 bits."""
+        x = (rows.long()[:, None] * HALF + torch.arange(HALF, device=rows.device)) & MASK32
+        x = x ^ (x >> 16)
+        x = cls._mul32(x, 0x7feb352d)
+        x = x ^ (x >> 15)
+        x = cls._mul32(x, 0x846ca68b)
+        x = x ^ (x >> 16)
+        return (x >> 8).float() * 2.0 ** -24
 
     # -- find ---------------------------------------------------------------
 
@@ -215,7 +199,7 @@ class FormLinks(nn.Module):
                               torch.where(go_right, self.right[cur].long(), cur))
         return torch.where(places < m[:, None], cur, -1), m
 
-    # -- count (post-sentence reset) ------------------------------------------
+    # -- count ----------------------------------------------------------------
 
     def _unit_rows(self, data, lengths, longest=None):
         """Row of each whole unit [U], counted or not (-1 where unknown or empty).
@@ -255,142 +239,11 @@ class FormLinks(nn.Module):
         """
         if not admit:
             return self._unit_rows(data, lengths, longest)
-        unit = self._insert(data, lengths, longest)[0]
+        unit = self._insert(data, lengths, longest)
         self._raise(unit)
         return unit
-
-    @torch.no_grad()
-    def close(self, data, lengths):
-        """The post-sentence reset: insert what the units lack, raise their counts, recentre their forms."""
-        unit, levels = self._insert(data, lengths)
-        self._raise(unit)
-        self._recentre(levels)
-        return unit
-
-    # -- running sums -----------------------------------------------------------
-
-    def _quantise(self, code):
-        """Code in units of 1/SCALE; a power-of-two scale keeps float32 values exact."""
-        return (code * SCALE).round().long()
-
-    def _q(self, rows):
-        return self._quantise(self.code[rows, :HALF])
-
-    def _whole_mean(self, rows):
-        """Mean code [F, HALF] of the forms holding ``rows``; ``1 - step`` where none."""
-        count = self.whole_count[rows].to(self.code.dtype)[:, None]
-        mean = self.whole_sum[rows].to(self.code.dtype) / (count.clamp_min(1) * SCALE)
-        return torch.where(count > 0, mean, 1 - self.step)
-
-    def _sums(self, rows, n, u):
-        """Distinct-part sum [F, HALF] and count [F] of forms ``rows`` (>= 0) of length n with border ``u``."""
-        L = self.left[rows].long().clamp_min(0)
-        R = self.right[rows].long().clamp_min(0)
-        M = self.right[L].long().clamp_min(0)
-        has = u >= 0
-        links = torch.stack((L, R, M, u.clamp_min(0)))
-        sign = torch.tensor([1, 1, -1, -1], device=rows.device)[:, None]
-        sign = sign * torch.stack((torch.ones_like(has), torch.ones_like(has), torch.full_like(has, n >= 3), has))
-        q = (self._q(links) * sign[..., None]).sum(0)
-        held = (self.part_sum[links[:3]] * sign[:3, :, None]).sum(0)
-        C = (self.part_count[links[:3]].long() * sign[:3]).sum(0) + sign.sum(0)
-        return held + q, C
-
-    def _centre(self, rows, S, C):
-        """Halfway between the parts' mean (``S``/``C``) and the wholes' mean."""
-        part_mean = S.to(self.code.dtype) / (C.clamp_min(1).to(self.code.dtype)[:, None] * SCALE)
-        return (part_mean + self._whole_mean(rows)) / 2
-
-    def _flat(self, levels, n):
-        """Rows of length n at each start that can hold one, flattened [B*(W-n+1)]."""
-        width = levels[0].shape[1]
-        return levels[n - 1][:, :width - n + 1].reshape(-1)
-
-    def _claim(self, flat):
-        """First place of each row in ``flat`` [P], as a [capacity] map, and the mask of first places."""
-        places = torch.arange(flat.shape[0], device=flat.device)
-        rows = flat.clamp_min(0)
-        claim = torch.full((self.capacity,), flat.shape[0], dtype=torch.int64, device=flat.device)
-        claim.scatter_reduce_(0, rows, torch.where(flat >= 0, places, flat.shape[0]), 'amin')
-        return claim, (flat >= 0) & (claim[rows] == places)
-
-    def _spread(self, levels, own):
-        """Add each form's amount (``own[n]`` [P_n, HALF+1]: code sum, count) to the whole sums of its distinct parts.
-
-        Top-down by the overlap rule: a form's amount goes to L and R and
-        their parts, back from M and its parts, and back from u. An amount
-        held for a row and its parts collects at the row's first place in
-        its level, is added to the row, and goes on the same way.
-        """
-        claims, pend = {}, {}
-
-        def claim(n):
-            if n not in claims:
-                claims[n] = self._claim(self._flat(levels, n))
-            return claims[n]
-
-        for n in range(len(levels), 0, -1):
-            held = pend.pop(n, None)
-            if held is None and n not in own:
-                continue
-            flat = self._flat(levels, n)
-            _, first = claim(n)
-            rows = flat.clamp_min(0)
-            if held is not None:
-                held = torch.where(first[:, None], held, 0)
-                self.whole_sum.index_add_(0, rows, held[:, :HALF])
-                self.whole_count.index_add_(0, rows, held[:, HALF].to(self.whole_count.dtype))
-            if n == 1:
-                break
-            amount = own[n] if held is None else held if n not in own else held + own[n]
-            amount = torch.where(first[:, None], amount, 0)
-            L = self.left[rows].long().clamp_min(0)
-            R = self.right[rows].long().clamp_min(0)
-            below, _ = claim(n - 1)
-            size = self._flat(levels, n - 1).shape[0]
-            to = torch.where(first, torch.cat((below[L], below[R])).view(2, -1), 0).clamp_max(size - 1)
-            add = torch.zeros(size, HALF + 1, dtype=torch.int64, device=flat.device) if n - 1 not in pend else pend[n - 1]
-            pend[n - 1] = add.index_add_(0, to.reshape(-1), torch.cat((amount, amount)))
-            if n >= 3:
-                M = self.right[L].long().clamp_min(0)
-                lower, _ = claim(n - 2)
-                size = self._flat(levels, n - 2).shape[0]
-                to = torch.where(first, lower[M], 0).clamp_max(size - 1)
-                add = torch.zeros(size, HALF + 1, dtype=torch.int64, device=flat.device) if n - 2 not in pend else pend[n - 2]
-                pend[n - 2] = add.index_add_(0, to, -amount)
-            u = self.border[rows].long()
-            back = torch.where((first & (u >= 0))[:, None], -amount, 0)
-            self.whole_sum.index_add_(0, u.clamp_min(0), back[:, :HALF])
-            self.whole_count.index_add_(0, u.clamp_min(0), back[:, HALF].to(self.whole_count.dtype))
-            claims.pop(n)
 
     # -- insert --------------------------------------------------------------
-
-    def _next_same(self, rows, k):
-        """Place of the next equal row of length k within each unit [B, W]; W where none."""
-        width = rows.shape[1]
-        part = rows[:, :width - k + 1]
-        places = torch.arange(part.shape[1], device=rows.device, dtype=torch.int32)
-        later = places[None, :] > places[:, None]
-        same = (part[:, :, None] == part[:, None, :]) & (part[:, :, None] >= 0) & later
-        return F.pad(torch.where(same, places, width).amin(-1).long(), (0, k - 1), value=width)
-
-    def _border(self, levels, nexts, rows, n):
-        """Row of u for the forms ``rows`` [B, w] of length n at each start; -1 where none.
-
-        A stretch of length k is a border where the rows of the prefix and of
-        the suffix of length k agree, and lies outside M where its next
-        occurrence after the start is past n-1-k. More than one raises.
-        """
-        width = rows.shape[1]
-        k = torch.arange(1, n, device=rows.device)[:, None, None]
-        places = torch.arange(width, device=rows.device)
-        whole = torch.stack(levels[:n - 1])
-        pre, nxt = whole[..., :width], torch.stack(nexts[:n - 1])[..., :width]
-        suf = torch.gather(whole, 2, (places + n - k).expand_as(pre))
-        found = (rows >= 0) & (pre >= 0) & (pre == suf) & (nxt > places + n - 1 - k)
-        torch._assert_async((found.sum(0) <= 1).all(), 'FormLinks: a form needs two borders')
-        return torch.where(found, pre, -1).amax(0)
 
     def _append(self, keys, n):
         """Rows of length n at ``used`` for the distinct keys of ``keys`` [N] (``UNUSED_KEY`` for none).
@@ -411,6 +264,9 @@ class FormLinks(nn.Module):
         self.left.index_add_(0, target, torch.where(valid, new // cap + 1, 0).to(self.left.dtype))
         self.right.index_add_(0, target, torch.where(valid, new % cap + 1, 0).to(self.right.dtype))
         self.length.index_add_(0, target, (valid * n).to(self.length.dtype))
+        x = torch.where(valid[:, None], self._points(rows), 0.)
+        self.code[:, :HALF].index_add_(0, target, x)
+        self._register(torch.where(valid, new // cap, 0), torch.where(valid, new % cap, 0), self._quantise(x), valid)
         self.used.add_(count)
         return new, rows
 
@@ -434,22 +290,19 @@ class FormLinks(nn.Module):
     def insert(self, data, lengths, longest=None):
         """Insert every unit with the substrings it lacks, shortest first; returns the unit rows [B].
 
-        Fixed shape, no host read. A new row is placed at the centroid of its
-        parts and its wholes, and added to the whole sums of its parts; the
-        part sums of every form of the units are refreshed. A full table
-        raises by a device assertion. ``longest``, a static Python bound on
-        the units' lengths, limits the levels built; a unit above it raises
-        by a device assertion.
+        Fixed shape, no host read. A new row takes its hashed point and is
+        added to its links' holder sums. A full table raises by a device
+        assertion. ``longest``, a static Python bound on the units' lengths,
+        limits the levels built; a unit above it raises by a device assertion.
         """
-        return self._insert(data, lengths, longest)[0]
+        return self._insert(data, lengths, longest)
 
     def _insert(self, data, lengths, longest=None):
         total = self._top(data, longest)
         torch._assert_async((lengths <= total).all(), 'FormLinks: a unit is longer than its bound')
         cur = self._leaves(data, lengths)
         unit = torch.where(lengths == 1, cur[:, 0], -1)
-        levels, nexts, own, added = [cur], [self._next_same(cur, 1)], {}, []
-        before = self.used.clone()
+        added = []
         for n in range(2, total + 1):
             width = data.shape[1] - n + 1
             a, b = cur[:, :width], cur[:, 1:width + 1]
@@ -459,220 +312,59 @@ class FormLinks(nn.Module):
             added.append((new, new_rows))
             place = torch.searchsorted(new, key).clamp_max(new.shape[0] - 1)
             row = torch.where((found < 0) & (key != UNUSED_KEY) & (new[place] == key), new_rows[place], found)
-            u = self._border(levels, nexts, row, n)
-            keep, rows = (row >= 0).reshape(-1), row.clamp_min(0).reshape(-1)
-            S, C = self._sums(rows, n, u.reshape(-1))
-            fresh = (row >= before).reshape(-1) & keep
-            x = torch.where(fresh[:, None], self._centre(rows, S, C), self.code[rows, :HALF])
-            self.part_sum.index_copy_(0, rows, torch.where(keep[:, None], S, self.part_sum[rows]))
-            self.part_count.index_copy_(0, rows, torch.where(keep, C, self.part_count[rows].long()).to(torch.int32))
-            self.border.index_copy_(0, rows, torch.where(keep, u.reshape(-1), self.border[rows].long()).to(torch.int32))
-            self.code[:, :HALF].index_copy_(0, rows, x)
-            self._cover(rows, fresh)
-            own[n] = torch.cat((torch.where(fresh[:, None], self._quantise(x), 0), fresh[:, None].long()), 1)
             cur = F.pad(row, (0, n - 1), value=-1)
-            levels.append(cur)
-            nexts.append(self._next_same(cur, n))
             unit = torch.where(lengths == n, cur[:, 0], unit)
         if added:
             self._merge(torch.cat([k for k, _ in added]), torch.cat([r for _, r in added]))
-        self._spread(levels, own)
-        return unit, levels
+        return unit
 
-    # -- recentre -------------------------------------------------------------
+    # -- the pull ---------------------------------------------------------------
 
-    @torch.no_grad()
-    def recentre(self, data, lengths):
-        """Recentre every form of the units, level by level from length 2."""
-        cur = self._leaves(data, lengths)
-        levels = [cur]
-        for _ in range(2, data.shape[1] + 1):
-            cur = self._level(cur)
-            levels.append(cur)
-        self._recentre(levels)
+    def _quantise(self, code):
+        """Code in units of 1/SCALE; a power-of-two scale keeps float32 values exact."""
+        return (code * SCALE).round().long()
 
-    @torch.no_grad()
-    def recentre_rows(self, rows, data, lengths, longest=None):
-        """Recentre only ``rows`` (any shape; -1 and bytes stay), each once.
+    def _register(self, L, R, amount, counted=None):
+        """Add ``amount`` [N, HALF] to the holder sums of links ``L`` and ``R`` (once where equal), and ``counted`` [N] to their counts."""
+        other = R != L
+        self.holder_sum.index_add_(0, L, amount)
+        self.holder_sum.index_add_(0, R, torch.where(other[:, None], amount, 0))
+        if counted is not None:
+            self.holder_count.index_add_(0, L, counted.to(self.holder_count.dtype))
+            self.holder_count.index_add_(0, R, (counted & other).to(self.holder_count.dtype))
 
-        A row goes halfway between its kept part centroid (``part_sum`` /
-        ``part_count`` as stored) and its kept whole centroid. Every row must
-        occur in ``data`` [B, L] (``lengths`` [B]); the move reaches the whole
-        sums of the row's distinct parts by ``_spread`` over the level table
-        of ``data``, built up to ``longest`` (a static bound on the rows'
-        lengths). Fixed shape, no host read.
-        """
-        ordered = torch.sort(torch.where(rows.reshape(-1) >= LEAVES, rows.reshape(-1).long(), -1)).values
-        safe, keep = ordered.clamp_min(0), ordered >= 0
-        count = self.part_count[safe].to(self.code.dtype)[:, None]
-        part_mean = self.part_sum[safe].to(self.code.dtype) / (count.clamp_min(1) * SCALE)
-        old = self.code[safe, :HALF]
-        x = torch.where(keep[:, None] & (count > 0), (part_mean + self._whole_mean(safe)) / 2, old)
-        delta = self._quantise(x) - self._quantise(old)
-        self.code[:, :HALF].index_copy_(0, safe, x)
-        levels = [self._leaves(data.long(), lengths)]
-        for _ in range(1, min(self.longest, self._top(data, longest))):
-            levels.append(self._level(levels[-1]))
-        own = {}
-        for n in range(2, len(levels) + 1):
-            held = self._flat(levels, n)
-            at = torch.searchsorted(ordered, held.contiguous()).clamp_max(ordered.shape[0] - 1)
-            hit = (held >= 0) & (ordered[at] == held)
-            own[n] = F.pad(torch.where(hit[:, None], delta[at], 0), (0, 1))
-        self._spread(levels, own)
-
-    @torch.no_grad()
-    def sweep(self, chunk=4096):
-        """Maintenance at a save: every form's part sum from the current codes, and the form recentred.
-
-        Length by length from 2, parts before wholes, at most ``chunk`` rows
-        at a time; each move reaches the whole sums of the form's parts by
-        ``_spread`` over the level table of its own spelling, so the whole
-        sums stay exact. Bytes stay. Host side; not captured.
-        """
-        used = int(self.used)
-        longest = int(self.length[:used].max()) if used > LEAVES else 1
-        for n in range(2, longest + 1):
-            found = (self.length[:used] == n).nonzero()[:, 0]
-            for start in range(0, found.shape[0], chunk):
-                rows = found[start:start + chunk]
-                S, C = self._sums(rows, n, self.border[rows].long())
-                self.part_sum.index_copy_(0, rows, S)
-                self.part_count.index_copy_(0, rows, C.to(self.part_count.dtype))
-                old = self.code[rows, :HALF]
-                x = self._centre(rows, S, C)
-                self.code[:, :HALF].index_copy_(0, rows, x)
-                data, lengths = self.spell(rows, n)
-                levels = [self._leaves(data.clamp_min(0), lengths)]
-                for _ in range(1, n):
-                    levels.append(self._level(levels[-1]))
-                self._spread(levels, {n: F.pad(self._quantise(x) - self._quantise(old), (0, 1))})
-
-    def _recentre(self, levels):
-        """Each level's forms from their refreshed part sums and their wholes; moves reach the whole sums after."""
-        own = {}
-        for n in range(2, len(levels) + 1):
-            cur = self._flat(levels, n)
-            keep, rows = cur >= 0, cur.clamp_min(0)
-            S, C = self._sums(rows, n, self.border[rows].long())
-            old = self.code[rows, :HALF]
-            x = torch.where(keep[:, None], self._centre(rows, S, C), old)
-            self.part_sum.index_copy_(0, rows, torch.where(keep[:, None], S, self.part_sum[rows]))
-            self.code[:, :HALF].index_copy_(0, rows, x)
-            own[n] = F.pad(self._quantise(x) - self._quantise(old), (0, 1))
-        self._spread(levels, own)
-
-    # -- density order embedding -------------------------------------------------
-
-    def _cover(self, rows, fresh):
-        """Gaussians of the ``fresh`` among ``rows``: the moments of the equal mixture of their two links'.
-
-        mean = (m_L + m_R) / 2; var = (v_L + v_R) / 2 + ((m_L - m_R) / 2)^2 per coordinate.
-        """
+    def _pull(self, rows, keep):
+        """One step for ``rows`` [N] where ``keep`` (kept rows distinct, all forms); targets from the codes before the step."""
         L = self.left[rows].long().clamp_min(0)
         R = self.right[rows].long().clamp_min(0)
-        mL, mR = self.mean[L], self.mean[R]
-        var = (self.log_var[L].exp() + self.log_var[R].exp()) / 2 + ((mL - mR) / 2).square()
-        keep = fresh[:, None]
-        self.mean.index_copy_(0, rows, torch.where(keep, (mL + mR) / 2, self.mean[rows]))
-        self.log_var.index_copy_(0, rows, torch.where(keep, var.log(), self.log_var[rows]))
+        x = self.code[rows, :HALF]
+        m = (self.code[L, :HALF] + self.code[R, :HALF]) / 2
+        n = self.holder_count[rows][:, None]
+        held = self.holder_sum[rows].to(x.dtype) / (n.clamp_min(1).to(x.dtype) * SCALE)
+        top = (1 - self.step + m - m.mean(1, keepdim=True)).clamp(0, 1)
+        target = torch.where(n > 0, (m + held) / 2, top)
+        moved = torch.where(keep[:, None], x + self.rate * (target - x), x)
+        self.code[:, :HALF].index_copy_(0, rows, moved)
+        self._register(L, R, torch.where(keep[:, None], self._quantise(moved) - self._quantise(x), 0))
 
-    @staticmethod
-    def kl(mean_f, log_var_f, mean_g, log_var_g):
-        """KL(f || g) [...] of diagonal Gaussians, summed over the last axis."""
-        return .5 * (log_var_g - log_var_f - 1 + torch.exp(log_var_f - log_var_g)
-                     + (mean_f - mean_g).square() * torch.exp(-log_var_g)).sum(-1)
+    @torch.no_grad()
+    def recentre_rows(self, rows):
+        """One pull step for each form in ``rows`` (any shape; -1 and bytes stay) and for its two links, each once.
 
-    def divergence(self, f, g):
-        """Thresholded ``max(0, KL(f || g) - gamma)`` [N] of rows ``f`` (specific), ``g`` (general)."""
-        f, g = f.long(), g.long()
-        return F.relu(self.kl(self.mean[f], self.log_var[f], self.mean[g], self.log_var[g]) - self.gamma)
-
-    def inside(self, part_rows, whole_rows):
-        """Thresholded divergence [N] of each part in its whole, and whether it is at most ``inside_at``."""
-        d = self.divergence(part_rows, whole_rows)
-        return d, d <= self.inside_at
-
-    def _walk(self, start, steps, coins):
-        """Row reached from ``start`` [N] by ``steps`` [N] links; link t is left where ``coins[:, t] < 1/2``."""
-        cur = start
-        for t in range(coins.shape[1]):
-            link = torch.where(coins[:, t] < .5, self.left[cur], self.right[cur]).long().clamp_min(0)
-            cur = torch.where(t < steps, link, cur)
-        return cur
-
-    def _down(self, whole, u, coins):
-        """A part of each ``whole`` by a walk of 1..n-1 links (``u`` uniform picks the number)."""
-        n = self.length[whole].long()
-        steps = 1 + (u * (n - 1)).long().clamp_max((n - 2).clamp_min(0))
-        return self._walk(whole, steps, coins)
-
-    def _holds(self, g, f, longest):
-        """Whether row f's spelling occurs in row g's (equal included), by spelling both [N]."""
-        gb, gn = self.spell(g, longest)
-        fb, fn = self.spell(f, longest)
-        i = torch.arange(longest, device=g.device)
-        at = (i[:, None] + i[None, :]).clamp_max(longest - 1)
-        match = (gb[:, at] == fb[:, None, :]) | (i[None, None, :] >= fn[:, None, None])
-        return (match.all(-1) & (i[None, :] <= (gn - fn)[:, None])).any(-1)
-
-    def order_noise(self, sample_size, generator=None):
-        """Uniforms [sample_size, C] for one ``order_loss`` sample (C fixed by ``longest`` and ``order_mix``)."""
-        s1, _, s4 = self.order_mix
-        walk = self.longest - 1
-        width = 2 + walk + 2 * s1 + s4 * (1 + walk)
-        return torch.rand(sample_size, width, generator=generator, device=self.mean.device)
-
-    def order_loss(self, sample_size, generator=None, noise=None, wholes=None):
-        """The margin loss ``d(part, whole) + sum relu(margin - d(false pair))`` over a sample, per true pair.
-
-        True pair: a whole drawn uniformly from rows in use of length >= 2
-        (or from ``wholes`` [N], rows of length >= 2), its part by a walk of
-        k links, k uniform in 1..n-1, each link left or right with even odds:
-        the part of length n-k at offset i has probability
-        ``C(k, i) / (2^k (n-1))``. Walks stop at ``longest - 1`` links.
-        False pairs by ``order_mix`` (S1, S2, S4) per true pair: S1 a row
-        uniform over rows in use in place of the part or the whole (even
-        odds), dropped where the spellings show the part inside the whole;
-        S2 the pair reversed; S4 the part and a second walk from the same
-        whole, dropped where either spelling holds the other. A pair with a
-        row longer than ``longest`` is dropped from the false pairs. Fixed
-        shape, no host read; ``noise`` from ``order_noise`` (a generator is
-        not capturable).
+        The holder sums follow every movement. Fixed shape, no host read.
         """
-        if noise is None:
-            noise = self.order_noise(sample_size, generator)
-        s1, s2, s4 = self.order_mix
-        walk = self.longest - 1
-        used = self.used
-        if wholes is None:
-            span = used - LEAVES
-            whole = LEAVES + (noise[:, 0] * span).long().clamp_max(span - 1)
-        else:
-            whole = wholes.long()[(noise[:, 0] * wholes.shape[0]).long().clamp_max(wholes.shape[0] - 1)]
-        part = self._down(whole, noise[:, 1], noise[:, 2:2 + walk])
-        real = self.length[whole] >= 2
-        loss = (self.divergence(part, whole) * real).sum()
-        at = 2 + walk
-        specific, general, checked = [], [], []
-        for _ in range(s1):
-            other = (noise[:, at + 1] * used).long().clamp_max(used - 1)
-            swap = noise[:, at] < .5
-            specific.append(torch.where(swap, other, part))
-            general.append(torch.where(swap, whole, other))
-            at += 2
-        for _ in range(s4):
-            specific.append(part)
-            general.append(self._down(whole, noise[:, at], noise[:, at + 1:at + 1 + walk]))
-            at += 1 + walk
-        if specific:
-            f, g = torch.cat(specific), torch.cat(general)
-            short = (self.length[f] <= self.longest) & (self.length[g] <= self.longest)
-            held = self._holds(g, f, self.longest)
-            count = s1 * sample_size
-            held = torch.cat((held[:count], held[count:] | self._holds(f[count:], g[count:], self.longest)))
-            ok = real.repeat(s1 + s4) & short & ~held
-            loss = loss + (F.relu(self.margin - self.divergence(f, g)) * ok).sum()
-        if s2:
-            loss = loss + (F.relu(self.margin - self.divergence(whole, part)) * real).sum()
-        return loss / sample_size
+        flat = rows.reshape(-1).long()
+        real = flat >= LEAVES
+        at = flat.clamp_min(0)
+        links = torch.cat((flat, torch.where(real, self.left[at].long(), -1), torch.where(real, self.right[at].long(), -1)))
+        ordered = torch.sort(links).values
+        keep = F.pad(ordered[1:] != ordered[:-1], (1, 0), value=True) & (ordered >= LEAVES)
+        self._pull(torch.where(keep, ordered, 0), keep)
+
+    @torch.no_grad()
+    def sweep(self, rounds=None):
+        """Maintenance at a save: ``rounds`` (default ``self.rounds``) pull steps over every form in use. Host side."""
+        rows = torch.arange(LEAVES, int(self.used), device=self.code.device)
+        keep = torch.ones_like(rows, dtype=torch.bool)
+        for _ in range(self.rounds if rounds is None else int(rounds)):
+            self._pull(rows, keep)
