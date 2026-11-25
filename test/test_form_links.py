@@ -1,4 +1,5 @@
 """The table of forms agrees with a host dictionary of spellings and runs on the device without host reads."""
+import copy
 import os
 import random
 from collections import Counter
@@ -7,7 +8,7 @@ import pytest
 import torch
 from torch.utils._python_dispatch import TorchDispatchMode
 
-from FormLinks import FormLinks, HALF, LEAVES
+from FormLinks import FormLinks, HALF, LEAVES, UNUSED_KEY
 
 DEVICES = ['cpu', 'mps']
 LONGEST = 8
@@ -46,7 +47,7 @@ def _table(device, rng, capacity=8192, threshold=0):
     words = _vocabulary(rng)
     half = len(words) // 2
     for batch in (words[:half], words[half:]):
-        table.admit_forms(*_pack(batch, device))
+        table.insert(*_pack(batch, device))
     return table, words
 
 
@@ -118,15 +119,15 @@ def test_tally_counts_known_units_and_admission_is_idempotent(device):
     assert rows == [row_of.get(u, -1) if u else -1 for u in units]
     count = table.count.cpu()
     assert count[row_of[b'banana']] == 2 and count[row_of[b'a']] == 1 and int(count.sum()) == 4
-    again = table.admit_forms(*_pack(words, dev)).cpu().tolist()
+    again = table.insert(*_pack(words, dev)).cpu().tolist()
     assert int(table.used) == used and again == [row_of[w] for w in words]
 
 
 def test_a_full_table_raises():
     table = FormLinks(LEAVES + 3, LONGEST, 0)
-    table.admit_forms(*_pack([b'ab', b'bc'], 'cpu'))
+    table.insert(*_pack([b'ab', b'bc'], 'cpu'))
     with pytest.raises(RuntimeError, match='FormLinks full'):
-        table.admit_forms(*_pack([b'abcd'], 'cpu'))
+        table.insert(*_pack([b'abcd'], 'cpu'))
 
 
 def test_state_dict_restores_the_table():
@@ -135,18 +136,20 @@ def test_state_dict_restores_the_table():
     table.close(*_pack(words[:5], 'cpu'))
     state = table.state_dict()
     assert set(state) == {'left', 'right', 'length', 'count', 'used', 'pair_keys', 'pair_rows', 'code',
-                          'whole_sum', 'whole_count'}
+                          'part_sum', 'part_count', 'border', 'whole_sum', 'whole_count'}
     restored = FormLinks(table.capacity, LONGEST, 0)
     restored.load_state_dict(state)
     data, lengths = _pack(_sentences(rng, words), 'cpu')
     for got, want in zip(restored.recognise(data, lengths), table.recognise(data, lengths)):
         assert torch.equal(got, want)
     assert torch.equal(restored.count, table.count) and int(restored.used) == int(table.used)
-    for name in ('code', 'whole_sum', 'whole_count'):
+    names = ('code', 'part_sum', 'part_count', 'border', 'whole_sum', 'whole_count', 'pair_keys', 'pair_rows')
+    for name in names:
         assert torch.equal(getattr(restored, name), getattr(table, name)), name
-    table.close(*_pack(words[5:9], 'cpu'))
-    restored.close(*_pack(words[5:9], 'cpu'))
-    assert torch.equal(restored.code, table.code) and torch.equal(restored.whole_sum, table.whole_sum)
+    table.close(*_pack(words[5:9] + [b'qqqzz'], 'cpu'))
+    restored.close(*_pack(words[5:9] + [b'qqqzz'], 'cpu'))
+    for name in names:
+        assert torch.equal(getattr(restored, name), getattr(table, name)), name
 
 
 class _NoHostScalar(TorchDispatchMode):
@@ -179,6 +182,162 @@ def test_recognise_and_spell_capture_whole_and_read_nothing_on_the_host(device, 
     for got in (eager, captured):
         for g, w in zip(got[0] + got[1], expected[0] + expected[1]):
             assert torch.equal(g, w)
+
+
+def _host_admission(batches):
+    """Links and lengths of every row by the host: each length's missing substrings in order of their links."""
+    row_of = {bytes([b]): b for b in range(LEAVES)}
+    left, right, length = [], [], []
+    for batch in batches:
+        for n in range(2, max(len(u) for u in batch) + 1):
+            pairs = sorted({(row_of[s[:-1]], row_of[s[1:]]) for u in batch
+                            for s in (u[i:i + n] for i in range(len(u) - n + 1)) if s not in row_of})
+            for lo, hi in pairs:
+                spelled = [k for k, r in row_of.items() if r == lo][0] + [k for k, r in row_of.items() if r == hi][0][-1:]
+                row_of[spelled] = LEAVES + len(left)
+                left.append(lo), right.append(hi), length.append(n)
+    return left, right, length
+
+
+def test_insert_equals_the_host_admission():
+    rng = random.Random(12)
+    words = _vocabulary(rng) + [b'abab', b'aaaa', b'abcabcabc', b'aabaa']
+    batches = [words[:30], words[30:], words[::7]]
+    table = FormLinks(8192, LONGEST)
+    for batch in batches:
+        table.insert(*_pack(batch, 'cpu'))
+    left, right, length = _host_admission(batches)
+    used = int(table.used)
+    assert used == LEAVES + len(left)
+    assert table.left[LEAVES:used].tolist() == left and table.right[LEAVES:used].tolist() == right
+    assert table.length[LEAVES:used].tolist() == length
+    assert bool((table.left[used:] == -1).all() and (table.length[used:] == 0).all())
+    keys = table.pair_keys[:used - LEAVES]
+    assert bool((keys[1:] > keys[:-1]).all()) and bool((table.pair_keys[used - LEAVES:] == UNUSED_KEY).all())
+
+
+HARD = [b'abab', b'aaaa', b'banana', b'mississippi', b'abcabcabc', b'aabaa', b'aaa', b'abaaba', b'aabaab']
+
+
+def _brute_part_sums(table, whole, part):
+    q = table._quantise(table.code[:, :HALF])
+    total = torch.zeros_like(table.part_sum).index_add_(0, whole, q[part])
+    count = torch.zeros_like(table.part_count).index_add_(0, whole, torch.ones_like(whole, dtype=torch.int32))
+    return total, count
+
+
+def test_recursive_part_sums_equal_the_distinct_parts():
+    words = _dictionary(600) + HARD
+    table = FormLinks(65536, LONGEST)
+    for i in range(0, len(words), 150):
+        table.insert(*_pack(words[i:i + 150], 'cpu'))
+    spelled, row_of, whole, part = _part_pairs(table)
+    total, count = _brute_part_sums(table, whole, part)
+    assert torch.equal(table.part_count, count) and torch.equal(table.part_sum, total)
+    bordered = [s for s in HARD if int(table.border[row_of[s]]) >= 0]
+    assert spelled[int(table.border[row_of[b'abab']])] == b'ab'
+    assert spelled[int(table.border[row_of[b'aaaa']])] == b'aaa'
+    assert int(table.border[row_of[b'banana']]) == -1 and int(table.border[row_of[b'aabaa']]) == row_of[b'aa']
+    share = float((table.border[LEAVES:int(table.used)] >= 0).float().mean())
+    print(f'\nforms with a border outside the middle: {share:.4f}; hard cases with one: {bordered}')
+
+
+def test_a_form_needing_two_borders_raises(monkeypatch):
+    table = FormLinks(1024, LONGEST)
+    data, lengths = _pack([b'aaa'], 'cpu')
+    monkeypatch.setattr(FormLinks, '_next_same', lambda self, rows, k: torch.full_like(rows, rows.shape[1]))
+    with pytest.raises(RuntimeError, match='two borders'):
+        table.insert(data, lengths)
+
+
+def test_the_kept_part_centroid_against_the_distinct_parts_after_a_stream():
+    words = _dictionary(800)
+    rng = random.Random(13)
+    table = FormLinks(65536, LONGEST)
+    for _ in range(12):
+        last = rng.sample(words, 200)
+        table.close(*_pack(last, 'cpu'))
+    spelled, row_of, whole, part = _part_pairs(table)
+    total, count = _brute_part_sums(table, whole, part)
+    assert torch.equal(table.part_count, count)
+    rows = torch.arange(LEAVES, int(table.used))
+    gap = ((table.part_sum[rows] - total[rows]).double().abs() / (count[rows, None].double() * 2.0 ** 32)).amax(1)
+    read = torch.tensor(sorted({row_of[u[i:j]] for u in last for i in range(len(u)) for j in range(i + 2, len(u) + 1)}))
+    print(f'\nkept part centroid against the distinct parts, {len(rows)} forms: max {float(gap.max()):.2e}, '
+          f'mean {float(gap.mean()):.2e}, stale {int((gap > 0).sum())}; forms of the last reading: max '
+          f'{float(gap[read - LEAVES].max()):.1e}')
+    assert torch.equal(table.part_sum[read], total[read])
+
+
+@pytest.mark.parametrize('device', DEVICES)
+def test_insert_captures_whole_and_reads_nothing_on_the_host(device, monkeypatch):
+    dev = _device(device)
+    rng = random.Random(14)
+    table, words = _table(dev, rng)
+    batch = _pack(words[::3] + HARD + [b'zzyzx', b'qqq'], dev)
+    eager, captured = copy.deepcopy(table), copy.deepcopy(table)
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('read a tensor on the host')
+
+    with monkeypatch.context() as patch, _NoHostScalar():
+        for method in ('item', 'tolist', '__bool__'):
+            patch.setattr(torch.Tensor, method, forbidden)
+        want = eager.insert(*batch)
+    torch._dynamo.reset()
+    got = torch.compile(captured.insert, fullgraph=True, backend='eager')(*batch)
+    assert torch.equal(got, want)
+    for name, buffer in eager.named_buffers():
+        assert torch.equal(getattr(captured, name), buffer), name
+
+
+def _host_cover(raw, spans, promoted, parts):
+    tiles = []
+    for start, end in spans:
+        out, i = [], start
+        while i < end:
+            n = max([1] + [m for m in range(2, min(LONGEST, end - i) + 1) if raw[i:i + m] in promoted])
+            out.append((i, i + n))
+            i += n
+        tiles.append(out)
+    return tiles
+
+
+@pytest.mark.parametrize('device', DEVICES)
+def test_cover_equals_the_host_tiling_and_captures(device):
+    dev = _device(device)
+    rng = random.Random(15)
+    table, words = _table(dev, rng, threshold=2)
+    table.tally(*_pack(words + words[::2] + [b'aa', b'aa', b'ana', b'ana'], dev))
+    spelled = _host_spellings(table)
+    count = table.count.cpu().tolist()
+    promoted = {spelled[r] for r in range(LEAVES, int(table.used)) if count[r] >= 2}
+    lines, spans = [], []
+    for _ in range(10):
+        units = [rng.choice(words) if rng.random() > .3 else bytes(rng.choices(b'abnaz\xff', k=rng.randint(1, 14)))
+                 for _ in range(rng.randint(1, 6))]
+        raw, at, line_spans = b'', 0, []
+        for u in units:
+            line_spans.append((len(raw), len(raw) + len(u)))
+            raw += u + b' '
+        lines.append(raw)
+        spans.append(line_spans)
+    width = max(len(s) for s in spans)
+    data, _ = _pack(lines, dev)
+    unit_spans = torch.tensor([s + [(0, 0)] * (width - len(s)) for s in spans], device=dev)
+    part, extent, counts = table.cover(data, unit_spans)
+    torch._dynamo.reset()
+    captured = torch.compile(table.cover, fullgraph=True, backend='eager')(data, unit_spans)
+    for g, w in zip(captured, (part, extent, counts)):
+        assert torch.equal(g, w)
+    row_of = {s: r for r, s in enumerate(spelled)}
+    part, extent, counts = part.cpu().tolist(), extent.cpu().tolist(), counts.cpu().tolist()
+    for b, raw in enumerate(lines):
+        for w, tiles in enumerate(_host_cover(raw, spans[b], promoted, LONGEST) + [[]] * (width - len(spans[b]))):
+            assert counts[b][w] == len(tiles)
+            shown = tiles[:LONGEST]
+            assert extent[b][w] == [list(t) for t in shown] + [[-1, -1]] * (LONGEST - len(shown))
+            assert part[b][w] == [row_of[raw[i:j]] for i, j in shown] + [-1] * (LONGEST - len(shown))
 
 
 # -- counting and codes -------------------------------------------------------
@@ -302,7 +461,7 @@ def test_running_whole_sums_equal_the_gathered_ones():
     table, words = _table('cpu', rng)
     for _ in range(4):
         table.close(*_pack(rng.sample(words, 20), 'cpu'))
-        table.admit_forms(*_pack([bytes(rng.choices(range(97, 123), k=rng.randint(2, 9))) for _ in range(6)], 'cpu'))
+        table.insert(*_pack([bytes(rng.choices(range(97, 123), k=rng.randint(2, 9))) for _ in range(6)], 'cpu'))
     _, _, whole, part = _part_pairs(table)
     total, count = _brute_whole_sums(table, whole, part)
     assert torch.equal(table.whole_count, count) and torch.equal(table.whole_sum, total)
@@ -341,5 +500,9 @@ def test_cpu_and_metal_make_equal_codes(dictionary):
     metal = _dictionary_table('mps', words, readings=3)
     cpu = _dictionary_table('cpu', words, readings=3)
     assert int(metal.used) == int(cpu.used) and torch.equal(metal.left.cpu(), cpu.left)
-    assert torch.equal(metal.whole_count.cpu(), cpu.whole_count)
+    for name in ('whole_count', 'part_count', 'border', 'pair_keys', 'pair_rows'):
+        assert torch.equal(getattr(metal, name).cpu(), getattr(cpu, name)), name
     assert (metal.code.cpu() - cpu.code).abs().max() <= 1e-5
+    for name in ('part_sum', 'whole_sum'):
+        gap = (getattr(metal, name).cpu() - getattr(cpu, name)).abs().max() / 2.0 ** 32
+        assert gap <= 1e-5 * max(1, int(cpu.whole_count.max())), (name, float(gap))
