@@ -68,8 +68,7 @@ def look(model, bank, request, own):
     # ways back give no share of the .where apart from the .what): kept,
     # since without it the request is taught nothing (eighth pass, step 4).
     match = where_match(bank, share.sum(-1), activity, field.evidence.shape[2])
-    from dataclasses import replace
-    return replace(field, evidence=field.evidence * match[None, :, :, None].to(field.evidence)), activity
+    return field.scaled_at_locations(match.to(field.evidence)), activity
 
 def extent_of(bank, activity, readings):
     """The readings a look holds, ``[B, readings]``: those with an
@@ -122,12 +121,11 @@ def narrow(model, bank, request, own, concepts, known, eligible):
     if general:
         # Keep the field under the same spatial constraint for the following
         # look. Eligibility and the production of evidence preceded this cap.
-        from dataclasses import replace
         supported = prior.masked_fill(~scores.isfinite(), -torch.inf)
         best = supported.amax(1, keepdim=True)
         strength = (supported - torch.where(best.isfinite(), best, 0.)).exp()
         strength = F.pad(strength, (0, field.evidence.shape[2] - strength.shape[1]))
-        field = replace(field, evidence=field.evidence * strength[None, :, :, None])
+        field = field.scaled_at_locations(strength)
     return field, extent, scores
 
 
@@ -374,6 +372,7 @@ class Looks:
             prediction = None
             unread = live & ~state.accepted & rows[:, None]
             look_field, extent, words = narrow(model, bank, request, own, concepts, state.known, unread)
+            nominees = getattr(getattr(owner, 'mtm', None), '_field_nominees', None)
             if forecasts is not None:
                 prediction = forecasts.forecast(extent, rows)
                 # What is expected is written anew at each look, before
@@ -390,7 +389,8 @@ class Looks:
             # forecast and stay valid while other paths run.
             kind_forecast = None if prediction is None else (
                 forecasts.rows[forecasts.basic_count:], prediction[:, forecasts.order_zero_width:, 0])
-            at_look(model, look_field, extent, rows, forecast=kind_forecast)
+            at_look(model, look_field, extent, rows, forecast=kind_forecast,
+                    binding=nominees)
             self.fields.append(dict(field=look_field, extent=extent.clone(), active=rows.clone(),
                                     surprise=surprise))
             replay = masked = None

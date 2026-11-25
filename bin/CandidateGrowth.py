@@ -258,29 +258,97 @@ def presences(field):
     return result
 
 
+def field_levels(concepts, evidence, ids, active):
+    """Gather each named concept's last positive observation and its first location."""
+    if concepts.ndim == 1:
+        concepts = concepts[:, None].expand(-1, evidence.shape[1])
+    lanes = evidence.detach().amax(2)
+    levels = (lanes[..., 0] - lanes[..., 1]).clamp_min(0).T
+    B, R = levels.shape
+    keys = concepts.T.contiguous()
+    index = torch.searchsorted(ids, keys)
+    valid = (index < len(ids)) & (ids[index.clamp_max(len(ids) - 1)] == keys)
+    valid &= (levels > 0) & active[:, None]
+    index = torch.where(valid, index, len(ids))
+    place = torch.arange(R, device=ids.device).expand(B, R)
+    earliest = ids.new_full((B, len(ids) + 1), R).scatter_reduce(1, index, place, 'amin')[:, :-1]
+    latest = ids.new_full((B, len(ids) + 1), -1).scatter_reduce(1, index, place, 'amax')[:, :-1]
+    padded = torch.nn.functional.pad(levels, (0, 1))
+    values = padded.gather(1, torch.where(latest >= 0, latest, R))
+    return values, earliest
+
+
+def bound_nominations(owner, names):
+    """Derive possible pairs from the shared symbol topology once for this read."""
+    allocator = owner._concept_allocator
+    table = allocator.symbol_table()
+    orders = tuple(allocator.order_of(name) for name in names)
+    seats = tuple((i, j) for i, j in itertools.combinations(range(len(names)), 2)
+                  if orders[i] == orders[j] >= 0 and table.fit(names[i], names[j]) is None)
+    return table.revision, seats
+
+
+def field_readings(owner, field, active, binding):
+    """Use the fixed candidate inventory for a small field.
+
+    The field's binding supplies its possible names. Evidence and page
+    activity select the observations. The MTM tally capacity bounds the
+    speculative pair grid.
+    """
+    if binding is None:
+        return None
+    names = binding
+    if not names:
+        empty = field.concept_ids.new_empty(0)
+        return [(names, empty, field.evidence.new_empty(0), empty, bound_nominations(owner, names))] * field.evidence.shape[1]
+    if len(names) * (len(names) - 1) // 2 > len(owner.mtm._candidate_pairs.tally_refs):
+        return None
+    ids = field.concept_ids.new_tensor(names)
+    if active is None:
+        active = torch.ones(field.evidence.shape[1], dtype=torch.bool, device=ids.device)
+    values, ranks = field_levels(field.concept_ids, field.evidence, ids, active)
+    nominations = bound_nominations(owner, names)
+    return [(names, ids, row, rank, nominations) for row, rank in zip(values.unbind(), ranks.unbind(), strict=True)]
+
+
 def presence(owner, field, batch):
     """The positive readings of one stream, for callers outside the look loop."""
     return presences(field)[batch]
 
 
-def pi_step(owner, present):
+def pi_step(owner, present, *, collect=None):
     """One step of the Pi's candidates from the concepts present at a look;
     the symbols made."""
     table = owner._concept_allocator.symbol_table()
     order = owner._concept_allocator.order_of
     held = matrices(owner)['pi']
-    found = sorted(cid for cid, value in present.items() if value >= PRESENT)
+    numerical = isinstance(present, tuple)
     rows = pair_rows(owner)
-    nominations = [(left, right) for left, right in itertools.combinations(found, 2)
-                   if order(left) == order(right) >= 0 and (left, right) not in rows
-                   and table.fit(left, right) is None]
+    if numerical:
+        names, ids, levels, _, (revision, eligible) = present
+        if table.revision != revision:
+            _, eligible = bound_nominations(owner, names)
+        nominations = [(i, j) for i, j in eligible if (names[i], names[j]) not in rows]
+    else:
+        names = sorted(cid for cid, value in present.items() if value >= PRESENT)
+        nominations = [(i, j) for i, j in itertools.combinations(range(len(names)), 2)
+                       if order(names[i]) == order(names[j]) >= 0 and (names[i], names[j]) not in rows
+                       and table.fit(names[i], names[j]) is None]
     occupied = held._known_count()
     if not nominations and occupied == 0:
         return []
-    pairs = held.refs.new_tensor(nominations).reshape(-1, 2)
-    promoted = held.observe_pairs(pairs, held.refs.new_tensor(list(present)),
-                                  held.activity.new_tensor(list(present.values())))
+    if numerical:
+        seats = held.refs.new_tensor(nominations).reshape(-1, 2)
+        pairs = torch.where((levels[seats] >= PRESENT).all(-1, keepdim=True), ids[seats], -1)
+        levels = levels.to(held.activity)
+    else:
+        pairs = held.refs.new_tensor([(names[i], names[j]) for i, j in nominations]).reshape(-1, 2)
+        ids, levels = held.refs.new_tensor(list(present)), held.activity.new_tensor(list(present.values()))
+    promoted = held.observe_pairs(pairs, ids, levels)
     if occupied == 0 and held.hold > 1:
+        return []
+    if collect is not None:
+        collect.append((held, promoted, rows, None))
         return []
     written = held.publish(promoted)
     rows.extend(key for key in written if key not in rows)
@@ -304,19 +372,30 @@ def pair_rows(owner):
     return rows
 
 
-def sigma_step(owner, present, expected, batch=None):
+def sigma_step(owner, present, expected, batch=None, *, collect=None):
     """One step of the Sigma's candidates at a look: a kind expected there
     and not read, with a thing present there. The entries written."""
     alloc = owner._concept_allocator
     table = alloc.symbol_table()
-    things = {}
-    for cid, value in present.items():
-        if value >= PRESENT:
-            for symbol in table.reading(cid):
-                if all(present.get(member, 0.) >= PRESENT for member in table.members(symbol)):
-                    things[int(symbol)] = value
-    if not things:
-        return []
+    numerical = isinstance(present, tuple)
+    if numerical:
+        names, ids, values, ranks, _ = present
+        by_name = {name: i for i, name in enumerate(names)}
+        members = [table.members(symbol) for symbol in range(len(table))]
+        eligible = [(symbol, [by_name[cid] for cid in row]) for symbol, row in enumerate(members)
+                    if row and all(cid in by_name for cid in row)]
+        if not eligible:
+            return []
+        things = [symbol for symbol, _ in eligible]
+    else:
+        things = {}
+        for cid, value in present.items():
+            if value >= PRESENT:
+                for symbol in table.reading(cid):
+                    if all(present.get(member, 0.) >= PRESENT for member in table.members(symbol)):
+                        things[int(symbol)] = value
+        if not things:
+            return []
     held = matrices(owner)['sigma']
     store = visible_store(alloc.layer(0))
     if batch is not None and expected is not None:
@@ -342,7 +421,7 @@ def sigma_step(owner, present, expected, batch=None):
             continue
         positions.append(i)
         kinds.append(kind)
-        observed.append(present.get(kind, 0.))
+        observed.append(by_name.get(kind, len(names)) if numerical else present.get(kind, 0.))
         for symbol in things:
             members = table.members(symbol)
             if not members or owner._row_order(owner._concept_row_of(members[0])) >= owner._row_order(row):
@@ -354,23 +433,74 @@ def sigma_step(owner, present, expected, batch=None):
     if not offers and occupied == 0:
         return []
     levels = levels.index_select(0, held.refs.new_tensor(positions))
-    observed = held.activity.new_tensor(observed)
-    wanted = (levels > observed) & (levels > 0)
-    pairs = held.refs.new_tensor(offers).reshape(-1, 2)
-    pairs = torch.where(wanted[held.refs.new_tensor(sources)][:, None], pairs, -1)
-    promoted = held.observe(pairs, held.refs.new_tensor(kinds),
-        torch.where(wanted, levels, 0.), held.refs.new_tensor(list(things)),
-        held.activity.new_tensor(list(things.values())),
+    if numerical:
+        observed = torch.nn.functional.pad(values, (0, 1))[ids.new_tensor(observed)].to(held.activity)
+        # The first constituent to occur sets the symbol's offer order.
+        # The last constituent in that order supplies its observed value.
+        width = max(len(row) for _, row in eligible)
+        member = ids.new_tensor([row + [-1] * (width - len(row)) for _, row in eligible])
+        valid = member >= 0
+        seats = member.clamp_min(0)
+        seen = ((values[seats] >= PRESENT) | ~valid).all(-1)
+        first = ranks[seats].masked_fill(~valid, torch.iinfo(ranks.dtype).max).amin(-1)
+        last = ranks[seats].masked_fill(~valid, -1).argmax(-1, keepdim=True)
+        order = first.argsort(stable=True)
+        symbols = ids.new_tensor(things)
+        presence = values[seats.gather(1, last)[:, 0]].to(held.activity)
+        symbols = torch.where(seen, symbols, -1)
+        legal = torch.zeros(len(kinds), len(things), device=ids.device, dtype=torch.bool)
+        if offers:
+            index = {symbol: i for i, symbol in enumerate(things)}
+            legal[ids.new_tensor(sources), ids.new_tensor([index[symbol] for _, symbol in offers])] = True
+        wanted = (levels > observed) & (levels > 0)
+        take = (legal & wanted[:, None] & seen).index_select(1, order)
+        candidates = ids.new_tensor(kinds)
+        ordered = symbols[order].expand(len(kinds), -1)
+        pairs = torch.stack((candidates[:, None].expand_as(ordered), ordered), -1)
+        pairs = torch.where(take[..., None], pairs, -1).reshape(-1, 2)
+    else:
+        observed = held.activity.new_tensor(observed)
+        wanted = (levels > observed) & (levels > 0)
+        pairs = held.refs.new_tensor(offers).reshape(-1, 2)
+        pairs = torch.where(wanted[held.refs.new_tensor(sources)][:, None], pairs, -1)
+        candidates = held.refs.new_tensor(kinds)
+        symbols = held.refs.new_tensor(list(things))
+        presence = held.activity.new_tensor(list(things.values()))
+    promoted = held.observe(pairs, candidates, torch.where(wanted, levels, 0.), symbols, presence,
         observed=torch.where(wanted, observed, 0.), read_pairs=True)
     if occupied == 0 and held.hold > 1:
         return []
+    trial = _current_trial.get()
+    if collect is not None:
+        collect.append((held, promoted, None, trial))
+        return []
+    return publish_relations(owner, held.publish(promoted), trial)
+
+
+def publish_relations(owner, promoted, trial):
+    table = owner._concept_allocator.symbol_table()
+    promote = trial.promote if trial is not None and trial.owner is owner else owner.kind_entry
     written = []
-    for kind, symbol in held.publish(promoted):
-        trial = _current_trial.get()
-        promote = trial.promote if trial is not None and trial.owner is owner else owner.kind_entry
+    for kind, symbol in promoted:
         if promote(kind, table.brought[symbol]) is not None:
             written.append((kind, symbol))
     return written
+
+
+def publish_look(owner, pending):
+    """Expose this look's promotions to their own next fixation."""
+    if not pending:
+        return
+    records = torch.stack([torch.cat((pool.count.expand(1, 2), pairs))
+                           for pool, pairs, _, _ in pending]).tolist()
+    for (count, *records), (pool, _, rows, trial) in zip(records, pending, strict=True):
+        pool._remember_count(count[0])
+        pairs = [(left, right) for left, right in records if left >= 0]
+        if rows is not None:
+            rows.extend(key for key in pairs if key not in rows)
+        elif pairs:
+            with trial.active():
+                publish_relations(owner, pairs, trial)
 
 
 @torch.no_grad()
@@ -413,7 +543,7 @@ def at_opening(model, field, extent, active, prior=None):
     return prior
 
 
-def at_look(model, field, extent=None, active=None, *, forecast=None):
+def at_look(model, field, extent=None, active=None, *, forecast=None, binding=None):
     """The candidates' step at one look, in training. A pair is offered and
     weighed from what the sentence held at the look: its field, and the
     words the omission withheld inside the look's ``extent`` (``[B, W]``)."""
@@ -422,7 +552,8 @@ def at_look(model, field, extent=None, active=None, *, forecast=None):
     owner = model._concept_owner()
     if getattr(owner, 'mtm', None) is None:
         return
-    held = withheld_words(model, extent) if extent is not None else None
+    omission = getattr(model, '_omission_targets', None)
+    held = withheld_words(model, extent) if extent is not None and omission is not None and 'word_bytes' in omission else None
     trial = _current_trial.get()
     if forecast is None:
         # The first look shares the opening already retained by its trial.
@@ -436,9 +567,16 @@ def at_look(model, field, extent=None, active=None, *, forecast=None):
     events = {}
     if trial is not None:
         trial.looks.append(events)
-    active = active.tolist() if trial is not None and active is not None else None
-    for batch, present in enumerate(presences(field)):
-        if active is not None and not active[batch]:
+    readings = (field_readings(owner, field, active if trial is not None else None, binding)
+                if hasattr(owner.mtm, '_candidate_pairs') and not any(held or ()) else None)
+    if readings is None:
+        readings = presences(field)
+        live = active.tolist() if trial is not None and active is not None else None
+    else:
+        live = None
+    pending = [] if trial is not None else None
+    for batch, present in enumerate(readings):
+        if live is not None and not live[batch]:
             continue
         sentence = present if not held or not held[batch] else {**present, **held[batch]}
         forecast = None if values is None else values[batch]
@@ -449,5 +587,6 @@ def at_look(model, field, extent=None, active=None, *, forecast=None):
             if batch not in trial.streams:
                 trial.streams[batch] = GrowthTrial(owner, path=trial.path, stream=batch)
         with row_scope(owner, batch):
-            pi_step(owner, sentence)
-            sigma_step(owner, present, forecast)
+            pi_step(owner, sentence, collect=pending)
+            sigma_step(owner, present, forecast, collect=pending)
+    publish_look(owner, pending)

@@ -283,3 +283,16 @@ def test_native_pair_candidates_preserve_lru_tallies_and_admission_order():
             assert state.keys() == {str(k) for k in oracle.entries}
             for key, entry in oracle.entries.items():
                 assert state[str(key)] == pytest.approx(vars(entry), abs=1e-7)
+
+
+def test_bound_field_uses_first_location_and_last_positive_observation_per_stream():
+    ids = torch.tensor([[8, 3], [3, 8], [8, 3], [8, -1]])
+    positive = torch.tensor([[.75, .5], [1., .8], [.6, .75], [0., 1.]])
+    lanes = torch.stack((positive, torch.zeros_like(positive)), -1).unsqueeze(2)
+    names = torch.tensor([3, 8, 17])
+    for active in (torch.tensor([True, True]), torch.tensor([True, False])):
+        values, first = growth.field_levels(ids, lanes, names, active)
+        assert torch.equal(values[0], torch.tensor([1., .6, 0.]))
+        assert first[0].tolist() == [1, 0, 4]
+        assert torch.equal(values[1], torch.tensor([.75, .8, 0.]) * active[1])
+        assert first[1].tolist() == ([0, 1, 4] if active[1] else [4, 4, 4])

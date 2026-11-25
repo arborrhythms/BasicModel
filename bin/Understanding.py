@@ -369,6 +369,18 @@ class ConceptualField:
             object.__setattr__(self, name, None if value is None else value.clone())
 
 
+    def scaled_at_locations(self, weights):
+        """A fresh evidence product over this snapshot's unchanged attribution."""
+        value = object.__new__(type(self))
+        object.__setattr__(value, 'concept_ids', self.concept_ids)
+        object.__setattr__(value, 'evidence', self.evidence * weights[None, :, :, None])
+        object.__setattr__(value, 'where', self.where)
+        object.__setattr__(value, 'when', self.when)
+        object.__setattr__(value, 'percepts', self.percepts)
+        object.__setattr__(value, 'wires', self.wires)
+        return value
+
+
 @dataclass(frozen=True)
 class Understanding:
     """Immutable logical products of one ``forward()`` call."""

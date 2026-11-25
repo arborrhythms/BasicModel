@@ -15376,6 +15376,7 @@ class ConceptualSpace(Space):
         rows = torch.tensor(addresses, dtype=torch.long, device=device).t()
         ids = [[self.concept_id_at_row(row) if row >= 0 else None for row in batch]
                for batch in addresses]
+        nomination_ids = tuple(sorted({cid for batch in ids for cid in batch if cid is not None}))
         ids = torch.tensor([[cid if cid is not None else -1 for cid in batch] for batch in ids],
                            dtype=torch.long, device=device).t()
         if addresses and all(batch == addresses[0] for batch in addresses[1:]):
@@ -15393,6 +15394,10 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_field_caps', tuple(caps))
         object.__setattr__(self, '_cs_field_rows', rows)
         object.__setattr__(self, '_cs_field_concept_ids', ids)
+        if getattr(self, 'mtm', None) is not None:
+            # The binding already resolved these seat handles and their orders.
+            # Candidate observations gather the evidence for them on device.
+            self.mtm._field_nominees = nomination_ids
 
     def cs_read_memberships(self, percepts, extents, *, publish=True):
         """Read the nominated basic percepts inside each bracket, then the
