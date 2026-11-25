@@ -31,6 +31,27 @@ def corners(pair):
                         torch.minimum(1 - positive, 1 - negative)), -1)
 
 
+def both_on_rows(lanes, inputs, entry_rows, entry_inputs, weights, rows, *, n_inputs, n_rows):
+    """Join each occupied Sigma entry's evidence, then read both poles of each requested row."""
+    positions = torch.arange(len(inputs), device=inputs.device)
+    # An absent percept contributes the neutral factor to the product.
+    source = inputs.new_full((n_inputs + 1,), -1)
+    source.scatter_reduce_(0, torch.where((inputs >= 0) & (inputs < n_inputs), inputs, n_inputs),
+                           positions, reduce='amax')
+    at = source[entry_inputs]
+    padded = torch.cat((lanes, lanes.new_zeros(1, *lanes.shape[1:])))
+    evidence = padded.index_select(0, torch.where(at >= 0, at, len(inputs)))
+    evidence = torch.where((weights < 0)[:, None, None, None], evidence.flip(-1), evidence)
+    factors = torch.where((weights.abs() > 0)[:, None, None, None], (1. - evidence).clamp_min(0.), 1.)
+    index = entry_rows[:, None, None, None].expand_as(factors)
+    product = lanes.new_ones(n_rows + 1, *lanes.shape[1:]).scatter_reduce(0, index, factors, reduce='prod')
+    both = (1. - product).amin(-1)
+    seats = torch.where((rows >= 0) & (rows < n_rows), rows, n_rows)
+    if rows.ndim == 1:
+        return both.index_select(0, seats)
+    return both.gather(0, seats[..., None].expand(-1, -1, both.shape[-1]))
+
+
 def in_extents(position_evidence, position_spans, extents):
     """Keep [C,B,E,L,2] position pairs and read [C,B,E,2] extent evidence.
 

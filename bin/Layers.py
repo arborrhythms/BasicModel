@@ -6610,12 +6610,17 @@ class ConceptualAttentionLayer(SparseLayer):
         if not self._thing_columns:
             return super().bind(inventory_rows)
         device = self._device()
-        if isinstance(inventory_rows, range) or (
+        if torch.is_tensor(inventory_rows) and not self._rows:
+            # An empty definition matrix only needs the shape of the field.
+            addresses = ()
+            size = inventory_rows.numel()
+        elif isinstance(inventory_rows, range) or (
                 isinstance(inventory_rows, (list, tuple)) and all(type(row) is int for row in inventory_rows)):
             addresses = inventory_rows
+            size = len(addresses)
         else:
             addresses = torch.as_tensor(inventory_rows).reshape(-1).tolist()
-        size = len(addresses)
+            size = len(addresses)
         lookup = {}
         for seat, row in enumerate(addresses):
             if 0 <= row < self.nOutput:

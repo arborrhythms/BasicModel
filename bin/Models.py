@@ -13016,16 +13016,14 @@ class BasicModel(BaseModel):
             if value is not None and (not torch.is_tensor(value) or value.shape != shape):
                 raise ValueError(f'word reference {name} must align with the current word slab')
         positions, actions, targets, columns = program
+        from ChunkJournal import action_rows
+        from Meaning import require_sentence_tensor
         log_probabilities = getattr(self._reconstruction_stack(), '_choice_log_probabilities', None)
         operations = (actions[..., 0] == 1) | (actions[..., 0] == 2)
-        batches, steps = operations.nonzero(as_tuple=True)
-        choice_columns = columns[batches, steps]
-        if bool((choice_columns < 0).any()):
-            raise ValueError('reading operations require a choice column')
+        require_sentence_tensor((~operations | (columns >= 0)).all(), 'reading operations require a choice column')
         probabilities = None
         if log_probabilities is not None:
-            probabilities = log_probabilities.new_zeros(columns.shape)
-            probabilities[batches, steps] = log_probabilities[batches, choice_columns].detach().exp()
+            probabilities = action_rows(log_probabilities.detach(), columns, operations, fill=-torch.inf).exp()
         journal = getattr(self._reconstruction_stack(), "_choice_values", None)
         action_records = getattr(self._reconstruction_stack(), "_choice_action_records", None)
         addresses = getattr(self._reconstruction_stack(), "_choice_refs", None)
@@ -13036,11 +13034,11 @@ class BasicModel(BaseModel):
         case_state = getattr(self._reconstruction_stack(), '_case_state', None)
         journal_columns = getattr(self._reconstruction_stack(), "_choice_journal_columns", None)
         # Nonoperations keep -1: no SHIFT or transpose reads a choice row.
-        columns = torch.full_like(columns, -1)
-        columns[batches, steps] = (choice_columns if journal_columns is None else
-                                  journal_columns[batches, choice_columns])
-        if bool((columns[batches, steps] < 0).any()):
-            raise ValueError('reading operations require a journal column')
+        if journal_columns is None:
+            columns = torch.where(operations, columns, -1)
+        else:
+            columns = action_rows(journal_columns, columns, operations, fill=-1)
+            require_sentence_tensor((~operations | (columns >= 0)).all(), 'reading operations require a journal column')
         # The legacy clause reader consumes the selected lexical positions.
         # Transfer their rectangular batch once alongside the two slice sizes.
         sizes = torch.stack(((positions >= 0).sum(1), (actions[..., 0] >= 0).sum(1)), 1)
@@ -13126,15 +13124,10 @@ class BasicModel(BaseModel):
                 from ChunkJournal import capture
                 identity_record = capture(owner(),chunk_state,chunk_scope,transactions,journal,
                     batch=b,positions=pos,columns=columns[b,:L],actions=acts[:L])
-            operation_steps = operations[b, :L].nonzero().flatten()
-            operation_columns = columns[b, operation_steps]
             def operation_rows(table, *, fill=0):
                 if table is None:
                     return None
-                # Readers index by action and skip kinds 0 and 3. Preserve
-                # that alignment with empty sentinels; gather operations only.
-                result = table.new_full((L, *table.shape[2:]), fill)
-                return result.index_copy(0, operation_steps, table[b, operation_columns])
+                return action_rows(table[b:b+1], columns[b:b+1, :L], operations[b:b+1, :L], fill=fill)[0]
 
             form_bank = getattr(self.languageSpace, '_form_wholes', None)
             forms = {}
@@ -13186,7 +13179,7 @@ class BasicModel(BaseModel):
                    if torch.is_tensor(value)})
             self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b,
                 after=int(self.symbolSpace.ltm_store.names_issued),
-                kept_tree=None if kept is None else kept.tree)
+                **({} if kept is None else {'kept_tree': kept.tree}))
             entries.append(entry)
         return tuple(entries)
 

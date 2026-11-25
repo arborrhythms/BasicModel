@@ -24,6 +24,20 @@ BIND_READ = IDEA_WRITES + 18
 RECORD_WIDTH = BIND_READ + 3
 
 
+def action_rows(table, columns, operations, *, fill=0):
+    """Gather the journal for each action, preserving empty shifts and transposes."""
+    if table.shape[1] == 0:
+        from Meaning import require_sentence_tensor
+        require_sentence_tensor(~operations.any(), 'reading operation has no journal rows', IndexError)
+        # Keep the gradient connection to even an empty numerical journal.
+        table = torch.cat((table, table.new_full((table.shape[0], 1, *table.shape[2:]), fill)), 1)
+    tail = table.shape[2:]
+    mask = operations.reshape(*columns.shape, *([1] * len(tail)))
+    seats = torch.where(operations, columns, 0).reshape(mask.shape)
+    values = table.gather(1, seats.expand(*columns.shape, *tail))
+    return values.masked_fill(~mask, fill)
+
+
 def publication_value(kind, operands, result, prior):
     """The numerical rule shared by the read and its comprehension."""
     kind = torch.as_tensor(kind, device=result.device)

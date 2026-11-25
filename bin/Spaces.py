@@ -15479,44 +15479,25 @@ class ConceptualSpace(Space):
         and its against lane as against; an entry below nothing (a Not
         entry) the reverse; an entry at nothing gives nothing.
         """
-        rows = torch.as_tensor(rows, dtype=torch.long).tolist()
-        shape = perception.values.shape[1:3]
-        result = perception.values.new_zeros(len(rows), *shape)
-        if not len(perception.keys) or not rows:
-            return result
+        from ConceptEvidence import both_on_rows
         lanes = perception.values.detach()
         if batch is not None:
             lanes = lanes[:, batch:batch + 1]
-            result = result[:, batch:batch + 1]
-        index = {key: i for i, key in enumerate(perception.keys)}
+        rows = torch.as_tensor(rows, dtype=torch.long, device=lanes.device)
         sigma = getattr(self, 'order_zero', None)
-        n0 = self._order_caps()[0]
-        entries = ({} if sigma is None else sigma.entries_by_row(
-            row for row in rows if 0 <= row < min(n0, sigma.nOutput)))
-        for slot, row in enumerate(rows):
-            held = ()
-            if row in entries:
-                held = sorted((index[('bp', percept)], int(negated))
-                              for percept, weight, negated in entries[row]
-                              if weight > 0 and ('bp', percept) in index)
-            if held:
-                given = torch.stack([lanes[found].flip(-1) if negated else lanes[found]
-                                     for found, negated in held])
-                joined = 1. - (1. - given).clamp_min(0.).prod(0)
-                result[slot] = joined.amin(-1)
-        return result
+        if sigma is None or not sigma.nnz or not perception.keys:
+            return lanes.new_zeros(rows.shape[0], *lanes.shape[1:3])
+        inputs = rows.new_tensor([key[1] if key[0] == 'bp' else -1 for key in perception.keys])
+        count = sigma.nnz
+        return both_on_rows(lanes, inputs, sigma.entry_row[:count], sigma.entry_input[:count],
+                            sigma.w(occupied_only=True).detach(), rows,
+                            n_inputs=sigma.nInput, n_rows=sigma.nOutput)
 
     @torch.no_grad()
     def order_zero_both_field(self, perception):
-        """:meth:`order_zero_both` at the open field's order-zero slots,
-        ``[n0, B, E]``."""
+        """The open field's order-zero evidence on both poles, per stream and reading."""
         addresses = self._field_inventory_rows()
-        n0 = self._field_caps()[0]
-        if addresses.ndim == 1 and perception.keys:
-            return self.order_zero_both(perception, addresses[:n0])
-        return torch.cat([self.order_zero_both(perception,
-            (addresses[:, b] if addresses.ndim == 2 else addresses)[:n0], batch=b)
-            for b in range(perception.values.shape[1])], 1)
+        return self.order_zero_both(perception, addresses[:self._field_caps()[0]])
 
     @torch.no_grad()
     def refinement_field(self, perception):
