@@ -1,5 +1,6 @@
 """Lexical form admission and constructed byte capacity for surface tables."""
 import torch
+from torch.nn import functional as F
 
 
 def is_lexical_form(value):
@@ -106,26 +107,59 @@ def trimmed_spans(surface, spans):
     return torch.where((start < end)[..., None], torch.stack((start, end), -1), 0)
 
 
+def spelling_sources(surface, bounds, present, *, across_pages=False):
+    """The first observed seat with the same length and every byte in the same order."""
+    width = surface.shape[1]
+    if not width or not present.numel():
+        return torch.full_like(bounds[..., 0], -1)
+    lo, hi = bounds.unbind(-1)
+    sizes = torch.where(present, hi - lo, 0)
+    # Four consecutive bytes per int32, at every possible starting offset.
+    # Length distinguishes a real trailing NUL from the zeros beyond an end.
+    octets = F.pad(surface.to(torch.int32), (0, 3))
+    words = octets[:, :width]
+    for i in range(1, 4):
+        words = words | (octets[:, i:i+width] << (8*i))
+    offsets = torch.arange(0, width, 4, device=surface.device)
+    remaining = (sizes[..., None] - offsets).clamp(0, 4)
+    at = (lo[..., None] + offsets).clamp(0, width)
+    chunks = F.pad(words, (0, 1)).gather(1, at.flatten(1)).reshape_as(at)
+    masks = words.new_tensor([0, 255, 65535, 16777215, -1])
+    spellings = chunks & masks[remaining]
+    if across_pages:
+        spellings = spellings.flatten(0, 1)[None]
+        sizes = sizes.reshape(1, -1)
+    B, W, columns = spellings.shape
+    if B * W * W * columns <= 1 << 20:
+        same = (spellings[:, :, None] == spellings[:, None]).all(-1)
+        same = same & (sizes[:, :, None] == sizes[:, None])
+        first = same.int().argmax(-1)
+    else:
+        # Equal runs stay in presentation order under each stable sort.
+        # Compare only neighbours once all columns have been ordered.
+        seats = torch.arange(W, device=surface.device).expand(B, -1)
+        order = seats
+        for column in reversed(spellings.unbind(-1)):
+            order = order.gather(1, column.gather(1, order).argsort(stable=True))
+        sorted_sizes, by_size = sizes.gather(1, order).sort(stable=True)
+        order = order.gather(1, by_size)
+        sorted_bytes = spellings.gather(1, order[..., None].expand_as(spellings))
+        boundary = ((sorted_sizes[:, 1:] != sorted_sizes[:, :-1])
+                    | (sorted_bytes[:, 1:] != sorted_bytes[:, :-1]).any(-1))
+        begin = torch.where(F.pad(boundary, (1, 0), value=True), seats, 0).cummax(1).values
+        first = torch.empty_like(order).scatter(1, order, order.gather(1, begin))
+    return torch.where(present, first.reshape_as(present), -1)
+
+
 def reading_forms(surface, spans, active, *, trimmed=None):
     """Name each ordered spelling by its first live occurrence on the same page."""
-    B, length = surface.shape
-    W = active.shape[1]
-    if not length or not W:
+    if not surface.shape[1] or not active.shape[1]:
         return torch.zeros_like(spans), torch.full_like(spans[..., 0], -1)
     if trimmed is None:
         trimmed = trimmed_spans(surface, spans)
     present = active & (trimmed[..., 1] > trimmed[..., 0])
     bounds = torch.where(present[..., None], trimmed, 0)
-    # Bound transient pairwise comparison for larger constructed capacities.
-    spellings, _ = bytes_at(surface, bounds, present, length)
-    sizes = bounds[..., 1] - bounds[..., 0]
-    block = max(1, 1048576 // max(1, B * W * length))
-    keys = []
-    for i in range(0, W, block):
-        same = (spellings[:, i:i+block, None] == spellings[:, None]).all(-1)
-        same = same & (sizes[:, i:i+block, None] == sizes[:, None])
-        keys.append(same.long().argmax(-1))
-    return bounds, torch.where(present, torch.cat(keys, 1), -1)
+    return bounds, spelling_sources(surface, bounds, present)
 
 
 def held_properties(surface, spans, memberships):

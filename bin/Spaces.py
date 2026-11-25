@@ -11306,6 +11306,18 @@ class PartSpace(Space):
         identity = getattr(ps, 'identity', None)
         simple_parts = identity is not None and not identity.nested and identity._marker_pattern is None
         layout = prepared_parts = prepared_counts = recognized_units = None
+        discovery_sources = None
+        admit = not getattr(self, "_online_learning_frozen", False)
+        def observation_keys(form_rows):
+            nonlocal discovery_sources
+            if not admit:
+                return form_rows
+            from WordSurfaces import spelling_sources
+            spans = layout[:, :form_rows.shape[1]]
+            novel = (form_rows < 0) & (spans[..., 1] > spans[..., 0])
+            discovery_sources = spelling_sources(compact[:, :byte_count], spans, novel, across_pages=True)
+            return torch.where(novel, -2 - discovery_sources, form_rows)
+
         if torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab):
             compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
             layout = Meronomy.sentence_unit_spans(
@@ -11323,7 +11335,8 @@ class PartSpace(Space):
             else:
                 counts_device = prepared_parts[1]
                 all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
-                form_rows = F.pad(prepared_parts[3], (0, delivered_layout.shape[1] - counts_device.shape[1]), value=-1)
+                form_rows = F.pad(observation_keys(prepared_parts[3]),
+                                  (0, delivered_layout.shape[1] - counts_device.shape[1]), value=-1)
                 records = torch.cat((delivered_layout, all_counts[..., None], form_rows[..., None]), -1).tolist()
                 unit_spans_rows = [[(lo, hi) for lo, hi, _, _ in row] for row in records]
                 prepared_counts = [[n for _, _, n, _ in row[:word_capacity]] for row in records]
@@ -11337,7 +11350,6 @@ class PartSpace(Space):
         # atom rows).  The row is the unit's CATEGORY; the atoms stay bytes
         # (the witness).  Queued rows are committed at the boundary flush;
         # nothing is admitted while online learning is frozen (evaluation).
-        admit = not getattr(self, "_online_learning_frozen", False)
         hits = self.__dict__.setdefault("_unit_hits", {})
         threshold = max(1, int(getattr(self, "chunk_promotion_threshold", 2) or 2))
         units = []
@@ -11456,7 +11468,7 @@ class PartSpace(Space):
             if prepared_parts is not None:
                 flat_parts, lengths, flat_extents, form_rows = prepared_parts
                 if prepared_counts is None:
-                    records = torch.stack((lengths, form_rows), -1).tolist()
+                    records = torch.stack((lengths, observation_keys(form_rows)), -1).tolist()
                     counts = [[n for n, _ in row] for row in records]
                     recognized_units = [[form for _, form in row] for row in records]
                 else:
@@ -11469,6 +11481,7 @@ class PartSpace(Space):
                 located_parts, located_extents = pack_disjoint_units(
                     flat_parts, lengths, flat_extents, -1, part_capacity)
         observed_forms = []
+        new_units = {}
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
             word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
@@ -11479,10 +11492,11 @@ class PartSpace(Space):
             if located_parts is not None:
                 if admit:
                     for w, ((lo, hi), form) in enumerate(zip(spans[:word_capacity], recognized_units[b])):
-                        if form < 0 and (changed is None or not changed[b][w]):
-                            unit = raw[lo:hi]
-                            observed_forms.append(unit)
-                            observe_new_form(unit, b, lo)
+                        if form <= -2 and (changed is None or not changed[b][w]):
+                            source = -2 - form
+                            if source not in new_units:
+                                new_units[source] = raw[lo:hi]
+                            observe_new_form(new_units[source], b, lo)
                 continue
             staged_words = []
             for word_index in range(word_capacity):
@@ -11574,6 +11588,21 @@ class PartSpace(Space):
             if observed_forms:
                 identity.observe_forms(observed_forms, repairs=repairs)
             if located_parts is not None:
+                if new_units:
+                    # The mutable identity index still publishes a new spelling
+                    # once. Repeated observations use the first visible seat's
+                    # native row, including repeats within a writing stream.
+                    assigned = [-1] * form_rows.numel()
+                    for source, raw in new_units.items():
+                        if raw not in identity.word_rows:
+                            with identity.record_repairs(repairs, raw):
+                                identity.admit(raw)
+                        assigned[source] = identity.word_rows[raw]
+                    observed = discovery_sources >= 0
+                    if hiding:
+                        observed = observed & ~omission['draw'].forms[:, :form_rows.shape[1]].any(-1)
+                    new_rows = form_rows.new_tensor(assigned)[discovery_sources.clamp_min(0)]
+                    form_rows = torch.where(observed, new_rows, form_rows)
                 identity.observe_rows(form_rows)
         self.subspace.whereEncoding.p = 0
         self.subspace.set_event(word_event)

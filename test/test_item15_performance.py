@@ -506,6 +506,34 @@ def test_reading_forms_use_ordered_bytes_and_only_this_page():
                 assert int(keys[b, w]) == (prior.setdefault(spelling, w) if spelling else -1)
 
 
+@pytest.mark.parametrize('seats', [12, 320])
+def test_novel_spelling_sources_compare_every_byte_and_keep_first_visible_seat(seats):
+    from WordSurfaces import spelling_sources
+    words = (b'ab\x00', b'ab', b'\xffabcabcd\x00', b'\xffabcabcd\xff', b'\x80', b'ab\x00')
+    rows = [b''.join(words), b''.join(reversed(words))]
+    surfaces = torch.tensor([list(row) for row in rows])
+    offsets = []
+    for row in (words, tuple(reversed(words))):
+        starts, at = [], 0
+        for word in row:
+            starts.append((at, at + len(word)))
+            at += len(word)
+        offsets.append([starts[i % len(row)] for i in range(seats)])
+    spans = torch.tensor(offsets)
+    visible = torch.ones_like(spans[..., 0], dtype=torch.bool)
+    visible[0, :4] = False
+    for shared in (True, False):
+        result = spelling_sources(surfaces, spans, visible, across_pages=shared).tolist()
+        seen = {}
+        for page, (row, bounds) in enumerate(zip(rows, offsets)):
+            if not shared:
+                seen.clear()
+            for i, (start, end) in enumerate(bounds):
+                seat = page * seats + i if shared else i
+                expected = seen.setdefault(row[start:end], seat) if visible[page, i] else -1
+                assert result[page][i] == expected
+
+
 def test_word_property_runs_fullgraph_matches_observed_bytes():
     from Meronomy import word_property_runs
     lut = torch.arange(256) % 7
