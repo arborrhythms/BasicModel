@@ -12770,7 +12770,7 @@ class BasicModel(BaseModel):
         keep = pos < d.reshape(B, 1)
         return torch.where(keep.unsqueeze(-1), gathered, torch.zeros_like(gathered))
 
-    def _derivation_program(self, t=None, budget=None):
+    def _derivation_program(self, t=None, budget=None, *, padded=False):
         """The recorded derivation of sentence slot ``t`` (``None``: the
         row's last sentence) as owned compose tensors:
         ``positions [B, n]`` (the sentence's words as
@@ -12782,8 +12782,8 @@ class BasicModel(BaseModel):
         order: the endings last applied first, then per word latest
         first its unary, post-binary, pop and pre-binary, in the walk's
         action ids: a binary local id, ``R2 +`` a unary local id,
-        ``R2 + R1`` = pop; -1 once exhausted).  Assembled on the host at
-        the eager boundary from the trace; ``None`` without a trace."""
+        ``R2 + R1`` = pop; -1 once exhausted). Training consumes the padded tensors directly.
+        Diagnostic callers can request the compact occupied extent."""
         trace = self._reconstruction_stack()
         language = getattr(self, "languageSpace", None)
         isp = getattr(self, "inputSpace", None)
@@ -12808,8 +12808,9 @@ class BasicModel(BaseModel):
         local_b, known_b = language.local_op_from_rule_ids(flat, binary_map)
         local_u, known_u = language.local_op_from_rule_ids(flat, unary_map)
         recorded = mask.reshape(-1).to(torch.bool)
-        if bool((recorded & ~(known_b | known_u)).any()):
-            raise ValueError('compose trace contains an unknown recorded operation')
+        from Meaning import require_sentence_tensor
+        require_sentence_tensor((~recorded | known_b | known_u).all(),
+                                'compose trace contains an unknown recorded operation')
         kind = torch.where(known_b, torch.ones_like(local_b),
                            torch.where(known_u, torch.full_like(local_b, 2),
                                        torch.full_like(local_b, -1)))
@@ -12824,87 +12825,45 @@ class BasicModel(BaseModel):
         closing_width = max(1, 2 * cap)
         packed = bool(getattr(isp, "_sentence_pack_enabled", False))
         ids = getattr(isp, "_packed_sentence_ids", None)
-        if packed and torch.is_tensor(ids) and tuple(ids.shape) == (B, W):
-            ids = ids.to("cpu").tolist()
+        if not packed or not torch.is_tensor(ids) or ids.shape != active.shape:
+            ids = torch.zeros_like(active, dtype=torch.long)
+        offsets = getattr(trace, '_choice_positions', None)
+        if not torch.is_tensor(offsets):
+            offsets = torch.zeros_like(op)
+        leaves = getattr(isp, '_ar_grammar_leaf_mask', None)
+        if not torch.is_tensor(leaves):
+            leaves = active
+        field = getattr(self, '_sentence_field', None)
+        if field is not None and hasattr(field, 'reads'):
+            order = field.source_columns()
         else:
-            ids = [[0] * W for _ in range(B)]
-        pos_tensor = getattr(trace, '_choice_positions', None)
-        pos_l = (pos_tensor.to('cpu').tolist() if torch.is_tensor(pos_tensor)
-                 else [[0] * S for _ in range(B)])
-        kind_l = kind.to("cpu").tolist()
-        op_l = op.to("cpu").tolist()
-        rows = active.to("cpu").tolist()
-        leaf_mask = getattr(isp, '_ar_grammar_leaf_mask', None)
-        leaves = leaf_mask.to('cpu').tolist() if torch.is_tensor(leaf_mask) else rows
-        T = int(budget) if budget is not None else self._derivation_trace_capacity()
-        positions_l, actions_l, targets_l, columns_l = [], [], [], []
-        for b in range(B):
-            words_all = [w for w in range(W) if rows[b][w]]
-            words, actions, targets, columns = [], [], [], []
-            if words_all:
-                last = words_all[-1]
-                sid = ids[b][last] if t is None else int(t)
-                words = [w for w in words_all if ids[b][w] == sid]
-            if words:
-                hi = words[-1]
-                base = 3 * W if hi == words_all[-1] else 3 * W + (hi + 1) * closing_width
-                words = [w for w in words if leaves[b][w]]
-                field = getattr(self, '_sentence_field', None)
-                if field is not None:
-                    words = [w for w in field.source_order(b) if w in words]
-                elif getattr(self, '_sentence_read_order', None) is not None:
-                    words = [w for w in self._sentence_read_order[b] if w in words]
-
-                def _at(slot):
-                    if 0 <= slot < S and kind_l[b][slot] >= 0:
-                        return kind_l[b][slot], op_l[b][slot]
-                    return -1, -1
-                depth = 0
-                def apply(slot):
-                    nonlocal depth
-                    k, o = _at(slot)
-                    if k in (1, 2, 3):
-                        catalog = getattr(language,'_compose_binary_rules',())
-                        field_bind = k == 1 and 0 <= o < len(catalog) and catalog[o].method_name == 'bind'
-                        if k in (1, 3) and not field_bind and depth < 2:
-                            raise ValueError('binary operation underflows the recorded forest')
-                        if k == 2 and not 0 <= pos_l[b][slot] < depth:
-                            raise ValueError('unary position is outside the recorded forest')
-                        actions.append((k, o, pos_l[b][slot] if k == 2 else -1))
-                        columns.append(slot)
-                        depth -= int(k == 1 and not field_bind)
-                for i, w in enumerate(words):
-                    actions.append((0, -1, i))
-                    columns.append(-1)
-                    depth += 1
-                    for r in range(3):
-                        apply(3*w+r)
-                for k in range(closing_width):
-                    apply(base+k)
-                targets = [stop if k == 0 else o if k in (1,3) else R2+o
-                           for k,o,_ in reversed(actions)]
-            if budget is None and len(targets) > T:
-                raise ValueError('recorded derivation exceeds its structural trace capacity')
-            positions_l.append(words)
-            actions_l.append(actions)
-            targets_l.append(targets[:T])
-            columns_l.append(columns)
-        n_max = max(1, max(len(p) for p in positions_l))
-        L_max = max(1, max(len(a) for a in actions_l))
-        positions = torch.full((B, n_max), -1, dtype=torch.long)
-        actions = torch.full((B, L_max, 3), -1, dtype=torch.long)
-        columns = torch.full((B, L_max), -1, dtype=torch.long)
-        targets = torch.full((B, T), -1, dtype=torch.long)
-        for b in range(B):
-            if positions_l[b]:
-                positions[b, :len(positions_l[b])] = torch.tensor(positions_l[b], dtype=torch.long)
-            if actions_l[b]:
-                actions[b, :len(actions_l[b])] = torch.tensor(actions_l[b], dtype=torch.long)
-                columns[b, :len(columns_l[b])] = torch.tensor(columns_l[b], dtype=torch.long)
-            if targets_l[b]:
-                targets[b, :len(targets_l[b])] = torch.tensor(targets_l[b], dtype=torch.long)
-        dev = active.device
-        return positions.to(dev), actions.to(dev), targets.to(dev), columns.to(dev)
+            source = ([field.source_order(b) for b in range(B)] if field is not None
+                      else getattr(self, '_sentence_read_order', None))
+            if source is None:
+                order = torch.arange(W, device=active.device).expand(B, W)
+            elif torch.is_tensor(source):
+                order = source
+            else:
+                width = max(1, max(map(len, source), default=0))
+                order = active.new_tensor([list(row) + [-1] * (width - len(row)) for row in source],
+                                          dtype=torch.long)
+        catalog = getattr(language, '_compose_binary_rules', ())
+        binds = [rule.method_name == 'bind' for rule in catalog]
+        bind = torch.zeros_like(kind, dtype=torch.bool)
+        if any(binds):
+            table = torch.tensor(binds, device=kind.device)
+            declared = known_b & (local_b >= 0) & (local_b < len(binds))
+            bind = (declared & table[local_b.clamp(0, len(binds) - 1)]).reshape(B, S)
+        from ReadingIndex import recorded_program
+        target_width = int(budget) if budget is not None else self._derivation_trace_capacity()
+        result = recorded_program(order, active, ids, leaves, kind, op, offsets, bind, closing_width,
+                                  R2, stop, target_width, t, budget is None)
+        if padded:
+            return result
+        positions, actions, targets, columns = result
+        counts = torch.stack(((positions >= 0).sum(1), (actions[..., 0] >= 0).sum(1)))
+        words, length = counts.amax(1).clamp_min(1).tolist()
+        return positions[:, :words], actions[:, :length], targets, columns[:, :length]
 
     def _derivation_targets(self, t=None, budget=None):
         """``[B, T]`` teacher actions of the recorded derivation (see
@@ -12982,7 +12941,7 @@ class BasicModel(BaseModel):
         for slot in slots:
             if sentence_slot is None and slot in captured:
                 continue
-            program = self._derivation_program(slot if packed else None)
+            program = self._derivation_program(slot if packed else None, padded=True)
             if packed or sentence_slot is not None:
                 end = (bank[:, slot].reshape(B, 3, D)
                        if torch.is_tensor(bank) and bank.dim() == 3

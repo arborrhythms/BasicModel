@@ -2,6 +2,62 @@
 import torch
 
 
+def recorded_program(order, active, ids, leaves, kind, op, offsets, bind, closing_width,
+                     binary_count, stop, target_width, sentence, check_capacity):
+    """Lay out the operations already selected by each walk in arrival order."""
+    from Meaning import require_sentence_tensor
+    B, W = active.shape
+    S = kind.shape[1]
+    columns = torch.arange(W, device=active.device)
+    # Index W supplies an inactive word even for an empty page.
+    def with_empty(table, fill):
+        return torch.nn.functional.pad(table, (0, 1), value=fill)
+    last = with_empty(torch.where(active, columns, -1), -1).amax(-1)
+    sid = with_empty(ids, -1).gather(1, torch.where(last >= 0, last, W)[:, None]) if sentence is None else sentence
+    in_sentence = active & (ids == sid)
+    final = with_empty(torch.where(in_sentence, columns, -1), -1).amax(-1)
+    valid = (order >= 0) & (order < W)
+    keep = with_empty(in_sentence & leaves, False).gather(1, torch.where(valid, order, W))
+    # Stable partition keeps the actual fixation order, including repeated words.
+    word_sort = (~keep).long().argsort(dim=1, stable=True)
+    words = torch.where(keep, order, -1).gather(1, word_sort)
+    word = words >= 0
+    slots = 3 * words[..., None] + torch.arange(3, device=active.device)
+    slots = torch.where(word[..., None], slots, -1)
+    shift = torch.nn.functional.pad(torch.zeros_like(slots, dtype=torch.bool), (1, 0), value=True)
+    shift = (shift & word[..., None]).reshape(B, -1)
+    slots = torch.nn.functional.pad(slots, (1, 0), value=-1).reshape(B, -1)
+    boundary = 3 * W + torch.where(final == last, 0, (final + 1) * closing_width)
+    closing = boundary[:, None] + torch.arange(closing_width, device=active.device)
+    slots = torch.cat((slots, torch.where(final[:, None] >= 0, closing, -1)), 1)
+    shift = torch.nn.functional.pad(shift, (0, closing_width))
+    source = torch.where((slots >= 0) & (slots < S), slots, S)
+    kinds = torch.where(shift, 0, with_empty(kind, -1).gather(1, source))
+    local = with_empty(op, -1).gather(1, source)
+    positions = with_empty(offsets, -1).gather(1, source)
+    args = torch.where(shift, shift.long().cumsum(1) - 1, torch.where(kinds == 2, positions, -1))
+    binary = (kinds == 1) & ~with_empty(bind, False).gather(1, source)
+    delta = shift.long() - binary.long()
+    depth = delta.cumsum(1) - delta
+    require_sentence_tensor((~(binary | (kinds == 3)) | (depth >= 2)).all(),
+                            'binary operation underflows the recorded forest')
+    require_sentence_tensor(((kinds != 2) | ((positions >= 0) & (positions < depth))).all(),
+                            'unary position is outside the recorded forest')
+    live = kinds >= 0
+    count = live.sum(1, keepdim=True)
+    if check_capacity:
+        require_sentence_tensor((count <= target_width).all(), 'recorded derivation exceeds its structural trace capacity')
+    ordered = (~live).long().argsort(dim=1, stable=True)
+    actions = torch.stack((kinds, local, args), -1)
+    actions = torch.where(live[..., None], actions, -1).gather(1, ordered[..., None].expand(-1, -1, 3))
+    columns = torch.where(live, slots, -1).gather(1, ordered)
+    kinds, local = actions[..., 0], actions[..., 1]
+    targets = torch.where(kinds == 0, stop, torch.where(kinds == 2, binary_count + local, local))
+    reverse = count - 1 - torch.arange(target_width, device=active.device)
+    targets = torch.where(reverse >= 0, targets.gather(1, reverse.clamp_min(0)), -1)
+    return words, actions, targets, columns
+
+
 def steps(reading):
     """The shared index for a native path, or the actions of an isolated journal."""
     index = getattr(reading, 'action_index', None)

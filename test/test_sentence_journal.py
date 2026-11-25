@@ -354,7 +354,7 @@ def test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading():
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
         _word_symbol_rows=lambda: rows, _word_symbol_concept_ids=lambda: rows,
         _answer_leaf_slab=lambda _: words, _word_lexical_forms=lambda *args: [(), ()],
-        _derivation_program=lambda _: program, _reconstruction_stack=lambda: trace,
+        _derivation_program=lambda _, *, padded: program, _reconstruction_stack=lambda: trace,
         _tensor_sentence_roots_live=torch.ones(B, 1, 3 * D), _tensor_sentence_roots_depth=torch.tensor([[1], [-1]]),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))

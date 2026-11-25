@@ -138,6 +138,14 @@ class SentenceField:
             accepted = accepted & valid[columns]
         return columns[accepted]
 
+    def source_columns(self):
+        """All streams' interpreted arrivals, padded where a stream did not read."""
+        if not self.reads:
+            return self.positions.new_full((len(self.scope), 1), -1)
+        columns = torch.stack([entry['index'] for entry in self.reads])
+        accepted = torch.stack([entry['rows'] for entry in self.reads], dim=1)
+        return torch.where(accepted, columns, -1)
+
     def source_order(self, row):
         return self.source_positions(row).tolist()
 
