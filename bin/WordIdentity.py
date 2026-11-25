@@ -383,52 +383,43 @@ class WordIdentity(nn.Module):
         """Which independent pages witnessed each new part before block consolidation."""
         from itertools import islice
         unavailable = torch.iinfo(torch.long).max
+        missing = torch.full((streams,), unavailable, device=device, dtype=torch.long)
+        observed = {name: (seen if torch.is_tensor(seen) else
+                           missing.new_tensor([seen.get(b, unavailable) for b in range(streams)]))
+                    for name, seen in observed.items()}
+
+        def witness_start(name):
+            if name in observed:
+                return observed[name]
+            holders = [seen for word, seen in observed.items() if name in word]
+            return torch.stack(holders).amin(0) if holders else missing
+
         born = []
         runs = []
         for run in islice(reversed(self.added), len(self.added) - prior_count):
             runs.append(bytes_of(run))
             between = self.added[run]
-            if run in observed:
-                starts = [observed[run].get(b, unavailable) for b in range(streams)]
-            elif between is not None:
-                # A repair needs both observations. Older forms were already
-                # available when the block opened.
-                starts = [max(observed[word].get(b, unavailable) if word in observed else 0
-                              for word in between) for b in range(streams)]
+            if run not in observed and between is not None:
+                witnesses = [observed[word] for word in between if word in observed]
+                opening = torch.stack(witnesses).amax(0) if witnesses else torch.zeros_like(missing)
             else:
-                # An explicit suffix lesson teaches the part from its holder.
-                witnesses = [seen for word, seen in observed.items() if run in word]
-                starts = [min((seen[b] for seen in witnesses if b in seen), default=unavailable)
-                          for b in range(streams)]
-            born.append((self.atoms[('part', run)], starts))
-        # A form can become a nearest holder even if its run was already
-        # an admitted part. Newly linked word rows have their own opening.
+                opening = witness_start(run)
+            born.append((self.atoms[('part', run)], opening))
         forms = (self._ordered[prior_forms:] if prior_forms is not None else
                  [bytes_of(name) for name in observed if bytes_of(name) in self.word_rows])
         for raw in forms:
-            name = text_of(raw)
-            witnesses = ([observed[name]] if name in observed else
-                         [seen for word, seen in observed.items() if name in word])
-            starts = [min((seen[b] for seen in witnesses if b in seen), default=unavailable)
-                      for b in range(streams)]
-            born.append((self.word_rows[raw], starts))
+            born.append((self.word_rows[raw], witness_start(text_of(raw))))
             runs.append(raw)
-        born.sort()
-        from bisect import bisect_right
+        born.sort(key=lambda item: item[0])
         from BlockPercepts import BlockParts, repaired_parts
         starts = sentence_starts if sentence_starts is not None else [[0]] * streams
         count = max(1, max(map(len, starts)))
-        def opening(stream, offset):
-            if offset == unavailable:
-                return unavailable
-            limits = starts[stream]
-            return limits[max(0, bisect_right(limits, offset) - 1)] if limits else 0
-
-        rows = torch.tensor([part for part, _ in born], dtype=torch.long, device=device)
-        times = torch.tensor([[opening(b, at) for b, at in enumerate(offsets)] for _, offsets in born],
-                             dtype=torch.long, device=device).reshape(-1, streams).T
-        starts = torch.tensor([list(r) + [unavailable] * (count - len(r)) for r in starts],
-                              dtype=torch.long, device=device)
+        starts = missing.new_tensor([list(row) + [unavailable] * (count - len(row)) for row in starts])
+        rows = missing.new_tensor([part for part, _ in born])
+        offsets = torch.stack([offset for _, offset in born], 1) if born else starts[:, :0]
+        at = torch.searchsorted(starts, offsets.contiguous(), right=True) - 1
+        times = torch.where(offsets == unavailable, unavailable,
+                            torch.where(starts[:, :1] == unavailable, 0, starts.gather(1, at.clamp_min(0))))
         runs.extend(bytes_of(atom[1]) for atom, *_ in repairs)
         block = BlockParts(rows, times, starts, tuple(dict.fromkeys(runs)))
         if repairs:

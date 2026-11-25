@@ -188,7 +188,6 @@ def repaired_parts(identity, block, born, observed, repairs):
     is needed on both the occurrence and the promoted Pi sides.
     """
     from WordIdentity import bytes_of, text_of, distinguishing_coordinates
-    from bisect import bisect_right
     device = block.rows.device
     atoms = tuple(identity.atoms)
     words = identity._ordered
@@ -198,13 +197,21 @@ def repaired_parts(identity, block, born, observed, repairs):
     atom_ids = block.rows.new_tensor([identity.atoms[a] for a in atoms])
     word_ids = block.rows.new_tensor([identity.word_rows[w] for w in words])
     end = torch.iinfo(torch.long).max
-    offsets = [sorted({seen[b] for seen in observed.values() if b in seen}) for b in range(len(block.starts))]
-    rank = {row: [bisect_right(steps, at) if at != end else end
-                  for steps, at in zip(offsets, starts)] for row, starts in born}
-    prior = (0,) * len(offsets)
+    zero = torch.zeros_like(block.starts[:, 0])
+    offsets = (torch.stack(list(observed.values()), 1).sort(1).values if observed
+               else block.starts[:, :0])
+    distinct = offsets != end
+    distinct[:, 1:] = distinct[:, 1:] & (offsets[:, 1:] != offsets[:, :-1])
+    rounds = distinct.sum(1).amax()
+
+    def rank_of(at):
+        return torch.where(at == end, end, ((offsets <= at[:, None]) & distinct).sum(1))
+
+    rank = {row: rank_of(starts) for row, starts in born}
 
     def ranks(addresses):
-        return block.rows.new_tensor([rank.get(row, prior) for row in addresses]).T[:, None]
+        values = [rank.get(row, zero) for row in addresses]
+        return (torch.stack(values, 1) if values else block.starts[:, :0])[:, None]
 
     word_rank = ranks(identity.word_rows[w] for w in words)
     atom_rank = ranks(identity.atoms[a] for a in atoms)
@@ -223,10 +230,8 @@ def repaired_parts(identity, block, born, observed, repairs):
         if containment:
             use -= gained.long()
         else:
-            limits = [max((observed[text_of(w)].get(b, end) for w in witnesses if text_of(w) in observed),
-                          default=0) for b in range(len(offsets))]
-            step = [bisect_right(seq, at) if at != end else end for seq, at in zip(offsets, limits)]
-            bit_changes.append((seat[atom], gained, block.rows.new_tensor(step)))
+            limits = [observed[text_of(w)] for w in witnesses if text_of(w) in observed]
+            bit_changes.append((seat[atom], gained, rank_of(torch.stack(limits).amax(0) if limits else zero)))
     state = initial.expand(*block.starts.shape, *initial.shape).clone()
     edges = [(w, seat[a]) for w, word in enumerate(words) for a in identity.words[word]]
     word_at, atom_at = block.rows.new_tensor(edges).T
@@ -241,9 +246,9 @@ def repaired_parts(identity, block, born, observed, repairs):
                        if a not in identity.words[inner] and atom[1] not in a[1]]) for h in sorted(holders)]
             targets[atom] = identity.order[inner], holds, identity._kept(inner, device=device), extras
 
-    for step in range(1, max(map(len, offsets), default=0) + 1):
-        live = word_visible & (word_rank <= step)
-        present = atom_visible & (atom_rank <= step)
+    for step in range(1, offsets.shape[1] + 1):
+        live = word_visible & (word_rank <= step) & (step <= rounds)
+        present = atom_visible & (atom_rank <= step) & (step <= rounds)
         for member, gained, first in bit_changes:
             reached = (first[:, None] <= step) & present[..., member]
             state[..., member, :] |= reached[..., None] & gained

@@ -11305,18 +11305,19 @@ class PartSpace(Space):
         byte_slab = getattr(self, '_staged_unit_bytes', None)
         identity = getattr(ps, 'identity', None)
         simple_parts = identity is not None and not identity.nested and identity._marker_pattern is None
-        layout = prepared_parts = prepared_counts = recognized_units = None
-        discovery_sources = None
+        layout = prepared_parts = prepared_counts = None
+        discovery_sources = first_names = None
         admit = not getattr(self, "_online_learning_frozen", False)
-        def observation_keys(form_rows):
-            nonlocal discovery_sources
-            if not admit:
-                return form_rows
+
+        def first_occurrences(forms, hidden=None):
             from WordSurfaces import spelling_sources
-            spans = layout[:, :form_rows.shape[1]]
-            novel = (form_rows < 0) & (spans[..., 1] > spans[..., 0])
-            discovery_sources = spelling_sources(compact[:, :byte_count], spans, novel, across_pages=True)
-            return torch.where(novel, -2 - discovery_sources, form_rows)
+            spans = layout[:, :forms.shape[1]]
+            visible = (forms < 0) & (spans[..., 1] > spans[..., 0])
+            if hidden is not None:
+                visible = visible & ~hidden
+            source = spelling_sources(compact[:, :byte_count], spans, visible, across_pages=True)
+            seats = torch.arange(forms.numel(), device=dev).reshape_as(forms)
+            return source, visible & (source == seats)
 
         if torch.is_tensor(unit_spans_rows) and torch.is_tensor(byte_slab):
             compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
@@ -11336,13 +11337,16 @@ class PartSpace(Space):
             else:
                 counts_device = prepared_parts[1]
                 all_counts = F.pad(counts_device, (0, delivered_layout.shape[1] - counts_device.shape[1]))
-                form_rows = F.pad(observation_keys(prepared_parts[3]),
-                                  (0, delivered_layout.shape[1] - counts_device.shape[1]), value=-1)
-                records = torch.cat((delivered_layout, all_counts[..., None], form_rows[..., None],
-                                     element_codes[..., None]), -1).tolist()
-                unit_spans_rows = [[(lo, hi) for lo, hi, _, _, _ in row] for row in records]
-                prepared_counts = [[n for _, _, n, _, _ in row[:word_capacity]] for row in records]
-                recognized_units = [[form for _, _, _, form, _ in row[:word_capacity]] for row in records]
+                columns = [delivered_layout, all_counts[..., None], element_codes[..., None]]
+                if admit:
+                    discovery_sources, first = first_occurrences(prepared_parts[3])
+                    columns.append(F.pad(first, (0, delivered_layout.shape[1] - first.shape[1]))[..., None])
+                records = torch.cat(columns, -1).tolist()
+                unit_spans_rows = [[(event[0], event[1]) for event in row] for row in records]
+                prepared_counts = [[event[2] for event in row[:word_capacity]] for row in records]
+                if admit:
+                    first_names = [(b, w) for b, row in enumerate(records)
+                                   for w, event in enumerate(row[:word_capacity]) if event[4]]
         staged_rows, cover_extents, word_texts_rows = [], [], []
         native_rows, native_spans = [], []
         part_capacity = 3
@@ -11435,7 +11439,7 @@ class PartSpace(Space):
             # The cover read the element at each position within its learned
             # cut. Only new native names reach the existing identity writer.
             if not hiding:
-                alphabet = dict.fromkeys(chr(record[4]) for row in records for record in row if record[4] >= 0)
+                alphabet = dict.fromkeys(chr(record[3]) for row in records for record in row if record[3] >= 0)
             missing_atoms = [('part', char) for char in alphabet if ('part', char) not in identity.atoms]
             for atom in missing_atoms:
                 identity._atom(atom)
@@ -11460,13 +11464,11 @@ class PartSpace(Space):
             elif missing_atoms or prepared_parts is None:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
                                                         layout[:, :min(byte_count, word_capacity)], -1, identify=True)
-                prepared_counts = None
+                prepared_counts = first_names = None
             if prepared_parts is not None:
                 flat_parts, lengths, flat_extents, form_rows = prepared_parts
                 if prepared_counts is None:
-                    records = torch.stack((lengths, observation_keys(form_rows)), -1).tolist()
-                    counts = [[n for n, _ in row] for row in records]
-                    recognized_units = [[form for _, form in row] for row in records]
+                    counts = lengths.tolist()
                 else:
                     counts = prepared_counts
                 missing = word_capacity - lengths.shape[1]
@@ -11478,6 +11480,26 @@ class PartSpace(Space):
                     flat_parts, lengths, flat_extents, -1, part_capacity)
         observed_forms = []
         new_units = {}
+        if located_parts is not None and admit:
+            admission_spans = layout[:, :form_rows.shape[1]]
+            if hiding or first_names is None:
+                hidden = omission['draw'].forms[:, :form_rows.shape[1]].any(-1) if hiding else None
+                discovery_sources, first = first_occurrences(form_rows, hidden)
+                first_names = first.nonzero().tolist()
+            for b, w in first_names:
+                lo, hi = units[b][1][w]
+                source = b * form_rows.shape[1] + w
+                new_units[source] = raw_rows[b][lo:hi], b, w
+            if track_parts and first_names:
+                from WordIdentity import text_of
+                unavailable = torch.iinfo(torch.long).max
+                offsets = admission_spans[..., 0]
+                earliest = offsets.new_full((batch, form_rows.numel()), unavailable)
+                earliest.scatter_reduce_(1, discovery_sources.clamp_min(0),
+                    torch.where(discovery_sources >= 0, offsets, unavailable), 'amin')
+                first_offsets = earliest.index_select(1, form_rows.new_tensor(list(new_units)))
+                new_forms = {text_of(raw): opening for (raw, _, _), opening in
+                             zip(new_units.values(), first_offsets.unbind(1), strict=True)}
         for b,(raw,spans) in enumerate(units):
             visible = visible_rows[b]
             word_texts_rows.append([visible[s0:e0].decode("latin1") for s0, e0 in spans])
@@ -11486,13 +11508,6 @@ class PartSpace(Space):
                                      else int(ps.get_id(bytes([value])))) for i, value in enumerate(visible)])
                 native_spans.append([(i, i+1) for i in range(len(raw))])
             if located_parts is not None:
-                if admit:
-                    for w, ((lo, hi), form) in enumerate(zip(spans[:word_capacity], recognized_units[b])):
-                        if form <= -2 and (changed is None or not changed[b][w]):
-                            source = -2 - form
-                            if source not in new_units:
-                                new_units[source] = raw[lo:hi], b, w
-                            observe_new_form(new_units[source][0], b, lo)
                 continue
             staged_words = []
             for word_index in range(word_capacity):
