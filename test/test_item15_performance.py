@@ -6,8 +6,136 @@ from torch.nn import functional as F
 from PerceptProperties import counts_in_spans
 
 
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_native_ancestry_expands_repeated_parts_without_host_reads(device, monkeypatch):
+    from BasicPercepts import BasicPercepts
+    from Layers import RadixLayer
+    from Meaning import share_meaning_metadata
+    from torch.utils._python_dispatch import TorchDispatchMode
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    native = RadixLayer(4, initial_cap=8).to(device)
+    for raw in (b'a', b'bc', b'abc', b'aabc'):
+        native.insert(raw)
+    native.part_groups = {2: (0, 1), 3: (0, 2)}
+    basic = BasicPercepts(native, 2, 2, 8).to(device)
+    ids = torch.tensor([[3, 0, -1], [2, 1, 0], [-1, -1, -1]], device=device)
+    spans = torch.tensor([[[4, 8], [9, 10], [0, 0]], [[0, 3], [3, 5], [6, 7]],
+                          [[0, 0], [0, 0], [0, 0]]], device=device)
+    expected_ids = ids.new_tensor([[0, 0, 1, 0], [0, 1, 1, 0], [-1] * 4])
+    expected_spans = spans.new_tensor([[[4, 5], [5, 6], [6, 8], [9, 10]],
+                                       [[0, 1], [1, 3], [3, 5], [6, 7]], [[0, 0]] * 4])
+
+    class NoHostScalar(TorchDispatchMode):
+        def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+            assert func != torch.ops.aten._local_scalar_dense.default
+            return func(*args, **(kwargs or {}))
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError('native ancestry read a tensor on the host')
+
+    with monkeypatch.context() as patch, share_meaning_metadata(), NoHostScalar():
+        for method in ('item', 'tolist'):
+            patch.setattr(torch.Tensor, method, forbidden)
+        rows, extents = basic._expand_native_parts(ids, spans)
+    torch.testing.assert_close(rows[:, :4], expected_ids, rtol=0, atol=0)
+    torch.testing.assert_close(extents[:, :4], expected_spans, rtol=0, atol=0)
+    assert rows[:, 4:].eq(-1).all() and extents[:, 4:].eq(0).all()
+    captured = torch.compile(basic._expand_native_parts, backend='eager', fullgraph=True)
+    for actual, expected in zip(captured(ids, spans), (rows, extents), strict=True):
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    for actual in basic._expand_native_parts(ids[:, :0], spans[:, :0]):
+        assert actual.shape[1] == 0
+    invalid = spans.clone()
+    invalid[0, 0, 1] += 1
+    with pytest.raises(ValueError, match='native part ancestry disagrees with its extent'):
+        basic._expand_native_parts(ids, invalid)
+
+
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+@pytest.mark.parametrize('sparse', [False, True])
+def test_inventory_boundary_reads_capture_without_predicates_and_keep_gradients(device, sparse):
+    from types import SimpleNamespace
+    from BasicPercepts import BasicPercepts
+    from Spaces import Codebook
+    from torch.utils._python_dispatch import TorchDispatchMode
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    banks = [Codebook(), Codebook()]
+    for bank in banks:
+        bank.W = torch.nn.Parameter(torch.arange(32, device=device).reshape(8, 4).float() / 32)
+        bank.sparse_lookup_grad = sparse
+    basic = BasicPercepts(SimpleNamespace(_basis=banks[0]), 2, 2, 8).to(device)
+    object.__setattr__(basic, 'whole', banks[1])
+    refs = [6 if sparse else -2, 0, 2, 0]
+    tensor_refs = torch.tensor(refs, device=device)
+
+    class NoHostPredicate(TorchDispatchMode):
+        def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+            assert func not in (torch.ops.aten._local_scalar_dense.default,
+                                torch.ops.aten.nonzero.default)
+            return func(*args, **(kwargs or {}))
+
+    for whole in (False, True):
+        read = basic.whole_codes if whole else basic.part_codes
+        # The tensor-reference route remains the general mixed-value reference.
+        expected = read(tensor_refs)
+        with NoHostPredicate():
+            eager = read(refs)
+        # The existing sparse embedding adapter is deliberately outside capture.
+        actual = read(refs) if sparse else torch.compile(read, backend='eager', fullgraph=True)(refs)
+        torch.testing.assert_close(eager, expected, rtol=0, atol=0)
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+        weight = expected.new_tensor([[1., 2.], [3., -1.], [4., 0.], [-2., 5.]])
+        for value in (eager, actual):
+            wanted = torch.autograd.grad((expected * weight).sum(), tuple(b.W for b in banks),
+                                         allow_unused=True, retain_graph=True)
+            got = torch.autograd.grad((value * weight).sum(), tuple(b.W for b in banks), allow_unused=True)
+            for left, right in zip(wanted, got, strict=True):
+                assert (left is None) == (right is None)
+                if left is not None:
+                    torch.testing.assert_close(left, right, rtol=0, atol=0)
+        with NoHostPredicate():
+            empty = read([])
+        assert empty.shape == (0, 2) and not empty.requires_grad
+
+
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_native_decode_checks_strength_on_stream_and_captures(device):
+    from FieldReverse import NativeDecode
+    from Meaning import share_meaning_metadata
+    from torch.utils._python_dispatch import TorchDispatchMode
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    decoder = NativeDecode(4, 7, 3).to(device)
+    decoder.sync([b'a', b'\x00b', b'xyz', b''])
+    rows = torch.tensor([[2, 0, 0, 1, 0, 0, 3], [1, 0, 2, 0, 0, 0, 0]], device=device)
+    strength = torch.tensor([[1., 1., 1., 1., 1., 0., 1.], [1., 1., 1., 1., 1., 1., 1.]], device=device)
+    expected = torch.tensor([[120, 121, 122, 0, 98, 0, 0], [0, 98, 120, 121, 122, 97, 97]], device=device)
+
+    class NoHostScalar(TorchDispatchMode):
+        def __torch_dispatch__(self, func, types, args=(), kwargs=None):
+            assert func != torch.ops.aten._local_scalar_dense.default
+            return func(*args, **(kwargs or {}))
+
+    with share_meaning_metadata(), NoHostScalar():
+        actual = decoder(rows, strength)
+    torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+    captured = torch.compile(decoder, backend='eager', fullgraph=True)
+    torch.testing.assert_close(captured(rows, strength), expected, rtol=0, atol=0)
+    # Eager external input validation still raises before dispatching the walk.
+    for invalid in (float('nan'), float('inf')):
+        with pytest.raises(RuntimeError, match='radix activity contains NaN/Inf'):
+            decoder(rows, torch.full_like(strength, invalid))
+        if device == 'cpu':
+            with pytest.raises(RuntimeError, match='radix activity contains NaN/Inf'):
+                captured(rows, torch.full_like(strength, invalid))
+        assert torch.is_grad_enabled()
+
+
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason="requires Metal")
-def test_compiled_sentence_rejects_an_invalid_operand_on_metal(tmp_path):
+@pytest.mark.parametrize('reader', ['meaning', 'native_decode'])
+def test_compiled_sentence_rejects_an_invalid_operand_on_metal(tmp_path, reader):
     """Test the project's compiler hooks in isolation from the suite's device state."""
     import os
     import subprocess
@@ -17,26 +145,37 @@ def test_compiled_sentence_rejects_an_invalid_operand_on_metal(tmp_path):
     code = """
 import torch
 import util
-from Meaning import ConceptualMeaning
-
-def read(roles, mask):
-    return ConceptualMeaning(roles, mask).roles.sum()
+import sys
+if sys.argv[1] == 'meaning':
+    from Meaning import ConceptualMeaning
+    def read(roles, mask):
+        return ConceptualMeaning(roles, mask).roles.sum()
+    values = torch.ones(3, 4, device='mps')
+    mask = torch.tensor([True, False, True], device='mps')
+    message = 'non-finite occupied meaning role'
+else:
+    from FieldReverse import NativeDecode
+    decoder = NativeDecode(1, 4, 1).to('mps')
+    decoder.sync([bytes([2])])
+    def read(strength, rows):
+        return decoder(rows, strength).sum()
+    values = torch.ones(1, 4, device='mps')
+    mask = torch.zeros(1, 4, dtype=torch.long, device='mps')
+    message = 'radix activity contains NaN/Inf'
 
 compiled = util.compile(read, fullgraph=True)
 assert compiled is not read
-values = torch.ones(3, 4, device='mps')
-mask = torch.tensor([True, False, True], device='mps')
 assert compiled(values, mask).item() == 8
 values[0, 0] = float('nan')
 try:
     compiled(values, mask)
     torch.mps.synchronize()
 except torch.AcceleratorError as exc:
-    assert 'non-finite occupied meaning role' in str(exc)
+    assert message in str(exc)
 else:
     raise AssertionError('compiled reader accepted non-finite occupied content')
 """
-    subprocess.run([sys.executable, '-c', code], check=True, cwd=root,
+    subprocess.run([sys.executable, '-c', code, reader], check=True, cwd=root,
         env={**os.environ, 'PYTHONPATH': str(root / 'bin'), 'MODEL_COMPILE': 'inductor',
              'BASICMODEL_DEVICE': 'mps', 'TORCHINDUCTOR_CACHE_DIR': str(tmp_path)})
 

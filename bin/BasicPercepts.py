@@ -769,6 +769,14 @@ class BasicPercepts(nn.Module):
     def _boundary_codes(self, references, *, whole, place=None):
         ids = torch.as_tensor(references, device=self.value_codes.device, dtype=torch.long)
         width = self.property_width if whole else self.identity_width
+        if not ids.numel():
+            # An empty read must not make either code bank participate in backward.
+            return self.value_codes.new_zeros(*ids.shape, width)
+        if (isinstance(references, (list, tuple))
+                and all(isinstance(ref, int) and ref >= -self.identity_width for ref in references)):
+            # Inventory references already known to Python need no device predicate
+            # or boolean compaction to establish that they are native addresses.
+            return self._native_boundary_codes(ids, whole=whole)
         result = self.value_codes.new_zeros(*ids.shape, width)
         values = ids < -self.identity_width
         if bool(values.any()):
@@ -776,11 +784,14 @@ class BasicPercepts(nn.Module):
             # either half is its cut of its place's sorted bins.
             result[values] = self.value_code(self.felt_of(ids[values]), width, place)
         if bool((~values).any()):
-            bank = self.whole if whole else self.native._basis
-            native = bank.lookup_rows(ids[~values])
-            result[~values] = (native[..., self.identity_width:self.width] if whole
-                               else native[..., :self.identity_width])
+            result[~values] = self._native_boundary_codes(ids[~values], whole=whole)
         return result
+
+    def _native_boundary_codes(self, ids, *, whole):
+        bank = self.whole if whole else self.native._basis
+        native = bank.lookup_rows(ids)
+        half = native[..., self.identity_width:self.width] if whole else native[..., :self.identity_width]
+        return half.to(self.value_codes)
 
     def _identity(self):
         return getattr(self.native, 'identity', None) if self.native is not None else None
@@ -1078,11 +1089,8 @@ class BasicPercepts(nn.Module):
         # references require a place-specific chart. Native codes stay live.
         if min(references) < -self.identity_width:
             return self._boundary_codes(references, whole=whole, place=int(self.places[row]))
-        bank = self.whole if whole else self.native._basis
         ids = torch.tensor(references, dtype=torch.long, device=self.value_codes.device)
-        native = bank.lookup_rows(ids)
-        half = native[..., self.identity_width:self.width] if whole else native[..., :self.identity_width]
-        return half.to(self.value_codes)
+        return self._native_boundary_codes(ids, whole=whole)
 
     def subspace_bounds(self, row):
         """The parts half, the greatest of its parts' codes; the wholes half,
@@ -1396,6 +1404,46 @@ class BasicPercepts(nn.Module):
                          for leaf in leaves(child, (*visiting, part))) if part in ancestry else (part,)
         return leaves
 
+    def _expand_native_parts(self, ids, spans):
+        """Expand recorded ancestry without reading occurrence addresses to Python."""
+        from Meaning import require_sentence_tensor
+        leaves = self._leaves()
+        index, members = [], []
+        widest = 1
+        for part in range(len(self.native)):
+            children = leaves(part)
+            index.append((len(members), len(children)))
+            offset = 0
+            for child in children:
+                length = len(self._part_text(child) or self.native.bytes_for(child))
+                members.append((child, offset, length))
+                offset += length
+            index[-1] += (offset,)
+            widest = max(widest, len(children))
+        live = (ids >= 0) & (spans[..., 1] > spans[..., 0])
+        require_sentence_tensor((~live | (ids < len(index))).all(),
+                                'unavailable native part reference', IndexError)
+        if not index or not ids.shape[1]:
+            return ids[:, :0], spans[:, :0]
+        # These columns come from the existing admitted ancestry, not from
+        # observed tensor values. The occurrence walk and its size stay native.
+        table = ids.new_tensor(index)
+        records = ids.new_tensor(members + [(-1, 0, 0)])
+        start, count, length = table[ids.clamp(0, len(index) - 1)].unbind(-1)
+        require_sentence_tensor((~live | (length == spans[..., 1] - spans[..., 0])).all(),
+                                'native part ancestry disagrees with its extent')
+        count = torch.where(live, count, 0)
+        end = count.cumsum(1)
+        slots = torch.arange(ids.shape[1] * widest, device=ids.device).expand(len(ids), -1).contiguous()
+        source = torch.searchsorted(end, slots, right=True).clamp_max(ids.shape[1] - 1)
+        occupied = slots < end[:, -1:]
+        within = slots - (end - count).gather(1, source)
+        at = torch.where(occupied, start.gather(1, source) + within, len(members))
+        row, offset, length = records[at].unbind(-1)
+        lo = spans[..., 0].gather(1, source) + offset
+        extents = torch.stack((lo, lo + length), -1)
+        return row, torch.where(occupied[..., None], extents, 0)
+
     def member_keys(self, row):
         """The keys of a basic percept's members in the percept tower: its
         run of parts and each of its wholes. A value percept has none."""
@@ -1602,30 +1650,9 @@ class BasicPercepts(nn.Module):
         # A nested native row retains its recorded part witnesses. Descend
         # those references, not its spelling or an alternative byte tiling.
         ancestry = getattr(self.native, 'part_groups', {})
-        leaves = self._leaves()
         if ancestry and not options.get('element_input', False):
             ids, spans, primitive, raw, whole_spans = percepts
-            expanded = []
-            for row_ids, row_spans in zip(ids.tolist(), spans.tolist()):
-                events = []
-                for part, (start, end) in zip(row_ids, row_spans):
-                    if part < 0 or end <= start:
-                        continue
-                    cursor = start
-                    for leaf in leaves(part):
-                        stop = cursor + len(self._part_text(leaf) or self.native.bytes_for(leaf))
-                        events.append((leaf, cursor, stop)); cursor = stop
-                    if cursor != end:
-                        raise ValueError('native part ancestry disagrees with its extent')
-                expanded.append(events)
-            width = max(map(len, expanded), default=0)
-            ids = ids.new_full((len(expanded), width), -1)
-            spans = spans.new_zeros(len(expanded), width, 2)
-            for batch, events in enumerate(expanded):
-                if events:
-                    values = ids.new_tensor(events)
-                    ids[batch, :len(events)] = values[:, 0]
-                    spans[batch, :len(events)] = values[:, 1:]
+            ids, spans = self._expand_native_parts(ids, spans)
             percepts = ids, spans, primitive, raw, whole_spans
         ordered = {}
         def with_members(row, seen):

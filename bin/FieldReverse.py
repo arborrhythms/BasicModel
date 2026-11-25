@@ -45,13 +45,15 @@ class NativeDecode(nn.Module):
             self.lengths[row] = len(raw)
         self._admitted = len(table)
 
-    @torch.no_grad()
     def forward(self, rows, strength):
+        from Meaning import require_sentence_tensor
+        # This integer walk has no differentiable outputs. A no_grad wrapper
+        # would put mode switches in the graph that a failed assert can bypass.
         B, W = rows.shape
         if W >= len(self.positions):
             raise OverflowError('native activity exceeds decoder position capacity')
-        if not bool(torch.isfinite(strength).all()):
-            raise RuntimeError('radix activity contains NaN/Inf')
+        require_sentence_tensor(torch.isfinite(strength).all(),
+                                'radix activity contains NaN/Inf', RuntimeError)
         pos = self.positions[:W + 1].expand(B, -1)
         length = torch.where(strength > 0, self.lengths[rows], 0)
         # The old greedy walk follows p -> p + max(1, spelling_length).
