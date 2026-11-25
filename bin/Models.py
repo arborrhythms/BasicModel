@@ -13737,7 +13737,7 @@ class BasicModel(BaseModel):
             ps._staged_unit_bytes = analysis_input if _ss is not None else None
             from Omission import prepare as prepare_omission
             object.__setattr__(self.perceptualSpace, '_omission_prepare',
-                (lambda units: prepare_omission(self, units)) if self.word_brackets and not target_only else None)
+                (lambda units, cover, counts: prepare_omission(self, units, cover, counts)) if self.word_brackets and not target_only else None)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:

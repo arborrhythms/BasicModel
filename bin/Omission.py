@@ -93,7 +93,7 @@ def covered_bytes(spans, forms, length):
     return changes[:, :-1].cumsum(1) > 0
 
 
-def prepare(model, units):
+def prepare(model, units, cover=None, counts=None):
     """Draw from the lexical layout before any unit or byte is admitted."""
     ps, isp = model.perceptualSpace, model.inputSpace
     policy = model.omission
@@ -105,22 +105,31 @@ def prepare(model, units):
         return None
     identity = getattr(ps.percept_store, 'identity', None)
     width = int(ps._serial_word_capacity)
-    plans, capacity = [], 3
-    for raw, spans in units:
-        row = []
-        for lo, hi in spans[:width]:
-            word = raw[lo:hi]
-            cover = () if identity is None else identity.ordered_cover(word)
-            parts = ([(lo+a, lo+z) for _, a, z in cover] if identity is not None
-                     else [(i, i+1) for i in range(lo, hi)])
-            row.append(dict(cover=cover, spans=parts))
-            capacity = max(capacity, len(parts))
-        plans.append(row)
     device = model._staged_concepts_in.device
-    valid = torch.zeros(len(units), width, capacity, dtype=torch.bool, device=device)
-    for b, row in enumerate(plans):
-        for w, plan in enumerate(row):
-            valid[b, w, :len(plan['spans'])] = True
+    plans = None
+    if cover is not None:
+        from BasicPercepts import pack_disjoint_units
+        ids, lengths, extents, _ = cover
+        capacity = max(3, max((n for row in counts for n in row), default=0))
+        lengths = torch.nn.functional.pad(lengths, (0, width - lengths.shape[1]))
+        _, span_table = pack_disjoint_units(ids, lengths, extents, -1, capacity)
+        valid = torch.arange(capacity, device=device) < lengths[..., None]
+    else:
+        plans, capacity = [], 3
+        for raw, spans in units:
+            row = []
+            for lo, hi in spans[:width]:
+                word = raw[lo:hi]
+                members = () if identity is None else identity.ordered_cover(word)
+                parts = ([(lo+a, lo+z) for _, a, z in members] if identity is not None
+                         else [(i, i+1) for i in range(lo, hi)])
+                row.append(dict(cover=members, spans=parts))
+                capacity = max(capacity, len(parts))
+            plans.append(row)
+        spans = [[word['spans'] + [(0, 0)] * (capacity - len(word['spans'])) for word in row]
+                 + [[(0, 0)] * capacity] * (width - len(row)) for row in plans]
+        span_table = torch.tensor(spans, device=device, dtype=torch.long).reshape(len(units), width, capacity, 2)
+        valid = span_table[..., 1] > span_table[..., 0]
     active = valid.any(-1)
     isp._finalize_sentence_word_layout(active)
     sentences = isp._packed_sentence_ids
@@ -134,9 +143,6 @@ def prepare(model, units):
     model._omission_prepared = dict(raw=raw_target, units=units, plans=plans,
         draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
     if bool(forms.any()):
-        spans = [[word['spans'] + [(0, 0)] * (capacity - len(word['spans'])) for word in row]
-                 + [[(0, 0)] * capacity] * (width - len(row)) for row in plans]
-        span_table = torch.tensor(spans, device=device, dtype=torch.long).reshape(*forms.shape, 2)
         model._omission_prepared['bytes'] = covered_bytes(span_table, forms, raw_target.shape[-1])
     return model._omission_prepared
 

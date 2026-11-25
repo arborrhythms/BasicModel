@@ -11364,10 +11364,11 @@ class PartSpace(Space):
                 spans = complete
             units.append((raw,spans))
         prepare = getattr(self, '_omission_prepare', None)
-        omission = None if prepare is None else prepare(units)
+        omission = None if prepare is None else prepare(units, prepared_parts, prepared_counts)
         hiding = omission is not None and 'bytes' in omission
-        changed = omission['draw'].forms.any(-1).detach().cpu().tolist() if hiding else None
-        hidden_rows = omission['bytes'].detach().cpu().tolist() if hiding else None
+        hidden_rows = omission['bytes'].tolist() if hiding else None
+        changed = ([[any(mask[lo:hi]) for lo, hi in spans[:word_capacity]]
+                    for mask, (_, spans) in zip(hidden_rows, units, strict=True)] if hiding else None)
         visible_rows = []
         for b, (raw, _) in enumerate(units):
             hidden = None if hidden_rows is None else hidden_rows[b]
@@ -11405,14 +11406,28 @@ class PartSpace(Space):
                         with identity.record_repairs(repairs, unit):
                             identity.observe_nested(unit)
         located_parts = None
-        if layout is not None and simple_parts and not hiding:
+        if layout is not None and simple_parts:
             # Register only observed characters. Cuts can split UTF-8, so decode
             # each actual unit with the same surrogate handling as WordIdentity.
             from WordIdentity import text_of
-            alphabet = dict.fromkeys(char for b, (raw, spans) in enumerate(units)
-                                     for w, (lo, hi) in enumerate(spans[:word_capacity])
-                                     if recognized_units is None or recognized_units[b][w] < 0
-                                     for char in text_of(raw[lo:hi]))
+            if hiding:
+                # Only unfilled, visible seats may create an atom. An omitted
+                # byte inside a known part never licenses a new element.
+                flat, _, extents, _ = prepared_parts
+                starts, ends = extents.unbind(-1)
+                unseen = (flat < 0) & (ends > starts)
+                missing_widths = torch.zeros_like(compact[:, :byte_count])
+                if byte_count:
+                    unseen = unseen & ~omission['bytes'].gather(1, starts)
+                    missing_widths.scatter_add_(1, starts, (ends - starts) * unseen)
+                alphabet = dict.fromkeys(text_of(raw[start:start + size])
+                    for (raw, _), row in zip(units, missing_widths.tolist(), strict=True)
+                    for start, size in enumerate(row) if size)
+            else:
+                alphabet = dict.fromkeys(char for b, (raw, spans) in enumerate(units)
+                                         for w, (lo, hi) in enumerate(spans[:word_capacity])
+                                         if recognized_units is None or recognized_units[b][w] < 0
+                                         for char in text_of(raw[lo:hi]))
             missing_atoms = [('part', char) for char in alphabet if ('part', char) not in identity.atoms]
             for atom in missing_atoms:
                 identity._atom(atom)
@@ -11463,8 +11478,8 @@ class PartSpace(Space):
                 native_spans.append([(i, i+1) for i in range(len(raw))])
             if located_parts is not None:
                 if admit:
-                    for (lo, hi), form in zip(spans[:word_capacity], recognized_units[b]):
-                        if form < 0:
+                    for w, ((lo, hi), form) in enumerate(zip(spans[:word_capacity], recognized_units[b])):
+                        if form < 0 and (changed is None or not changed[b][w]):
                             unit = raw[lo:hi]
                             observed_forms.append(unit)
                             observe_new_form(unit, b, lo)
@@ -11523,6 +11538,9 @@ class PartSpace(Space):
             lengths = torch.tensor(counts, dtype=torch.long, device=dev)
         else:
             pid_grid = located_parts.masked_fill(located_parts < 0, null_pid)
+            if hiding:
+                pid_grid = pid_grid.masked_fill(omission['draw'].forms, -1)
+                form_rows = form_rows.masked_fill(omission['draw'].forms[:, :form_rows.shape[1]].any(-1), -1)
         positions = torch.arange(part_capacity, device=dev)
         part_mask = positions < lengths[..., None]
         if layout is None:
