@@ -117,6 +117,15 @@ def observe_run():
     import SentenceCredit
     result=dict(reader_weights=[],reader_mse=[],
                 reader_training_rows=[],sentence_gradients={},form_containment={})
+    closing_images = BasicModel._sentence_closing_images
+    result['closing_image'] = {}
+    def observe_images(model, view, active):
+        images = closing_images(model, view, active)
+        result['closing_image'] = dict(
+            concept_widths={row: image.concept_width for row, image in images.items()},
+            image_max={row: float(image.image.abs().max()) for row, image in images.items()})
+        return images
+
     commit = BasicModel._commit_sentence
     result['sentence_trials'] = []
     def observed_commit(model,state,sid,active,*args):
@@ -144,7 +153,6 @@ def observe_run():
                     final.append(row)
                 result['final_committed_training_operators']=final
         value=commit(model,state,sid,active,*args)
-        result['closing_image']=getattr(model,'_last_closing_image_audit',{})
         result['storage']=storage_snapshot(model)
         owner=model._concept_owner()
         prime=getattr(owner, '_last_occurrence_priming', {})
@@ -259,7 +267,7 @@ def observe_run():
         return value
     preferences=observe_score_function(result)
     from handoff_probe import observe_handoff
-    with patch.object(SentenceCredit, 'departure', observed_departure), observe_handoff(result), preferences, patch.object(BasicModel,'_commit_sentence',observed_commit), observe_decomposition(result), patch.object(BasicModel,'_reconstruct_trial',observed_trial), patch.object(BasicModel,'runEpoch',observed_epoch), patch.object(BasicModel,'_project_sentence_parameters',observed_projection), patch.object(BaseModel,'_backward_training_loss',observed_backward):
+    with patch.object(BasicModel, '_sentence_closing_images', observe_images), patch.object(SentenceCredit, 'departure', observed_departure), observe_handoff(result), preferences, patch.object(BasicModel,'_commit_sentence',observed_commit), observe_decomposition(result), patch.object(BasicModel,'_reconstruct_trial',observed_trial), patch.object(BasicModel,'runEpoch',observed_epoch), patch.object(BasicModel,'_project_sentence_parameters',observed_projection), patch.object(BaseModel,'_backward_training_loss',observed_backward):
         try:
             yield result
         finally:

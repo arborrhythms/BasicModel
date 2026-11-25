@@ -20591,44 +20591,10 @@ class BasicModel(BaseModel):
         return stm, tuple(lang), feedback
 
     def _sentence_closing_images(self, view, active):
-        from Meaning import ClosingImage, withheld_symbols
-        images = {}
-        for b, meaning in enumerate(view['meanings']):
-            if meaning is None or not bool(active[b]):
-                continue
-            estimate = None  # Sentence estimates are retired; preserve the cold read.
-            entry_roles = view['observed'][b]
-            entry_mask = view['roles'][b] if view['roles'] is not None else meaning.role_mask
-            registry = _boundary_registry(self)
-            mask = _open_reference_mask(meaning, registry, view['clauses'][b])
-            images[b] = ClosingImage.form(entry_roles,
-                None if estimate is None else estimate.roles.to(meaning.roles),
-                None if estimate is None else estimate.confidence,
-                gain=0., object_mask=mask,
-                prediction=estimate, occupied=entry_mask,
-                identities=None if view.get('symbol_ids') is None else view['symbol_ids'][b],
-                lanes=(None if view.get('clauses', [None]*len(view['meanings']))[b] is None else
-                       meaning.roles.new_tensor(view.get('clauses', [None]*len(view['meanings']))[b].evidence).expand(3, 2)),
-                withheld=None if estimate is None else withheld_symbols(meaning, estimate),
-                epsilon=getattr(self, 'expectation_epsilon', 1e-6), saturation=getattr(self, 'expectation_saturation', 'clip'))
-            row_prior = None  # No row-level estimate feeds the closing image.
-            if row_prior is not None:
-                row_image = ClosingImage.form(entry_roles, row_prior.roles,
-                    row_prior.confidence, prediction=row_prior,
-                    gain=0., object_mask=mask,
-                    occupied=entry_mask, identities=None if view.get('symbol_ids') is None else view['symbol_ids'][b],
-                    withheld=withheld_symbols(meaning, row_prior),
-                    lanes=(None if view.get('clauses', [None]*len(view['meanings']))[b] is None else
-                           meaning.roles.new_tensor(view.get('clauses', [None]*len(view['meanings']))[b].evidence).expand(3, 2)),
-                    epsilon=getattr(self, 'expectation_epsilon', 1e-6),
-                    saturation=getattr(self, 'expectation_saturation', 'clip'))
-                content = images[b].conceived * row_image.gain[:, None]
-                images[b] = replace(images[b], conceived=content, image=content-entry_roles.detach(),
-                    gain=images[b].gain*row_image.gain, row_expected=row_image.expected)
-        self._last_closing_image_audit = dict(
-            concept_widths={b:v.concept_width for b,v in images.items()},
-            image_max={b:float(v.image.abs().max()) for b,v in images.items()})
-        return images
+        from Meaning import ClosingImage
+        return {b: ClosingImage.form(view['observed'][b], None, None)
+                for b, meaning in enumerate(view['meanings'])
+                if meaning is not None and bool(active[b])}
 
     @kept_close
     def _commit_sentence(self, state, sid, active, observations, wins):

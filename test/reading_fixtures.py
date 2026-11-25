@@ -270,8 +270,8 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     owner.conceptualSpaces = (registry.space,)
     owner.symbolSpace = SimpleNamespace(ltm_store=store, expectation=discourse)
     from clock_fixtures import install
-    if not hasattr(owner, 'when_time'):
-        install(owner)
+    if not hasattr(owner, '_sentence_ticks'):
+        install(owner, tick=int(getattr(owner, 'when_time', 0)))
     short_term.model_state.when_time = owner.when_time
     short_term.model_state.when_code = owner.when_code
     owner._sentence_ticks[sid] = owner._advance_when_time() if active else owner.present()
