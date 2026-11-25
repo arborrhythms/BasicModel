@@ -6,6 +6,8 @@ PYTHONHASHSEED=0. A fixed seed is for paired measurements, never a test gate.
 import argparse
 import cProfile
 import hashlib
+import importlib
+import inspect
 import json
 import os
 import platform
@@ -42,6 +44,8 @@ def main():
                         help='enable the native compiled entry (step mode only)')
     parser.add_argument('--strict-sentence', choices=('eager', 'inductor'),
                         help='probe fullgraph capture of the entire normal input sentence on one training update')
+    parser.add_argument('--strict-region', metavar='MODULE:FUNCTION',
+                        help='probe one model function with strict Dynamo capture on its actual training inputs')
     parser.add_argument('--compile-percept-fold', action='store_true',
                         help='also compile the live whole/part fold for a native step comparison')
     parser.add_argument('--source', type=Path, default=Path(__file__).resolve().parents[1])
@@ -51,8 +55,9 @@ def main():
         parser.error('--training-seconds needs --lesson and a positive training time')
     if args.dispatch_census and (args.lesson or args.corpus):
         parser.error('--dispatch-census requires step mode')
-    if args.strict_sentence and (args.lesson or args.corpus or args.compiled_step):
-        parser.error('--strict-sentence probes the ordinary unpartitioned step')
+    if ((args.strict_sentence or args.strict_region) and (args.lesson or args.corpus or args.compiled_step)
+            or args.strict_sentence and args.strict_region):
+        parser.error('select one strict probe on an ordinary unpartitioned training update')
     if args.lesson and args.compiled_step:
         parser.error('--lesson uses the native lesson runner; --compiled-step requires step mode')
     if args.compile_percept_fold and not args.compiled_step:
@@ -268,12 +273,28 @@ def main():
                     record['steps'][-1].update(input_setup_seconds=setup_seconds,
                                                end_and_reset_seconds=time.perf_counter() - reset_start)
 
-        if args.strict_sentence:
-            method = torch.compile(BasicModel._execute_input_sentence, backend=args.strict_sentence,
-                                   fullgraph=True)
+        if args.strict_sentence or args.strict_region:
+            target, name = BasicModel, '_execute_input_sentence'
+            if args.strict_region:
+                module, path = args.strict_region.split(':', 1)
+                target = importlib.import_module(module)
+                *parents, name = path.split('.')
+                for parent in parents:
+                    target = getattr(target, parent)
+                record['strict_region'] = args.strict_region
+            original_method = inspect.getattr_static(target, name)
+            descriptor = isinstance(original_method, (classmethod, staticmethod))
+            method = torch.compile(original_method.__func__ if descriptor else original_method,
+                                   backend=args.strict_sentence or 'eager', fullgraph=True)
+            record['probe_calls'] = 0
+            def probe(*inputs, **options):
+                record['probe_calls'] += 1
+                return method(*inputs, **options)
             try:
-                with patch.object(BasicModel, '_execute_input_sentence', method):
+                with patch.object(target, name, type(original_method)(probe) if descriptor else probe):
                     step()
+                if not record['probe_calls']:
+                    raise RuntimeError('the training step did not call the selected probe')
             except Exception as error:
                 record['capture_error'] = str(error)
                 raise
