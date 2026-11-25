@@ -19,11 +19,14 @@ def reachable_rows(active, rows, standing, sources, targets, rounds, size):
 def rung_entries(store, addresses, like):
     """Index sparse entries while the field writer assigns its page seats."""
     pages, entries, symbolic = [], [], []
+    # The inventory view elides out-of-range rows before numbering entries.
+    physical = [(row, column) for row, column in zip(store._rows, store._cols, strict=True)
+                if 0 <= row < store.nOutput]
     for page, field_rows in enumerate(addresses):
         seated = set(field_rows)
-        for edge, row in enumerate(store._rows):
+        for edge, (row, column) in enumerate(physical):
             if row in seated:
-                if store._cols[edge] != store.bias_column():
+                if column != store.bias_column():
                     symbolic.append(len(entries))
                 pages.append(page)
                 entries.append(edge)

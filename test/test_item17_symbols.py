@@ -849,6 +849,29 @@ def test_batched_sigma_preserves_the_bound_field_and_its_gradients():
                     torch.testing.assert_close(left, right)
 
 
+def test_attended_sigma_uses_its_entry_plan_until_rows_or_topology_change(monkeypatch):
+    import FieldProjection
+    cs, store, _, (word, cats, dogs, _, _) = _small_space()
+    cs.add_concept_edge(cats, word, .5)
+    seen = []
+    calculate = FieldProjection.seated_rung
+    def observe(field, addresses, weights, topology, size, start, end, plan=None):
+        seen.append(plan)
+        return calculate(field, addresses, weights, topology, size, start, end, plan)
+    monkeypatch.setattr(FieldProjection, 'seated_rung', observe)
+    def bind():
+        cs._bind_attended_concepts(torch.ones(1, 2, 1, 2), torch.tensor([word]))
+        return torch.ones(sum(cs._field_caps()), 2, 1, 2)
+    field = bind()
+    cs._concept_rung_presence(field, 0, len(field))
+    cs._cs_field_rows.fill_(-1)
+    cs._concept_rung_presence(field, 0, len(field))
+    field = bind()
+    cs.add_concept_edge(dogs, word, .75)
+    cs._concept_rung_presence(field, 0, len(field))
+    assert seen[0] is not None and seen[1:] == [None, None]
+
+
 def test_cert_23d_above_order_zero_a_not_entry_reads_a_symbols_pair_exchanged():
     """Certificate 23 (d): a Not entry above order zero is an entry whose
     sign chooses the symbol's not-value: its weight is at zero or above
