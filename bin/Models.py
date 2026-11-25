@@ -21114,7 +21114,7 @@ class BasicModel(BaseModel):
 
     def _run_sentence_word_bricks(self, words, active, sentence_ids, stm, sub, sym,
                                 lang, empty_feedback, perceive, symbolize, native_support, compose_word,
-                                *, incoming_trust):
+                                *, incoming_trust, word_sources=None):
         from SentenceCompose import select_rows
         from WholePaths import finish as finish_path, credit as path_credit, objectives as path_objectives
         trust = incoming_trust
@@ -21266,6 +21266,9 @@ class BasicModel(BaseModel):
                 source_leaf_mask = torch.zeros_like(active)
             from ModelAttention import NativeReading
             speculative = single and self.explore_paths and self.grammar_phases.vector
+            shared_sources = (self.conceptualSpace.stm.reserve_word_sources(W, sub[3], sub[4])
+                              if speculative and word_sources is not None else None)
+            source_columns = 0
             opening_history = self.percept_expectation.history(B) if speculative else None
             if speculative:
                 opening_expected, opening_loss = self._percept_expected, self._percept_arrival_loss
@@ -21401,7 +21404,7 @@ class BasicModel(BaseModel):
                 path_forecast = word_forecast.begin_path(reading_walk)
                 forecast_paths.append(path_forecast)
                 def arrival(word, rows):
-                    nonlocal sub, sym
+                    nonlocal sub, sym, source_columns
                     from ModelAttention import forecast_percept, observe_percept
                     from SentenceAttention import masked_payload
                     index = word_slots[word]
@@ -21415,7 +21418,22 @@ class BasicModel(BaseModel):
                             forecast = forecast_percept(self, fresh)
                         else:
                             forecast = forecast_percept(self, fresh, history=native_path.history)
-                        payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
+                        if shared_sources is None:
+                            payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub)
+                        else:
+                            # Both physical folds precede the row gate, the
+                            # conceptual read and this candidate's forecast.
+                            column = 1 << word
+                            if exploit is not None and source_columns & column:
+                                sources = tuple(bank[word] for bank in shared_sources)
+                            else:
+                                sources = word_sources(index)
+                                if not source_columns & column:
+                                    for bank, value in zip(shared_sources, sources):
+                                        bank[word].copy_(value)
+                                    source_columns |= column
+                            payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub,
+                                                    sources=sources)
                         payload, sym = symbolize(payload,empty_feedback,index,None,sym)
                         if native_path is None:
                             payload = observe_percept(self, forecast, payload, sub, word, fresh)
@@ -22160,15 +22178,20 @@ class BasicModel(BaseModel):
             safe = index.clamp(0, width - 1).reshape(1)
             return torch.index_select(source, 1, safe)
 
-        def stage_cs_sub(_word, row_gate, index, _live, current_cs_sub):
-            """IS(w) -> {PS(w),WS(w)} -> CSSub(w), with peer-only reads."""
-            del _word, _live
+        def word_sources(index):
             local_ids = _gather_word(part_ids, index)
             local_mask = _gather_word(part_mask, index)
             local_offsets = _gather_word(part_offsets, index)
             local_properties = _gather_word(
                 word_property_weights, index).reshape(
                     B, whole_locations, int(word_property_weights.shape[-1]))
+            return (ps.synthesize_word_parts(local_ids, local_mask, local_offsets),
+                    ws.compute_word_property_event(local_properties))
+
+        def stage_cs_sub(_word, row_gate, index, _live, current_cs_sub, *, sources=None):
+            """IS(w) -> {PS(w),WS(w)} -> CSSub(w), with peer-only reads."""
+            del _word, _live
+            part, whole = word_sources(index) if sources is None else sources
             row = _gather_word(concept_rows, index).reshape(B)
             order = _gather_word(concept_orders, index).reshape(B)
             object_row = _gather_word(object_rows, index).reshape(B)
@@ -22177,8 +22200,8 @@ class BasicModel(BaseModel):
                 B, concept_dim)
             commit = _gather_word(commit_mask, index).reshape(B, 1)
             commit = torch.logical_and(commit, row_gate)
-            part_sources = (ps.synthesize_word_parts(local_ids, local_mask, local_offsets),)
-            whole_sources = (ws.compute_word_property_event(local_properties),)
+            part_sources = (part,)
+            whole_sources = (whole,)
             local_codes = _gather_word(reference_codes, index).reshape(B, cs.REFERENCE_SLOTS)
             local_roles = _gather_word(reference_roles, index).reshape(B, cs.REFERENCE_SLOTS)
             local_reading = _gather_word(order_zero_reading, index).reshape(B, -1)
@@ -22738,9 +22761,11 @@ class BasicModel(BaseModel):
                 language_feedback,
             )
 
+        source_fold = None
         if sentence_transactions and canonical:
             from SentenceCompose import compile_word_brick
             from CompileGuard import carried_state_phase
+            source_fold = compile_word_brick(word_sources)
             stage_cs_sub = compile_word_brick(stage_cs_sub, initial_phase=carried_state_phase)
             stage_cs_sym = compile_word_brick(stage_cs_sym, initial_phase=carried_state_phase)
             # Compile one reusable choice/application, not every unrolled
@@ -22788,7 +22813,7 @@ class BasicModel(BaseModel):
                 words, active, sentence_ids, stm_state, cs_sub_state,
                 cs_sym_state, cs_lang_state, empty_feedback,
                 stage_cs_sub, stage_cs_sym, canonical,
-                stage_cs_lang, incoming_trust=trust)
+                stage_cs_lang, incoming_trust=trust, word_sources=source_fold)
         else:
             (final_stm, final_cs_sub, final_cs_sym, final_cs_lang,
              feedback, trip_count) = (

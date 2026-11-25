@@ -501,6 +501,17 @@ class ShortTermMemory(MemoryStore, Layer):
 
     DEFAULT_CAPACITY = 8
 
+    @staticmethod
+    def reserve_word_sources(width, parts, wholes):
+        """Reserve the two live physical folds for this sentence's candidate walks.
+
+        Each source is [batch, 1, locations, channels] in the word carry.
+        The sentence driver owns the lifetime through its common backward.
+        Untouched columns are never read.
+        """
+        return tuple(source.new_empty(width, source.shape[0], *source.shape[2:])
+                     for source in (parts, wholes))
+
     def __init__(self, batch=1, capacity=None, concept_dim=0):
         super().__init__(nInput=0, nOutput=0)
         # Construction bound: nStreams × stmCapacity (default eight) × D.
