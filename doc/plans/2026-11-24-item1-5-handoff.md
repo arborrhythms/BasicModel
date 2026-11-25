@@ -1,10 +1,43 @@
 # Item 1.5 integration handoff
 
-**Item 1.5 remains open.** Local main started at `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains reviewed 1.7 commit `d38029113103ce5e9cf1223eaa55c9181010d649`. All commits are local on main. Integration and push belong to Alec. The fully measured attention change is `c5fb7aa2158ff336078bb9e16dd6aeb5b6381074`. Subsequent lexical staging is `16e6d631bc40837410faa49d0111766a096c4c4f`. The property-mask change is `a5db60a9e9`. The measured lexical model commit is `4902d3bf5d66721c9fd07bad8557eb125650b698`. Benchmark and regression checks on that model are in `99c4e9ca56901a7d5a6b0ed9c7c1be7e9a2e2c8b`.
+**Item 1.5 remains open.** Local main started at `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains reviewed 1.7 commit `d38029113103ce5e9cf1223eaa55c9181010d649`. The measured model is `926b8e58e08e13da7e9126f576436f5b7f196366`. Integration and push belong to Alec.
+
+| Four independent sentence rows, real training | CPU sentences/s | MPS sentences/s |
+| --- | ---: | ---: |
+| 1.7, one exploitation and one exploration per row | 6.991 | 0.786 |
+| Current, same setup | 11.151 | 2.352 |
+| Current including input staging and reset | 11.107 | 2.344 |
+| Three explorations per row at `9c7ee5232b` | 6.505 | 1.200 |
+
+These are eager measurements with backward and Adam, nine timed updates after three warm-ups, or 36 sentences. The speedups against 1.7 are 1.60× on CPU and 2.99× on MPS. The separate MPS audit recorded 560 Python tensor inspections at 159 source locations. These include 266 lists, 192 booleans, 57 integer conversions, 25 explicit scalar reads, 12 CPU transfers and eight float conversions. Native dispatch recorded 270 copies to the host, 277 MPS scalar returns and 16 MPS equality results. The categories overlap with the Python audit. The graph-depth bound removed all 408 Metal equality reads for forecast propagation. The strict Inductor probe captured that function on MPS during 20 calls in the first training update. The complete sentence still fails strict capture while filtering learned spelling endpoints. Candidate promotion and consolidation also depend on device-derived Python values. The MTM journal still materializes host records for genuine identity transactions.
+
+One MPS audit counted 418 percept lookup requests for 16 distinct addresses. Exploit and explore walks took 0.336 and 0.344 seconds. Their scores took 0.095 and 0.097 seconds. All 604 checks in the paired CPU replay at the measured revision matched, including 26 live gradient tensors, sparse indices and absent gradients. Nine numeric XOR, raised-class and candidate-growth tests passed. The two fresh CPU readers at `9c7ee5232b` restored at 122/122 in sampled and evaluation modes in 38.32 and 25.01 seconds (seeds 1505 and 1539668869). The fresh MPS reader at the measured revision reached both 122/122 results in 146.85 seconds (seed 1505). The base lesson times were 97.89 seconds on CPU and 652.01 on MPS. See the earlier paired measurements for the verbal XOR receipts and the known word-teacher and omitted-word failures. Receipts for the current rates and census are in `output/item1-5/word-column-{cpu,mps}`.
+
+Claude's overlapping interfaces include STM operand resolution in `Comprehension`, identity transactions in `ChunkJournal`, MTM access in `ReferenceClose`, and ordinary object and class edges in `ConceptSpread`. Concept propagation retains the old iteration limit for cyclic graphs. The look still hands grammar one concept containing content and location.
 
 ## Real training
 
-### Latest local measurements
+### November 24 evening checkpoint
+
+Local main started at `ad8fafea927839c0d7f92d0aee35c913d02b2612` and contains reviewed 1.7 commit `d38029113103ce5e9cf1223eaa55c9181010d649`. The measured sparse fold is `0c755c4f0ecf647567e1e20e290a8cc7c66b033f`. The following operator handoff is `74ff132971`. Integration and push are pending review.
+
+| Real four-page training, one exploit plus one exploration per row | CPU | Metal |
+| --- | ---: | ---: |
+| 1.7 sentences/s | 6.991 | 0.786 |
+| Sparse fold sentences/s | 11.196 | 2.151 |
+| Sparse fold sentences/s including input and reset | 11.151 | 2.144 |
+| Speedup inside the training entry | 1.60× | 2.74× |
+| Python tensor inspections during the audited update | 1,028 | 1,031 |
+
+Each rate counts 36 sentences in nine synchronized updates after three warm-ups. Every update includes backward and Adam. These are eager rates. The Metal audit counted 385 copies to host, 629 device scalar extractions and 405 device equality reads. Those calls took 0.306 s in a separately instrumented 2.677 s sentence update. The exploit walk and score took 0.349 and 0.109 s. Exploration took 0.375 and 0.109 s. Both devices requested 418 percept addresses at the instrumented sites, including 402 repeats. Four pages with three extra explorations each reached 6.251 sentences/s on CPU at the same revision.
+
+At `4db55f8f2c`, the disjoint spelling reader handles new elements inside learned cuts on device. The UTF-8 check covers every byte cut through ASCII, multibyte characters and malformed bytes, including a taught part whose letters were previously unknown. The spelling and omission group passed 64 tests. Each of the next two CPU replays matched 600 parameters, buffers, optimizer tensors, RNG state and boundary gradients in total. The batched Sigma fold also passed strict capture and a direct value and gradient comparison for duplicate seats, missing members, standing bias and an empty page. The close and candidate group passed 52 tests. The numeric XOR, raised-class and growth group passed 8. The known word-teacher and omitted-word failures still have separate receipts.
+
+The most recent fresh CPU reader before these folds restored 122/122 in sampled and evaluation modes in 38.50 s at `dfc9eb038c`. A fresh Metal reader at `60760df187` reached the same scores in 169.32 s. The 1.7 times were 97.89 and 652.01 s. A fresh verbal XOR run during the reference changes got 4/4 into grammar and 4/4 through the inverse. Whole-sentence capture still fails during learned spelling admission. The remaining host readers include the grammar journal and MTM nomination. Receipts are under `output/item1-5/` in the directories prefixed by the model commit, plus `field-plan-cpu` and `live-operands-cpu`.
+
+Claude's most recent overlap is the batched concept-row fold in `FieldProjection.seated_rung` and `Spaces._concept_rung_presence`, the preference and named-object reader in `Interpret`, and the operator values, formal references and denoted order passed from `Comprehension` to `ClauseJournal`. These sit on the object-grounding and recent-event interfaces.
+
+### Earlier paired measurements
 
 Model revision `2f4868df9f3979051072d0a622e56357cf09ab2f` is 1.55× faster on CPU and 2.59× faster on MPS than the 1.7 base inside the real training entry. The four independent pages each run one exploit and one exploration. A training update counts four presented sentences, including backward and the optimizer. Seed 1505, the lesson, configuration, float32 and device match the corresponding base run. These are eager rates. The strict whole-sentence check still stops when Python branches on a learned spelling span's endpoints in `PartSpace._embed_ladder_word_major`.
 
