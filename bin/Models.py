@@ -8530,8 +8530,9 @@ class BasicModel(BaseModel):
             carriers['scalar_percepts'] = tuple(getattr(self, '_scalar_present', {}).get(batch, {}).get('percept')
                 for batch in range(field.evidence.shape[1]))
         from ImagePercepts import imaged
-        if imaged(self, 0):
-            # The field the image was read into, the first sentence's.
+        if 0 in scalar_fields and imaged(self, 0):
+            # The field the image was read into, the first sentence's: only
+            # a pass that opened a sentence can have read an image.
             from dataclasses import replace
             field = scalar_fields[0]
             carriers['image_field'] = replace(field, evidence=field.evidence.clone())
