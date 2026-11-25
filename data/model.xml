@@ -34,6 +34,8 @@
     <!-- The candidate entries held at a look, and the penalty on each. -->
     <candidateCapacity>64</candidateCapacity>
     <candidatePenalty>0.2</candidatePenalty>
+    <!-- The most things present at one look whose offers are read; more raises. -->
+    <candidateThings>64</candidateThings>
     <!-- The least value at which a structure is read. -->
     <structureReadThreshold>0.001</structureReadThreshold>
     <!-- The rows of the table a look presents: the attended percepts. -->

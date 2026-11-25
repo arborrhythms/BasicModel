@@ -13,9 +13,11 @@ At each look, in training:
   that thing; held above the penalty it is written as the kind's entry. A
   thing read at another look is never offered.
 
-What may be offered is each pool's ``admissible`` mask, read again only
-where the table, the rows or the entries change; a look meets it with what
-is present, on the device.
+A look's offers are read on the device over what is present at it: the
+bound concepts and the things all of whose members they are, each at a
+fixed width. What holds between looks (a pair already a row, an entry
+already in the store, an order, a symbol holding both) is read for those
+from the promoted rows, the store's indices and the symbols' members.
 """
 from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
@@ -178,7 +180,7 @@ class GrowthTrial:
                 # forecasts are already fixed. Later offers in the replay
                 # still see each earlier promotion in the device slab.
                 promoted = releases[:written].flatten(0, 1)
-                pool.append_pairs(promoted, len(pool.publish(promoted)), owner._concept_allocator.layer(0))
+                pool.append_pairs(promoted, len(pool.publish(promoted)))
 
 
 def row_scope(owner, batch):
@@ -328,16 +330,15 @@ def binding_names(ids, width):
 def field_readings(owner, field, active, binding):
     """Use the fixed candidate inventory for a small field.
 
-    The field's binding supplies its possible names. Evidence and page
-    activity select the observations. The MTM tally capacity bounds the
-    speculative pair grid.
+    The field's binding supplies its possible names, each once: the width
+    of every reading of the look. Evidence and page activity select the
+    observations. The MTM tally capacity bounds the speculative pair grid.
     """
     if binding is None:
         return None
-    width = owner.mtm._candidate_pairs.binding_width
-    if len(binding) > width:
+    if len(binding) > owner.mtm._candidate_pairs.binding_width:
         return None
-    names = binding_names(owner._cs_field_concept_ids, width)
+    names = binding_names(owner._cs_field_concept_ids, max(1, len(binding)))
     if active is None:
         active = torch.ones(field.evidence.shape[1], dtype=torch.bool, device=names.device)
     values, ranks = field_levels(field.concept_ids, field.evidence, names, active)
@@ -374,11 +375,19 @@ def unpromoted_offers(offers, prior):
     return torch.cat(blocks)
 
 
+def seat_of(names, keys):
+    """Each of ``keys``' place in ``names`` (ascending), ``len(names)`` where
+    it is not there."""
+    place = torch.searchsorted(names, keys.clamp_min(0))
+    return torch.where((keys >= 0) & (F.pad(names, (0, 1), value=-1)[place] == keys), place, len(names))
+
+
 def pi_step(owner, present, *, collect=None, prior=None):
     """One step of the Pi's candidates from the concepts present at a look;
     the symbols made."""
     held = matrices(owner)['pi']
-    store = owner._concept_allocator.layer(0)
+    alloc = owner._concept_allocator
+    store = alloc.layer(0)
     if isinstance(present, tuple):
         names, levels, _, count = present
     else:
@@ -388,12 +397,23 @@ def pi_step(owner, present, *, collect=None, prior=None):
         return []
     if not isinstance(present, tuple):
         names, levels = dict_readings(held, present)
-    held.admit_pairs(owner)
+    symbols = owner.mtm._candidate_relations
+    symbols.read_symbols(owner)
     # Pairs in ascending order of their two names, each read where both
-    # concepts are present and the pair is admissible.
-    seats = torch.triu_indices(len(names), len(names), 1, device=names.device).T
-    ends = store.concept_rows(names)[seats]
-    admitted = held.admissible[ends[:, 0].clamp_min(0), ends[:, 1].clamp_min(0)] & (ends >= 0).all(-1)
+    # concepts are present, of one order, held together by no symbol and
+    # not yet a row.
+    width = len(names)
+    seats = torch.triu_indices(width, width, 1, device=names.device).T
+    ends = store.concept_rows(names)
+    order = torch.where((ends >= 0) & (names > 0), symbols.orders[ends.clamp_min(0)], -1)
+    blocked = torch.zeros(width + 1, width + 1, dtype=torch.bool, device=names.device)
+    member = seat_of(names, symbols.members[:len(alloc.symbol_table())])
+    blocked[member[:, :, None].expand(-1, -1, member.shape[1]),
+            member[:, None, :].expand(-1, member.shape[1], -1)] = True
+    promoted = seat_of(names, held.promoted_pairs())
+    blocked[promoted[:, 0], promoted[:, 1]] = True
+    left, right = seats.unbind(-1)
+    admitted = (order[left] == order[right]) & (order[left] >= 0) & ~blocked[left, right]
     pairs = torch.where((admitted & (levels[seats] >= PRESENT).all(-1))[:, None], names[seats], -1)
     levels = levels.to(held.activity)
     if prior is not None:
@@ -405,7 +425,7 @@ def pi_step(owner, present, *, collect=None, prior=None):
         collect.append((held, promoted, True, None))
         return []
     written = held.publish(promoted)
-    held.append_pairs(promoted, len(written), store)
+    held.append_pairs(promoted, len(written))
     return written
 
 
@@ -432,7 +452,6 @@ def sigma_step(owner, present, expected, batch=None, *, collect=None):
     if not isinstance(present, tuple):
         names, values, ranks = dict_readings(held, present, places=True)
     store = visible_store(alloc.layer(0))
-    held.admit_offers(owner, store)
     symbols = owner.mtm._candidate_relations
     symbols.read_symbols(owner)
     if batch is not None and expected is not None:
@@ -448,29 +467,47 @@ def sigma_step(owner, present, expected, batch=None, *, collect=None):
         rows = held.refs.new_tensor([row for row, _ in entries])
         levels = held.activity.new_tensor([value for _, value in entries])
     levels = levels.to(held.activity)
-    kinds = symbols.kinds[:len(levels)] if rows is None else symbols.kinds[rows]
-    legal = held.admissible[:len(levels)] if rows is None else held.admissible[rows]
+    if rows is None:
+        # A row of order zero holds no kind.
+        start = min(owner._order_caps()[0], len(levels))
+        rows, levels = torch.arange(start, len(levels), device=levels.device), levels[start:]
+    kinds = symbols.kinds[rows]
     top = len(names)
-    def seat(keys):
-        place = torch.searchsorted(names, keys.clamp_min(0)).clamp_max(top - 1)
-        return torch.where((keys >= 0) & (names[place] == keys), place, top)
     padded, placed = F.pad(values, (0, 1)), F.pad(ranks, (0, 1))
-    observed = padded[seat(kinds)].to(held.activity)
-    # A symbol is offered once every member is present. The first member
+    observed = padded[seat_of(names, kinds)].to(held.activity)
+    # A thing is a symbol whose members are all present. The first member
     # to occur sets its offer order; the last supplies its observed value.
-    member = symbols.members
+    table = store.symbol_table
+    member = symbols.members[:len(table)]
     valid = member >= 0
-    seats = seat(member)
+    seats = seat_of(names, member)
     named = valid.any(-1) & ((seats < top) | ~valid).all(-1)
     seen = named & ((padded[seats] >= PRESENT) | ~valid).all(-1)
     first = placed[seats].masked_fill(~valid, torch.iinfo(ranks.dtype).max).amin(-1)
     last = placed[seats].masked_fill(~valid, -1).argmax(-1, keepdim=True)
-    order = first.argsort(stable=True)
-    presence = padded[seats.gather(1, last)[:, 0]].to(held.activity)
-    things = torch.where(seen, torch.arange(len(member), device=member.device), -1)
+    # The things present, in offer order, at a fixed width: no more than
+    # there are symbols.
+    width = min(symbols.thing_width, len(member))
+    if len(member) > width:
+        torch._assert_async(seen.sum() <= width, 'more things present at a look than architecture.candidateThings')
+    order = first.masked_fill(~seen, torch.iinfo(first.dtype).max).argsort(stable=True)[:width]
+    things = F.pad(torch.where(seen[order], order, -1), (0, width - len(order)), value=-1)
+    presence = F.pad(padded[seats.gather(1, last)[:, 0]][order], (0, width - len(order))).to(held.activity)
+    # A kind may be offered a thing of lower order on which it has no entry.
+    sources, columns = store._indices(names.device)
+    place = torch.full((len(member) + 1,), width, dtype=torch.long, device=names.device)
+    place.scatter_(0, torch.where(things >= 0, things, len(member)), torch.arange(width, device=names.device))
+    place[-1] = width
+    seat = torch.full((len(symbols.kinds) + 1,), len(rows), dtype=torch.long, device=names.device)
+    seat.scatter_(0, rows, torch.arange(len(rows), device=names.device))
+    entry = torch.zeros(len(rows) + 1, width + 1, dtype=torch.bool, device=names.device)
+    entry[seat[sources.clamp_max(len(symbols.kinds))], place[columns.clamp_max(len(member))]] = True
+    below = store.concept_rows(F.pad(member[:, 0], (0, 1), value=-1)[torch.where(things >= 0, things, len(member))])
+    below = torch.where(below >= 0, symbols.orders[below.clamp_min(0)], torch.iinfo(torch.long).max)
+    legal = (kinds >= 0)[:, None] & (below < symbols.orders[rows][:, None]) & ~entry[:-1, :-1]
     wanted = (levels > observed) & (levels > 0)
-    take = (legal & wanted[:, None] & seen).index_select(1, order)
-    ordered = things[order].expand(len(kinds), -1)
+    take = legal & wanted[:, None] & (things >= 0)
+    ordered = things.expand(len(kinds), -1)
     pairs = torch.stack((kinds[:, None].expand_as(ordered), ordered), -1)
     pairs = torch.where(take[..., None], pairs, -1).reshape(-1, 2)
     occupied = held._known_count()
@@ -501,12 +538,11 @@ def publish_look(owner, pending):
         return
     records = torch.stack([torch.cat((pool.count.expand(1, 2), pairs))
                            for pool, pairs, _, _ in pending]).tolist()
-    store = owner._concept_allocator.layer(0)
     for (count, *records), (pool, promoted, paired, trial) in zip(records, pending, strict=True):
         pool._remember_count(count[0])
         pairs = [(left, right) for left, right in records if left >= 0]
         if paired:
-            pool.append_pairs(promoted, len(pairs), store)
+            pool.append_pairs(promoted, len(pairs))
         elif pairs:
             with trial.active():
                 publish_relations(owner, pairs, trial)
