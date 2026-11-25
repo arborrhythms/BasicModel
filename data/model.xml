@@ -573,7 +573,7 @@
     <!-- BPE merges per chunking pass (lexicon mode ignores this). -->
     <wordLearning>2</wordLearning>
     <!-- Radix promotion: the count and the least length of a chunk. -->
-    <chunkPromotionThreshold>4</chunkPromotionThreshold>
+    <chunkPromotionThreshold>3</chunkPromotionThreshold>
     <chunkPromotionMinLength>2</chunkPromotionMinLength>
     <!-- The table of forms: rows (256 byte leaves included) and the longest form recognised. -->
     <formCapacity>262144</formCapacity>

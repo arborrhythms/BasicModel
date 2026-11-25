@@ -355,10 +355,13 @@ def test_hidden_word_changes_only_loss_targets_through_the_close(tmp_path, monke
                 batch_override=(model.inputSpace.prepInput([text]), torch.empty(1, 0)))
         store = model.symbolSpace.ltm_store
         record['writes'] = store.slots.detach().clone()
-        native = model.perceptualSpace.percept_store
-        record['percept_store'] = snapshot(dict(addresses=native.hash_map,
-            values=native._basis.W, witnesses=native.identity.word_witnesses,
-            words=native.identity.words, size=len(native)))
+        native, ps = model.perceptualSpace.percept_store, model.perceptualSpace
+        # Every delivered byte is seated before the sentence, a hidden one too;
+        # compare the rest of the store by name.
+        seated = set(ps.byte_store_rows.tolist()) | set(ps.form_part_rows[:256].tolist())
+        record['percept_store'] = snapshot(dict(
+            values={key: native._basis.W[row] for key, row in native.hash_map.items() if row not in seated},
+            form_counts=ps.form_links.count, words=native.identity.words))
         record['occurrences'] = snapshot((model._sentence_sources, tuple(store.row_name(i) for i in range(len(store)))))
         record['word_values'] = model.inputSpace._ar_embedded_N.detach().clone()
         owner = model._concept_owner()

@@ -3813,6 +3813,10 @@ class BaseModel(Mereology, nn.Module):
         if path is None:
             path = os.path.join(ProjectPaths.OUTPUT_DIR, "weights.ckpt")
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        forms = getattr(getattr(self, "perceptualSpace", None), "form_links", None)
+        if forms is not None:
+            # The save's maintenance: refresh every form's kept sums and place.
+            forms.sweep()
         optimizer = getattr(self, "_optimizer", None)
         optimizer_manifest = (
             build_optimizer_param_manifest(
@@ -8579,6 +8583,17 @@ class BasicModel(BaseModel):
         """Use the common decoder; the indexed identity readback is an audit."""
         return self.reverse(carrier, field=field)
 
+    def _stage_host_surface(self):
+        """The host boundary before a sentence: decode the delivered bytes and seat each in the percept store."""
+        if not isinstance(self.inputSpace, InputSpace):
+            return
+        self.inputSpace.stage_host_surface()
+        delivery = self.inputSpace._staged_delivery
+        seat = getattr(getattr(self, 'perceptualSpace', None), 'seat_bytes', None)
+        if delivery is not None and seat is not None:
+            seat(delivery[1])
+            self._delivery_seated = delivery[0]
+
     @_sentence_query_mask
     def _execute_input_sentence(self, input_data, executor=None):
         """Run caller-supplied sentence execution under the same phase mask."""
@@ -8586,8 +8601,7 @@ class BasicModel(BaseModel):
 
     def understand(self, input_data, *, executor=None):
         """One bottom-up analysis pass returning its ``Understanding``."""
-        if isinstance(self.inputSpace, InputSpace):
-            self.inputSpace.stage_host_surface()
+        self._stage_host_surface()
         execution = self._execute_input_sentence(input_data, executor)
         understanding = self._capture_understanding(execution)
         self._last_understanding = understanding
@@ -10384,8 +10398,7 @@ class BasicModel(BaseModel):
                 if input_data is None:
                     raise ValueError(
                         "Model.ask needs input_data or an existing execution")
-                if isinstance(self.inputSpace, InputSpace):
-                    self.inputSpace.stage_host_surface()
+                self._stage_host_surface()
                 execution = self._execute_input_sentence(input_data, executor)
         finally:
             for h, ctx, detail in saved:
@@ -13671,16 +13684,18 @@ class BasicModel(BaseModel):
             # one tiling); handed over transiently, like the callback.
             _spans_full = getattr(_ss, "_staged_unit_spans", None)
             ps._staged_unit_spans = _spans_full
-            ps._staged_sentence_rows = getattr(self.inputSpace, '_packed_sentence_rows', None)
             ps._staged_unit_bytes = analysis_input if _ss is not None else None
+            if getattr(self, '_delivery_seated', None) is None and hasattr(ps, 'seat_bytes'):
+                # No delivery was seated before the sentence; its surfaces were read here.
+                ps.seat_bytes(getattr(self.inputSpace, '_analyse_surfaces', None) or ())
+            self._delivery_seated = None
             from Omission import prepare as prepare_omission
             object.__setattr__(self.perceptualSpace, '_omission_prepare',
-                (lambda units, cover, counts: prepare_omission(self, units, cover, counts)) if self.word_brackets and not target_only else None)
+                (lambda surface, spans, cover: prepare_omission(self, surface, spans, cover)) if self.word_brackets and not target_only else None)
             try:
                 self.perceptualSpace.embed_stem(in_sub)
             finally:
                 ps._staged_unit_spans = None
-                ps._staged_sentence_rows = None
                 ps._staged_unit_bytes = None
                 object.__setattr__(self.perceptualSpace, '_omission_prepare', None)
             self.inputSpace.finalize_stem(in_sub, self.perceptualSpace)
@@ -21087,8 +21102,7 @@ class BasicModel(BaseModel):
             if self._sentence_reconstruction:
                 from SentenceField import reconstruction, charge
                 opened = self._sentence_open_fields[sid]
-                block_parts = (getattr(self.perceptualSpace, '_forward_input', None) or {}).get('block_parts')
-                self._sentence_order_zero_reverse = reconstruction(self, opened, block_parts=block_parts)
+                self._sentence_order_zero_reverse = reconstruction(self, opened)
                 self._opening_errors = Error(row_mask=present)
                 # These text brackets came from reading_forms on the delivered
                 # surface. A joined modality has its own coordinate range.
@@ -23987,17 +24001,13 @@ class BasicModel(BaseModel):
         """Reverse the perceptual boundary (percept space_role → input)."""
         return self.perceptualSpace.reverse(sub)
 
-    def reverse(self, x, *, field, block_parts=None):
+    def reverse(self, x, *, field):
         """The common grammar-free decoder, from order zero to input percepts."""
         if self.numeric_percepts is not None:
             value = self.numeric_percepts.reverse(field)
             x.set_event(value)
             return x
-        if block_parts is None:
-            x = self._reverse_body(x, field=field)
-        else:
-            from FieldReverse import reverse
-            x = reverse(self, x, field, block_parts=block_parts)
+        x = self._reverse_body(x, field=field)
         # Phase 7 (painting reverse): carry the conceptual reconstruction
         # branch across the PS handoff (the perceptual reverse may swap
         # subspace objects) so it reaches InputSpace.reverse riding the

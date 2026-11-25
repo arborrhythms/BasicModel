@@ -506,3 +506,54 @@ def test_cpu_and_metal_make_equal_codes(dictionary):
     for name in ('part_sum', 'whole_sum'):
         gap = (getattr(metal, name).cpu() - getattr(cpu, name)).abs().max() / 2.0 ** 32
         assert gap <= 1e-5 * max(1, int(cpu.whole_count.max())), (name, float(gap))
+
+
+@pytest.mark.parametrize('device', DEVICES)
+def test_recentre_rows_moves_only_the_rows_given_and_keeps_the_whole_sums(device):
+    dev = _device(device)
+    rng = random.Random(16)
+    table, words = _table(dev, rng)
+    table.close(*_pack(words[:20], dev))
+    spelled = _host_spellings(table)
+    row_of = {s: r for r, s in enumerate(spelled)}
+    given = [row_of[w] for w in words[:6] if len(w) > 1] + [row_of[b'an'], row_of[b'a'], -1]
+    rows = torch.tensor(given + given[:3], device=dev)
+    before = table.code.clone()
+    captured = copy.deepcopy(table)
+    data = _pack(words[:6] + [b'an'], dev)
+    table.recentre_rows(rows, *data)
+    moved = (table.code != before).any(1).nonzero().flatten().tolist()
+    assert set(moved) <= {r for r in given if r >= LEAVES} and moved, 'only the rows given move; bytes never'
+    _, _, whole, part = _part_pairs(table)
+    total, count = _brute_whole_sums(table, whole.to(dev), part.to(dev))
+    assert torch.equal(table.whole_count, count) and torch.equal(table.whole_sum, total)
+    torch._dynamo.reset()
+    torch.compile(captured.recentre_rows, fullgraph=True, backend='eager')(rows, *data)
+    for name, buffer in table.named_buffers():
+        assert torch.equal(getattr(captured, name), buffer), name
+
+
+@pytest.mark.parametrize('device', DEVICES)
+def test_sweep_leaves_no_stale_sum_and_keeps_links_and_counts(device):
+    dev = _device(device)
+    rng = random.Random(17)
+    table, words = _table(dev, rng)
+    for _ in range(4):
+        table.close(*_pack(rng.sample(words, 12), dev))
+        read = _pack(rng.sample(words, 8), dev)
+        table.recentre_rows(table._unit_rows(*read), *read)
+    _, _, whole, part = _part_pairs(table)
+    whole, part = whole.to(dev), part.to(dev)
+    stale = not torch.equal(table.part_sum, _brute_part_sums(table, whole, part)[0])
+    kept = {name: getattr(table, name).clone() for name in ('left', 'right', 'length', 'count', 'used', 'border',
+                                                           'pair_keys', 'pair_rows', 'code')}
+    for _ in range(2):
+        table.sweep(chunk=16)
+        total, count = _brute_part_sums(table, whole, part)
+        assert torch.equal(table.part_count, count) and torch.equal(table.part_sum, total)
+        total, count = _brute_whole_sums(table, whole, part)
+        assert torch.equal(table.whole_count, count) and torch.equal(table.whole_sum, total)
+        for name, value in kept.items():
+            if name != 'code':
+                assert torch.equal(getattr(table, name), value), name
+    assert stale and torch.equal(table.code[:LEAVES], kept['code'][:LEAVES]), 'stale before; bytes never move'

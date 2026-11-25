@@ -450,28 +450,14 @@ def drawn(score):
     return (tied * torch.rand(score.shape, device=score.device)).argmax(-1)
 
 
-def spelling_scores(held, kept, spelled, offsets, local=None):
+def spelling_scores(held, kept, spelled):
     """Read the inverse Pi mixture and its spelling targets at the same opening."""
-    if local is None:
-        what = torch.einsum('rbe,rw->bew', held, kept)
-    else:
-        positive = local.at(offsets)[..., 0, :].to(held)
-        shared = kept.index_fill(0, local.indices, 0.)
-        what = (torch.einsum('rbe,rw->bew', held, shared) +
-                torch.einsum('rbe,rbew->bew', held[local.indices], positive))
+    what = torch.einsum('rbe,rw->bew', held, kept)
     codes = kept.index_select(0, torch.tensor(spelled, device=kept.device))
-    score = F.cosine_similarity(what[..., None, :], codes, dim=-1)        # [B, E, P]
-    if local is not None:
-        named = {row: i for i, row in enumerate(spelled)}
-        selected = [(i, named[row]) for i, row in enumerate(local.rows) if row in named]
-        if selected:
-            versions, seats = zip(*selected)
-            local_score = F.cosine_similarity(what[None], positive[list(versions)], dim=-1)
-            score = score.index_copy(-1, local.indices.new_tensor(seats), local_score.permute(1, 2, 0))
-    return score
+    return F.cosine_similarity(what[..., None, :], codes, dim=-1)        # [B, E, P]
 
 
-def reverse(model, sub, field, *, block_parts=None):
+def reverse(model, sub, field):
     """The input's reconstruction leaf by leaf (rule 79; §19.133): each
     reading's own concept goes back through the order-zero Sigma and the
     first Pi to the basic percept it recreates; the percept is taken apart;
@@ -504,8 +490,6 @@ def reverse(model, sub, field, *, block_parts=None):
     rows = list(range(len(basic.index)))
     held = sigma.reverse(concepts, rows).clamp_min(0).sum(-1)                # [R, B, E]
     kept = basic.kept_percept(rows)[0][:, 0].to(held)                        # [R, width]
-    from BlockPercepts import revisions
-    local = revisions(basic, rows, block_parts)
     # A leaf is present as its greatest row is, through the chart (tanh).
     presence = torch.tanh(held.amax(0)) if len(rows) else value.new_zeros(B, E)
     value = value[..., 0]
@@ -516,7 +500,7 @@ def reverse(model, sub, field, *, block_parts=None):
     P, L = table.shape
     position = torch.arange(L, device=value.device)
     if P:
-        score = spelling_scores(held, kept, spelled, field.where[..., 0], local)
+        score = spelling_scores(held, kept, spelled)
         w = torch.softmax(float(TheXMLConfig.get('architecture.reconstructionWhatSharpness')) * score, -1)
         spelt = F.one_hot(table.clamp_min(0), 256).to(w) * (table >= 0)[..., None].to(w)   # [P, L, 256]
         offsets = torch.einsum('bep,plv->belv', w * presence[..., None], spelt)

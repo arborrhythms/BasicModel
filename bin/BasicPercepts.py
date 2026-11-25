@@ -81,7 +81,6 @@ class PerceptBank:
     # holds: a part's event, a stored form, or a run of a row's parts.
     # ``None``: every occurrence can.
     holder: torch.Tensor = None
-    revisions: object = None
     surface_width: int = 0          # byte grid used to locate the observations
     # Derived from this table’s spans. Replacing its geometry starts a fresh scope.
     scope: torch.Tensor = field(default=None, init=False, repr=False, compare=False)
@@ -226,7 +225,7 @@ def merge_occurrences(own, context):
     return torch.where(live[..., None], extents, 0), live & (order < own.shape[1]), first.sum(1)
 
 
-def spelling_occurrences(surface, spellings, groups, nominations, known, first_part, *, available_from=None):
+def spelling_occurrences(surface, spellings, groups, nominations, known, first_part):
     """Exact overlapping matches, the nominated extents and all known extent keys."""
     from FieldReverse import _window_hits
     batch, width = surface.shape
@@ -235,8 +234,6 @@ def spelling_occurrences(surface, spellings, groups, nominations, known, first_p
     matches = _window_hits(surface, torch.ones_like(surface, dtype=torch.bool), spellings, groups)
     for size, rows, match in matches:
         start = torch.arange(rows.shape[1], device=surface.device)
-        if available_from is not None:
-            match = match & (start >= available_from.gather(1, rows))
         key = start * (width + 1) + start + size
         extent_keys.append(torch.where(match & known[rows], key, -1))
         lengths.append(torch.full_like(rows, size))
@@ -255,22 +252,6 @@ def spelling_occurrences(surface, spellings, groups, nominations, known, first_p
     spans = spans.gather(1, order[..., None].expand_as(spans))
     learned = priority.gather(1, order) >= first_part * (width + 1)
     return torch.where(learned[..., None], 0, spans), torch.where(learned[..., None], spans, 0), keys.sort(1).values
-
-
-def proper_byte_runs(wholes, parts):
-    """Which shorter byte sequences occur at any offset in each longer sequence."""
-    size = parts.shape[1]
-    if not size or size >= wholes.shape[1] or not len(wholes) or not len(parts):
-        return wholes.new_zeros((len(wholes), len(parts)), dtype=torch.bool)
-    windows = wholes.unfold(1, size, 1)
-    block = max(1, (1 << 22) // (windows.shape[1] * size))
-    # Bound the temporary equality grid even for a large inventory.
-    columns = max(1, block // min(block, len(wholes)))
-    found = []
-    for rows in windows.split(block):
-        matches = [(rows[:, :, None] == keys).all(-1).any(1) for keys in parts.split(columns)]
-        found.append(torch.cat(matches, 1))
-    return torch.cat(found)
 
 
 def part_starts(raw, spans, spellings):
@@ -334,17 +315,6 @@ def escaped_part_starts(raw, spans, spellings):
     return torch.cat(found, 1)
 
 
-def parts_for_units(raw, spans, spellings, rows, added_rank, padding, *, escaped_elements=False):
-    """Native addresses for the observed parts, in the ladder's constituent order."""
-    first = (escaped_part_starts if escaped_elements else part_starts)(raw, spans, spellings)
-    width = raw.shape[1]
-    present = first < width
-    # Characters follow surface order. Learned runs follow admission order.
-    rank = torch.where(added_rank < 0, first, width + added_rank)
-    order = torch.where(present, rank, torch.iinfo(rank.dtype).max).argsort(-1)
-    return torch.where(present.gather(-1, order), rows[order], padding), present.sum(-1)
-
-
 def _utf8_boundaries(raw, remaining, *, with_stride=False):
     """A cut through a multibyte character exposes each truncated byte as an element."""
     width = raw.shape[1]
@@ -367,155 +337,7 @@ def _utf8_boundaries(raw, remaining, *, with_stride=False):
     return cuts
 
 
-def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False,
-                         form_rows=None, unseen_elements=False, report_elements=False):
-    """Tile each ordered unit with its longest proper part at each surviving start."""
-    batch, width = raw.shape
-    units = spans.shape[1]
-    recognized = None if form_rows is None else spans.new_full((batch, units), -1)
-    if not units or not width:
-        result = rows.new_full((batch, width), padding), spans.new_zeros(batch, units), spans.new_zeros(batch, width, 2)
-        if report_elements:
-            return *result, recognized, rows.new_full((batch, width), -1)
-        return result if form_rows is None else (*result, recognized)
-    pos = torch.arange(width, device=raw.device).expand(batch, -1).contiguous()
-    lo, hi = spans.unbind(-1)
-    seat = torch.searchsorted(torch.where(hi > lo, lo, width).contiguous(), pos, right=True) - 1
-    parent = seat.clamp_min(0)
-    left, right = lo.gather(1, parent), hi.gather(1, parent)
-    live = (seat >= 0) & (pos < right)
-    if unseen_elements:
-        boundaries, stride = _utf8_boundaries(raw, torch.where(live, right - pos, 0), with_stride=True)
-    else:
-        boundaries = _utf8_boundaries(raw, torch.where(live, right - pos, 0)) if escaped_elements else None
-        stride = torch.ones_like(pos)
-    element_stride = stride
-    known_elements = torch.zeros_like(live) if report_elements else None
-    address = torch.full_like(pos, padding)
-    base = 0
-    for group in spellings:
-        size = group.shape[1]
-        if size <= width:
-            windows = raw.unfold(1, size, 1)
-            count = windows.shape[1]
-            chunk = max(1, (1 << 22) // max(1, batch * count * size))
-            for offset in range(0, len(group), chunk):
-                keys = group[offset:offset + chunk]
-                hit = (windows[:, :, None] == keys).all(-1)
-                index = hit.to(torch.int32).argmax(-1) + base + offset
-                proper = (size < right[:, :count] - left[:, :count]) | (ranks[index] < 0)
-                matched = hit.any(-1)
-                if report_elements and size <= 4:
-                    known = matched & (ranks[index] < 0) & (element_stride[:, :count] == size)
-                    known_elements = known_elements | F.pad(known, (0, size - 1))
-                if form_rows is not None:
-                    # A full-unit hit is already present in this comparison.
-                    # Its native name can count an exposure without becoming
-                    # one of the form's own reconstruction operands.
-                    start = lo.clamp(0, count - 1)
-                    whole = (hi - lo == size) & matched.gather(1, start)
-                    recognized = torch.where(whole, form_rows[index.gather(1, start)], recognized)
-                keep = live[:, :count] & (pos[:, :count] + size <= right[:, :count]) & proper & matched
-                if boundaries is not None:
-                    keep = keep & boundaries[:, :count] & boundaries[:, size:size+count]
-                keep = F.pad(keep, (0, size - 1))
-                stride = torch.where(keep, size, stride)
-                address = torch.where(keep, F.pad(rows[index], (0, size - 1)), address)
-        base += len(group)
-
-    # Follow just the cuts reachable from each unit start. Redirect the last
-    # step to a sentinel so adjacent units cannot affect each other's cover.
-    sentinel = pos.new_full((batch, 1), width)
-    successor = pos + stride
-    jump = torch.cat((torch.where(successor < right, successor, width), sentinel), 1)
-    reached = torch.cat((live & (pos == left), sentinel < width), 1)
-    for _ in range(width.bit_length()):
-        reached = reached | torch.zeros_like(jump).scatter_add(1, jump, reached.long()).bool()
-        jump = jump.gather(1, jump)
-    starts = reached[:, :width]
-    counts = torch.zeros_like(lo).scatter_add(1, parent, starts.long())
-    # Across disjoint units a sentence can have at most one part per byte.
-    order = torch.where(starts, pos, width).sort(1).values
-    valid = order < width
-    take = order.clamp_max(width - 1)
-    extents = torch.stack((order, successor.gather(1, take)), -1)
-    result = torch.where(valid, address.gather(1, take), padding), counts, torch.where(valid[..., None], extents, 0)
-    if report_elements:
-        # A taught proper part can exist before its individual letters. Find
-        # those letters inside it too, before choosing the disjoint operands.
-        missing = live & ~known_elements
-        if recognized is not None:
-            missing = missing & (recognized.gather(1, parent) < 0)
-        if unseen_elements:
-            missing = missing & boundaries[:, :width]
-            codes = _element_codepoints(raw, pos, element_stride)
-        else:
-            codes = raw.long()  # the input boundary certified ASCII
-        return *result, recognized, torch.where(missing, codes, -1)
-    return result if form_rows is None else (*result, recognized)
-
-
-def _element_codepoints(raw, start, length):
-    """Decode an element at each supplied position, respecting learned cuts."""
-    padded = F.pad(raw.to(dtype=torch.long), (0, 3))
-    first = padded.gather(1, start)
-    # A non-ASCII single byte exposed by an invalid or cut sequence has
-    # Python's surrogateescape code point. Multi-byte seats are valid UTF-8.
-    element = torch.where(first < 128, first, 0xDC00 + first)
-    prefix = torch.where(length == 2, first & 31, torch.where(length == 3, first & 15, first & 7))
-    for offset in (1, 2, 3):
-        prefix = (prefix << 6) | (padded.gather(1, start + offset) & 63)
-        element = torch.where(length == offset + 1, prefix, element)
-    return element
-
-
-def visible_missing_elements(raw, ids, extents, hidden):
-    """Unseated element code at its visible start or -1 at every other byte."""
-    if not raw.shape[1]:
-        return ids.new_full(raw.shape, -1)
-    starts, stops = extents.unbind(-1)
-    lengths = stops - starts
-    codes = _element_codepoints(raw, starts, lengths)
-    visible = (ids < 0) & (lengths > 0) & ~hidden.gather(1, starts)
-    events = torch.where(visible, codes + 1, 0)
-    return torch.zeros_like(raw, dtype=torch.long).scatter_add(1, starts, events) - 1
-
-
-def fill_new_elements(raw, flat, extents, codepoints, rows):
-    """Install newly admitted UTF-8 element addresses at the cover's unfilled seats."""
-    if not len(codepoints):
-        return flat
-    start, end = extents.unbind(-1)
-    length = end - start
-    element = _element_codepoints(raw, start, length)
-    seat = torch.searchsorted(codepoints, element).clamp_max(len(codepoints) - 1)
-    use = (flat < 0) & (length > 0) & (length <= 4) & (codepoints[seat] == element)
-    return torch.where(use, rows[seat], flat)
-
-
-def pack_disjoint_units(ids, counts, extents, padding, capacity):
-    """Gather the sentence's occurrences into the word loop's part seats."""
-    if not ids.shape[1]:
-        shape = (*counts.shape, capacity)
-        return ids.new_full(shape, padding), extents.new_zeros(*shape, 2)
-    seats = torch.arange(capacity, device=ids.device)
-    first = counts.cumsum(1) - counts
-    take = (first[..., None] + seats).clamp_max(ids.shape[1] - 1).flatten(1)
-    valid = seats < counts[..., None]
-    rows = ids.gather(1, take).reshape_as(valid)
-    spans = extents.gather(1, take[..., None].expand(-1, -1, 2)).reshape(*valid.shape, 2)
-    return torch.where(valid, rows, padding), torch.where(valid[..., None], spans, 0)
-
-
-def disjoint_parts(raw, spans, spellings, rows, ranks, padding):
-    """Fixed-width view of a disjoint cover for callers without a tighter bound."""
-    ids, counts, extents = disjoint_occurrences(raw, spans, spellings, rows, ranks, padding)
-    parts, locations = pack_disjoint_units(ids, counts, extents, padding, raw.shape[1])
-    return parts, counts, locations
-
-
-def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False,
-                     available_from=None, block=None, addresses=None):
+def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elements=False):
     """Join distinct located parts once, preserving the basis gradient at ties."""
     batch, occurrences = spans.shape[:2]
     if not spellings:
@@ -523,23 +345,18 @@ def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elem
                 catalog.new_ones(batch, occurrences, catalog.shape[-1]))
     starts = (escaped_part_starts if escaped_elements else part_starts)(raw, spans, spellings)
     found = starts < raw.shape[1]
-    if available_from is not None:
-        found = found & (spans[..., :1] >= available_from[:, None, :])
     coordinates = torch.cat((part_codes, catalog.to(part_codes)), -1)
     step = max(1, (1 << 22) // max(1, batch * coordinates.numel()))
     joined = []
-    for mask, places in zip(found.split(step, dim=1), spans.split(step, dim=1)):
-        available = coordinates
-        if block is not None:
-            available = block.values(addresses, coordinates, 0, places[..., 0])
-        joined.append(available.masked_fill(~mask[..., None], -torch.inf).amax(-2))
+    for mask in found.split(step, dim=1):
+        joined.append(coordinates.masked_fill(~mask[..., None], -torch.inf).amax(-2))
     joined = torch.cat(joined, dim=1)
     parts, tight = joined.split((part_codes.shape[-1], catalog.shape[-1]), dim=-1)
     present = found.any(-1, keepdim=True)
     return torch.where(present, parts, 0.), torch.where(present, tight, 1.)
 
 
-def held_at(bank, table, codes=None, *, spans=None):
+def held_at(bank, table, codes=None):
     """Each row of ``bank`` at each attended percept of ``table`` ``[B, A,
     columns, 2]``, read from the graded what columns by the least and the
     greatest (each ``[rows, B, A]``): ``part``, the least of the percept's
@@ -550,7 +367,6 @@ def held_at(bank, table, codes=None, *, spans=None):
     is graded too: ``max(wire, 1 - code)`` stands for a part it holds to the
     degree ``code``. At codes of 0 and 1 these are the read of
     :meth:`BasicPercepts.read_points`."""
-    local = getattr(bank, 'revisions', None) if codes is None else None
     codes = bank.codes if codes is None else codes
     iw, width = bank.identity_width, bank.width
     point = table[..., :width, 0].to(codes)
@@ -558,21 +374,6 @@ def held_at(bank, table, codes=None, *, spans=None):
     part = least_of_greater(point[..., :iw], 1 - row[:, :iw])
     whole = least_of_greater(1 - point[..., iw:], row[:, iw:])
     added = 1 - least_of_greater(1 - point[..., :iw], 1 - against[:, :iw])
-    if local is not None:
-        offsets = (bank.span if spans is None else spans)[..., 0]
-        revised = local.at(offsets)
-        pos, neg = revised.unbind(-2)
-        def least(wires, constants):
-            if not wires.shape[-1]:
-                return constants.new_ones(constants.shape[:-1])
-            with torch.no_grad():
-                at = torch.maximum(wires[None], constants).argmin(-1, keepdim=True)
-            address = torch.arange(wires.shape[0] * wires.shape[1], device=wires.device).reshape(wires.shape[:2])
-            seen = wires.reshape(-1)[at.squeeze(-1) + address * wires.shape[-1]]
-            return torch.maximum(seen, constants.gather(-1, at).squeeze(-1))
-        part = part.index_copy(0, local.indices, least(point[..., :iw], 1 - pos[..., :iw]))
-        whole = whole.index_copy(0, local.indices, least(1 - point[..., iw:], pos[..., iw:]))
-        added = added.index_copy(0, local.indices, 1 - least(1 - point[..., :iw], 1 - neg[..., :iw]))
     return part, whole, added
 
 
@@ -1469,7 +1270,7 @@ class BasicPercepts(nn.Module):
         """Tie both towers live, with the complementary pole from properties."""
         return self.read_bank(self.lookup(percepts, brackets, rows, **options))
 
-    def _occurrence_what(self, percepts, spans, wholes, *, block_parts=None):
+    def _occurrence_what(self, percepts, spans, wholes):
         """Each occurrence's code ``[B, O, width]``, as a row's code is made
         (:meth:`subspace_bounds`). The parts half: the greatest of the codes
         of the identity atoms of the bytes it spans (of the part leaves it
@@ -1494,9 +1295,7 @@ class BasicPercepts(nn.Module):
             spellings, rows, catalog, _ = bank
             basis = self.native._basis.lookup_rows(rows)[..., :self.identity_width]
             parts, tight = occurrence_parts(raw, spans, spellings, basis, catalog,
-                                            escaped_elements=identity.escaped_elements(device),
-                                            available_from=None if block_parts is None else block_parts.openings(rows),
-                                            block=block_parts, addresses=rows)
+                                            escaped_elements=identity.escaped_elements(device))
             codes[..., :self.identity_width] = parts
             # A native alphabet can supply parts alone. In that layout the
             # receiving field's wholes start at one until a property cuts them.
@@ -1617,7 +1416,7 @@ class BasicPercepts(nn.Module):
         spans = self._run_extents(part_ids, part_spans, keys)
         return [[tuple(span) for span in row if span[0] >= 0] for row in spans.tolist()]
 
-    def _spelling_geometry(self, text, rows, identity, delivered, block_parts=None):
+    def _spelling_geometry(self, text, rows, identity, delivered):
         from FieldReverse import index_spellings
         nominated = {form for form in (self.form_of(row) for row in rows
                                        if row not in self.place_rows and row not in self.conjunctions)
@@ -1638,13 +1437,7 @@ class BasicPercepts(nn.Module):
         rank = surface.new_tensor([ranks.get(form, -1) for form in forms])
         known_forms = set(learned).union(words)
         known = torch.tensor([form in known_forms for form in forms], device=text.device, dtype=torch.bool)
-        available_from = None
-        if block_parts is not None:
-            from WordIdentity import text_of
-            addresses = rank.new_tensor([identity.atoms.get(('part', text_of(form)), -1) for form in forms])
-            available_from = block_parts.openings(addresses)
-        spelled, learned, keys = spelling_occurrences(surface, spellings, groups, rank, known, len(nominated),
-                                                     available_from=available_from)
+        spelled, learned, keys = spelling_occurrences(surface, spellings, groups, rank, known, len(nominated))
         return spelled, learned, keys, text.shape[1]
 
     def lookup(self, percepts, brackets, rows, **options):
@@ -1687,7 +1480,7 @@ class BasicPercepts(nn.Module):
         identity = getattr(self.native, 'identity', None)
         if not raw.is_floating_point():
             spelled, learned, known, width = self._spelling_geometry(
-                text, rows, identity, options.get('delivered'), options.get('block_parts'))
+                text, rows, identity, options.get('delivered'))
         else:
             spelled = learned = parts[:, :0]
             known, width = None, text.shape[1]
@@ -1725,7 +1518,7 @@ class BasicPercepts(nn.Module):
         # external intervals, and leave the original source geometry intact.
         surface = raw[..., :limit]
         what, outside = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans),
-                                              spans, wholes, block_parts=options.get('block_parts'))
+                                              spans, wholes)
         dtype = options.get('dtype') or what.dtype
         # The against lane: nothing on the parts half; on the wholes half, the
         # degree to which each whole is witnessed outside over the occurrence.
@@ -1747,11 +1540,9 @@ class BasicPercepts(nn.Module):
         observed = (seen.gather(1, ends[..., 1]) - seen.gather(1, ends[..., 0])) == spans[..., 1] - spans[..., 0]
         activity = (real & observed)[..., None].expand(-1, -1, 2).to(dtype)
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
-        from BlockPercepts import revisions
-        local = revisions(self, rows, options.get('block_parts'))
         bank = PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
-                           when_band, registry, holder, local, surface.shape[-1])
+                           when_band, registry, holder, surface.shape[-1])
         object.__setattr__(bank, 'scope', holds | containing)
         return bank
 
@@ -1833,7 +1624,7 @@ class BasicPercepts(nn.Module):
         B, A = presence.shape
         if rows:
             if basis is None:
-                part, whole, added = held_at(bank, look.table, spans=look.span)
+                part, whole, added = held_at(bank, look.table)
                 outside = self.outside(look.table, rows, bank.width)
                 factor = self.place_factor(look.table, rows)
             else:

@@ -35,7 +35,7 @@ def lesson_store(extra=EXTRA):
     store = RadixLayer(64, initial_cap=1024)
     identity = WordIdentity(store)
     for word in lesson_words() + tuple(extra) + (b'cat', b'cats'):
-        identity.observe_forms([word])
+        identity.admit(word)
     return store, identity
 
 

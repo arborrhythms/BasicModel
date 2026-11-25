@@ -347,13 +347,6 @@ def main():
                         torch.cat((plus, minus, plus.new_zeros(module.width) if what is None else what))
                         for _, (plus, minus, what) in places]).cpu().view(torch.int32) if places else
                         torch.empty(0, 2 * WHERE_WIRES + module.width, dtype=torch.int32, device='cpu'))
-                if type(module).__name__ == 'WordIdentity' and not hasattr(module, '_witness_counts'):
-                    from WordIdentity import text_of
-                    counts = torch.full((module.store._capacity,), -1, dtype=torch.long, device='cpu')
-                    for form, row in module.word_rows.items():
-                        if text_of(form).replace(' ', '').isalpha():
-                            counts[row] = module.word_witnesses.get(form, 0)
-                    buffers[f'{name}._witness_counts'] = counts
                 if type(module).__name__ == 'WholeSpace' and not hasattr(module, '_standalone_bytes_seen'):
                     seen = torch.zeros(256, dtype=torch.bool, device='cpu')
                     seen[list(getattr(module, '_standalone_run_bytes', ()))] = True

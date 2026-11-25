@@ -216,6 +216,15 @@ class FormLinks(nn.Module):
         self.count.index_add_(0, unit.clamp_min(0), known.to(self.count.dtype))
 
     @torch.no_grad()
+    def read(self, data, lengths, admit=True):
+        """Row of each whole unit [U] (-1 where unknown or empty); with ``admit``, insert what the units lack and count them first."""
+        if not admit:
+            return self._unit_rows(data, lengths)
+        unit = self._insert(data, lengths)[0]
+        self._raise(unit)
+        return unit
+
+    @torch.no_grad()
     def close(self, data, lengths):
         """The post-sentence reset: insert what the units lack, raise their counts, recentre their forms."""
         unit, levels = self._insert(data, lengths)
@@ -442,6 +451,62 @@ class FormLinks(nn.Module):
             cur = self._level(cur)
             levels.append(cur)
         self._recentre(levels)
+
+    @torch.no_grad()
+    def recentre_rows(self, rows, data, lengths):
+        """Recentre only ``rows`` (any shape; -1 and bytes stay), each once.
+
+        A row goes halfway between its kept part centroid (``part_sum`` /
+        ``part_count`` as stored) and its kept whole centroid. Every row must
+        occur in ``data`` [B, L] (``lengths`` [B]); the move reaches the whole
+        sums of the row's distinct parts by ``_spread`` over the level table
+        of ``data``. Fixed shape, no host read.
+        """
+        ordered = torch.sort(torch.where(rows.reshape(-1) >= LEAVES, rows.reshape(-1).long(), -1)).values
+        safe, keep = ordered.clamp_min(0), ordered >= 0
+        count = self.part_count[safe].to(self.code.dtype)[:, None]
+        part_mean = self.part_sum[safe].to(self.code.dtype) / (count.clamp_min(1) * SCALE)
+        old = self.code[safe, :HALF]
+        x = torch.where(keep[:, None] & (count > 0), (part_mean + self._whole_mean(safe)) / 2, old)
+        delta = self._quantise(x) - self._quantise(old)
+        self.code[:, :HALF].index_copy_(0, safe, x)
+        levels = [self._leaves(data.long(), lengths)]
+        for _ in range(1, min(self.longest, data.shape[1])):
+            levels.append(self._level(levels[-1]))
+        own = {}
+        for n in range(2, len(levels) + 1):
+            held = self._flat(levels, n)
+            at = torch.searchsorted(ordered, held.contiguous()).clamp_max(ordered.shape[0] - 1)
+            hit = (held >= 0) & (ordered[at] == held)
+            own[n] = F.pad(torch.where(hit[:, None], delta[at], 0), (0, 1))
+        self._spread(levels, own)
+
+    @torch.no_grad()
+    def sweep(self, chunk=4096):
+        """Maintenance at a save: every form's part sum from the current codes, and the form recentred.
+
+        Length by length from 2, parts before wholes, at most ``chunk`` rows
+        at a time; each move reaches the whole sums of the form's parts by
+        ``_spread`` over the level table of its own spelling, so the whole
+        sums stay exact. Bytes stay. Host side; not captured.
+        """
+        used = int(self.used)
+        longest = int(self.length[:used].max()) if used > LEAVES else 1
+        for n in range(2, longest + 1):
+            found = (self.length[:used] == n).nonzero()[:, 0]
+            for start in range(0, found.shape[0], chunk):
+                rows = found[start:start + chunk]
+                S, C = self._sums(rows, n, self.border[rows].long())
+                self.part_sum.index_copy_(0, rows, S)
+                self.part_count.index_copy_(0, rows, C.to(self.part_count.dtype))
+                old = self.code[rows, :HALF]
+                x = self._centre(rows, S, C)
+                self.code[:, :HALF].index_copy_(0, rows, x)
+                data, lengths = self.spell(rows, n)
+                levels = [self._leaves(data.clamp_min(0), lengths)]
+                for _ in range(1, n):
+                    levels.append(self._level(levels[-1]))
+                self._spread(levels, {n: F.pad(self._quantise(x) - self._quantise(old), (0, 1))})
 
     def _recentre(self, levels):
         """Each level's forms from their refreshed part sums and their wholes; moves reach the whole sums after."""

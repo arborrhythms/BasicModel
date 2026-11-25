@@ -11,7 +11,6 @@ functions of the parts' bytes, not parameters.
 """
 import hashlib
 from collections import Counter
-from contextlib import contextmanager
 from functools import lru_cache
 from itertools import groupby
 
@@ -209,8 +208,6 @@ class WordIdentity(nn.Module):
         self.added = {}
         # Each parts half's stored forms, for a reader that has only that.
         self.by_parts = {}
-        self.register_buffer('_witness_counts', torch.full((store._capacity,), -1,
-            dtype=torch.long, device=store._basis.W.device), persistent=False)
         self.nested = {}
         self.revision = 0
         from BasicPercepts import BasicPercepts
@@ -332,100 +329,6 @@ class WordIdentity(nn.Module):
         self._catalog[key] = stamp, bank
         return bank
 
-    def located_parts(self, surface, spans, padding):
-        """The parts of each unit found directly in the surface, using its learned inventory."""
-        from BasicPercepts import parts_for_units
-        bank = self.occurrence_bank(surface.device)
-        if bank is None:
-            return None
-        spellings, rows, _, ranks = bank
-        return parts_for_units(surface, spans, spellings, rows, ranks, padding,
-                               escaped_elements=self.escaped_elements(surface.device))
-
-    def sentence_cover(self, surface, spans, padding, *, identify=False, unseen_elements=False, report_elements=False):
-        """Read ordered parts, including escaped bytes at a unit's UTF-8 boundaries."""
-        from BasicPercepts import disjoint_occurrences
-        bank = self._occurrences(surface.device, False)
-        escapes = bank is None
-        if escapes:
-            bank = self._occurrences(surface.device, True)
-        spellings, rows, _, ranks, forms = bank
-        return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding,
-                                    escaped_elements=escapes, form_rows=forms if identify else None,
-                                    unseen_elements=unseen_elements, report_elements=report_elements)
-
-    @contextmanager
-    def record_repairs(self, repairs, source):
-        """Attribute coordinates added during this observation to its witnesses."""
-        previous = getattr(self, '_observed_repairs', None)
-        self._observed_repairs = (repairs, source) if repairs is not None else None
-        try:
-            yield
-        finally:
-            self._observed_repairs = previous
-
-    def _repair_coordinates(self, atom):
-        if getattr(self, '_observed_repairs', None) is not None:
-            if atom not in self.atoms:
-                return torch.zeros(self.total, device='cpu')
-            return torch.cat((self.atom_code(atom), self.catalog_code(atom) if self.property_width
-                              else self.atom_code(atom)[:0]))
-        return None
-
-    def _record_coordinates(self, atom, before, witnesses, *, containment):
-        if before is not None:
-            repairs, source = self._observed_repairs
-            gained = (self._repair_coordinates(atom) > before)
-            repairs.append((atom, gained, (source, *witnesses), containment))
-
-    def block_part_visibility(self, prior_count, observed, streams, device, *, sentence_starts=None, repairs=(), prior_forms=None):
-        """Which independent pages witnessed each new part before block consolidation."""
-        from itertools import islice
-        unavailable = torch.iinfo(torch.long).max
-        missing = torch.full((streams,), unavailable, device=device, dtype=torch.long)
-        observed = {name: (seen if torch.is_tensor(seen) else
-                           missing.new_tensor([seen.get(b, unavailable) for b in range(streams)]))
-                    for name, seen in observed.items()}
-
-        def witness_start(name):
-            if name in observed:
-                return observed[name]
-            holders = [seen for word, seen in observed.items() if name in word]
-            return torch.stack(holders).amin(0) if holders else missing
-
-        born = []
-        runs = []
-        for run in islice(reversed(self.added), len(self.added) - prior_count):
-            runs.append(bytes_of(run))
-            between = self.added[run]
-            if run not in observed and between is not None:
-                witnesses = [observed[word] for word in between if word in observed]
-                opening = torch.stack(witnesses).amax(0) if witnesses else torch.zeros_like(missing)
-            else:
-                opening = witness_start(run)
-            born.append((self.atoms[('part', run)], opening))
-        forms = (self._ordered[prior_forms:] if prior_forms is not None else
-                 [bytes_of(name) for name in observed if bytes_of(name) in self.word_rows])
-        for raw in forms:
-            born.append((self.word_rows[raw], witness_start(text_of(raw))))
-            runs.append(raw)
-        born.sort(key=lambda item: item[0])
-        from BlockPercepts import BlockParts, repaired_parts
-        starts = sentence_starts if sentence_starts is not None else [[0]] * streams
-        count = max(1, max(map(len, starts)))
-        starts = missing.new_tensor([list(row) + [unavailable] * (count - len(row)) for row in starts])
-        rows = missing.new_tensor([part for part, _ in born])
-        offsets = torch.stack([offset for _, offset in born], 1) if born else starts[:, :0]
-        at = torch.searchsorted(starts, offsets.contiguous(), right=True) - 1
-        times = torch.where(offsets == unavailable, unavailable,
-                            torch.where(starts[:, :1] == unavailable, 0, starts.gather(1, at.clamp_min(0))))
-        runs.extend(bytes_of(atom[1]) for atom, *_ in repairs)
-        block = BlockParts(rows, times, starts, tuple(dict.fromkeys(runs)))
-        if repairs:
-            from dataclasses import replace
-            return replace(block, repairs=repaired_parts(self, block, born, observed, repairs))
-        return block
-
     def ordered_cover(self, raw):
         """Proper constituents and byte intervals at the host lesson/checkpoint boundary."""
         nested = self.nested.get(raw, ())
@@ -447,7 +350,7 @@ class WordIdentity(nn.Module):
             start = end
         return result
 
-    def retain_spelling(self, raw, *, opening=None):
+    def retain_spelling(self, raw):
         """Keep ordered native references on a form and on its non-element parts."""
         groups = self.store.part_groups
         row = self.word_rows[raw]
@@ -462,17 +365,7 @@ class WordIdentity(nn.Module):
             groups[row] = tuple(self.word_rows[part] for part, _, _ in cover)
             self.store._canonical_group_cache = None
             return
-        children = ()
-        if opening is not None:
-            # The observed seats already contain the disjoint cover. A prior
-            # admission or this form's collision repair can introduce a new
-            # proper constituent after that read. Only then retile the form.
-            children, first_new_rank = opening
-            if any(1 < len(run) < len(text) and ('part', run) in self.words[raw]
-                   for run in self._parts_since(first_new_rank)):
-                children = ()
-        if not children:
-            children = tuple(self.atoms[part] for part, _, _ in self.ordered_cover(raw))
+        children = tuple(self.atoms[part] for part, _, _ in self.ordered_cover(raw))
         for child in children:
             if child not in groups:
                 part = text_of(self._fixed_bytes[child])
@@ -481,89 +374,20 @@ class WordIdentity(nn.Module):
         groups[row] = children
         self.store._canonical_group_cache = None
 
-    def _parts_since(self, rank):
-        from itertools import islice
-        return islice(reversed(self.added), len(self.added) - rank)
-
-    def observed_links(self, surface, spans, observations):
-        """Both directions of byte containment for one batch of new forms, in admission order."""
-        links, _ = self.observed_definitions(surface, spans, observations)
-        return links
-
-    def observed_definitions(self, surface, spans, observations, parts=None):
-        """Publish new links and the opening's ordered part seats in one admission packet."""
-        from BasicPercepts import proper_byte_runs
-        # Ordinals below -1 name visible, newly observed forms. Existing
-        # forms use physical word rows. -1 is a part without its own word.
-        grouped = {}
-        words = []
-        positions = []
-        for word, page, seat in observations:
-            grouped.setdefault(len(word), []).append((len(words), page, seat))
-            words.append(word)
-            positions.append((page, seat))
-        prior = self._occurrences(surface.device, False)
-        if prior is None:
-            prior = self._occurrences(surface.device, True)
-        old_forms, _, _, _, old_rows = prior
-        groups, addresses = list(old_forms), [old_rows]
-        new_groups = []
-        for size, seats in grouped.items():
-            ordinal, page, seat = spans.new_tensor(seats).T
-            at = spans[page, seat, 0, None] + torch.arange(size, device=surface.device)
-            observed = surface[page[:, None], at].to(torch.uint8)
-            groups.append(observed)
-            addresses.append(-2 - ordinal)
-            new_groups.append((observed, ordinal))
-        names = torch.cat(addresses)
-        links = [(set(), set()) for _ in words]
-        matches, order = [], []
-        children = [[] for _ in words]
-        for observed, ordinal in new_groups:
-            directions = []
-            for group in groups:
-                if observed.shape[1] < group.shape[1]:
-                    directions.append(-proper_byte_runs(group, observed).T.to(torch.int8))
-                else:
-                    directions.append(proper_byte_runs(observed, group).to(torch.int8))
-            earlier = (names >= 0) | ((names < -1) & (-2 - names < ordinal[:, None]))
-            matches.append(torch.where(earlier, torch.cat(directions, 1), 0))
-            order.append(ordinal)
-        if matches:
-            directions = torch.cat(matches)
-            query, other = directions.nonzero(as_tuple=True)
-            records = torch.stack((torch.cat(order)[query], names[other], directions[query, other]), 1)
-            if parts is not None:
-                pages, seats = spans.new_tensor(positions).T
-                rows = parts[pages, seats]
-                targets = torch.arange(len(words), device=rows.device)[:, None].expand_as(rows)
-                cover = torch.stack((targets, rows, torch.zeros_like(rows)), -1)
-                records = torch.cat((records, cover.flatten(0, 1)))
-            for target, name, direction in records.tolist():
-                if direction:
-                    word = words[-2 - name] if name < -1 else self._fixed_bytes[name]
-                    links[target][0 if direction > 0 else 1].add(word)
-                elif name >= 0:
-                    children[target].append(name)
-        return (dict(zip(words, links, strict=True)),
-                {word: (tuple(group), len(self.added)) for word, group in zip(words, children, strict=True)})
-
-    def _link(self, raw, links=None):
+    def _link(self, raw):
         """Link a new stored form to the stored forms it holds as a run (its
         parts among the forms) and to those that hold it (its holders), on
         both sides of each link."""
         text = bytes(raw)
-        if links is None:
-            inside = {text[start:start + size] for size in range(1, len(text))
-                      for start in range(len(text) - size + 1)
-                      if text[start:start + size] in self.inside}
-            by_byte = self._forms_by_byte(text)
-            lists = [self.holders[run] for run in inside]
-            lists.extend(by_byte[byte] for byte in set(text))
-            shortest = min(lists, key=len)
-            holders = {word for word in shortest if word != text and text in word}
-            links = inside, holders
-        self.inside[text], self.holders[text] = links
+        inside = {text[start:start + size] for size in range(1, len(text))
+                  for start in range(len(text) - size + 1)
+                  if text[start:start + size] in self.inside}
+        by_byte = self._forms_by_byte(text)
+        lists = [self.holders[run] for run in inside]
+        lists.extend(by_byte[byte] for byte in set(text))
+        shortest = min(lists, key=len)
+        holders = {word for word in shortest if word != text and text in word}
+        self.inside[text], self.holders[text] = inside, holders
         for run in self.inside[text]:
             self.holders[run].add(text)
         for holder in self.holders[text]:
@@ -896,9 +720,7 @@ class WordIdentity(nn.Module):
             for bits in range(self.bits.get(atom, self.ones)+1, self.pair_dim+1):
                 if not torch.equal(seen(left, override=(atom, bits)),
                                    seen(right, override=(atom, bits))):
-                    before = self._repair_coordinates(atom)
                     self._atom(atom, bits)
-                    self._record_coordinates(atom, before, (left, right), containment=False)
                     changed.append(atom)
                     self.revision += 1
                     return self._holders(changed)
@@ -938,8 +760,6 @@ class WordIdentity(nn.Module):
                 row = self.store.insert(self.WORD_PREFIX + self.word_keys[word],
                                         init_vector=self._storage_code(self.form(word)))
                 self.word_rows[word] = row
-                if text_of(word).replace(' ', '').isalpha():
-                    self._witness_counts[row] = 0
                 self.store.inverse_table[row] = word
                 self._fixed_bytes[row] = word
                 # Keep byte rows distinct for one-letter words/descent.
@@ -1065,7 +885,6 @@ class WordIdentity(nn.Module):
         atom = ('part', text)
         touched = sorted(self.holders[inner] | {inner}, key=order)
         value = report[:self.total].to(torch.float32)
-        before = self._repair_coordinates(atom)
         if atom in self.atoms:
             old = self.given.get(atom)
             self.given[atom] = value if old is None else torch.maximum(old, value)
@@ -1078,7 +897,6 @@ class WordIdentity(nn.Module):
             self._atom(atom)
             for word in touched:
                 self.words[word] = self.words[word] + (atom,)
-        self._record_coordinates(atom, before, (inner, *outers), containment=True)
         index = own.new_tensor([order(word) for word in touched])
         old = self._packed[index]
         new = old | self._pack(given)[0]
@@ -1133,7 +951,7 @@ class WordIdentity(nn.Module):
         self.basic.follow_forms(changed, new)
         return changed
 
-    def admit(self, raw, *, links=None, opening=None):
+    def admit(self, raw):
         raw = bytes(raw)
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
@@ -1146,7 +964,7 @@ class WordIdentity(nn.Module):
             if len(text) > 1 and text not in self.added:
                 self.added[text] = None
             self.words[raw] = self.atoms_of(raw)
-            self._link(raw, links)
+            self._link(raw)
             carriers = [holder for holder in sorted(self.holders[raw], key=self.order.__getitem__)
                         if own not in self.words[holder]] if len(text) > 1 else []
             for holder in carriers:
@@ -1157,7 +975,7 @@ class WordIdentity(nn.Module):
                 index = self._packed.new_tensor([self.order[word] for word in carriers])
                 self._packed.index_copy_(0, index, self._pack(torch.stack([self.code(word) for word in carriers])).to(index))
             self._keep(self._settle(carriers + [raw]), new=raw)
-            self.retain_spelling(raw, opening=opening)
+            self.retain_spelling(raw)
         return self.parts(raw)
 
     def admit_part(self, run):
@@ -1188,30 +1006,6 @@ class WordIdentity(nn.Module):
         for part, _lo, _hi in self.nested.get(raw, ()):
             atoms.update(self.part_atoms(part))
         return atoms
-
-    @property
-    def word_witnesses(self):
-        """Export the historical spelling-keyed counts at the checkpoint boundary."""
-        counts = self._witness_counts.tolist()
-        return {word: counts[row] for word, row in self.word_rows.items() if counts[row] > 0}
-
-    def observe_rows(self, rows):
-        """One count per presentation, including repeated addresses in a batch."""
-        seats = rows.flatten().clamp_min(0)
-        valid = (rows.flatten() >= 0) & (self._witness_counts[seats] >= 0)
-        self._witness_counts.scatter_add_(0, seats, valid.long())
-
-    def observe_forms(self, forms, *, repairs=None):
-        """Count known native rows together and discover new forms in first-seen order."""
-        rows = []
-        for form in forms:
-            if isinstance(form, bytes):
-                if form not in self.word_rows:
-                    with self.record_repairs(repairs, form):
-                        self.admit(form)
-                form = self.word_rows[form]
-            rows.append(form)
-        self.observe_rows(self._witness_counts.new_tensor(rows))
 
     def row_for_form(self, form):
         """The row of the stored form whose code (:meth:`code`) this is. A
@@ -1275,8 +1069,7 @@ class WordIdentity(nn.Module):
     def vocab_extras(self):
         return dict(atoms=self.atoms, bits=self.bits, words=self.words,
                     word_rows=self.word_rows, added=self.added,
-                    revision=self.revision,
-                    word_witnesses=self.word_witnesses, nested=self.nested,
+                    revision=self.revision, nested=self.nested,
                     holders={word: tuple(sorted(found)) for word, found in self.holders.items()},
                     inside={word: tuple(sorted(found)) for word, found in self.inside.items()},
                     given={atom: tuple(value.nonzero().flatten().tolist()) for atom, value in self.given.items()},
@@ -1300,11 +1093,6 @@ class WordIdentity(nn.Module):
             setattr(self, name, value[name])
         self.__dict__.pop('_by_byte', None)
         self._codes = {}
-        counts = value.get('word_witnesses', {})
-        self._witness_counts.fill_(-1)
-        words = [word for word in self.word_rows if text_of(word).replace(' ', '').isalpha()]
-        rows = self._witness_counts.new_tensor([self.word_rows[word] for word in words])
-        self._witness_counts[rows] = self._witness_counts.new_tensor([counts.get(word, 0) for word in words])
         self.nested = value.get('nested', {})
         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}
         self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})

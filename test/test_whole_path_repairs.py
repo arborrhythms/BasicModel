@@ -250,9 +250,9 @@ def test_partial_omission_admits_only_the_visible_form_parts(tmp_path, monkeypat
                        batch_override=(source, torch.empty(1, 0)))
         identity = model.perceptualSpace.percept_store.identity
         parts = base_atoms(b'gamma')
-        assert b'gamma' not in identity.words and b'gamma' not in identity.word_witnesses
-        assert parts[0] not in identity.atoms
-        assert all(part in identity.atoms for part in parts[1:])
+        assert b'gamma' not in identity.words
+        # Every delivered byte is seated before the sentence, a hidden one too.
+        assert all(part in identity.atoms for part in parts)
         ids = model.inputSpace._ar_word_part_ids[0, 1]
         assert int(ids[0]) == -1 and bool((ids[1:len(parts)] >= 0).all())
         assert bool(model.inputSpace._ar_embedded_N[0, 1, :identity.width].any())

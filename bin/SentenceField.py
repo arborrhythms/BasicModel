@@ -261,10 +261,8 @@ def put_back(model, field, *, record=None, programs=()):
     return generation, realize(model, generation), met
 
 
-def reconstruction(model, field, *, block_parts=None):
+def reconstruction(model, field):
     """Invert opening evidence through the common perceptual inverse."""
-    if block_parts is not None:
-        return model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field, block_parts=block_parts)
     return model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
 
 

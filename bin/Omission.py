@@ -93,26 +93,24 @@ def covered_bytes(spans, forms, length):
     return changes[:, :-1].cumsum(1) > 0
 
 
-def prepare(model, units, cover=None, counts=None):
-    """Draw from the lexical layout before any unit or byte is admitted."""
-    ps, isp = model.perceptualSpace, model.inputSpace
+def prepare(model, surface, spans, cover):
+    """Draw from the lexical layout before any unit is inserted.
+
+    ``surface`` [B, L] bytes, ``spans`` [B, W, 2] unit extents, ``cover``
+    the parts of each unit: rows [B, W, P], extents [B, W, P, 2] and the
+    number of tiles [B, W].
+    """
+    isp = model.inputSpace
     policy = model.omission
+    units = (surface, spans)
     if ((not model.training or policy.target == 1)
             and getattr(policy.draw, '__func__', None) is Omission.draw):
         # The draw is identically empty and consumes no random numbers.
         # Use the finalized part layout for the loss and observation counts.
         model._omission_prepared = dict(raw=model._staged_concepts_in.detach().clone(), units=units)
         return None
-    if cover is None:
-        raise RuntimeError('omission draws over the sentence cover; this reading has none')
-    width = int(ps._serial_word_capacity)
-    device = model._staged_concepts_in.device
-    from BasicPercepts import pack_disjoint_units
-    ids, lengths, extents, _ = cover
-    capacity = max(3, max((n for row in counts for n in row), default=0))
-    lengths = torch.nn.functional.pad(lengths, (0, width - lengths.shape[1]))
-    _, span_table = pack_disjoint_units(ids, lengths, extents, -1, capacity)
-    valid = torch.arange(capacity, device=device) < lengths[..., None]
+    _, extents, counts = cover
+    valid = torch.arange(extents.shape[2], device=extents.device) < counts[..., None]
     active = valid.any(-1)
     isp._finalize_sentence_word_layout(active)
     sentences = isp._packed_sentence_ids
@@ -126,8 +124,20 @@ def prepare(model, units, cover=None, counts=None):
     model._omission_prepared = dict(raw=raw_target, units=units,
         draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
     if bool(forms.any()):
-        model._omission_prepared['bytes'] = covered_bytes(span_table, forms, raw_target.shape[-1])
+        model._omission_prepared['bytes'] = covered_bytes(extents, forms, raw_target.shape[-1])
     return model._omission_prepared
+
+
+def host_units(units):
+    """Each row's bytes and its units' extents, read once at the host boundary."""
+    surface, spans = units
+    width = surface.shape[1]
+    rows = []
+    for row in torch.cat((surface, spans.flatten(1)), 1).tolist():
+        ends = row[width:]
+        rows.append((bytes(row[:width]).rstrip(b'\0'),
+                     [(s, e) for s, e in zip(ends[0::2], ends[1::2]) if e > s]))
+    return rows
 
 
 def native_values(ps, units):
@@ -212,6 +222,7 @@ def stage(model):
     prepared.update(native=native, word_values=word_values, valid=valid.detach().clone(),
                     ids=isp._ar_word_part_ids.detach().clone(), spans=spans)
     if hiding or 'unit_spans' not in native:
+        prepared['units'] = host_units(prepared['units'])
         prepared['word_bytes'] = tuple(tuple(raw[lo:hi] for lo, hi in units)
                                        for raw, units in prepared['units'])
     model._omission_targets = prepared
