@@ -9255,3 +9255,440 @@ Keep tmp/item1-6/alphabet_progress.md current after each step.
 Do not run git and do not commit: Claude commits what it has reviewed.
 Nothing is pushed.
 ~~~
+
+## 47. Step V: the return (Claude on Opus, 2026-11-24) (Claude on Opus, 2026-11-24)
+
+The work of §46.3, following §46.2. No git was run; nothing is committed.
+Progress was kept in `tmp/item1-6/alphabet_progress.md`. Every file changed
+was first copied to `/tmp/item1-6-2026-11-24/alphabet_before/` (`bin/`,
+`data/`, `test/`); the V5 output from before any edit is
+`alphabet_before/v5_before.txt`. What was removed (`NumericPercepts.pooled`,
+`BasicPercepts.cut`, `met`, the buffers `centroids` and `meets`, the key
+`intensityWhereWidth`, `FamiliarTier.promoted_alone`) is in those copies;
+the state of the files just before the withdrawal of point 5 is in
+`/tmp/item1-6-2026-11-24/alphabet_before2/`. Nothing else was deleted.
+
+**In five lines.** An alphabet of 256 levels of one pixel, learned by vector
+quantization, replaces the cuts given beforehand; an atom's row is its level
+(part and whole its seat), its centroid the level. The aperture
+`intensityPartSigma` replaces `intensityWhereWidth`, and the readout's
+pooling, not the numeric stem, keeps XOR's two inputs apart: `pooled` is
+gone and XOR, its certificate and "without the intersection" pass unchanged.
+Point 5 (a Pi for every concept) was built, changed two passing tests of the
+text, and was then withdrawn by the owner: `promoted_alone` is gone, and in
+its place a Sigma above order zero may hold an entry on a basic percept's
+row, read from the Not of order zero (47.6).
+
+### 47.1 Files changed, and why
+
+| File | Why |
+|---|---|
+| `data/model.xml`, `data/model.xsd` | `intensityPartCardinality` (256) beside `whereAxes` (point 1); `intensityWhereWidth` renamed `intensityPartSigma` (0), with its comment saying what it limits (point 4). |
+| `data/MM_xor.xml`, `data/XOR_exact.xml`, `data/MM_xor_fixture.xml` | `intensityPartSigma` 1 in place of `intensityWhereWidth` 1. |
+| `bin/BasicPercepts.py` | **Point 1.** Buffers `levels`, `level_meets`, `level_seats`; `fall`, `learn`, `level_seat`, `atom`; `_new_seat` split from `_seat`. **Point 2.** `perceive_intensity(ies)` make an atom's row from its level; `felt` is the value of the row's part; `centroids`, `meets`, `met` and `cut` removed. `value_bank` codes an occurrence by its level and keeps its intensity (`PerceptBank.values`, new field); `value_events` and `thing_events` compare a value's row and an occurrence by their values (`levels_of`). **Points 3, 4.** `part_sigma` read from the key; `aperture`, `span`, `weights`; `with_things` and `read_values` lose their width argument. |
+| `bin/NumericPercepts.py` | `where_width` and `pooled` removed; `forward` hands the field to the readout as it is; `read` gives `close` the basic percepts' lanes. |
+| `bin/ImagePercepts.py` | The two reads of `intensityWhereWidth` removed (the table reads its own key). |
+| `bin/Spaces.py` | `pooled_over_readings(field, owner)` (new, module level), called by `OutputSpace.read_field`: the aperture on the readout's pooling (47.3). |
+| `bin/FamiliarTier.py` | `promoted_alone` removed, and its call in `promote_candidates` (at order zero nothing is nominated, as before step D3). |
+| `bin/Interpret.py` | `promoted_alone`'s import and its two calls in `lookup_word` removed: the file is as it was before step D3 (`/tmp/item1-6-2026-11-24/promotion_before/bin/Interpret.py`). |
+| `bin/Places.py` | Unchanged at the end (the call to `promoted_alone` added for point 5 was taken out again). |
+| `bin/Layers.py` | `ConceptualAttentionLayer.percept_entries` (new): a definition's entries on basic percepts' rows (47.6). |
+| `bin/FieldProjection.py` | `close(owner, rows, evidence, percepts=None)`: such an entry is read from the Not of order zero in the same Sigma fold (47.6). |
+| `test/test_item16_alphabet.py` (new) | A1 to A8. |
+| `test/test_item16_values.py`, `test_item16_things.py`, `test_item16_relations.py`, `test_item16_naming.py`, `test_item17_symbols.py` | Ports (47.5). |
+
+`data/BasicModel.xml` gains nothing. Neither gate's file nor anything a gate
+uses was changed (the gates read `data/model.xml` and `MM_xor.xml`, changed
+as §46.3 steps 1 and 2 require).
+
+### 47.2 The alphabet, its learning and its state (step 1)
+
+- **What it is.** `BasicPercepts.levels`, `intensityPartCardinality` values on
+  the sorted line, `torch.linspace(0, 1, n)` before any learning: at 256 each
+  eight-bit step `k/255` is level `k` (A1). A value falls to the nearest
+  level (`fall`: `bucketize` on the midpoints; a value midway falls to the
+  lesser).
+- **A level is a row of the table of values.** When a level is first met it
+  is given a seat of the table of values (`level_seat`, its reference kept in
+  `level_seats`), holding its value. Its code in the cube is `value_code` of
+  that value, the coarser image (three bins on XOR and MM_image, 64 on the
+  scene model). Seats are given on first meeting because MM_xor's table has
+  200 seats, fewer than 256 levels.
+- **How a level is learned.** `learn(level, value, count)`: the level moves
+  to the mean of every intensity that has fallen to it,
+  `lerp(level, mean, count / (meets + count))` (MacQueen's online k-means;
+  `torch.lerp` with weight one gives the value exactly, so a level met by one
+  value is that value). Its seat moves with it. In one image every intensity
+  falls to its level before any level moves, and each level moves once by
+  the mean of what fell to it (`perceive_intensities`). Learning happens
+  wherever an intensity is perceived, as `met` did. *Marked:* it runs in
+  evaluation too, as the centroid did.
+- **What keeps the order.** Nothing is sorted: a level lies in its own cell
+  (between the midpoints to its neighbours) and so does the mean of what
+  falls to it, so the moved level stays in its cell, and the cells are in
+  order. A2 presents 999 values over the line and finds 255 levels moved and
+  the order kept.
+- **Where it is saved.** `levels`, `level_meets` and `level_seats` are
+  buffers of `BasicPercepts` (so of the model's state dict); the seats'
+  values are in `value_codes`, already a buffer. A state saved before this
+  step lacks them and is refused by a strict load; nothing is kept for it.
+- **Existing vector quantization.** `Layers.VectorQuantize` (EMA, cosine,
+  dead-code revival) quantizes vectors of a codebook with its own ownership
+  rules; it keeps no order and its initialization is not the even line. It
+  was not used. What was used is what the table already did for a
+  centroid: the running mean of `met`, now the level's.
+
+**Point 2: an atom's row.** `perceive_intensity(value, count)` →
+`atom(level)`: `reserve((seat,), (seat,))`, the level's seat as its part (a
+lower cut) and its whole (an upper cut). Its region is the level; the set of
+values allowed to it is what falls to it (its cell). Its centroid
+(`felt`) is the value of its part, the level. It is nominated by MTM under
+`('value', row)` on `conceptMintCount` readings, as before.
+
+*Read by value.* `value_events` reads a value's row at an occurrence by
+less-than-or-equal on values: part held where the occurrence's level is at
+or above the row's part, under the whole where at or below its whole. The
+occurrence's value is the level its intensity falls to, read at reading time
+(`levels_of`). The codes stay the coarser image, and every other row of the
+bank (places, conjunctions) is read by `held_at` on codes as before.
+`thing_events` reads a thing's places the same way.
+
+### 47.3 The aperture, and what the readout does under it (step 2)
+
+- **In a part.** `aperture(run)`: of a run of touching places, a part holds
+  the places nearer its centre (the middle place of the run's box, rounded
+  down) than `part_sigma` on every axis; the whole run where it is 0. At one a
+  part is one place, so no thing is made (as at `intensityWhereWidth` 1). A
+  part holds at most `2 sigma - 1` places on an axis (`span`). One part is
+  taken from each run, about the run's centre.
+- **The Gaussian.** `weights(offsets)`: `exp(-d^2 / 2 sigma^2)` of a place's
+  distance from the centre of the part's box; in `thing_events` a place of
+  weight `g` that fails the part or the whole test takes `g` from it
+  (`1 - g (1 - held)`, the least over the places). One everywhere at 0.
+- **On the Pi over values.** A value's row is read at no reading wider than
+  the span (`read_values`), as before at one.
+- **On the readout** (`Spaces.pooled_over_readings`, called by
+  `OutputSpace.read_field`). Where the key sets 0, each concept is the
+  greatest over its readings, as before. Where it sets one, and a stream's
+  readings lie at places farther apart than the span, **a concept is pooled
+  over its readings only if each of its basic percepts is a place's row**
+  (which reads at its own place and at the readings that hold it); **any
+  other concept** (of a value, a thing, a conjunction, or above order zero)
+  **is read at the bracket alone**, the reading that holds every place, as
+  the field read it there. So a value's concept, whose readings at two
+  places lie farther apart than one place, is not merged into an OR of the
+  two inputs: it reads nothing at the readout, because the Pi over values
+  does not read it at the bracket.
+- **Why not "bracket alone for every concept".** Tried first: the places'
+  concepts at the bracket are read against where the conjunction holds them
+  (rule 53), so at the bracket a place reads `a and not b`, the readout
+  learned XOR from the two places alone (conjunction weight 3.6e-7), and V5's
+  sign assertion failed. A place's concept must be pooled at its place.
+- **Why not "where this concept's readings lie apart".** Read per input, a
+  value's concept would read 1 at `[1,0]` and `[0,1]` and nothing at `[1,1]`:
+  XOR in one concept, which "without the intersection" forbids. The rule
+  must depend on what kind of percept the concept reads, not on the input.
+- `read_field` reads the key from `TheXMLConfig` (always loaded with
+  `data/model.xml`), not from the head, so `test_concept_output.py`'s stand-in
+  head works unchanged. *Marked:* the readout measures "farther apart" by the
+  bracket's extent in addresses, which is exact on the numeric stem's line.
+
+### 47.4 The certificates, as printed
+
+(Development run, `tmp/item1-6/alphabet_certificates.log`; the bounded run in 47.8.)
+
+- **A1.** `levels 256, first 0.0, last 1.0, in_order True,
+  distinct_levels_of_the_steps 256, step_falls_to_its_own True`; with the key
+  at 16, `[0.0, 0.0667, ..., 1.0]`; numbers above 2 in `__init__`, `fall`,
+  `learn`, `level_seat`, `perceive_intensity(ies)`, `value_bank`: none.
+- **A2.** Level 76 at `0.29804`; five values about it, mean `0.2981961`;
+  after `0.2981961` (neighbours `0.29412`, `0.30196`). A grid of 999 values:
+  `levels_moved 255, in_order True, greatest_move 0.0010`.
+- **A3** (MM_xor). Level 127, seat -4, `occurrence ((-4,), (-4,))`, key the
+  same; centroid = the level; cell `(0.49706, 0.50098)`; seen over three
+  presentations `[(0, False, None)], [(0, False, None)], [(0, True, 0)]`;
+  read at `0.49853 (1,0)`, `0.50049 (1,0)`, the next level `0.50196 (0,1)`,
+  the level below `0.49412 (0,0)`.
+- **A4.** At one (MM_xor): `things {}`; the value's concept reads at the
+  places `[[0,0],[0,.76],[.76,0],[.76,.76]]`, at the bracket `[0,0,0,0]`,
+  as the readout reads it `[0,0,0,0]`; place 13 `[0,.76,0,.76]` and place 14
+  `[0,0,.76,.76]` as the readout reads them (pooled at their places); the
+  conjunction `[0,0,0,.76]`. At three (a run of nine, `.2 .3 .4 .5 .6 .5 .4
+  .3 .2`): a part of 5 places, offsets 0..4 about centre 2, felt
+  `[.4, .5, .6, .5, .4]`, weights `[.8007, .946, 1, .946, .8007]`. At
+  nothing: the whole run of 9, weights all 1.
+- **A5.** `pooled_in_the_numeric_stem False`; answers
+  `[1.82e-11, 1.0, 1.0, 1.82e-11]`, mse `1.654e-22`, conjunction `{3: (1, 2)}`.
+- **A6** (naming model, after the withdrawal). After `three` and the pixel
+  200 have recurred: the word 93's symbols `[('kind', 91, 93)]` (its kind's,
+  made by `things_reading`), the value 95's none; no handle `('alone', …)`.
+  A concept of order one (97, row 131) given one entry at a time, `+1` or
+  `-1`, read with the target for `(.76, 0)` and against `(0, .76)`:
+
+  | Entry on | `+1` at for | `+1` at against | `-1` at for | `-1` at against |
+  |---|---|---|---|---|
+  | the word's thing (symbol 0) | `(.6411, 0)` | `(0, .6411)` | `(0, .6411)` | `(.6411, 0)` |
+  | the value's thing (symbol 1) | `(.6411, 0)` | `(0, .6411)` | `(0, .6411)` | `(.6411, 0)` |
+  | the basic percept's row 2 | `(.6411, 0)` | `(0, .6411)` | `(0, .6411)` | `(.6411, 0)` |
+
+  `tanh(.76) = .6411`: each read is the target's value where the entry is
+  positive and its not-value where it is negative. Symbols: 2 with the
+  things, 2 after the entries; the entry on the basic percept's row made no
+  symbol's row. *Marked:* the store's columns are things, which are symbols'
+  rows; the value had no thing of its own, so the certificate wrote one
+  (`nominate_symbol(('certificate', 95), 95)`, symbol 1). No rule makes one.
+- **A7.** Ports as listed in 47.5; `older_forms_named []` (no
+  `intensityWhereWidth`, `where_width`, `pooled`, `.cut(` or `centroids[`
+  in `bin`, `test`, `data`).
+- **A8** (scene widths 64 and 64, 256 levels; train split). For each value,
+  the distinct steps met and the atoms' rows they make:
+
+  | Value | Cat. 1 steps / rows | Cat. 2 steps / rows | 1 and 2 steps / rows |
+  |---|---|---|---|
+  | 1 | 6 / 6 | 4 / 4 | 6 / 6 |
+  | 2 | — | 6 / 6 | 6 / 6 |
+  | 3 | 6 / 6 | 6 / 6 | 6 / 6 |
+  | 4 | 5 / 5 | 6 / 6 | 6 / 6 |
+  | 5 | 5 / 5 | 6 / 6 | 6 / 6 |
+  | 6 | — | 5 / 5 | 5 / 5 |
+  | 7 | 5 / 5 | 6 / 6 | 6 / 6 |
+  | 8 | 6 / 6 | 6 / 6 | 6 / 6 |
+  | 9 | 4 / 4 | 5 / 5 | 5 / 5 |
+
+  Every step is a level of its own, so a value's band of six free steps
+  makes six rows (at 64 bins it made 2 or 3). Category 1's train split has
+  no image of 2 or 6. N7: 47.7.
+
+**XOR before and after** (V5, `test/numeric_xor.py`'s certificate):
+
+| | Before | After |
+|---|---|---|
+| answers | `[1.8189894035458565e-11, 1.0, 1.0, 1.8189894035458565e-11]` | the same |
+| weights | `[1.313035249710083, 1.313035249710083, -2.626070499420166]` | the same |
+| against | `[0.0, 0.0, 0.0]` | the same |
+| promoted_row | 3 | 3 |
+| mse | `1.6543612251060553e-22` | the same |
+
+### 47.5 Tests ported
+
+| Test | Point | Old | New |
+|---|---|---|---|
+| `test_item16_values.py::test_v3` | 1 | `.1` and `.2` share a row, `.9` and `1.` share a row, 3 rows; expected lanes by the 3-bin region; `read_values(bank, where_width=…)` | each value its own level, 5 rows; expected lanes by the level (`fall`); `read_values(bank)`. Keys, entries, codes and source assertions unchanged |
+| `test_v9` | 1 | `n` values in the middle third, one row keyed by `cut(region)`; centroid against `basic.centroids` dtype | `n` values within a quarter step of the middle level, one row keyed by the level's seat; centroid against `basic.levels` dtype. Every other assertion unchanged |
+| `test_v10` | 4 | reads `intensityWhereWidth` in four files; `numeric_percepts.where_width == 1`; `read_values(bank, where_width=1)`; `numeric_percepts.pooled(field)` | reads `intensityPartSigma`; `basic.part_sigma == 1`; `read_values(bank)`; `Spaces.pooled_over_readings(field, owner)`. Assertions unchanged |
+| `test_v11` | 1 | two values of one 3-bin region come back to their mean | two values within one level's cell (a quarter step either side of the middle level) come back to their mean; the lone values exact. Assertions unchanged |
+| `test_v12` | 1 | a reserved step falls in a row its value's other steps made; no row made by the reserved steps | a reserved step falls in a row of its own, made by no other step; 9 rows made by the 9 reserved steps. The other assertion unchanged |
+| `test_item16_things.py` `_bank`, `_read`, `test_e6`, `test_e8` | 4 | `with_things(…, where_width=…)`, `read_values(…, where_width=…)`, `numeric_percepts.where_width == 1`, the key `intensityWhereWidth` | no width argument; `basic.part_sigma == 1`; the key `intensityPartSigma`. Assertions unchanged |
+| `test_item16_relations.py::bank_of` | 4 | `with_things(…, where_width=…)` | `with_things(bank, percepts)` |
+| `test_item16_naming.py::test_n2` | 5, withdrawn | for point 5 it was first ported to `alone['word_symbols'] and alone['value_symbols']`; after the withdrawal | `alone['word_symbols'] and not alone['value_symbols']`, the assertion as step D3 left it; only the docstring changed: the word's symbol is its kind's, no concept is promoted alone. The module docstring likewise |
+| `test_item17_symbols.py::test_71_no_symbol_is_made…` | 5, withdrawn | callers of `nominate_symbol`: `promote_candidates`, `promote_identity`, `promoted_alone`, `things_reading` | `promote_candidates`, `promote_identity`, `things_reading` (the list of before step D3, less `ImagePercepts.noun`, which D3 removed); its comment likewise. The second half is unchanged |
+
+No other assertion was changed, skipped or marked; no seed was chosen. N3 to
+N6 keep their marks (47.7).
+
+### 47.6 Point 5: built, withdrawn, and what stands in its place
+
+Alec, on point 5, during the step:
+
+> "a pi for every concept is not necessary as long as the sigma is free to
+> range over all lower order's percepts and symbols (which is a better fix).
+> But since NOTLayer combines those into signed values for sigma, perhaps it
+> should go after that for symbols? (we have the difficulty that NOT occurs
+> after PI at the basic level, so I'm not sure if basic percepts get to be
+> negated by higher-order sigmas?)"
+
+**What point 5 did, while it stood.** `promoted_alone` without its text
+condition, called by `Places.bring`, gave every concept MTM brings (values,
+things, places) its symbol. The first bounded run
+(`output/tests/20261124-193308-8aed37/result.json`, 1309 cases) found two
+passing tests of the text modality changed, which step 3 says to report:
+`test_item17_symbols::test_71_no_symbol_is_made_for_a_concept_and_every_symbol_is_mtms`
+(the lesson's text model meets places at its word brackets; their ten
+concepts got symbols with the handle `('alone', c)`, 32 symbols where there
+were 22, which is neither MTM's nor a kind's) and
+`test_item17_symbols::test_4_a_nomination_above_order_zero_makes_one_symbol_that_brings_its_concept`.
+Both pass again after the withdrawal.
+
+**The withdrawal.** `promoted_alone` is removed with its callers (`Places.bring`,
+`Interpret.lookup_word`, `promote_candidates`); a symbol is made as before
+step D3: by MTM's nomination above order zero, by `promote_identity`, and by
+a kind's need of a member (`things_reading`).
+
+**What stands in its place.**
+
+1. *A thing of one concept is that concept's value or not-value* (checked, no
+   change): in `FieldProjection.close` an entry on a thing reads the product
+   of the concepts it holds, through `NotLayer3.options`, by `sigma_fold`; a
+   thing of one member is that member's lanes. A6 shows it for a word's and an
+   intensity's concept, both signs.
+2. *An entry above order zero on a basic percept's row.* Stored in the
+   concept store, `ConceptualAttentionLayer.percept_entries`, a dictionary
+   `{(concept row, basic percept row): signed number}`, addressed by the
+   concept's row and the row of the first Pi (the table of basic percepts).
+   `close` takes the basic percepts' lanes as `percepts = (lanes [P, B, E,
+   2], rows [P])`; for each such entry it reads the row's two options from
+   `owner.order_zero_not` (the Not of order zero, the same module the order-
+   zero Sigma reads through) and folds them with the definition's other
+   entries in the one `sigma_fold`, the entry's sign choosing the option.
+   `NumericPercepts.read` gives `close` its lanes (`presence`, `nominated`);
+   no other caller does, so elsewhere such an entry reads nothing. Nothing
+   makes one: A6 writes them. *Marked:* the dictionary is not a learned
+   parameter and is not saved in a model's state.
+
+**Where the Not stands, and whether a basic percept could be read negated
+from above.** At order zero, `ConceptualSpace.order_zero_field` applies the
+Not (`order_zero_not`, a `NotLayer3`) to each basic percept's row of the
+first Pi, giving its value and not-value, and the order-zero Sigma
+(`SparseSigmaLDU`) reads those options, a Not entry (below zero) reading the
+not-value; so the Not stands after the Pi and before the Sigma there. Above
+order zero, `FieldProjection.close` makes each thing's lanes (the product of
+the concepts a symbol holds, themselves the Sigma's signed values on two
+lanes) into options by `NotLayer3.options` and the store's signed entries
+choose one, so the Not stands after the symbols' product and before the
+Sigma. The store's columns were only symbols and the bias
+(`ConceptualAttentionLayer.column_of_thing`), so **before this change a
+higher Sigma could not read a basic percept's row at all**, negated or not:
+only an order-zero concept could (by a Not entry), and a higher Sigma could
+negate that concept through a thing of it. **After it**, a higher concept's
+entry in `percept_entries` reads the row's not-value from the order-zero
+Not where the entry is negative (A6), on the numeric stem, where `close` is
+given the lanes.
+
+### 47.7 N3 to N6, and N7
+
+- **N3 to N6** stay marked expected-to-fail and failed as expected in both
+  runs (`xfailed`); none passes, with point 5 or after its withdrawal.
+- **N7** (`tmp/item1-6/alphabet_n7.log`, run with point 5 in force; in the
+  final bounded run, after the withdrawal, it passed again): 300 rows
+  taught, 0 refused; order caps `(512, 323, 153, 64, 32)`; units across
+  modality by order `{}`; every number word united with 0 steps. As in §39
+  (`{}`, none united). With 256 levels a value's band falls in five or six
+  rows (A8), so a number word's count is split further than at 64 bins.
+
+### 47.8 The runs (step 6)
+
+`env -u RUN_TRAINED -u RUN_SLOW DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py`
+on the 116 files of `tmp/item1-6/alphabet_run_files.txt`: §46.3 step 6's list
+(both gates' files, `test_mm_xor.py`, `test_concept_output.py`, every
+`test_item16_*.py`, `test_item17_echo.py`, `test_item17_symbols.py`,
+`test_item18_places.py`, `test_item18_scalar.py`, `test_what_spacetime.py`,
+`values_run4_files.txt`, every test file naming `read_field`,
+`promoted_alone`, `nominate_symbol` or `intensityWhereWidth`), step D3's list
+of files with `attentionPromotion` true (less
+`test_compiled_lesson_step.py`, whose one test passes 8 GiB on the tree
+before step D3 too, §39.8), every test file that builds `MM_xor`,
+`XOR_exact` or `MM_image`, and the test files that make a `BasicPercepts` of
+their own.
+
+- **Run 1, with point 5** (`output/tests/20261124-193308-8aed37/result.json`):
+  `Result: test_failure, exit 1; 1309/1309 cases completed.` 1215 passed,
+  82 skipped, 5 xfailed, 7 failed: `test_71_…` and `test_4_…` of
+  `test_item17_symbols.py` (point 5, 47.6) and the five below.
+- **Run 2, after the withdrawal** (`output/tests/20261124-200135-45c8cd/result.json`,
+  log `tmp/item1-6/alphabet_run2.log`, 1521 s, greatest memory at once
+  7.90 GiB): **`Result: test_failure, exit 1; 1309/1309 cases completed.`**
+  1217 passed, 82 skipped, 5 xfailed, 5 failed.
+  - **Both stopping gates passed**, `test_mm_xor.py` whole, V5,
+    `test_concept_output.py` whole with "without the intersection" [0], [1],
+    [2], A1 to A8, V1 to V12, E1 to E8, N1, N2, N7, `test_71_…` and
+    `test_4_…`; N3 to N6 xfailed. The four of `test_what_spacetime.py` passed.
+  - The five failures: `test_item16_grid::test_g1_…[MM_xor.xml]` and
+    `[MM_image.xml]` (by test order), `test_item18_perceptual_scalar::test_text_uses_the_same_percept_collection_reader`
+    (by chance), `test_item17_symbols::test_54bd_…` and
+    `test_item20_round6_loop::test_parallel_input_…` (failed in the sweep).
+  - `test_explicit_dimensions::TestXorGrammarReconstruction` is skipped (slow).
+    Every other test has its sweep outcome.
+- **Run 3**, the 15 further test files that name `FieldProjection`,
+  `order_zero_not` or `ConceptualAttentionLayer` (`tmp/item1-6/alphabet_run_extra.txt`):
+  **`Result: passed, exit 0; 224/224 cases completed.`**
+  `output/tests/20261124-202710-e4fa26/result.json`: 217 passed, 7 skipped,
+  every one its sweep outcome.
+
+### 47.9 What in §46.2 could not be built as written, and what was built
+
+1. *"Its whole the set of values allowed to it."* A whole of the table is an
+   upper cut at one value. The atom's whole is its level's seat as an upper
+   cut, so its region is the level; the set of values allowed to it, its
+   cell, is what falls to it, and an occurrence is read by the level it falls
+   to. *Marked.*
+2. *Read by value beside the code.* With 256 levels and a cube three or 64
+   bins wide, several levels share a code, so a row is read by value
+   (`value_events`, `thing_events`), the code being the coarser image;
+   places and conjunctions are read by codes as before. This needed the
+   occurrence's intensity in the bank (`PerceptBank.values`). *Marked.*
+3. *The occurrence's level is found at reading time.* In one image every
+   intensity falls before any level moves; between the perceiving and the
+   reading, a value at the very edge of a cell could fall to the neighbour
+   once the level has moved. Not met in any test. *Marked.*
+4. *One part per run.* Of a run wider than the aperture, the one part about
+   the run's centre is made; the rest of the run is not covered. Parts at
+   every place (receptive fields everywhere) and levels of combination above
+   the first are not built (point 6). The part's places may not all touch
+   (an L cut by the window). *Marked.*
+5. *The centre.* The aperture is taken about the middle place of the run's
+   box (rounded down); the Gaussian about the centre of the part's own box,
+   since the row's key (its arrangement) keeps no other centre. *Marked.*
+6. *The readout's rule* is by kind of basic percept (47.3); a concept above
+   order zero is read at the bracket under an aperture (31.9's point, that a
+   concept above order zero over a value's would still be pooled, is met).
+7. *`span` is written twice:* `BasicPercepts.span` and, as `2 * sigma - 1`,
+   in `Spaces.pooled_over_readings`, which has no table. *Marked.*
+8. *`A6` on a model of the text with the scene's box*, the naming test's.
+9. *Learning in evaluation* (47.2). *Marked.*
+10. *A saved state* before this step does not load (47.2).
+11. *Point 5* was withdrawn (47.6). The entries on basic percepts' rows
+    that stand in its place are read only where `close` is given the lanes
+    (the numeric stem), are not learned and are not saved. *Marked.*
+12. *A6's things.* An entry above order zero on a concept goes through a
+    thing, a symbol's row; for the value the certificate wrote one. Only the
+    entry on the basic percept's row makes no symbol's row.
+
+### 47.20 Review of step V (Claude, 2026-11-24)
+
+**Accepted.** Claude ran `test_mm_xor.py` whole, the other stopping gate,
+`test_item16_alphabet.py`, `test_item16_values.py`, `test_item16_things.py`,
+`test_item16_scene_field.py`, `test_item16_out.py`,
+`test_item16_relations.py`, `test_concept_output.py`,
+`test_what_spacetime.py` and `test_item17_symbols.py`: 108 of 109 passed,
+the one failure `test_54bd`, which fails on the unchanged source.
+
+- *The alphabet* is 256 levels learned by vector quantization. On
+  categories 1 and 2 every step of every value is a level and a row of
+  its own, where 64 bins gave two or three rows to a value.
+- *`intensityPartSigma`* has taken the place of `intensityWhereWidth`, and
+  `NumericPercepts.pooled` is gone. Under the aperture the readout pools a
+  place's concept over its own readings and reads every other concept at
+  the reading over the whole input. It is by kind of percept and not by
+  input: by input, XOR went into the value's one concept and "not without
+  the conjunction" failed. So the certificate still rests on how the
+  readout treats a value's concept; Alec is not sure the XOR of
+  intensities works until the item 1.4 plan's §10 is built, and it is
+  judged again there.
+- *A Pi for every concept was built, broke two passing tests of text, and
+  was withdrawn on his word,* with step D3's rule for text. Symbols are
+  made as before step D3.
+- *An entry of a Sigma above order zero on a basic percept's row* exists
+  (`ConceptualAttentionLayer.percept_entries`), read through the Not of
+  order zero on the numeric stem alone; nothing makes or saves such
+  entries.
+- *Naming:* no unit across modality on the corpus; N3 to N6 still fail as
+  expected.
+
+## 48. What goes to item 1.4 (Alec, 2026-11-24)
+
+"Please add this work to 1.4. I am not clear that the intensity XOR will
+work until it is completed. Please add doc todo also to cover the import
+of positive concepts at various orders. Add also the removal of NOT at all
+orders to Augustine."
+
+Done in `e87ee67d22`: the item 1.4 plan's §10 (his proposals of positive
+evidence at order zero, no negation there, the Not as one weight that
+exchanges a concept's lanes, a Sigma over every lower order, with Claude's
+comments as given); `todo.md`'s entry for item 1.4 with the documentation
+to do on positive concepts at the various orders; and `doc/FutureWork.md`'s
+Augustine, in which the Not is removed at every order.
+
+§44 is as it stood before step V. Since it: step V (`47`), the documents
+of `372abe55c1`, and this. No full sweep has been run since step V; the
+files of 47's run and of 47.20 were.
+

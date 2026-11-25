@@ -396,9 +396,6 @@ class InterpretLayer(GrammarLayer):
             return word
         if not cs.nominates(('form', form) if form is not None else ('parts', parts), reading):
             return None
-        # The word's concept, which MTM nominated, is promoted alone by the
-        # Pi of order one where it lies in the text.
-        from FamiliarTier import promoted_alone
         # In the discovering field, interpretation names the case it admits.
         # It never allocates a competing concept row for the same unit.
         discovering = word_reading and cs._promotion_enabled and cs._sparse_active()
@@ -431,7 +428,6 @@ class InterpretLayer(GrammarLayer):
             alloc.singletons.add(word)
             cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
             cs._csw_concept_row(0, word)
-            promoted_alone(cs, word, ('alone', word))
             alloc.word_descriptions[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
             cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
             self._description_revision += 1
@@ -459,7 +455,6 @@ class InterpretLayer(GrammarLayer):
         alloc.singletons.add(word)
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
-        promoted_alone(cs, word, ('alone', word))
         alloc.word_descriptions[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
         cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
         self._description_revision += 1

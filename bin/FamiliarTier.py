@@ -145,22 +145,6 @@ def across(owner, concept):
                                for member in members if member != concept))
 
 
-def promoted_alone(owner, concept, handle):
-    """A concept of order zero whose basic percepts all lie in the range
-    ``text``, promoted by MTM, is promoted alone by the Pi of order one: a
-    row of that one member, its symbol, which makes it available to a Sigma.
-    Text is written the same way every time, so the Pi has nothing to
-    generalize over there. A concept with a member in another range gets its
-    symbol only as the Pi of order one ordinarily makes one. Wherever MTM's
-    promotion is on (``ConceptualSpace.attentionPromotion``); a symbol that
-    already holds the concept (its fit) is kept, else one is nominated under
-    ``handle``. ``None`` where nothing is promoted."""
-    if not owner._promotion_enabled or ranges(owner, concept, {}) != {'text'}:
-        return None
-    found = owner._concept_allocator.symbol_table().fit(int(concept))
-    return found if found is not None else owner.nominate_symbol(handle, int(concept))
-
-
 def support_order(owner, support, candidate_order=None):
     """The highest member order, whose next order the candidate can become."""
     if candidate_order == 0:
@@ -1058,11 +1042,8 @@ def promote_candidates(owner):
         pool.promote(key, cid)
         if derived > 0:
             # Above order zero the nomination makes a symbol, which brings
-            # this concept; at order zero it is the basic percept's row,
-            # promoted alone where it lies in the text.
+            # this concept; at order zero it is the basic percept's row.
             owner.nominate_symbol(key, cid)
-        else:
-            promoted_alone(owner, cid, key)
         alloc.raised.add(cid)
         alloc.relate_idx['part-base', cid] = ('candidate', key[1])
         cover_members(owner, cid, entry.support, conjunctive=literal is not None and literal[0] == 'field')

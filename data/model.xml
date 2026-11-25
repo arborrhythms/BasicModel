@@ -273,11 +273,17 @@
     <!-- The axes of the .where: a place is (x, y, z), each axis four
          wires of the two-rung ladder; text lies on the first axis. -->
     <whereAxes>3</whereAxes>
-    <!-- The greatest .where width, in places, of a percept of
-         intensities: a value's row and its concept are read at no reading
-         wider. 0 sets no limit; 1 makes every percept of intensities
-         atomic over digits. -->
-    <intensityWhereWidth>0</intensityWhereWidth>
+    <!-- The alphabet of intensity: the number of levels on the sorted line
+         of values, learned by vector quantization; at 256, before any
+         learning, each step of an eight-bit pixel is a level. -->
+    <intensityPartCardinality>256</intensityPartCardinality>
+    <!-- The width in places of the Gaussian aperture about a part's centre:
+         a part of adjacent atoms holds the places nearer its centre than
+         this, each weighed by the Gaussian; a value's row is read at no
+         reading wider than the aperture, and the readout pools no concept
+         across places farther apart. 0 sets no limit (a part is a whole run);
+         1 makes every part one place. -->
+    <intensityPartSigma>0</intensityPartSigma>
     <!-- The shape of a scene's box: up to whereAxes whole numbers
          separated by spaces (8 8 8 is a box of 8 by 8 by 8 places).
          Empty: the model feels no scene and has no box for one. -->

@@ -36,11 +36,7 @@ class NumericPercepts:
     """The numeric stem: its input is an image, one intensity at each place
     of its box, read as an image's bank by the Pi over values."""
     def __init__(self, model, dimensions):
-        from util import TheXMLConfig
         self.model, self.dimensions = model, int(dimensions)
-        # The greatest .where width, in places, of a percept of intensities
-        # (``architecture.intensityWhereWidth``); zero sets no limit.
-        self.where_width = int(TheXMLConfig.get('architecture.intensityWhereWidth'))
 
     def read(self, inputs):
         """Each place and the bracket over the input are readings. The input
@@ -48,12 +44,12 @@ class NumericPercepts:
         occurrence of the basic percept of intensity whose region holds it.
         A basic percept and its places are met, and each is nominated on the
         count that nominates a form and brings its concept then; so is each
-        thing, a run of touching places, each an occurrence with a reading of
-        its own (:meth:`BasicPercepts.BasicPercepts.with_things`); the promoted
-        rows are read by the Pi over values, no value's row over more places than
-        the greatest .where width of a percept of intensities, and the
-        order-zero Sigma reads them through the one Not. The definitions
-        above order zero are closed."""
+        thing, adjacent atoms within the aperture, each an occurrence with a
+        reading of its own (:meth:`BasicPercepts.BasicPercepts.with_things`);
+        the promoted rows are read by the Pi over values, no value's row over
+        more places than the aperture holds, and the order-zero Sigma reads
+        them through the one Not. The definitions above order zero are
+        closed."""
         from FieldProjection import inventory, close
         from FamiliarTier import observe_intersection, promote_candidates
         from Places import meet, nominate
@@ -73,11 +69,11 @@ class NumericPercepts:
                                 time=self.model.present())
         meet(owner, bank)
         # The things, runs of touching places, after the places are met.
-        bank, things = basic.with_things(bank, percepts, where_width=self.where_width)
+        bank, things = basic.with_things(bank, percepts)
         nominate(owner, things, 'thing')
         nominated = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
         bank = replace(bank, rows=tuple(nominated), codes=basic.bank_codes(nominated).to(values.device))
-        presence = basic.read_values(bank, where_width=self.where_width)
+        presence = basic.read_values(bank)
         if self.model.training:
             # The places' concepts read together at the bracket recur, and
             # their conjunction is nominated.
@@ -91,7 +87,7 @@ class NumericPercepts:
             promote_candidates(owner)
         rows = inventory(owner)
         evidence = owner.order_zero_field(presence, nominated, rows)
-        evidence = close(owner, rows, evidence)
+        evidence = close(owner, rows, evidence, (presence, nominated))
         ids = torch.tensor([owner.concept_id_at_row(row) for row in rows], device=values.device)
         when = torch.full_like(bank.where, self.model.present())
         return ConceptualField(ids, evidence, bank.where, when, percepts)
@@ -151,24 +147,5 @@ class NumericPercepts:
         carrier._concept_ids, carrier._concept_activations = field.concept_ids, field.evidence
         self.model._combine_last_cs_sub = carrier
         self.model._numeric_field = field
-        output = self.model.outputSpace.read_field(self.pooled(field), owner)
+        output = self.model.outputSpace.read_field(field, owner)
         return inputs, point, output, 0
-
-    def pooled(self, field):
-        """The field as the readout reads it, each concept as the greatest
-        over its readings. Where the greatest ``.where`` width of a percept
-        of intensities is narrower than the input, a concept that reads a
-        value's row is read at the bracket alone, where it is not read: the
-        greatest over the places would read it over all of them at once."""
-        from Spaces import _concept_alloc_of
-        A = self.dimensions
-        if not self.where_width or A <= self.where_width:
-            return field
-        owner = self.model._concept_owner()
-        basic = owner.basic_percepts
-        values = {owner.concept_id_at_row(concept) for concept, percept, negated
-                  in _concept_alloc_of(owner).order_zero_members if not negated and basic.is_value(percept)}
-        value = torch.tensor([int(cid) in values for cid in field.concept_ids.tolist()], device=field.evidence.device)
-        bracket = torch.arange(field.evidence.shape[2], device=value.device) >= A
-        keep = ~value[:, None] | bracket[None]
-        return replace(field, evidence=field.evidence * keep[:, None, :, None])

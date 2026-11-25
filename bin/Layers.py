@@ -6416,6 +6416,12 @@ class ConceptualAttentionLayer(SparseLayer):
         # A square store's columns are things: see :meth:`square`.
         self._thing_columns = False
         self._room = None
+        # A definition's entries on rows of the first Pi, basic percepts'
+        # rows: ``{(concept row, basic percept row): signed number}``, each
+        # reading that row's options from the Not of order zero, its value
+        # at or above zero and its not-value below (``FieldProjection.close``).
+        # Written explicitly; nothing makes one by itself.
+        self.percept_entries = {}
         for name, value in (
                 ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),

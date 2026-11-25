@@ -483,15 +483,21 @@ places.
   and one only at infinity ("the log chart was to avoid clipping, and
   sensation seems to be log. But we can treat that as a preprocessing
   step"). No reader of the numeric stem applies it.
-- **A basic percept of intensity identifies a region.** The catalogs of
-  parts and of wholes over intensity are the bins of the line of values,
-  in order, with values for codes: a part is a lower cut and a whole an
-  upper cut. A basic percept is a row over a part and a whole, the cuts of
-  its bin, with its entries in a Pi of the value space's own
-  (`BasicPercepts.value_pi`); the first Pi over forms is not used for it.
-  It has a centroid, the mean of the values met in it, and no exact value.
-  The same region at two places is one percept met twice. Zero is no
-  presence.
+- **An alphabet of intensity.** As text has its character set, intensity
+  has a codebook over the value of one pixel:
+  `architecture.intensityPartCardinality` levels, 256, on the sorted line
+  of values. It is learned by vector quantization: a level moves toward
+  the intensities that fall to it, and the levels stay in order. Before
+  any learning the levels lie evenly on 0..1, so that each step of an
+  eight-bit pixel is a level.
+- **A basic percept of intensity identifies a region.** An atom's row is
+  over a part and a whole taken from the alphabet, its level and the set
+  of values allowed to it, with its entries in a Pi of the value space's
+  own (`BasicPercepts.value_pi`); the first Pi over forms is not used for
+  it. Its centroid is its level; it has no exact value. A code in the
+  percept's cube is the coarser image of a level, and levels are compared
+  by their values. The same region at two places is one percept met
+  twice. Zero is no presence.
 - **An image has a bank of occurrences,** as a sentence has
   (`BasicPercepts.value_bank`): each place with a value above zero is an
   occurrence, its `.what` the value's code on two lanes, its `.where` the
@@ -532,16 +538,23 @@ places.
   (`Places.meet`), and keeps the what met there; it is a part of an
   occurrence at its own place alone. XOR's conjunction is over two places'
   rows. The comparison needs the wires at single precision or better.
-- **Percepts atomic over digits.** `architecture.intensityWhereWidth` is
-  the greatest `.where` width of a percept of intensities; 0, its default,
-  sets no limit. The XOR configurations set it to one: no thing is wider
-  than a place, and a value's row and
-  its concept are read at single places and never over the whole input, so
-  that nothing but the conjunction joins the two inputs. The output's
-  readout takes each concept as the greatest over its readings, which
-  would read a value over every place at once; under the limit the numeric
-  stem gives the readout a value's concept at no place
-  (`NumericPercepts.pooled`).
+- **The aperture.** `architecture.intensityPartSigma` is the width in
+  places of the Gaussian aperture about a part's centre: a part holds the
+  places nearer its centre than that width, each weighed by the Gaussian
+  in what reads for and against it. At nothing, its default, there is no
+  limit and a part is a whole run of touching places. The aperture limits
+  whatever reaches across places: the combining of adjacent atoms into a
+  part, and the pooling of a concept over its readings at the output
+  (`OutputSpace.read_field`). The XOR configurations set it to one: a part
+  is one place, and at the output a place's concept is pooled over its own
+  readings and every other concept is read at the reading over the whole
+  input, so that nothing but the conjunction joins the two inputs.
+- **A Sigma above order zero may read a basic percept's row.** An entry of
+  a definition above order zero may be on a basic percept's row
+  (`ConceptualAttentionLayer.percept_entries`); it reads the row's value or
+  not-value from the Not of order zero, by the entry's sign
+  (`FieldProjection.close`). Such entries are read on the numeric stem,
+  and nothing makes them or saves them yet.
 - **One Not.** The rows of an image's bank, its values, its places and its
   conjunctions, go once through the Not and the Sigma of order zero
   (`order_zero_field`).

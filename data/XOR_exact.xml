@@ -10,8 +10,8 @@
       <dataType>numeric</dataType>
       <dataset>xor</dataset>
     </data>
-    <!-- Every percept of intensities is atomic over digits. -->
-    <intensityWhereWidth>1</intensityWhereWidth>
+    <!-- The aperture is one place: every part of intensities is one place. -->
+    <intensityPartSigma>1</intensityPartSigma>
     <training>
       <autoload>false</autoload>
       <numEpochs>64</numEpochs>

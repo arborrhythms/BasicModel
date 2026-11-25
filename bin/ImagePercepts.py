@@ -13,8 +13,9 @@ nothing at a reading of the other. The table goes to the one Not and the
 Sigma of order zero in one call (``cs_read_percept_field``).
 
 The image's readings are the places its pixels hold, each a place of the
-box, the bracket over the box, and each thing's, the box of a run of
-touching places that are not background. A row with no image has none: its
+box, the bracket over the box, and each thing's, the box of adjacent
+atoms within the aperture, of a run of touching places that are not
+background. A row with no image has none: its
 columns are empty brackets. An empty image has the bracket alone.
 
 At the opening's reconstruction the image is put back from the field alone
@@ -77,14 +78,12 @@ def perceive(model, bank, values):
     Returns the bank with its things
     (:meth:`BasicPercepts.BasicPercepts.with_things`)."""
     from Places import meet, nominate
-    from util import TheXMLConfig
     owner = model._concept_owner()
     basic = owner.basic_percepts
     percepts = basic.perceive_intensities(values)
     nominate(owner, percepts, 'value')
     meet(owner, bank)
-    bank, things = basic.with_things(bank, percepts,
-                                     where_width=int(TheXMLConfig.get('architecture.intensityWhereWidth')))
+    bank, things = basic.with_things(bank, percepts)
     nominate(owner, things, 'thing')
     return bank
 
@@ -118,12 +117,10 @@ def joined(model, bank, sentence, image, values):
     nothing at a reading of the other."""
     from dataclasses import replace
     from Places import readings
-    from util import TheXMLConfig
     basic = model._concept_owner().basic_percepts
     rows = image_rows(model)
     image = replace(image, rows=tuple(rows), codes=basic.bank_codes(rows).to(values.device))
-    lanes = basic.read_values(image,                                                  # [R, B, Ki, 2]
-                              where_width=int(TheXMLConfig.get('architecture.intensityWhereWidth')))
+    lanes = basic.read_values(image)                                                  # [R, B, Ki, 2]
     events = basic.value_events(image) if rows else image.table.new_zeros(0, *image.token.shape, 2)
     own = set(rows)
     keys = tuple(sentence.keys) + tuple(('bp', row) for row in rows if ('bp', row) not in sentence.keys)

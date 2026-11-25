@@ -923,9 +923,12 @@ and read as a form is, for inside the region and against above it. A place is to
 its wires, through a place's row that is nominated when occurrences recur at
 it. Zero is no presence. Reverse returns at each place the centroid of the
 percept a concept of the field reads for there, so an input is put back once
-its regions and places are known. `architecture.intensityWhereWidth` is the greatest
-`.where` width of a percept of intensities (0, the default, no limit); the
-XOR configurations set it to 1, so that a value is read at single places.
+its regions and places are known. `architecture.intensityPartCardinality` (256) is the number of levels
+of the alphabet of intensity, a codebook over one pixel's value learned by
+vector quantization. `architecture.intensityPartSigma` is the width in places
+of the Gaussian aperture of a part of intensity (0, the default, no limit);
+the XOR configurations set it to 1, so that a part is one place and no
+concept is pooled across places at the output.
 `architecture.createMetaConcepts` (true) has `interpret` make a word's meta
 concept, and a blank object where the word has none; false, `interpret`
 makes neither and gives a word's object from a unit that MTM has made. No

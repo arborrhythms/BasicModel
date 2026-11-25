@@ -13,10 +13,8 @@ image present together in an opened field are offered to MTM as any two
 concepts are (``FamiliarTier.observe_field``: each witnessed concept's
 co-present concepts are a candidate, read on the focal concept's two lanes,
 and ``promote_candidates`` promotes none read both). A concept of order
-zero whose basic percepts all lie in the range ``text``, promoted by MTM, is
-promoted alone by the Pi of order one, its symbol
-(``FamiliarTier.promoted_alone``); a value's concept has a symbol only as
-the Pi of order one ordinarily makes one. A unit across modality is whatever
+zero has a symbol only as the Pi of order one ordinarily makes one (a kind's
+need of a member, or MTM's nomination above order zero). A unit across modality is whatever
 concept of order one or above that promotion makes with members of the two
 ranges ``text`` and ``scene`` (``FamiliarTier.units``). Met alone, either
 member raises the unit, and by the way down the unit raises the other
@@ -286,10 +284,9 @@ def test_n1_the_key(tmp_path, monkeypatch, stages):
 
 def test_n2_each_known_alone(stages):
     """After a word alone and a pixel alone have each recurred, the word has
-    its concept and its symbol of order one (a concept of the text alone is
-    promoted alone by the Pi of order one); the value has its concept and no
-    symbol (an intensity's concept is not promoted automatically); and
-    there is no unit across modality."""
+    its concept and a symbol of order one, its kind's (no concept is promoted
+    alone to a symbol); the value has its concept and no symbol; and there
+    is no unit across modality."""
     alone = stages['alone']
     print(f"N2 said back {stages['said']}; the word {WORD!r} concept {alone['word']} symbols "
           f"{alone['word_symbols']}; the pixel {PIXEL} concept {alone['value']} symbols {alone['value_symbols']}; "

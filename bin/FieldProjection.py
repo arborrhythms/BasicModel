@@ -11,10 +11,14 @@ def inventory(owner):
                   if owner.concept_id_at_row(row) is not None)
 
 
-def close(owner, rows, evidence):
+def close(owner, rows, evidence, percepts=None):
     """Read each definition once, in dependency order: each kind's entries,
     each on its symbol's value or not-value (the Not), summed by the
-    store's Sigma and stored as one signed value on two lanes."""
+    store's Sigma and stored as one signed value on two lanes. Where the
+    basic percepts' lanes are given (``percepts``, ``(lanes [P, B, E, 2],
+    rows [P])``), a definition's entry on a basic percept's row
+    (``store.percept_entries``) reads that row's value or not-value from the
+    Not of order zero (``owner.order_zero_not``) in the same Sigma."""
     from Layers import NotLayer3, sigma_fold, signed_lanes
     store = owner._concept_allocator.layer(0)
     positions = {int(row): i for i, row in enumerate(rows)}
@@ -26,6 +30,8 @@ def close(owner, rows, evidence):
         definitions[row] = [(None if store.thing_of_column(column) is None else store.column_rows(column), index)
                             for (target, column), index in store._index.items()
                             if target == row and values is not None and float(values[index].detach()) != 0]
+    # Each basic percept's place among the lanes given.
+    at = {} if percepts is None else {int(p): i for i, p in enumerate(percepts[1])}
     done, pending = {}, set(positions)
     while pending:
         ready = [row for row in sorted(pending) if all(
@@ -36,7 +42,9 @@ def close(owner, rows, evidence):
         for row in ready:
             value = evidence[positions[row]]
             edges = definitions[row]
-            if edges:
+            bound = [(at[percept], weight) for (target, percept), weight in store.percept_entries.items()
+                     if target == row and weight and percept in at]
+            if edges or bound:
                 operands = []
                 for sources, _ in edges:
                     if sources is None:
@@ -47,11 +55,16 @@ def close(owner, rows, evidence):
                         held = [done.get(source, torch.zeros_like(value)) for source in sources]
                         item = torch.stack(held).prod(0) if held else torch.zeros_like(value)
                     operands.append(item)
-                options = NotLayer3.options(torch.stack(operands))
-                entry = values.index_select(0, torch.tensor([index for _, index in edges],
+                options = NotLayer3.options(torch.stack(operands)) if operands else value.new_zeros(0, *value.shape)
+                entry = values.index_select(0, torch.tensor([index for _, index in edges], dtype=torch.long,
                                                             device=values.device)).to(options)
-                read = sigma_fold(entry, torch.zeros(len(edges), dtype=torch.long, device=options.device),
-                                              torch.arange(len(edges), device=options.device), options, 1)[0]
+                if bound:
+                    # A basic percept's row: its options from the Not of order zero.
+                    lanes = percepts[0].index_select(0, torch.tensor([i for i, _ in bound], device=percepts[0].device))
+                    options = torch.cat((options, owner.order_zero_not(lanes.to(options))))
+                    entry = torch.cat((entry, entry.new_tensor([float(w) for _, w in bound])))
+                read = sigma_fold(entry, torch.zeros(len(entry), dtype=torch.long, device=options.device),
+                                              torch.arange(len(entry), device=options.device), options, 1)[0]
                 # A row without direct evidence takes its definition. Direct
                 # perceptual evidence and a definition are independent sources.
                 value = torch.maximum(value, signed_lanes(read))

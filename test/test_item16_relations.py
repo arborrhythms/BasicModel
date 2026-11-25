@@ -42,7 +42,6 @@ def bank_of(reader, scene):
     """The image's bank of ``scene`` with its things, as the image's reader
     makes it (``ImagePercepts.image_bank``, ``BasicPercepts.with_things``),
     and the intensity of each pixel's occurrence ``[1, A]``."""
-    from util import TheXMLConfig
     model, table = reader
     registry = model.where_registry
     lo = registry.slices['scene'][0]
@@ -55,8 +54,7 @@ def bank_of(reader, scene):
     percepts = table.perceive_intensities(values)
     bank = table.value_bank(values, places, registry=registry, when_encoding=model.when_encoding,
                             time=model.present())
-    bank, _ = table.with_things(bank, percepts,
-                                where_width=int(TheXMLConfig.get('architecture.intensityWhereWidth')))
+    bank, _ = table.with_things(bank, percepts)
     assert lo <= int(addresses.min())
     return bank, values
 

@@ -51,7 +51,7 @@ def _bank(model, image):
     percepts = basic.perceive_intensities(values)
     bank = basic.value_bank(values, places, registry=model.where_registry,
                             when_encoding=model.when_encoding, time=model.present())
-    return basic.with_things(bank, percepts, where_width=model.numeric_percepts.where_width)
+    return basic.with_things(bank, percepts)
 
 
 def _address(model, x, y):
@@ -60,8 +60,7 @@ def _address(model, x, y):
 
 def _read(model, bank, rows):
     basic = model._concept_owner().basic_percepts
-    return basic.read_values(replace(bank, rows=tuple(rows), codes=basic.bank_codes(list(rows))),
-                             where_width=model.numeric_percepts.where_width)
+    return basic.read_values(replace(bank, rows=tuple(rows), codes=basic.bank_codes(list(rows))))
 
 
 # -- E1: a run is a thing ------------------------------------------------------------
@@ -194,7 +193,7 @@ def test_e5_recurrence():
 # -- E6: the limit -------------------------------------------------------------------
 
 def test_e6_the_limit():
-    """With intensityWhereWidth one no thing's row is made; the XOR gate,
+    """With intensityPartSigma one no thing's row is made; the XOR gate,
     the XOR certificate and test_concept_output.py are certified by the run
     that names them."""
     from test_item16_values import _xor, _recur
@@ -210,10 +209,10 @@ def test_e6_the_limit():
     percepts = basic.perceive_intensities(flat)
     bank = basic.value_bank(flat, places, registry=model.where_registry,
                             when_encoding=model.when_encoding, time=model.present())
-    _, at_one = basic.with_things(bank, percepts, where_width=model.numeric_percepts.where_width)
-    print(dict(where_width=model.numeric_percepts.where_width, things=basic.things,
+    _, at_one = basic.with_things(bank, percepts)
+    print(dict(part_sigma=basic.part_sigma, things=basic.things,
                readings=field.where.shape[1], places=A, at_one=at_one.tolist()))
-    assert model.numeric_percepts.where_width == 1
+    assert basic.part_sigma == 1
     assert basic.things == {} and field.where.shape[1] == A + 1 and at_one.shape[1] == 0
 
 
@@ -320,7 +319,7 @@ def test_e8_the_corpus(tmp_path, monkeypatch):
         owner = model._concept_owner()
         registry, basic = model.where_registry, owner.basic_percepts
         mint = owner.concept_mint_count
-        width = int(TheXMLConfig.get('architecture.intensityWhereWidth'))
+        width = int(TheXMLConfig.get('architecture.intensityPartSigma'))
         lo = registry.slices['scene'][0]
         origin = registry.boxes['scene'][0]
         table = BasicPercepts(None, basic.identity_width, basic.property_width, 1 << 15)
@@ -341,7 +340,7 @@ def test_e8_the_corpus(tmp_path, monkeypatch):
             places = torch.stack((addresses, torch.where(values > 0, addresses + 1, addresses)), -1)
             percepts = table.perceive_intensities(values)
             bank = table.value_bank(values, places, registry=registry, when_encoding=model.when_encoding, time=0)
-            _, things = table.with_things(bank, percepts, where_width=width)
+            _, things = table.with_things(bank, percepts)
             rows = {}
             for b in range(len(scenes)):
                 for row in set(things[b].tolist()) - {-1}:
@@ -352,7 +351,7 @@ def test_e8_the_corpus(tmp_path, monkeypatch):
                                                  rows=len(rows), nominated=sum(n >= mint for n in rows.values()))
         total = dict(things=sum(r['things'] for r in report.values()), rows=len(met),
                      nominated=sum(n >= mint for n in met.values()))
-        print(dict(intensityWhereWidth=width, mint_count=mint, categories=sorted(report), by_category=report,
+        print(dict(intensityPartSigma=width, mint_count=mint, categories=sorted(report), by_category=report,
                    all=total))
         assert report and total['things'] >= total['rows'] >= total['nominated']
     finally:

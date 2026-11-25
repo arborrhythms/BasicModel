@@ -20927,8 +20927,9 @@ class OutputSpace(Space):
         return vspace
 
     def read_field(self, field, owner):
-        """One fixed linear weight for every inventory row and evidence lane."""
-        evidence, ids = field.evidence.amax(2), field.concept_ids
+        """One fixed linear weight for every inventory row and evidence lane,
+        each concept pooled over its readings (:func:`pooled_over_readings`)."""
+        evidence, ids = pooled_over_readings(field, owner), field.concept_ids
         if ids.ndim == 1:
             ids = ids[:,None].expand(-1, evidence.shape[1])
         rows = torch.tensor([[owner._concept_row_of(int(cid)) if int(cid) > 0 and owner._concept_row_of(int(cid)) is not None else -1 for cid in stream]
@@ -21096,3 +21097,39 @@ class OutputSpace(Space):
         else:
             detached = _detach(result)
         self._batch_results.append(detached)
+
+
+def pooled_over_readings(field, owner):
+    """Each concept of ``field`` pooled over its readings by the greatest,
+    ``[concepts, B, 2]``, as the readout reads it. The aperture
+    (``intensityPartSigma``) limits the pooling: where a stream's readings lie
+    at places farther apart than the aperture holds (``2 sigma - 1`` places), a
+    concept is pooled over them only where each of its basic percepts is a
+    place's row, which reads at its own place and at the readings that hold
+    it; any other concept (of a value, a thing, a conjunction, or above order
+    zero) can be read at places farther apart than the aperture, and is read
+    at the reading that holds them all, its bracket, as the field read it
+    there."""
+    from util import TheXMLConfig
+    evidence, ids = field.evidence, field.concept_ids
+    if ids.ndim == 1:
+        ids = ids[:, None].expand(-1, evidence.shape[1])
+    sigma = int(TheXMLConfig.get('architecture.intensityPartSigma'))
+    if sigma and field.where is not None:
+        where = field.where.to(evidence.device)                                         # [B, K, 2]
+        low, high = where[..., 0].amin(1, keepdim=True), where[..., 1].amax(1, keepdim=True)
+        bracket = (where[..., 0] == low) & (where[..., 1] == high)
+        wide = high - low > 2 * sigma - 1                                                # [B, 1]
+        if bool(wide.any()):
+            basic = owner.basic_percepts
+            percepts = {}
+            for concept, percept, negated in _concept_alloc_of(owner).order_zero_members:
+                if not negated:
+                    percepts.setdefault(int(concept), []).append(percept)
+            placed = lambda row: bool(percepts.get(row)) and all(p in basic.place_rows for p in percepts[row])
+            at = torch.tensor([[int(cid) > 0 and owner._concept_row_of(int(cid)) is not None
+                                and placed(owner._concept_row_of(int(cid))) for cid in column]
+                               for column in ids.tolist()], dtype=torch.bool, device=evidence.device)  # [C, B]
+            keep = at[..., None] | bracket[None] | ~wide[None]
+            evidence = evidence * keep[..., None].to(evidence)
+    return evidence.amax(2)
