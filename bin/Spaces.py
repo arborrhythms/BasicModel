@@ -6,6 +6,7 @@ and outputs.  The same module also carries the project utilities used to
 load datasets, resolve config paths, plot results, and save reports.
 """
 from PrependedSymbols import word_view
+from WordSurfaces import occupied_width
 
 import math, os, warnings
 from collections import namedtuple
@@ -9670,11 +9671,7 @@ class InputSpace(Space):
                     if length is not None:
                         self._valid_len_host = min(length, self.outputShape[0])
                     else:
-                        _any = _valid_pos.any(dim=0)
-                        self._valid_len_host = min(
-                            int(_any.nonzero().max().item()) + 1
-                            if bool(_any.any().item()) else 0,
-                            int(self.outputShape[0]))
+                        self._valid_len_host = min(int(occupied_width(_valid_pos)), int(self.outputShape[0]))
                     sub.valid_mask = _valid_pos.any(dim=1).reshape(-1, 1)
                 else:
                     self._valid_len_host = 0
@@ -9705,12 +9702,7 @@ class InputSpace(Space):
             # no peer PartSpace here, so validity falls back to the
             # nonzero-content test.
             _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
-            _any_pos = _valid_pos.any(dim=0)
-            if torch.is_tensor(_any_pos) and _any_pos.any().item():
-                self._valid_len_host = int(
-                    _any_pos.nonzero().max().item()) + 1
-            else:
-                self._valid_len_host = 0
+            self._valid_len_host = int(occupied_width(_valid_pos))
 
         B, T, D = embedded.shape
         # 2026-06-06: when a peer PartSpace owns the word-as-percept
@@ -9804,8 +9796,7 @@ class InputSpace(Space):
             # The ladder emits one active slot per delivered interval in order.
             self._valid_len_host = min(W, max(map(len, source['word_intervals']), default=0))
         else:
-            slots = torch.arange(1, W + 1, device=active.device)
-            self._valid_len_host = int(torch.where(active, slots, 0).amax()) if active.numel() else 0
+            self._valid_len_host = int(occupied_width(active))
 
         self._ar_embedded = embedded
         self._ar_embedded_N = embedded
@@ -9871,10 +9862,10 @@ class InputSpace(Space):
                     "packed sentence metadata is missing or shape-misaligned "
                     f"with staged words {(B, W)}")
             expected_active = self._packed_sentence_ids >= 0
-            if not torch.equal(expected_active.to(dev), active):
-                raise RuntimeError(
-                    "packed surface word layout differs from the staged "
-                    "sentence boundaries; refusing to train misaligned roots")
+            from Meaning import require_sentence_tensor
+            require_sentence_tensor((expected_active.to(dev) == active).all(),
+                "packed surface word layout differs from the staged "
+                "sentence boundaries; refusing to train misaligned roots", RuntimeError)
             return
 
         # Ordinary input is one sentence per active row. Install the same
@@ -9950,12 +9941,7 @@ class InputSpace(Space):
                 _valid_pos = source_valid_pos[:, :_Te]
             else:
                 _valid_pos = embedded.detach().abs().sum(dim=-1) > 0
-            _any_pos = _valid_pos.any(dim=0)
-            if torch.is_tensor(_any_pos) and bool(_any_pos.any().item()):
-                self._valid_len_host = int(
-                    _any_pos.nonzero().max().item()) + 1
-            else:
-                self._valid_len_host = 0
+            self._valid_len_host = int(occupied_width(_valid_pos))
         B, T, D = embedded.shape
         # Hand off the PEER's word-reduced output width (e.g. MM_20M reduces
         # 8192 chars -> 8 words); fall back to IS's own width.
@@ -10815,35 +10801,37 @@ class PartSpace(Space):
         identity = getattr(store, 'identity', None)
         atom_ids = set(identity.atoms.values()) if identity is not None else set()
         identity_ids = atom_ids | (set(identity.word_rows.values()) if identity is not None else set())
+        literals = [tuple(map(int, literal)) if isinstance(literal, (list, tuple)) else (int(literal),)
+                    for literal in features]
         atom_witnesses = None
-        if atom_ids:
+        if any(ids and identity_ids.issuperset(ids) for ids in literals):
             # Byte descent is still the observed witness. Read its parts
             # (characters and added parts); their order in the bank has no
             # evidential significance.
             atom_witnesses = []
-            for b, row in enumerate(spans.detach().cpu().tolist()):
-                events = list(zip(part_ids[b].detach().cpu().tolist(),
-                                  part_spans[b].detach().cpu().tolist()))
+            event_count = part_ids.shape[1]
+            records = torch.cat((torch.cat((part_ids[..., None], part_spans), -1),
+                                 F.pad(spans, (1, 0), value=-1)), 1).tolist()
+            for row in records:
+                events = row[:event_count]
                 values = []
-                for w, (start, end) in enumerate(row):
-                    selected = [(pid, a, z) for pid, (a, z) in events
-                                if pid >= 0 and start <= a < z <= end]
-                    raw = b''.join(store.bytes_for(pid) for pid, _, _ in selected)
+                for _, start, end in row[event_count:]:
+                    raw = b''.join(store.bytes_for(pid) for pid, a, z in events
+                                   if pid >= 0 and start <= a < z <= end)
                     parts = (identity.words.get(raw) or identity.atoms_of(raw)) if raw else ()
                     members = ({*identity.parts(raw), identity.word_rows[raw]} if raw in identity.words else
                                {identity.atoms[a] for a in parts if a in identity.atoms})
-                    values.append(members if bool(complete[b, w]) else set())
+                    values.append(members)
                 atom_witnesses.append(values)
         pairs, supports = [], []
-        for literal in features:
-            ids = tuple(int(i) for i in literal) if isinstance(literal, (list, tuple)) else (int(literal),)
+        for ids in literals:
             count = part_ids.shape[1] - len(ids) + 1
             present = torch.zeros_like(complete)
             support = torch.zeros(*complete.shape, part_ids.shape[1],
                                   dtype=torch.bool, device=part_ids.device) if return_support else None
-            if ids and set(ids) <= identity_ids:
+            if ids and identity_ids.issuperset(ids):
                 present = complete.new_tensor([[set(ids) <= members for members in row]
-                                               for row in atom_witnesses])
+                                               for row in atom_witnesses]).reshape_as(complete) & complete
                 if return_support:
                     support = present[..., None] & valid[:, None] & (overlap > 0)
             elif count > 0 and ids:
@@ -11389,11 +11377,21 @@ class PartSpace(Space):
             hidden = omission['bytes'][:, :byte_count]
             if prepared_parts is not None and simple_parts:
                 from BasicPercepts import visible_missing_elements
-                flat, _, extents, _ = prepared_parts
+                flat, _, extents, forms = prepared_parts
                 missing = visible_missing_elements(compact[:, :byte_count], flat, extents, hidden)
-                observations = torch.stack((hidden, missing), -1).tolist()
-                hidden_rows = [[flag for flag, _ in row] for row in observations]
-                alphabet = dict.fromkeys(chr(code) for row in observations for _, code in row if code >= 0)
+                columns = [hidden, missing]
+                if admit:
+                    # Admission and omission share a host catalog update. Include
+                    # the first visible seat with its already-required byte report.
+                    hidden_forms = omission['draw'].forms[:, :forms.shape[1]].any(-1)
+                    discovery_sources, first = first_occurrences(forms, hidden_forms)
+                    columns.append(F.pad(first, (0, hidden.shape[1] - first.shape[1])))
+                observations = torch.stack(columns, -1).tolist()
+                hidden_rows = [[event[0] for event in row] for row in observations]
+                alphabet = dict.fromkeys(chr(event[1]) for row in observations for event in row if event[1] >= 0)
+                if admit:
+                    first_names = [(b, w) for b, row in enumerate(observations)
+                                   for w, event in enumerate(row[:forms.shape[1]]) if event[2]]
             else:
                 hidden_rows = hidden.tolist()
         changed = ([[any(mask[lo:hi]) for lo, hi in spans[:word_capacity]]
@@ -11482,7 +11480,7 @@ class PartSpace(Space):
         new_units = {}
         if located_parts is not None and admit:
             admission_spans = layout[:, :form_rows.shape[1]]
-            if hiding or first_names is None:
+            if first_names is None:
                 hidden = omission['draw'].forms[:, :form_rows.shape[1]].any(-1) if hiding else None
                 discovery_sources, first = first_occurrences(form_rows, hidden)
                 first_names = first.nonzero().tolist()

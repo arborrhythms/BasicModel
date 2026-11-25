@@ -3,6 +3,14 @@ import torch
 from torch.nn import functional as F
 
 
+def occupied_width(active):
+    """End of the last occupied column across the batch, or zero."""
+    if not active.numel():
+        return active.new_zeros((), dtype=torch.long)
+    slots = torch.arange(1, active.shape[1] + 1, device=active.device)
+    return torch.where(active.any(0), slots, 0).amax()
+
+
 def is_lexical_form(value):
     """Known text needs a character other than whitespace: all content of
     the input is a word, marks included.

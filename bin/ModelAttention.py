@@ -3,6 +3,7 @@ import torch
 import math
 from torch.nn import functional as F
 from Attention import SentenceReading, read_code_field
+from WordSurfaces import occupied_width
 
 
 POLE_CONSUMERS = ('_attention_sentence_payload', '_pushed_word_slab:poles',
@@ -132,18 +133,15 @@ def native_word_poles(model, spans, forms, known, *, word_ids=None):
     if 'native_indices' not in fi:
         ids, positions = canonical_native_events(model, ids, positions, spans)
         fi['native_indices'], fi['native_part_spans'] = ids, positions
-    if not bool(known.any()):
-        return owner.similarity_codebook.W.new_zeros(*known.shape, 2)
     # The native field's concept axis can be large. Its reading axis needs
     # only extents containing known words, not the padded word capacity.
     # Keep positions unchanged and restore the silent suffix afterwards.
-    width = int(torch.where(known,
-        torch.arange(known.shape[1], device=known.device)[None] + 1, 0).max())
+    width, event_width = torch.stack((occupied_width(known),
+        occupied_width(positions[..., 1] > positions[..., 0]))).tolist()
+    if not width:
+        return owner.similarity_codebook.W.new_zeros(*known.shape, 2)
     live_spans = spans[:, :width]
-    if positions.shape[1]:
-        event_width = int(torch.where(positions[..., 1] > positions[..., 0],
-            torch.arange(positions.shape[1], device=positions.device)[None] + 1, 0).max())
-        ids, positions = ids[:, :event_width], positions[:, :event_width]
+    ids, positions = ids[:, :event_width], positions[:, :event_width]
     ws = model.wholeSpace
     whole_spans, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
     field = owner.cs_read_memberships((ids, positions,
@@ -202,7 +200,9 @@ def stage_input(model):
         model._attention_meters=tuple(QueryWorkBudget(model.attention_budget) for _ in range(B))
     packed = getattr(isp, '_packed_sentence_slot_mask', None)
     if packed is not None:
-        for meter, count in zip(model._attention_meters, packed.sum(1).tolist(), strict=True):
+        rows = getattr(isp, '_packed_sentence_rows', None)
+        counts = map(len, rows) if rows is not None else packed.sum(1).tolist()
+        for meter, count in zip(model._attention_meters, counts, strict=True):
             meter.size_for_presentation(model.attention_budget, count)
     # Zero is the ordinary-composition control: no bracket walk or thought
     # read is performed. The stem still supplies every word to the VP path.
@@ -311,8 +311,7 @@ def stage_input(model):
         model._last_gist=(model._open_read*live[...,None]).sum(1)/live.sum(1).clamp_min(1)[:,None]
         poles=native_word_poles(model,spans,forms,known,word_ids=concepts)
         model._attention_native_poles=poles
-    live_width = max(1, int(torch.where(live,
-        torch.arange(W, device=live.device)[None] + 1, 0).max()))
+    live_width = max(1, int(occupied_width(live)))
     concepts=torch.tensor(concepts,device=slab.device,dtype=torch.long)
     model._attention_word_concepts=torch.where(known,concepts,-1)
     from Memory import ShortTermMemory
