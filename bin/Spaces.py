@@ -19864,66 +19864,53 @@ class WholeSpace(Space):
                 w.clamp_(-8.0, 8.0)
 
 
+    def _prepare_property_pulls(self, weights):
+        from PropertyPulls import PropertyPulls
+        pulls = getattr(self, 'property_pulls', None)
+        if pulls is None:
+            pulls = self.property_pulls = PropertyPulls(weights)
+        previous = self.__dict__.pop('_property_lbg', None)
+        if previous:
+            pulls.restore_records(previous)
+        return pulls
+
+    def observe_property_units(self, surface, spans, codes):
+        """Record observed property memberships and bytes on the reading device."""
+        from PropertyPulls import byte_counts
+        from WordSurfaces import held_properties
+        basis = self.subspace.what
+        weights = basis.getW()
+        if getattr(self, '_online_learning_frozen', False) or weights is None or not surface.numel():
+            return
+        held = held_properties(surface, spans, basis.primitive_properties.coefficients().detach())
+        pulls = self._prepare_property_pulls(weights)
+        pulls.observe(held.flatten(0, 1), codes.detach().flatten(0, 1), weights.detach(),
+                      byte_counts(surface, spans).flatten(0, 1))
+
     def record_property_pull(self, row, vec, byte_values):
-        """Accumulate the pull a unit's rung-0 code exerts on property row
-        ``row`` (the unit holds the row's predicate), with the bytes of the
-        unit, so a split can assign bytes to the new row by the side of the
-        split they fall on (predicate acquisition through the parts)."""
-        if getattr(self, "_online_learning_frozen", False) or not torch.is_tensor(vec):
-            return
-        cb = getattr(getattr(self, "subspace", None), "what", None)
-        W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
-        if W is None or not (0 <= int(row) < int(W.shape[0])):
-            return
-        v = vec.detach().to(W.device, W.dtype).reshape(-1)
-        d = int(min(v.shape[0], W.shape[1]))
-        delta = (v[:d] - W[int(row), :d].detach()).clone()
-        tab = self.__dict__.setdefault("_property_lbg", {})
-        rec = tab.setdefault(int(row), {"sum": torch.zeros(d, device="cpu"),
-                                        "sq": torch.zeros(d, device="cpu"), "n": 0, "pulls": []})
-        rec["sum"] = rec["sum"] + delta.to("cpu"); rec["sq"] = rec["sq"] + (delta * delta).to("cpu"); rec["n"] += 1
-        rec["pulls"].append((delta.to("cpu").clone(), tuple(int(x) & 0xFF for x in byte_values)))
-        if len(rec["pulls"]) > 512:
-            del rec["pulls"][:-512]
+        if torch.is_tensor(vec):
+            self.record_property_pulls([[row]], vec.reshape(1, -1), [byte_values])
 
     def record_property_pulls(self, unit_rows, codes, unit_bytes):
-        """Batched :meth:`record_property_pull` for one presentation.
-
-        ``unit_rows[u]`` is the list of property rows unit ``u`` holds,
-        ``codes`` ``[U, D]`` (any device) the units' rung-0 codes and
-        ``unit_bytes[u]`` their bytes.  One device-to-host copy for the
-        batch, then host accumulation (sums, squares, counts and the
-        capped pull lists), so the per-unit recorder's per-pull device
-        syncs do not scale with the packed row.
-        """
-        if getattr(self, "_online_learning_frozen", False) or not torch.is_tensor(codes):
+        """Record an externally supplied list of unit observations in presentation order."""
+        if getattr(self, '_online_learning_frozen', False) or not torch.is_tensor(codes):
             return
-        cb = getattr(getattr(self, "subspace", None), "what", None)
-        W = cb.getW() if cb is not None and hasattr(cb, "getW") else None
-        if W is None or int(codes.shape[0]) == 0:
+        basis = getattr(getattr(self, 'subspace', None), 'what', None)
+        weights = basis.getW() if basis is not None and hasattr(basis, 'getW') else None
+        if weights is None:
             return
-        R = int(W.shape[0])
-        d = int(min(codes.shape[-1], W.shape[1]))
-        v = codes.detach().to(W.dtype).reshape(int(codes.shape[0]), -1)[:, :d].to("cpu")
-        W_host = W.detach()[:, :d].to("cpu")
-        tab = self.__dict__.setdefault("_property_lbg", {})
-        for u, rows in enumerate(unit_rows):
-            if not rows:
-                continue
-            bv = tuple(int(x) & 0xFF for x in unit_bytes[u])
-            for r in rows:
-                r = int(r)
-                if not (0 <= r < R):
-                    continue
-                delta = v[u] - W_host[r]
-                rec = tab.setdefault(r, {"sum": torch.zeros(d, device="cpu"),
-                                         "sq": torch.zeros(d, device="cpu"), "n": 0, "pulls": []})
-                rec["sum"] = rec["sum"] + delta
-                rec["sq"] = rec["sq"] + delta * delta
-                rec["n"] += 1
-                rec["pulls"].append((delta.clone(), bv))
-                if len(rec["pulls"]) > 512:
-                    del rec["pulls"][:-512]
+        observations = [(u, int(r)) for u, rows in enumerate(unit_rows) for r in rows
+                        if 0 <= int(r) < weights.shape[0]]
+        if not observations:
+            return
+        units, rows = torch.tensor(observations, device=weights.device).unbind(1)
+        held = rows[:, None] == torch.arange(weights.shape[0], device=weights.device)
+        counts = torch.zeros((len(unit_rows), 256), dtype=torch.int32, device='cpu')
+        for u, spelling in enumerate(unit_bytes):
+            ids = torch.tensor([int(b) & 255 for b in spelling], device='cpu', dtype=torch.long)
+            counts[u] = torch.bincount(ids, minlength=256)
+        self._prepare_property_pulls(weights).observe(
+            held, codes.detach().to(weights)[units], weights.detach(), counts.to(weights.device)[units])
 
     def maybe_split_property_row(self, row):
         """LBG split of a property row (Mereology.md, "Automatic analysis:
@@ -19933,17 +19920,23 @@ class WholeSpace(Space):
         ``old - eps*d`` (``d`` the unit mean displacement) and acquires as
         its predicate the bytes of the pulls on that side; returns the new
         row or None."""
-        tab = self.__dict__.get("_property_lbg") or {}
-        rec = tab.get(int(row))
-        if rec is None or rec["n"] < int(getattr(self, "_lbg_min_count", 8)):
+        if self.__dict__.get('_property_lbg'):
+            self._prepare_property_pulls(self.subspace.what.getW())
+        pulls = getattr(self, 'property_pulls', None)
+        if pulls is None or not 0 <= int(row) < pulls.count.numel():
             return None
-        n = float(rec["n"]); mean = rec["sum"] / n
-        var = rec["sq"] / n - mean * mean
+        n = int(pulls.count[row])
+        if n < max(1, int(getattr(self, '_lbg_min_count', 8))):
+            return None
+        total, squared = pulls.moments.view(pulls.precision)[:, row]
+        mean = total / n
+        var = squared / n - mean * mean
         if float(var.max()) < float(getattr(self, "_lbg_threshold", 0.5)):
             return None
         norm = float(mean.norm())
         if norm < 1e-9:
-            tab.pop(int(row), None); return None
+            pulls.reset_row(row)
+            return None
         direction = mean / norm
         cb = getattr(getattr(self, "subspace", None), "what", None)
         W = cb.W
@@ -19960,21 +19953,13 @@ class WholeSpace(Space):
                 old = W[int(row), :d].detach().clone()
                 W.data[int(row), :d].copy_(old + eps * direction.to(W.device, W.dtype))
                 W.data[new_row, :d].copy_(old - eps * direction.to(W.device, W.dtype))
-        side = {}
-        for delta, bytes_ in rec["pulls"]:
-            proj = float((delta * direction).sum())
-            for bv in bytes_:
-                side.setdefault(bv, [0, 0])[0 if proj >= 0 else 1] += 1
-        new_bytes = {bv for bv, (pos, neg) in side.items() if neg > pos}
         ids = torch.arange(256, device=W.device)
-        target = torch.zeros(256, device=W.device)
-        if new_bytes:
-            target[list(new_bytes)] = 1.
+        target = pulls.split_bytes(row, n, direction).to(device=W.device, dtype=torch.float32)
         cb.primitive_properties.teach(new_row, ids, target)
         self.__dict__["_predicate_byte_lut"] = None
         self._grow_boundary_weights()
         self._prime_predicate_masks()
-        tab.pop(int(row), None)
+        pulls.reset_row(row)
         return new_row
 
     def _prime_predicate_masks(self):
@@ -20002,8 +19987,14 @@ class WholeSpace(Space):
         if hard and not getattr(self, "_online_learning_frozen", False):
             self._update_boundary_predicates()
             self._prime_predicate_masks()
-            for row in list((self.__dict__.get("_property_lbg") or {}).keys()):
-                self.maybe_split_property_row(row)
+            if self.__dict__.get('_property_lbg'):
+                self._prepare_property_pulls(self.subspace.what.getW())
+            pulls = getattr(self, 'property_pulls', None)
+            if pulls is not None:
+                minimum = max(1, int(getattr(self, '_lbg_min_count', 8)))
+                threshold = float(getattr(self, '_lbg_threshold', 0.5))
+                for row in pulls.pending(minimum, threshold):
+                    self.maybe_split_property_row(row)
         super().Reset(batch=batch, hard=hard)
 
     def _build_boundary_predicates(self):

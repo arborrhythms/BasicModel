@@ -296,10 +296,10 @@ permanent conceptual location.
 Wholes are divided by splitting property rows on WholeSpace
 (`record_property_pull`, `maybe_split_property_row`). After the ladder stem,
 each unit's rung-0 code (the max over its atoms) pulls on every property row
-its bytes hold, with the unit's bytes recorded beside the pull (the stem
-records a whole presentation at once through `record_property_pulls`, one
-device-to-host copy and a byte-to-row lookup table, so the cost does not
-scale with the packed row's units). At the sentence boundary a row whose
+its bytes hold, with each byte occurrence voting on the side of its unit. The stem passes
+the observed byte tensor and its disjoint spans to WholeSpace. WholeSpace
+keeps lifetime displacement sums and the most recent 512 pulls per property
+in device tensors. At the sentence boundary a row whose
 pulls' largest per-coordinate variance exceeds a fixed threshold (0.5) after
 at least eight pulls splits along its mean pull, the fresh row taking as its
 **analyzer predicate** the bytes whose pulls fell on its side, so the

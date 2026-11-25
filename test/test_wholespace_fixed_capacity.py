@@ -130,3 +130,45 @@ def test_empty_wholespace_inventory_has_no_parameter_identity_to_freeze():
     assert cb.W is None
     assert not cb._capacity_frozen
     assert ws.getParameters() == []
+
+
+def test_property_pull_history_wrap_preserves_lifetime_moments_and_repeated_byte_votes():
+    from PropertyPulls import PropertyPulls, byte_counts
+
+    weights = torch.tensor([[0.25, -0.5], [-0.75, 1.5]])
+    pulls = PropertyPulls(weights)
+    raw = torch.tensor([[0, 7, 7, 255, 0, 23]])
+    units = torch.tensor([[[0, 2], [2, 5], [0, 0]]])
+    hist = byte_counts(raw, units)[0]
+    assert hist[0, 0] == hist[0, 7] == 1
+    assert hist[1, 7] == hist[1, 255] == hist[1, 0] == 1
+    assert not hist[2].any() and hist.sum() == 5
+    generator = torch.Generator().manual_seed(447)
+    records = [[], []]
+    total = torch.zeros_like(weights)
+    squared = torch.zeros_like(weights)
+    for n in (7, 518, 13):
+        codes = torch.randn(n, 2, generator=generator)
+        held = torch.stack((torch.arange(n) % 3 != 0, torch.ones(n, dtype=torch.bool)), -1)
+        bytes_ = torch.randint(0, 256, (n, 3), generator=generator)
+        # The second copy of each spelling gives repeated bytes two votes.
+        letters = torch.zeros(n, 256, dtype=torch.int32).scatter_add_(
+            1, bytes_, torch.full_like(bytes_, 2, dtype=torch.int32))
+        pulls.observe(held, codes, weights, letters)
+        for i, row in held.nonzero().tolist():
+            delta = codes[i] - weights[row]
+            total[row] += delta
+            squared[row] += delta.square()
+            records[row].append((delta, letters[i]))
+    assert torch.equal(pulls.moments.view(torch.float32), torch.stack((total, squared)))
+    assert pulls.pending(1) == [1, 0]
+    for row, recent in enumerate(records):
+        assert pulls.count[row] == len(recent)
+        direction = torch.tensor([0.5, -1.75])
+        votes = sum((bits if (delta * direction).sum() >= 0 else -bits)
+                    for delta, bits in recent[-512:])
+        assert torch.equal(pulls.split_bytes(row, len(recent), direction), votes < 0)
+    pulls.reset_row(1)
+    assert pulls.pending(1) == [0]
+    pulls.half()
+    assert torch.equal(pulls.moments.view(torch.float32)[0, 0], total[0])
