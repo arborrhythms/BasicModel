@@ -7,6 +7,29 @@ from test_item17_one_reconstruction import _grammar_free_text_model
 from test_item17_places import nominate
 
 
+def test_working_tree_bulk_write_preserves_handles_and_duplicate_activity():
+    from Memory import STM1, OCCURRENCE, RELATION, SYMBOL
+    # Seat 2 is an external relation. Seat 3 becomes an operator symbol
+    # while writing. The repeated spelling has distinct occurrence names.
+    branch = [((SYMBOL, 3), (OCCURRENCE, 17)),
+              ((OCCURRENCE, 18), (RELATION, 0)),
+              ((SYMBOL, 7), (RELATION, 1))]
+    for pairs in (branch, [*branch, branch[0]]):
+        together, reference = STM1(12), STM1(12)
+        for parts in (together, reference):
+            parts.handle_reserved = lambda seat: seat == 2
+        expected = []
+        for pair in pairs:
+            left, right = [(kind, expected[name] if kind == RELATION else name) for kind, name in pair]
+            expected.append(reference.add(left, right, truth_plus=1.))
+        assert together.write_tree_pairs(pairs) == expected
+        assert expected[:3] == [1, 4, 5]
+        for key in (*reference.columns, 'count', 'relation_order'):
+            assert torch.equal(getattr(reference, key), getattr(together, key)), key
+        assert together.reference_pairs(expected) == reference.reference_pairs(expected)
+        assert list(together.leaves((RELATION, expected[2]))) == list(reference.leaves((RELATION, expected[2])))
+
+
 def test_closed_operand_keeps_its_explicit_identity_and_gradient_through_stm():
     from Meaning import ConceptualMeaning
     from SentenceStrata import IdeaStack

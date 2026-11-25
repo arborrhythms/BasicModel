@@ -234,13 +234,28 @@ class Tree:
         for (_, at), name in zip(shifts, names, strict=True):
             heads[at] = OCCURRENCE, name
         from PartsOfSpeech import operation_name
+        # An operand references an earlier pair or an actual idea name. Publish
+        # all pairs to this trial's STM1 together, in the original write order.
+        pairs = []
+        def join(left, right):
+            pairs.append((left, right))
+            return RELATION, len(pairs) - 1
+
+        def sequence(operands):
+            head = None
+            for operand in reversed(operands):
+                head = operand if head is None else join(operand, head)
+            return head
+
         for at, (kind, local, _) in enumerate(index.steps):
             if kind in (1, 2):
                 rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
                 operator = language.parts_of_speech.seats[operation_name(rules[local])].concept
-                operands = store.parts.sequence([heads[child] for child in index.operands[at]])
-                heads[at] = RELATION, store.parts.add((SYMBOL, operator), operands, truth_plus=1.)
-        trace.head = store.parts.sequence([heads[root] for root in index.roots])
+                operands = sequence([heads[child] for child in index.operands[at]])
+                heads[at] = join((SYMBOL, operator), operands)
+        head = sequence([heads[root] for root in index.roots])
+        handles = store.parts.write_tree_pairs(pairs)
+        trace.head = (RELATION, handles[head[1]]) if head is not None and head[0] == RELATION else head
         return (concepts <= 0).sum() if torch.is_tensor(concepts) else sum(concept is None for concept in concepts)
 
     def view(self, address):

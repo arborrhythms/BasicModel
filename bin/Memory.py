@@ -2723,7 +2723,11 @@ class LTM1(_CountedRows, nn.Module):
         self._init_count()
         self.register_buffer('layout_version', torch.tensor(VERSION, dtype=torch.long))
         self.register_buffer('relation_order', torch.full((self.capacity,), -1, dtype=torch.long), persistent=False)
-        self.register_buffer('_effective_addresses', self.refs.new_zeros(self.capacity, 3), persistent=False)
+        # These are physical relation and concept seats. Logical names in refs
+        # retain their full width. Every candidate STM1 reserves this workspace.
+        address_dtype = torch.int32 if self.capacity <= 2**31 else torch.int64
+        self.register_buffer('_effective_addresses', self.refs.new_zeros(
+            self.capacity, 3, dtype=address_dtype), persistent=False)
         for name in ('effective_plus', 'effective_minus'):
             self.register_buffer(name, torch.zeros(self.capacity), persistent=False)
         from MemoryActivity import Activity
@@ -2827,7 +2831,10 @@ class LTM1(_CountedRows, nn.Module):
                                        for kind, value in self._endpoints[row])) for row in level)
                 graph.done(*level)
             if records:
-                self._effective_addresses[:len(records)].copy_(self.refs.new_tensor(records))
+                addresses = self._effective_addresses
+                if addresses.dtype == torch.int32 and max(seats.values(), default=-1) >= 2**31:
+                    self._effective_addresses = addresses = addresses.long()
+                addresses[:len(records)].copy_(addresses.new_tensor(records))
             self._effective_levels = (revision, seats, sizes)
         sizes = self._effective_levels[2]
         return self._effective_addresses[:sum(sizes)].split(sizes) if sizes else ()
@@ -3214,6 +3221,62 @@ class LTM1(_CountedRows, nn.Module):
 
 class STM1(LTM1):
     """Ordered working branches, with LTM1's storage and tagged-reference reads."""
+    @torch.no_grad()
+    def write_tree_pairs(self, pairs):
+        """Seat a working tree together. Relation operands index earlier pairs."""
+        if not pairs:
+            return []
+        handles = []
+        def resolve(ref):
+            kind, value = ref
+            if kind == RELATION:
+                if not 0 <= value < len(handles):
+                    raise ValueError('tree operand must precede its parent')
+                return RELATION, handles[value]
+            ref = self.reference(ref)
+            if ref == (SYMBOL, NULL_CONCEPT):
+                raise ValueError('a null-concept cannot be a relation endpoint')
+            return ref
+
+        # Ordinary parsings target an expired trial and use each operand once.
+        # Other writers can intern a repeated pair or supply an allocating store.
+        if len(self) or self.allocate is not None or len(set(pairs)) != len(pairs):
+            for left, right in pairs:
+                handles.append(self.add(resolve(left), resolve(right), truth_plus=1.))
+            return handles
+
+        self._index()
+        entries = []
+        named = set()
+        seat = 1
+        for left, right in pairs:
+            left, right = resolve(left), resolve(right)
+            while seat < self.capacity and (seat in named or self._reserved_handle(seat)):
+                seat += 1
+            if seat == self.capacity:
+                raise OverflowError('LTM1 capacity exhausted; forgetting is required')
+            entries.append((seat, left[0], right[0], left[1], right[1]))
+            handles.append(seat)
+            named.update(value for kind, value in (left, right) if kind == SYMBOL)
+            seat += 1
+
+        # One transfer contains all physical addresses, tags and endpoints.
+        # Both working and durable readers continue to use the native columns.
+        records = self.refs.new_tensor(entries)
+        rows = records[:, 0].contiguous()
+        self.refs.index_copy_(0, rows, records[:, 3:])
+        self.ref_kinds.index_copy_(0, rows, records[:, 1:3].to(self.ref_kinds))
+        self.truth_plus.index_fill_(0, rows, 1.)
+        self.activity.index_fill_(0, rows, self.activity_config.default)
+        self.relation_order[:len(entries)].copy_(rows)
+        self._write_count(len(entries))
+        for seat, left_kind, right_kind, left_name, right_name in entries:
+            self._index_pair(seat, (left_kind, left_name), (right_kind, right_name))
+            if right_kind == SYMBOL and (left_kind == SYMBOL or right_name in getattr(self, '_class_rows', ())):
+                self._symbol_epoch += 1
+        self._index_version = self._order_revision = self._topology_revision
+        return handles
+
     @torch.no_grad()
     def append_occurrence(self, head, occurrence):
         """Extend a live temporal chain. Its head stays stable after the first pair."""
