@@ -10618,7 +10618,8 @@ class PartSpace(Space):
         if self.percept_store is not None:
             from FormLinks import FormLinks
             self.form_links = FormLinks(int(TheXMLConfig.space(section, 'formCapacity')),
-                                        int(TheXMLConfig.space(section, 'formLongest')))
+                                        int(TheXMLConfig.space(section, 'formLongest')),
+                                        self.chunk_promotion_threshold)
         # Numeric carriers have no lexical dictionary. Native text prototype
         # storage has one optimizer owner; admission preserves its moments.
         self._optimize_radix_codebook = self.percept_store is not None

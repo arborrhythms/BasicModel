@@ -1,11 +1,12 @@
 """The table of forms agrees with a host dictionary of spellings and runs on the device without host reads."""
+import os
 import random
 
 import pytest
 import torch
 from torch.utils._python_dispatch import TorchDispatchMode
 
-from FormLinks import FormLinks, LEAVES
+from FormLinks import FormLinks, HALF, LEAVES
 
 DEVICES = ['cpu', 'mps']
 LONGEST = 8
@@ -39,8 +40,8 @@ def _host_spellings(table):
     return spelled
 
 
-def _table(device, rng, capacity=8192):
-    table = FormLinks(capacity, LONGEST).to(device)
+def _table(device, rng, capacity=8192, threshold=0):
+    table = FormLinks(capacity, LONGEST, threshold).to(device)
     words = _vocabulary(rng)
     half = len(words) // 2
     for batch in (words[:half], words[half:]):
@@ -121,7 +122,7 @@ def test_tally_counts_known_units_and_admission_is_idempotent(device):
 
 
 def test_a_full_table_raises():
-    table = FormLinks(LEAVES + 3, LONGEST)
+    table = FormLinks(LEAVES + 3, LONGEST, 0)
     table.admit_forms(*_pack([b'ab', b'bc'], 'cpu'))
     with pytest.raises(RuntimeError, match='FormLinks full'):
         table.admit_forms(*_pack([b'abcd'], 'cpu'))
@@ -132,13 +133,14 @@ def test_state_dict_restores_the_table():
     table, words = _table('cpu', rng)
     table.tally(*_pack(words[:5], 'cpu'))
     state = table.state_dict()
-    assert set(state) == {'left', 'right', 'length', 'count', 'used', 'pair_keys', 'pair_rows'}
-    restored = FormLinks(table.capacity, LONGEST)
+    assert set(state) == {'left', 'right', 'length', 'count', 'used', 'pair_keys', 'pair_rows', 'code'}
+    restored = FormLinks(table.capacity, LONGEST, 0)
     restored.load_state_dict(state)
     data, lengths = _pack(_sentences(rng, words), 'cpu')
     for got, want in zip(restored.recognise(data, lengths), table.recognise(data, lengths)):
         assert torch.equal(got, want)
     assert torch.equal(restored.count, table.count) and int(restored.used) == int(table.used)
+    assert torch.equal(restored.code, table.code)
 
 
 class _NoHostScalar(TorchDispatchMode):
@@ -151,7 +153,8 @@ class _NoHostScalar(TorchDispatchMode):
 def test_recognise_and_spell_capture_whole_and_read_nothing_on_the_host(device, monkeypatch):
     dev = _device(device)
     rng = random.Random(5)
-    table, words = _table(dev, rng)
+    table, words = _table(dev, rng, threshold=2)
+    table.tally(*_pack(words + words[::3], dev))
     data, lengths = _pack(_sentences(rng, words), dev)
     rows = torch.tensor(rng.sample(range(int(table.used)), 64) + [-1], device=dev)
     expected = table.recognise(data, lengths), table.spell(rows)
@@ -170,3 +173,82 @@ def test_recognise_and_spell_capture_whole_and_read_nothing_on_the_host(device, 
     for got in (eager, captured):
         for g, w in zip(got[0] + got[1], expected[0] + expected[1]):
             assert torch.equal(g, w)
+
+
+# -- counting and codes -------------------------------------------------------
+
+def test_a_row_is_a_form_only_once_counted_to_the_threshold():
+    table = FormLinks(1024, LONGEST, 2)
+    data, lengths = _pack([b'the cat'], 'cpu')
+    unit = _pack([b'cat'], 'cpu')
+    table.close(*unit)
+    row = int(table._unit_rows(*unit)[0])
+    assert row >= LEAVES and int(table.count[row]) == 1
+    assert table.rows_of(*unit).tolist() == [-1]
+    rows, best = table.recognise(data, lengths)
+    assert bool((best[0, :7] < LEAVES).all()), 'below the threshold the parts are used'
+    assert bool((best[0, :7] == data[0, :7].long()).all()), 'leaves always'
+    table.close(*unit)
+    assert table.rows_of(*unit).tolist() == [row] and int(table.count[row]) == 2
+    rows, best = table.recognise(data, lengths)
+    assert int(best[0, 4]) == row and int(rows[0, 2, 4]) == row
+    at = table._unit_rows(*_pack([b'at'], 'cpu'))
+    assert int(table.count[at]) == 0 and int(rows[0, 1, 5]) == -1, 'a part read only inside a unit is not counted'
+
+
+def _dictionary(count):
+    path = '/usr/share/dict/words'
+    if not os.path.exists(path):
+        pytest.skip('requires /usr/share/dict/words')
+    with open(path, 'rb') as handle:
+        words = sorted({w.strip() for w in handle if 0 < len(w.strip()) <= 24})
+    return random.Random(7).sample(words, count)
+
+
+def _dictionary_table(device, words, capacity=131072):
+    table = FormLinks(capacity, LONGEST, 2).to(device)
+    for i in range(0, len(words), 500):
+        table.close(*_pack(words[i:i + 500], device))
+    return table
+
+
+@pytest.fixture(scope='module')
+def dictionary():
+    words = _dictionary(3000)
+    return words, _dictionary_table('cpu', words)
+
+
+def test_codes_order_parts_below_wholes_in_both_towers_and_are_distinct(dictionary):
+    _, table = dictionary
+    used = int(table.used)
+    rows = torch.arange(LEAVES, used)
+    parts, wholes = table.code[:, :HALF], table.code[:, HALF:]
+    for link in (table.left, table.right):
+        part = link[rows].long()
+        assert bool((parts[rows] >= parts[part]).all() and (parts[rows] > parts[part]).any(1).all())
+        assert bool((wholes[part] >= wholes[rows]).all() and (wholes[part] > wholes[rows]).any(1).all())
+    assert torch.unique(table.code[:used], dim=0).shape[0] == used
+
+
+def test_distance_falls_as_shared_substrings_rise_among_words_of_one_length(dictionary):
+    words, table = dictionary
+    for n in (7, 9):
+        same = [w for w in words if len(w) == n]
+        code = table.code[table._unit_rows(*_pack(same, 'cpu'))]
+        dist = torch.cdist(code, code)
+        subs = [{w[i:j] for i in range(n) for j in range(i + 1, n + 1)} for w in same]
+        few, many = [], []
+        for i in range(len(same)):
+            for j in range(i + 1, len(same)):
+                shared = len(subs[i] & subs[j])
+                (few if shared <= 2 else many if shared >= 6 else []).append(float(dist[i, j]))
+        assert len(many) > 50 and sum(many) / len(many) < sum(few) / len(few), n
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires Metal')
+def test_cpu_and_metal_make_equal_codes(dictionary):
+    words, table = dictionary
+    metal = _dictionary_table('mps', words[:1000])
+    cpu = _dictionary_table('cpu', words[:1000])
+    assert int(metal.used) == int(cpu.used)
+    assert torch.equal(metal.code.cpu(), cpu.code) and torch.equal(metal.left.cpu(), cpu.left)
