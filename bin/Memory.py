@@ -1225,6 +1225,7 @@ class MediumTermMemory(MemoryStore):
             self._candidate_pairs = MTMPairRows(room, strength=penalty()).to(device=device, dtype=dtype)
             self._relation_trials, self._pair_trials = [], []
             for pool in (self._candidate_pairs, self._candidate_relations):
+                pool.pack_trial_columns()
                 pool._remember_count(0)
         required = streams * trials
         for pool, seats in ((self._candidate_relations, self._relation_trials),
@@ -1236,7 +1237,9 @@ class MediumTermMemory(MemoryStore):
                     pool._remember_count(occupied)
                 seats.clear()
             for _ in range(len(seats), required):
-                seats.append(type(pool)(room, strength=pool.strength).to(device=device, dtype=dtype))
+                seat = type(pool)(room, strength=pool.strength).to(device=device, dtype=dtype)
+                seat.pack_trial_columns()
+                seats.append(seat)
         self._relation_trial_width = streams
 
     def candidate_relations(self, path=None, stream=None, *, source=None, pairs=False):
@@ -3295,6 +3298,9 @@ class LTM1(_CountedRows, nn.Module):
 
 class MTM1(LTM1):
     """Provisional kind-to-symbol entries in native relation slots."""
+    trial_columns = ('refs', 'ref_kinds', 'activity', 'entered_at', 'read_count', 'held',
+                     'gathered', 'gathered_low', 'totals')
+
     def __init__(self, capacity, *, strength, hold=3):
         # As in STM1, zero is reserved. The two ordered coordinates are
         # a kind and an entry in its symbol table.
@@ -3314,10 +3320,41 @@ class MTM1(LTM1):
         other.reset_from(self)
         return other
 
+    def pack_trial_columns(self):
+        """Make the mutable columns views into one transfer per storage dtype."""
+        groups = {}
+        for name in self.trial_columns:
+            groups.setdefault(self._buffers[name].dtype, []).append(name)
+        slabs = []
+        for names in groups.values():
+            columns = [self._buffers[name] for name in names]
+            slab = torch.cat([column.reshape(-1) for column in columns])
+            views = slab.split([column.numel() for column in columns])
+            for name, view, column in zip(names, views, columns, strict=True):
+                self._buffers[name] = view.view_as(column)
+            slabs.append(slab)
+        self._trial_slabs = tuple(slabs)
+
+    def _apply(self, fn, recurse=True):
+        # A dtype/device move replaces registered buffers independently.
+        # Rebind them to their new device before the next fork.
+        packed = self.__dict__.pop('_trial_slabs', None)
+        super()._apply(fn, recurse)
+        if packed is not None:
+            self.pack_trial_columns()
+        return self
+
     def reset_from(self, source):
-        for name in ('refs', 'ref_kinds', 'activity', 'entered_at', 'read_count', 'held',
-                     'gathered', 'gathered_low', 'totals', 'count'):
-            getattr(self, name).copy_(getattr(source, name))
+        target = getattr(self, '_trial_slabs', None)
+        origin = getattr(source, '_trial_slabs', None)
+        if target is not None and origin is not None:
+            for destination, column in zip(target, origin, strict=True):
+                destination.copy_(column)
+        else:
+            for name in self.trial_columns:
+                getattr(self, name).copy_(getattr(source, name))
+        # Its independent version counter describes only occupancy changes.
+        self.count.copy_(source.count)
         occupied = source._known_count()
         if occupied is not None:
             self._remember_count(occupied)
@@ -3477,6 +3514,9 @@ class MTM1(LTM1):
 
 class MTMPairRows(MTM1):
     """Two symbols seen together, with their meeting and marginal masses in MTM."""
+    trial_columns = (*MTM1.trial_columns, 'tally_refs', 'tally_time', 'tally_clock',
+                     'mass_bits', 'gradient_bits', 'value_bits')
+
     def __init__(self, capacity, *, strength, hold=3):
         super().__init__(capacity, strength=strength, hold=hold)
         room = 16 * capacity
@@ -3491,11 +3531,6 @@ class MTMPairRows(MTM1):
         self.register_buffer('mass_bits', self.refs.new_zeros(room, 3), persistent=False)
         self.register_buffer('gradient_bits', self.refs.new_zeros(self.capacity - 1), persistent=False)
         self.register_buffer('value_bits', self.refs.new_zeros(self.capacity - 1), persistent=False)
-
-    def reset_from(self, source):
-        super().reset_from(source)
-        for name in ('tally_refs', 'tally_time', 'tally_clock', 'mass_bits', 'gradient_bits', 'value_bits'):
-            getattr(self, name).copy_(getattr(source, name))
 
     def offer_magnitudes(self):
         return self.value_bits.abs()

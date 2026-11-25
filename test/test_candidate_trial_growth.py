@@ -285,6 +285,32 @@ def test_native_pair_candidates_preserve_lru_tallies_and_admission_order():
                 assert state[str(key)] == pytest.approx(vars(entry), abs=1e-7)
 
 
+def test_private_mtm_columns_remain_views_when_moved_and_reset():
+    from copy import deepcopy
+    from Memory import MTMPairRows
+    source = MTMPairRows(3, strength=.2)
+    private = source.fork()
+    for pool in (source, private):
+        pool.pack_trial_columns()
+    source._write_count(1)
+    for device in ('cpu', 'mps') if torch.backends.mps.is_available() else ('cpu',):
+        dtype = torch.float64 if device == 'cpu' else torch.float32
+        source.to(device=device, dtype=dtype)
+        private.to(device=device, dtype=dtype)
+        for index, name in enumerate(source.trial_columns, start=1):
+            getattr(source, name).fill_(index)
+        base = private.refs.data_ptr()
+        private.reset_from(source)
+        assert private.refs.data_ptr() == base and int(private.count) == 1
+        clone = deepcopy(private)
+        for index, name in enumerate(private.trial_columns, start=1):
+            assert torch.equal(getattr(source, name), getattr(private, name))
+            getattr(private, name).zero_()
+            assert (getattr(source, name) == index).all()
+        private.reset_from(clone)
+        assert all(torch.equal(getattr(private, name), getattr(source, name)) for name in source.trial_columns)
+
+
 def test_bound_field_uses_first_location_and_last_positive_observation_per_stream():
     ids = torch.tensor([[8, 3], [3, 8], [8, 3], [8, -1]])
     positive = torch.tensor([[.75, .5], [1., .8], [.6, .75], [0., 1.]])
