@@ -12,6 +12,25 @@ from Meaning import ConceptualMeaning
 from Understanding import ConceptualField
 
 
+def test_working_relations_respect_episodic_handles_after_row_and_buffer_writes():
+    from Memory import STM0
+
+    store = STM0(12, 3, percept_width=12, episodic_concepts=2, relation_capacity=16)
+    point = torch.zeros(12)
+    store.append_idea(point)
+    store.episodic_concepts[0, 0] = 1
+    assert store.parts.add(7, 8) == 2
+    store.expire()
+    store.append_idea(point)
+    assert store.parts.add(7, 8) == 1
+    store.expire()
+    store.append_idea(point)
+    column = store.episodic_concepts.clone()
+    column[0, 0] = 1
+    store.episodic_concepts = column
+    assert store.parts.add(7, 8) == 2
+
+
 def test_selection_keeps_strongest_signed_lanes_and_zero_stores_nothing():
     # The operated set holds each concept's strongest reading on each lane.
     values = torch.tensor([[[[.5, .5], [.1, .1]]],

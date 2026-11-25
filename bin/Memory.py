@@ -13,6 +13,7 @@ import copy
 import hashlib
 import json
 import math
+import weakref
 from dataclasses import dataclass, field, replace
 from typing import NamedTuple
 
@@ -2152,6 +2153,7 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             raise ValueError('ltmWindow must be positive')
         self.register_buffer('slots', torch.zeros(self.capacity,self.nDim))
         self.register_buffer('episodic_concepts', torch.full((self.capacity,self.episodic_capacity),-1,dtype=torch.long))
+        self._mark_empty_episodes()
         self.register_buffer('episodic_values', torch.zeros(self.capacity,self.episodic_capacity))
         self.register_buffer('trust', torch.zeros(self.capacity))
         self.register_buffer('referent', torch.stack((torch.zeros(self.capacity,dtype=torch.long),
@@ -2173,6 +2175,20 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         object.__setattr__(self,'parts',(LTM1 if relation_type is None else relation_type)(relation_capacity))
         self.parts._occurrence_store = weakref.ref(self)
         self.clear_caches()
+
+    def _mark_empty_episodes(self):
+        column = self.episodic_concepts
+        self._empty_episode_version = None if column.is_inference() else (weakref.ref(column), column._version)
+
+    def _episode_reserves(self, symbol):
+        """A freshly cleared episode bank cannot reserve a relation name."""
+        if not self.episodic_capacity or not len(self):
+            return False
+        column = self.episodic_concepts
+        empty = self._empty_episode_version
+        if empty is not None and empty[0]() is column and empty[1] == column._version:
+            return False
+        return bool(column[:len(self)].eq(symbol).any())
 
     def _occupied_names(self):
         """Rebuild after checkpoint restore, compaction, or external writes."""
@@ -2470,6 +2486,8 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             if retained is not None:
                 value[:len(keep)].copy_(retained)
         self._write_count(len(keep))
+        if not keep.numel():
+            self._mark_empty_episodes()
         self.clear_caches()
         if owner is not None:
             for reference in removed:
@@ -2734,8 +2752,7 @@ class LTM1(_CountedRows, nn.Module):
             return True
         ref = getattr(self, '_occurrence_store', None)
         store = None if ref is None else ref()
-        return (store is not None and store.episodic_capacity > 0 and len(store) > 0
-                and bool(store.episodic_concepts[:len(store)].eq(row).any()))
+        return store is not None and store._episode_reserves(row)
 
     @property
     def revision(self):
