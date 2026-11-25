@@ -685,8 +685,9 @@ class ReferenceClose(nn.Module):
         last = coordinate_read(pool.read_member(tail, concept)).to(value)
         difference = (value-last).square().mean()
         stm = getattr(self.components.owner, 'stm', None)
-        present = False if stm is None else bool((stm.state[7] == entry.transient).any()) if entry.transient is not None else False
-        return (overlap, *gap, difference, value.new_tensor(float(present)))
+        present = (zeros if stm is None or entry.transient is None
+                   else (stm.state[7] == entry.transient).any().to(value))
+        return (overlap, *gap, difference, present)
 
     @staticmethod
     def choice_cost(features, logits, selected):
@@ -697,9 +698,13 @@ class ReferenceClose(nn.Module):
 
     def select(self, choices, logits, *, forward_identity=None, individuals=None):
         """The ordinary resolver choice; fixtures may force this operation seam."""
-        if not choices or not bool((logits.detach() > 0).any()):
+        if not choices:
             return None
-        return int(logits.detach().argmax())
+        values = logits.detach()
+        # Keep the dummy on an all-nonpositive menu, including zero ties.
+        # The host recipient uses the chosen index to address an MTM record.
+        best = int(torch.where((values > 0).any(), values.argmax(), -1))
+        return best if best >= 0 else None
 
     def choose(self, plan, choices, features, logits, *, forward_identity=None, individuals=None):
         """The zero-logit dummy wins ties; a departure takes the next option.
@@ -712,8 +717,11 @@ class ReferenceClose(nn.Module):
         greedy = self.select(choices, logits, forward_identity=forward_identity,
                              individuals=individuals)
         greedy = 0 if greedy is None else greedy + 1
-        ranked = menu.detach().argsort(descending=True, stable=True).tolist()
-        alternate = next((index for index in ranked if index != greedy), greedy)
+        if choices:
+            top = menu.detach().argsort(descending=True, stable=True)[:2]
+            alternate = int(torch.where(top[0] == greedy, top[1], top[0]))
+        else:
+            alternate = greedy
         departed = bool(choices) and len(plan['decisions']) == plan['departure']
         selected = alternate if departed else greedy
         probabilities = menu.softmax(0)
