@@ -726,10 +726,6 @@ class WordIdentity(nn.Module):
         self.by_parts.setdefault(parts_key, set()).add(word)
         self._parts_key[word] = parts_key
 
-    def definition_key(self, raw):
-        """The admitted form's parts-half key, maintained by collision repair and restore."""
-        return self._parts_key[raw].hex()
-
     def _reindex(self):
         """Key every stored form and pack its code, in the order of
         admission. Returns the first two forms found with one code, if any."""
@@ -1179,6 +1175,26 @@ class WordIdentity(nn.Module):
         shortest run the string holds and the word does not."""
         return distinguishing_run(string, word, one_sided=True)
 
+    def percept_parts(self, observed):
+        """Resolve either catalog constituents or an ordered native byte cover."""
+        observed = tuple(observed)
+        if not observed:
+            return ()
+        # Catalog constituents include the form's own atom and may overlap.
+        # They are already a native definition, not a sequence to concatenate.
+        for part in reversed(observed):
+            raw = self._fixed_bytes.get(part)
+            if raw in self.words and self.parts(raw) == observed:
+                return observed
+        elements = []
+        for part in observed:
+            if not 0 <= part < len(self.store):
+                return observed
+            raw = self._fixed_bytes.get(part)
+            elements.append(self.store.bytes_for(part) if raw is None else raw)
+        raw = b''.join(elements)
+        return self.parts(raw) if raw in self.words else observed
+
     def parts(self, raw):
         """The form's part rows and its witnessed nested wholes."""
         return (tuple(self.atoms[a] for a in self.words[raw]) +
@@ -1351,6 +1367,8 @@ class WordIdentity(nn.Module):
                         self.holders[run].add(word)
 
     def load_vocab_extras(self, value):
+        self.basic.__dict__.pop('_raw_texts', None)
+        self.basic.__dict__.pop('_text_stamp', None)
         for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'revision'):
             setattr(self, name, value[name])
         self.__dict__.pop('_by_byte', None)

@@ -17099,12 +17099,24 @@ class ConceptualSpace(Space):
         alloc = _concept_alloc_of(self)
         values = set(alloc.word_forms.get(str(form), ()))
         operator = self.__dict__.get('_interpret_operator')
-        if operator is not None:
-            values.update(word for word, value in operator.objectless().items() if str(form) in value['forms'])
         index = self._definition_index()
-        word = None if index is None else index.word(form=form)
+        word = (operator.word_for_form(form) if operator is not None else
+                index.word(form=form) if index is not None else None)
         if word is not None:
-            values.update((word, *index.objects(word)))
+            values.add(word)
+            if index is not None:
+                values.update(index.objects(word))
+        # A raised class is reached from its named object through the
+        # existing raising relation, including successive raises.
+        pending = list(values)
+        while pending:
+            source = pending.pop()
+            if source not in alloc.concepts:
+                continue
+            parent = alloc.relate_idx.get(('part-kind', (alloc.parts.SYMBOL, source), alloc.order_of(source) + 1))
+            if parent is not None and parent not in values:
+                values.add(parent)
+                pending.append(parent)
         store = self._closed_clause_store()
         return tuple(sorted(cid for cid in values if cid not in alloc.retired and
                             (cid in alloc.concepts or

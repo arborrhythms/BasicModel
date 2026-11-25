@@ -115,7 +115,7 @@ def canonical_native_events(model, ids, positions, brackets):
     return result, spans
 
 
-def native_word_poles(model, spans, forms, known):
+def native_word_poles(model, spans, forms, known, *, word_ids=None):
     """Read the current native definition at each word's own extent.
 
     A name lookup identifies the row to inspect, but does not stand in for
@@ -156,9 +156,10 @@ def native_word_poles(model, spans, forms, known):
         field = torch.maximum(field, both[..., None].to(field))
     native = owner._cs_field_concept_ids[:field.shape[0]]
     native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
+    if word_ids is None:
+        word_ids = [[owner.interpret.word_for_form(form) for form in row[:width]] for row in forms]
     objects = [[tuple(dict.fromkeys((word, *owner.definitions.objects(word))))
-                if (word := owner.interpret.word_for_form(form)) is not None else ()
-                for form in row[:width]] for row in forms]
+                if word is not None and word >= 0 else () for word in row[:width]] for row in word_ids]
     alternatives = max(1, max((len(values) for row in objects for values in row), default=0))
     wanted = native.new_tensor([[list(values)+[-1]*(alternatives-len(values)) for values in row]
                                for row in objects])
@@ -232,15 +233,24 @@ def stage_input(model):
         """The word of a form, counting this reading of it first: the first
         reader of a form in a reading is where MTM nominates it (rule 20),
         so that attention reads it as known in that reading."""
-        word=owner.interpret.word_for_form(form)
-        if (word is not None or not reads_words or not is_lexical_form(form) or whole_space is None
-                or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):
-            return word
         nonlocal native_rows, property_bits
+        native_identity = getattr(getattr(model.perceptualSpace, 'percept_store', None), 'identity', None)
+        if native_identity is None:
+            word = owner.interpret.word_for_form(form)
+            if word is not None:
+                return word
+        if not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans):
+            return None
         if native_rows is None:
             native_rows = torch.cat((native_ids[..., None], native_spans.to(native_ids)), -1).tolist()
         parts = [pid for pid, start, stop in native_rows[b] if pid >= 0 and lo <= start < stop <= hi]
         if not parts:
+            return None
+        if native_identity is not None:
+            word = owner.interpret.word_for_parts(native_identity.percept_parts(parts))
+            if word is not None:
+                return word
+        if not reads_words or not is_lexical_form(form) or whole_space is None:
             return None
         if native_spans_available:
             if property_bits is None:
@@ -299,7 +309,7 @@ def stage_input(model):
     with torch.no_grad():
         model._open_read=read_code_field(keys,live)
         model._last_gist=(model._open_read*live[...,None]).sum(1)/live.sum(1).clamp_min(1)[:,None]
-        poles=native_word_poles(model,spans,forms,known)
+        poles=native_word_poles(model,spans,forms,known,word_ids=concepts)
         model._attention_native_poles=poles
     live_width = max(1, int(torch.where(live,
         torch.arange(W, device=live.device)[None] + 1, 0).max()))

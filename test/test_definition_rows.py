@@ -215,3 +215,25 @@ def test_32_retired_head_meta_checkpoint_is_rejected():
     object.__setattr__(cs, '_model', target)
     with pytest.raises(ValueError, match='retired META'):
         target._restore_structural_extras(fixture['structural'])
+
+
+def test_native_word_is_nominated_from_parts_and_reversed_through_its_percept():
+    from nomination_fixtures import recurrent_word
+    m = model()
+    try:
+        cs, store = m._concept_owner(), m.perceptualSpace.percept_store
+        parts = store.spell_out(b'shopping')
+        wholes = m.wholeSpace.property_rows_for_bytes(b'shopping')
+        word = recurrent_word(cs.interpret, parts, wholes, form=b'unrelated')
+        assert word is not None and cs.interpret.word_for_form(b'unrelated') is None
+        assert cs.interpret.lookup_word(parts, wholes, form=b'second label') == word
+        alloc = cs._concept_allocator
+        assert not alloc.word_descriptions[word]['forms']
+        assert 'identity_key' not in alloc.word_descriptions[word]
+        assert all(word not in ids for ids in alloc.word_forms.values())
+        obj = witness_object(cs, word)
+        assert cs.interpret.forward(word) == obj
+        assert cs.interpret.reverse(obj) == word
+        assert cs.interpret.lexical_form(word) == 'shopping'
+    finally:
+        m.End()

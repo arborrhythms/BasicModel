@@ -180,8 +180,45 @@ class InterpretLayer(GrammarLayer):
         word = int(word)
         return word in self.objectless() and not self.owner.definitions.objects(word)
 
+    def _native_identity(self):
+        ps = getattr(getattr(self.owner, '_model', None), 'perceptualSpace', None)
+        return getattr(getattr(ps, 'percept_store', None), 'identity', None)
+
+    def _live_word_percepts(self):
+        basic = self.owner.basic_percepts
+        alloc = self.owner._concept_allocator
+        named = self.owner.definitions.word_ids
+        for word, row in basic.words.items():
+            if (word in alloc.word_descriptions and word in alloc.concepts and word not in alloc.retired
+                    and (word in named or not alloc.named_identities.get(word))):
+                yield word, row
+
+    def word_for_parts(self, parts):
+        """Recognize the nominated percept by its current constituent rows."""
+        parts = tuple(parts)
+        if not parts:
+            return None
+        basic = self.owner.basic_percepts
+        for word, row in self._live_word_percepts():
+            if tuple(basic.occurrences[row][0]) == parts:
+                return word
+        return None
+
     def word_for_form(self, form):
         """Read an admitted form, including one with no object yet."""
+        identity = self._native_identity()
+        if identity is not None and isinstance(form, (str, bytes)):
+            from WordIdentity import bytes_of
+            raw = bytes_of(form) if isinstance(form, str) else form
+            if raw in identity.words:
+                word = self.word_for_parts(identity.parts(raw))
+                if word is not None:
+                    return word
+            # External text queries also cover words learned directly from
+            # byte rows, including checkpoints with no whole-form entry.
+            from FieldReverse import spelling
+            return next((word for word, row in self._live_word_percepts()
+                         if spelling(identity.basic, row) == raw), None)
         form = form_key(form)
         word = self.owner.definitions.word(form=form)
         if word is not None:
@@ -263,17 +300,23 @@ class InterpretLayer(GrammarLayer):
                             if cid not in alloc.retired))
 
     def lexical_form(self, identity):
-        if self.no_object(identity):
-            value = self.objectless()[int(identity)]
-        elif int(identity) in self.owner.definitions.word_ids:
-            value = self.owner.definitions.description(int(identity))
+        word = int(identity)
+        if self.no_object(word):
+            value = self.objectless()[word]
+        elif word in self.owner.definitions.word_ids:
+            value = self.owner.definitions.description(word)
         else:
-            words = self.owner.definitions.words(int(identity))
             from PerceptCollections import said_by
-            words = said_by(self.owner, identity, words)
+            words = said_by(self.owner, word, self.owner.definitions.words(word))
             if len(words) != 1:
                 return None
-            value = self.owner.definitions.description(words[0])
+            word = words[0]
+            value = self.owner.definitions.description(word)
+        native = self._native_identity()
+        if native is not None and word in native.basic.words:
+            from FieldReverse import spelling
+            raw = spelling(native.basic, native.basic.words[word])
+            return None if raw is None else form_key(raw)
         forms = value['forms']
         return forms[0] if len(forms) == 1 else None
 
@@ -366,38 +409,31 @@ class InterpretLayer(GrammarLayer):
         alloc, index = _concept_alloc_of(cs), cs.definitions
         parts = tuple(map(int, parts))
         wholes = (int(wholes),) if isinstance(wholes, int) else tuple(map(int, wholes or ()))
-        if getattr(cs, '_online_learning_frozen', False):
-            # Held-out reads may resolve existing definitions, but cannot
-            # reserve identities, add decompositions or finish pending words.
-            known = index.word(unit=parts, form=form)
-            return known if known is not None else next((cid for cid, value in self.objectless().items()
-                if parts in value['parts'] or (form is not None and form_key(form) in value['forms'])), None)
         model = getattr(cs, '_model', None)
         ps = getattr(model, 'perceptualSpace', None)
         native = getattr(ps, 'percept_store', None)
         identity = getattr(native, 'identity', None)
-        identity_key = None
-        if identity is not None and form is None and parts:
-            native_rows = set(identity.atoms.values()) | set(identity.word_rows.values())
-            if all(part in native_rows for part in parts):
-                # The stored form whose code the parts make; a code that is
-                # no stored form has no spelling and is fused as parts.
-                form = identity.spelling(parts)
-        if identity is not None and isinstance(form, (str, bytes)):
-            from WordIdentity import bytes_of
-            raw = bytes_of(form) if isinstance(form, str) else form
-            parts = identity.admit(raw)
-            self._sync_identity(identity)
-            identity_key = identity.definition_key(raw)
-        elif native is not None:
-            parts = tuple(ps.fuse_parts(parts))
-        form = form_key(form)
-        word = index.word(unit=parts, form=form, identity=identity_key)
-        objectless = self.objectless()
-        for cid, value in objectless.items():
-            if parts in value['parts'] or (form is not None and form in value['forms']):
-                word = cid
-                break
+        frozen = getattr(cs, '_online_learning_frozen', False)
+        if identity is not None:
+            # Perception owns admission. Interpret consumes the witnessed parts,
+            # even if a caller also supplies a text label for reporting.
+            parts = identity.percept_parts(parts)
+            word = self.word_for_parts(parts)
+            form = None
+            if word is not None:
+                return word
+        else:
+            objectless = self.objectless()
+            if native is not None and not frozen:
+                parts = tuple(ps.fuse_parts(parts))
+            form = form_key(form)
+            word = index.word(unit=parts, form=form)
+            for cid, value in objectless.items():
+                if parts in value['parts'] or (form is not None and form in value['forms']):
+                    word = cid
+                    break
+        if frozen or not parts:
+            return word
         if word is not None:
             if form is not None:
                 cs.bind_word_concept(form, word)
@@ -506,52 +542,7 @@ class InterpretLayer(GrammarLayer):
         self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
-        if identity_key is not None:
-            alloc.word_descriptions[word]['identity_key'] = identity_key
-            self._description_revision += 1
         return word
-
-    def _sync_identity(self, identity):
-        """A collision extends the existing word's parts without changing its row."""
-        from Spaces import _concept_alloc_of
-        if getattr(self, '_identity_revision', -1) == identity.revision:
-            return
-        from WordIdentity import bytes_of
-        cs, index = self.owner, self.owner.definitions
-        alloc = _concept_alloc_of(cs)
-        for word, old in tuple(self.objectless().items()):
-            if not old['forms']:
-                continue
-            raw = old['forms'][0]
-            raw = bytes_of(raw) if isinstance(raw, str) else raw
-            if raw not in identity.words:
-                continue
-            parts = identity.parts(raw)
-            alloc.word_descriptions[word] = dict(old, parts=(parts,), identity_key=identity.definition_key(raw))
-            self._description_revision += 1
-            for part in parts:
-                cs.add_part(word, part)
-            cs._populate_concept_weights(word, witness=(parts, old['wholes']), word_reading=True, coactive=True)
-        for word in tuple(index.word_ids):
-            old = index.description(word)
-            if not old or not old['forms']:
-                continue
-            raw = old['forms'][0]
-            raw = bytes_of(raw) if isinstance(raw, str) else raw
-            if raw not in identity.words:
-                continue
-            parts = identity.parts(raw)
-            value = dict(old, parts=(parts,), identity_key=identity.definition_key(raw))
-            for part in parts:
-                cs.add_part(word, part)
-            for obj in index.objects(word):
-                cs._populate_concept_weights(obj, witness=(parts, old['wholes']), word_reading=True, coactive=True)
-                row = index.row(word, obj)
-                store = index._store()
-                _concept_alloc_of(cs).word_descriptions[word] = value
-                self._description_revision += 1
-        index.rebuild()
-        self._identity_revision = identity.revision
 
     @torch.no_grad()
     def define(self, word, obj, *, description=None, trust=None, evidence=None):

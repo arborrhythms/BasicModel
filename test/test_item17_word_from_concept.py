@@ -47,8 +47,8 @@ def test_the_leaf_filled_by_its_concepts_inverse(tmp_path, monkeypatch):
         opened = SentenceField.reconstruction
         responses = []
 
-        def measured(owner, field):
-            returned = opened(owner, field)
+        def measured(owner, field, **options):
+            returned = opened(owner, field, **options)
             surface = bytes(returned.materialize()[0, 0].tolist()).rstrip(b'\0')
             responses.append((field.concept_ids.detach().flatten().tolist(), surface))
             return returned
