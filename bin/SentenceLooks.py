@@ -389,7 +389,7 @@ class Looks:
             if not bool(found.any()):
                 break
             if self.look_credit is not None:
-                self.look_credit.observe(anticipated, index)
+                self.look_credit.observe(anticipated, torch.where(found[:, None], observation.last_where, -1))
             word = index.clamp_min(0)
             allowed = found & (state.known.gather(1, word[:, None])[:, 0]
                                | torch.isfinite(words.gather(1, word[:, None])[:, 0]))

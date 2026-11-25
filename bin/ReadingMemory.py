@@ -330,7 +330,7 @@ def _read(model, bank, concepts):
         if not found.any():
             break
         if credit is not None:
-            credit.observe(anticipated, index)
+            credit.observe(anticipated, torch.where(found[:, None], observation.last_where, -1))
         batch = torch.arange(B, device=index.device)
         evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
         episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,

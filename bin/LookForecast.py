@@ -204,25 +204,25 @@ class OccurrenceCredit:
         where = spatial_match(self.bank, request[rows:, :, 0].T, self.bank.span[..., 0])
         return what.clamp(0., 1.)[:, None] * where.sigmoid()[..., None]
 
-    def observe(self, anticipated, index):
+    def observe(self, anticipated, span):
         from Layers import Error
         bank = self.bank
-        from BasicPercepts import reading_scope
-        if not bank.where.shape[1] or not anticipated.shape[-1]:
+        from BasicPercepts import extent_members
+        if not bank.surface_width or not anticipated.shape[-1]:
             return
-        batch = torch.arange(len(index), device=index.device)
-        scoped = reading_scope(bank, bank.where.shape[1])[batch, index.clamp_min(0)]
-        seen = (index[:, None] >= 0) & scoped & (bank.activity[..., 0] > 0)
+        inside, around = extent_members(bank.span, span[:, None])
+        seen = (inside | around)[:, 0] & (bank.activity[..., 0] > 0)
         live = seen.any(1)
         if not bool(live.any()):
             return
         # The fixation limits *both* sides. Its action probability is absent
         # from this cost. Overlapping events at a byte share the same place.
         starts = torch.where(seen, bank.span[..., 0], 0)
-        width = int(starts.max()) + 1
         addresses = starts[..., None].expand_as(anticipated)
         def located(values):
-            grid = values.new_zeros(len(values), width, values.shape[-1])
+            # Empty outer cells give identical matches at all coarser
+            # pyramid levels. The opening supplies one size for every look.
+            grid = values.new_zeros(len(values), bank.surface_width, values.shape[-1])
             return grid.scatter_reduce(1, addresses, values * seen[..., None], 'amax')
         put, wanted = located(anticipated), located(self.observed)
         shared, mass = Error.pyramid_match(put, wanted)

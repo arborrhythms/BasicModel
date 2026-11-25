@@ -82,6 +82,7 @@ class PerceptBank:
     # ``None``: every occurrence can.
     holder: torch.Tensor = None
     revisions: object = None
+    surface_width: int = 0          # byte grid used to locate the observations
     # Derived from this table’s spans. Replacing its geometry starts a fresh scope.
     scope: torch.Tensor = field(default=None, init=False, repr=False, compare=False)
     # Request-independent Pi reads, scoped to this sentence's opening:
@@ -1712,7 +1713,7 @@ class BasicPercepts(nn.Module):
         local = revisions(self, rows, options.get('block_parts'))
         bank = PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
-                           when_band, registry, holder, local)
+                           when_band, registry, holder, local, surface.shape[-1])
         object.__setattr__(bank, 'scope', holds | containing)
         return bank
 
