@@ -16,6 +16,67 @@ def reachable_rows(active, rows, standing, sources, targets, rounds, size):
     return reached
 
 
+def rung_entries(store, addresses, like):
+    """Index sparse entries while the field writer assigns its page seats."""
+    pages, entries, symbolic = [], [], []
+    for page, field_rows in enumerate(addresses):
+        seated = set(field_rows)
+        for edge, row in enumerate(store._rows):
+            if row in seated:
+                if store._cols[edge] != store.bias_column():
+                    symbolic.append(len(entries))
+                pages.append(page)
+                entries.append(edge)
+    columns = like.new_tensor(pages + entries + symbolic)
+    return columns.split((len(pages), len(entries), len(symbolic)))
+
+
+def seated_rung(field, addresses, weights, topology, inventory_size, start, end, entry_plan=None):
+    """Read a Sigma rung for all pages from their own seats in the same inventory."""
+    from Layers import NotLayer3, _EntryRead, signed_lanes
+    edges, targets, columns, members, complete = topology
+    size, batch, places, _ = field.shape
+    width = end - start
+    if addresses.ndim == 1:
+        addresses = addresses[:, None].expand(-1, batch)
+    # In a repeated row the final seat is the one visible to the bound store.
+    ids = addresses.T
+    seats = torch.arange(size, device=ids.device).expand_as(ids)
+    inverse = ids.new_full((batch, inventory_size + 1), -1).scatter_reduce(
+        1, torch.where((ids >= 0) & (ids < inventory_size), ids, inventory_size), seats, 'amax')
+    destinations = inverse.index_select(1, targets)
+    if entry_plan is None:
+        pages, entries = (destinations >= 0).nonzero(as_tuple=True)
+        symbolic = (columns.index_select(0, entries) < len(members)).nonzero().flatten()
+    else:
+        pages, entries, symbolic = entry_plan
+    if not len(entries) or width <= 0:
+        return field.new_zeros(max(width, 0), batch, places, 2)
+    slots = columns.index_select(0, entries)
+    # A page with only standing biases has no gradient into its input field.
+    # Preserve that distinction, including when the optimizer has momentum.
+    lanes = field.new_zeros(len(entries), places, 2)
+    lanes[..., 0] = 1.
+    valid = torch.ones_like(entries, dtype=torch.bool)
+    if len(symbolic):
+        parents = slots.index_select(0, symbolic)
+        source = members.index_select(0, parents)
+        page = pages.index_select(0, symbolic)[:, None]
+        located = inverse[page, source.clamp_min(0)]
+        active = complete.index_select(0, parents) & ((source < 0) | (located >= 0)).all(1)
+        operands = field[located.clamp_min(0), page]
+        operands = torch.where((source >= 0)[..., None, None], operands, 1.)
+        lanes = lanes.index_copy(0, symbolic, operands.prod(1) * active[:, None, None])
+        valid = valid.index_copy(0, symbolic, active)
+    seat = destinations[pages, entries]
+    valid = valid & (seat >= start) & (seat < end)
+    value = weights.to(field)[edges[entries]] * valid.to(field)
+    terms = _EntryRead.apply(value[:, None].expand(-1, places), NotLayer3.options(lanes))
+    target = (seat - start).clamp(0, width - 1) * batch + pages
+    total = field.new_zeros(width * batch, places).index_add(0, target, terms)
+    return signed_lanes(total.tanh()).reshape(width, batch, places, 2)
+
+
 def inventory(owner):
     store = owner._concept_allocator.layer(0)
     return sorted(row for row in store._tensor_row_keys

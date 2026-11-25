@@ -811,6 +811,44 @@ def test_cert_4_the_next_sigma_reads_one_combined_input_for_each_symbol():
     assert all(store.symbol_table.members(t[1]) for t in view._things)
 
 
+def test_batched_sigma_preserves_the_bound_field_and_its_gradients():
+    from FieldProjection import rung_entries, seated_rung
+    from Layers import signed_lanes, sigma_read, thing_options
+
+    cs, store, ids, rows = _small_space()
+    word, cats, dogs, green, other = rows
+    cs.add_concept_edge(cats, word, .5, negated=True)
+    pair = store.symbol_table.make(('test', 'both'), ids[1], ids[2])
+    store.add_edge(green, pair, .7)
+    store.add_edge(other, store.bias_column(), .4)
+    compiled = torch.compile(seated_rung, fullgraph=True, backend='eager')
+    for pages in ([[word, cats, dogs, green, other], [cats, word, word, green, -1]],
+                  [[other, -1]], [[word, -1]]):
+        addresses = torch.tensor(pages).T.contiguous()
+        size, batch = addresses.shape
+        field = torch.linspace(.1, .9, size * batch * 4).reshape(size, batch, 2, 2).requires_grad_()
+        topology = store.inventory_indices(store.nOutput, field.device)
+        plan = rung_entries(store, pages, addresses)
+        read = compiled(field, addresses, store.values, topology, store.nOutput, 0, size, plan)
+        reference = []
+        for b, row in enumerate(pages):
+            bound = store.bind(row)
+            options = thing_options(bound, field[:, b])
+            reference.append(signed_lanes(sigma_read(bound, options)))
+        expected = torch.stack(reference, dim=1)
+        torch.testing.assert_close(read, expected, rtol=0., atol=0.)
+        assert read.requires_grad == expected.requires_grad
+        if read.requires_grad:
+            inputs = (field, store.values)
+            before = torch.autograd.grad(expected.sum(), inputs, allow_unused=True)
+            after = torch.autograd.grad(read.sum(), inputs, allow_unused=True)
+            for left, right in zip(before, after, strict=True):
+                if left is None:
+                    assert right is None
+                else:
+                    torch.testing.assert_close(left, right)
+
+
 def test_cert_23d_above_order_zero_a_not_entry_reads_a_symbols_pair_exchanged():
     """Certificate 23 (d): a Not entry above order zero is an entry whose
     sign chooses the symbol's not-value: its weight is at zero or above

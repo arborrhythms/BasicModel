@@ -15370,6 +15370,16 @@ class ConceptualSpace(Space):
                            dtype=torch.long, device=device).t()
         if addresses and all(batch == addresses[0] for batch in addresses[1:]):
             rows, ids = rows[:, 0], ids[:, 0]
+        # Retain only the physical addresses used by the field's Sigma.
+        # A trial that grows a different store gets its own binding on read.
+        parent = visible_store(store)
+        if getattr(parent, '_thing_columns', False) and parent.nnz:
+            from FieldProjection import rung_entries
+            topology = parent.inventory_indices(parent.nOutput, device)
+            plan = rung_entries(parent, addresses, rows)
+            self.__dict__['_cs_rung_entries'] = rows, topology, B, plan
+        else:
+            self.__dict__.pop('_cs_rung_entries', None)
         object.__setattr__(self, '_cs_field_caps', tuple(caps))
         object.__setattr__(self, '_cs_field_rows', rows)
         object.__setattr__(self, '_cs_field_concept_ids', ids)
@@ -15759,6 +15769,14 @@ class ConceptualSpace(Space):
         the Sigma (each kind's entries, each reading one option)."""
         from Layers import thing_options, sigma_read, signed_lanes
         addresses = self._field_inventory_rows() if inventory_rows is None else inventory_rows
+        from CandidateGrowth import visible_store
+        store = visible_store(_concept_alloc_of(self).layer(0))
+        if getattr(store, '_thing_columns', False):
+            from FieldProjection import seated_rung
+            if not store.nnz or store.values is None:
+                return field.new_zeros(end - start, *field.shape[1:])
+            return seated_rung(field, addresses.to(field.device), store.values,
+                               store.inventory_indices(store.nOutput, field.device), store.nOutput, start, end)
         if addresses.ndim == 2:
             return torch.cat([self._concept_rung_presence(field[:, b:b+1], start, end,
                 inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
