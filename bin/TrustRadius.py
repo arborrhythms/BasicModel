@@ -1,7 +1,5 @@
 """The native binary64 trust law, with one final rounding into the float32 chart."""
-from functools import cache
 import math
-from pathlib import Path
 import struct
 
 import torch
@@ -17,11 +15,6 @@ def gain_bits(horizon):
     return struct.unpack(f'={len(gains)}q', struct.pack(f'={len(gains)}d', *gains))
 
 
-@cache
-def _metal_library():
-    return torch.mps.compile_shader(Path(__file__).with_name('trust_radius.metal').read_text())
-
-
 @torch.library.custom_op('basicmodel::metal_trust_radius', mutates_args=(), device_types='mps')
 def metal_radius(views: torch.Tensor, agreement: torch.Tensor, gains: torch.Tensor) -> torch.Tensor:
     if (views.shape != agreement.shape or views.dtype != torch.long or agreement.dtype != torch.float32
@@ -30,7 +23,8 @@ def metal_radius(views: torch.Tensor, agreement: torch.Tensor, gains: torch.Tens
         raise ValueError('trust requires aligned int64 counts, float32 agreements and a binary64 gain table')
     result = torch.empty_like(agreement, memory_format=torch.contiguous_format)
     if result.numel():
-        _metal_library().trust_radius(result, views.contiguous(), agreement.contiguous(), gains.contiguous(),
+        from MetalNumerics import shader
+        shader('trust_radius').trust_radius(result, views.contiguous(), agreement.contiguous(), gains.contiguous(),
                                      len(gains) - 1, threads=[result.numel()])
     return result
 

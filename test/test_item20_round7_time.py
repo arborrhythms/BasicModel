@@ -190,3 +190,30 @@ def test_compiled_comparator_reuses_one_graph_and_keeps_exact_arithmetic():
         assert clock.decode_index(actual).tolist() == [1, 0]
     assert len(graphs) == 1
     assert not clock.state_dict()
+
+
+@pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires Metal')
+def test_native_clock_rotation_and_stamp_gradient_match_double_precision():
+    from RowTime import how_far_back
+    from torch._dynamo.testing import CompileCounterWithBackend
+
+    generator = torch.Generator(device='cpu').manual_seed(1505)
+    latest = torch.randint(0, HORIZON, (96,), generator=generator, device='cpu')
+    back = (torch.rand(96, generator=generator, device='cpu') * latest).long()
+    now = encoder().encode(latest).float().cpu()
+    past = encoder().encode(latest - back).float().cpu()
+    stamps = torch.stack((past, torch.rand(past.shape, generator=generator, device='cpu')), 1)
+    stamps[:3, 0] = torch.tensor(((0., 0., 0., 0.), (.5, .5, .6, .1), (.5, .5, .5, .5)), device='cpu')
+    grad = torch.randn(stamps.shape, generator=generator, device='cpu')
+    counter = CompileCounterWithBackend('inductor')
+    compiled = torch.compile(how_far_back, backend=counter, fullgraph=True)
+    for source, weights in ((stamps, grad), (stamps.flip(0), grad.flip(0))):
+        cpu = source.detach().requires_grad_()
+        native = source.detach().to('mps').requires_grad_()
+        expected = how_far_back(now, cpu)
+        actual = compiled(now.to('mps'), native)
+        torch.testing.assert_close(actual.cpu(), expected, rtol=0, atol=0)
+        reference, = torch.autograd.grad(expected, cpu, weights)
+        gradient, = torch.autograd.grad(actual, native, weights.to('mps'))
+        torch.testing.assert_close(gradient.cpu(), reference, rtol=0, atol=0, equal_nan=True)
+    assert counter.frame_count == 1

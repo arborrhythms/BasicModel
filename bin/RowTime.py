@@ -48,15 +48,23 @@ def how_far_back(present, stamp):
     # A present per stream reads every stamp of that stream.
     while present.ndim < stamp.ndim:
         present = present.unsqueeze(-2)
-    # The rotation is taken in double precision, so a distance decodes to
-    # its exact tick count over the whole ladder. Metal has no float64: there
-    # the rotation is taken on the host and its code returned to the device.
+    low, high = clock.div_lf, clock.div_hf
     device, dtype = stamp.device, stamp.dtype
+    if (device.type == 'mps' and present.device == device and present.dtype == dtype == torch.float32
+            and present.shape[-1] == stamp.shape[-1] == 4 and not present.requires_grad
+            and torch.broadcast_shapes(present.shape, stamp.shape) == stamp.shape):
+        from MetalNumerics import clock_code
+        return clock_code(present.expand_as(stamp), stamp, low, high)
     work = torch.device('cpu') if device.type == 'mps' else device
-    present = signed_phase(present.to(device=work).to(torch.float64))
-    signed = signed_phase(stamp.to(device=work).to(torch.float64))
+    code = _rotate(present.to(device=work).to(torch.float64),
+                   stamp.to(device=work).to(torch.float64), low, high).to(dtype).to(device)
+    return torch.where(stamp.ne(0).any(-1, keepdim=True), code, 0.)
+
+
+def _rotate(present, stamp, low, high):
+    present, signed = signed_phase(present), signed_phase(stamp)
     pairs = []
-    for rung, step in zip(range(0, stamp.shape[-1], 2), (clock.div_lf, clock.div_hf)):
+    for rung, step in zip(range(0, stamp.shape[-1], 2), (low, high)):
         ps, pc = present[..., rung], present[..., rung + 1]
         ss, sc = signed[..., rung], signed[..., rung + 1]
         sin, cos = ps * sc - pc * ss, pc * sc + ps * ss
@@ -65,8 +73,7 @@ def how_far_back(present, stamp):
         turn_sin, turn_cos = math.sin(step), math.cos(step)
         pairs += [.5 * (sin + sin * turn_cos + cos * turn_sin),
                   .5 * (cos + cos * turn_cos - sin * turn_sin)]
-    code = unsigned_phase(torch.stack(pairs, -1)).to(dtype).to(device)
-    return torch.where(stamp.ne(0).any(-1, keepdim=True), code, 0.)
+    return unsigned_phase(torch.stack(pairs, -1))
 
 
 def compared(model, idea, *, tick=None):

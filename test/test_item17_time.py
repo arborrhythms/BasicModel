@@ -130,9 +130,7 @@ def test_55d_a_question_context_gives_its_quantities_as_codes():
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason='needs the MPS device')
 def test_55d_the_comparator_and_a_question_context_run_on_mps():
-    """Metal has no float64: the comparator and the question context take
-    their double precision on the host and return their codes to the device,
-    with the comparator exact at a million ticks from four thousand million."""
+    """The comparator reads a million ticks back at four thousand million."""
     from Models import BasicModel
     from RowTime import encoder, how_far_back
     from Spaces import WhereEncoding
