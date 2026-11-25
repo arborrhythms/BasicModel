@@ -260,34 +260,39 @@ class ReferenceClose(nn.Module):
         if len(chunks) != len(STMChunks.FIELDS) or not all(torch.is_tensor(value) for value in chunks):
             raise ValueError('reference access requires the shared chunk tuple')
         store, pool = self.store, self.components.owner.mtm
-        from PrependedSymbols import chunk_token
+        from PrependedSymbols import token_from_references
         from Spaces import _concept_alloc_of
         alloc = _concept_alloc_of(self.components.owner)
         records, tokens = {}, []
-        for b in range(chunks[0].shape[0]):
-            for position in range(chunks[0].shape[1]):
-                identity = int(chunks[STMChunks.IDENTITY][b,position])
-                token = chunk_token(pool,store,chunks,b,position)
+        # MTM indexes the two tagged references and the fallback identity.
+        # Read their bounded STM seats together, keeping the value tensors live.
+        seats = torch.cat((chunks[STMChunks.REFS].flatten(-2),
+                           chunks[STMChunks.IDENTITY][..., None], chunks[STMChunks.ORDERS][..., None]), -1)
+        orders = set()
+        for b, page in enumerate(seats.tolist()):
+            for position, (left_kind, left, right_kind, right, identity, order) in enumerate(page):
+                if order > 0:
+                    orders.add(order)
+                token = token_from_references(pool, store, left_kind, left, right_kind, right, identity)
                 if token is not None:
                     tokens.append(token)
                 elif identity >= 0 and identity in alloc.individuals and identity not in alloc.retired:
                     records[identity] = ('sym',identity), dict(role=0,
                         position=(position,0),identity=identity,value=chunks[0][b,position])
-                for tag, reference in chunks[STMChunks.REFS][b,position].tolist():
+                for tag, reference in ((left_kind, left), (right_kind, right)):
                     if tag == STMChunks.OCCURRENCE:
                         row = store.index_of_row(reference)
                         if row is not None:
+                            occurrence = store.occurrence_of(row)
                             tokens.extend(key for key, entry in pool.entries.items()
-                                if key == store.occurrence_of(row) or any(event.role == 0 and
-                                    event.occurrence == store.occurrence_of(row) for timeline in entry.timelines
+                                if key == occurrence or any(event.role == 0 and
+                                    event.occurrence == occurrence for timeline in entry.timelines
                                     for event in timeline.events))
         if include_pool:
-            for key in pool.entries:
-                row = store.location(key)
-                tokens.append(key)
+            tokens.extend(pool.entries)
         # A retained, unpooled idea can start a collection on its next link.
         from MemoryLink import chunk_candidates
-        for order in set(int(value) for value in chunks[STMChunks.ORDERS].reshape(-1).tolist() if int(value) > 0):
+        for order in orders:
             for address, record in chunk_candidates(self.components.owner, 'reference', order, stream).items():
                 records.setdefault(address[-1], (store.location(address), dict(record, identity=address)))
         names = {}

@@ -95,3 +95,32 @@ def test_forced_interpretation_reads_the_explicit_operators_extension(declared_o
     torch.testing.assert_close(implicit.field.aligned(ids),explicit.aligned(ids))
     assert explicit.ids.tolist() == [word]
     torch.testing.assert_close(explicit.values,source.values)
+
+
+def test_device_members_follow_live_truth_and_preserve_repeated_source_gradients(declared_object):
+    from ConceptHierarchy import members
+    from Extension import _stored_values
+    model, word, obj, _ = declared_object
+    owner = model._concept_owner()
+    alloc = owner._concept_allocator
+    child, parent = owner.new_concept(), owner.new_concept()
+    edge = alloc.parts.add(child, parent, truth_minus=.75)
+    ids = torch.tensor([parent, obj, parent, word, -1])
+    points = torch.tensor([[.5, 0.], [.8, .4], [.5, .2], [0., 0.], [1., .3]], requires_grad=True)
+    for positive in (False, True, False):
+        alloc.parts.truth_plus[edge] = float(positive)
+        assert members(owner, parent) == ((child,) if positive else ())
+        sources, targets = [], []
+        for index, cid in enumerate(ids.tolist()):
+            if cid >= 0 and points[index].detach().any():
+                for member in members(owner, cid) or (cid,):
+                    sources.append(index)
+                    targets.append(member)
+        wanted, inverse = ids.new_tensor(targets).unique(return_inverse=True)
+        reference = points.new_zeros(len(wanted), 2).scatter_reduce(
+            0, inverse[:, None].expand(-1, 2), points[sources], 'amax', include_self=False)
+        emitted, actual = _stored_values(owner, ids, points)
+        torch.testing.assert_close(emitted, wanted, rtol=0, atol=0)
+        torch.testing.assert_close(actual, reference, rtol=0, atol=0)
+        torch.testing.assert_close(torch.autograd.grad(actual.sum(), points)[0],
+                                   torch.autograd.grad(reference.sum(), points)[0], rtol=0, atol=0)

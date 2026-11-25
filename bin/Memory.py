@@ -2685,7 +2685,7 @@ class LTM1(_CountedRows, nn.Module):
     columns = ('refs', 'ref_kinds', 'truth_plus', 'truth_minus', 'activity')
     caches = ('_pairs', '_parts', '_wholes', '_references', '_endpoints', '_index_version',
               'relation_order', '_order_revision', 'effective_plus',
-              'effective_minus', '_effective_source')
+              'effective_minus', '_effective_source', '_effective_addresses', '_effective_levels')
     auxiliary = {'count': 'occupied relation rows', 'layout_version': 'checkpoint schema'}
 
     def __init__(self, capacity=8192):
@@ -2701,6 +2701,7 @@ class LTM1(_CountedRows, nn.Module):
         self._init_count()
         self.register_buffer('layout_version', torch.tensor(VERSION, dtype=torch.long))
         self.register_buffer('relation_order', torch.full((self.capacity,), -1, dtype=torch.long), persistent=False)
+        self.register_buffer('_effective_addresses', self.refs.new_zeros(self.capacity, 3), persistent=False)
         for name in ('effective_plus', 'effective_minus'):
             self.register_buffer(name, torch.zeros(self.capacity), persistent=False)
         from MemoryActivity import Activity
@@ -2717,6 +2718,7 @@ class LTM1(_CountedRows, nn.Module):
         self._index_version = self._order_revision = None
         self.relation_order.fill_(-1)
         self._effective_source = None
+        self._effective_levels = None
         self.effective_plus.zero_()
         self.effective_minus.zero_()
 
@@ -2760,20 +2762,53 @@ class LTM1(_CountedRows, nn.Module):
         revision = (self.revision, None if trust is None else trust.revision)
         if revision == self._effective_source:
             return
-        self._sort()
-        from ConceptTrust import positive_length
-        def endpoint(kind, value):
-            if kind == RELATION:
-                return max(float(self.effective_plus[value]), float(self.effective_minus[value]))
-            if kind == SYMBOL and owner is not None and value in owner._concept_allocator.concepts:
-                return positive_length(owner, value)
-            return 1.
-        rows = self.relation_order[:len(self)].tolist()
-        for row, pair in self.reference_pairs(rows).items():
-            scale = min(endpoint(*ref) for ref in pair)
-            self.effective_plus[row] = self.truth_plus[row] * scale
-            self.effective_minus[row] = self.truth_minus[row] * scale
+        levels = self._effective_read_levels(owner)
+        for packed in levels:
+            rows, concepts = packed[:, 0], packed[:, 1:]
+            kinds, refs = self.ref_kinds[rows], self.refs[rows]
+            # Symbols and occurrences can address spaces larger than LTM1.
+            children = torch.where(kinds == RELATION, refs, 0)
+            weights = torch.maximum(self.effective_plus[children], self.effective_minus[children])
+            weights = torch.where(kinds == RELATION, weights, 1.)
+            if trust is not None and len(trust.lengths):
+                address = concepts.clamp_min(0)
+                weights = torch.where((concepts >= 0) & trust.allocated[address],
+                                      trust.lengths[address, 0].to(weights), weights)
+            scale = weights.amin(-1)
+            self.effective_plus[rows] = self.truth_plus[rows] * scale
+            self.effective_minus[rows] = self.truth_minus[rows] * scale
         self._effective_source = revision
+
+    def _effective_read_levels(self, owner):
+        """Stage direct operand addresses in dependency order when topology or seating changes."""
+        self._sort()
+        self._index()
+        seats = {}
+        if owner is not None:
+            for kind, value in self._references:
+                if kind == SYMBOL and value in owner._concept_allocator.concepts:
+                    row = owner._concept_row_of(value)
+                    if row is not None:
+                        seats[value] = row
+        revision = self._topology_revision
+        saved = self._effective_levels
+        if saved is None or saved[:2] != (revision, seats):
+            from graphlib import TopologicalSorter
+            graph = TopologicalSorter({row: [value for kind, value in pair if kind == RELATION]
+                                       for row, pair in self._endpoints.items()})
+            graph.prepare()
+            records, sizes = [], []
+            while graph.is_active():
+                level = graph.get_ready()
+                sizes.append(len(level))
+                records.extend((row, *(seats.get(value, -1) if kind == SYMBOL else -1
+                                       for kind, value in self._endpoints[row])) for row in level)
+                graph.done(*level)
+            if records:
+                self._effective_addresses[:len(records)].copy_(self.refs.new_tensor(records))
+            self._effective_levels = (revision, seats, sizes)
+        sizes = self._effective_levels[2]
+        return self._effective_addresses[:sum(sizes)].split(sizes) if sizes else ()
 
     @property
     def effective_revision(self):

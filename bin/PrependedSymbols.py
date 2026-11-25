@@ -178,7 +178,11 @@ def chunk_token(pool, store, state, batch, index):
     identity = state[chunks.IDENTITY][batch, index].reshape(1)
     # The MTM pool takes Python keys. Read the seat once for both tagged
     # references and its fallback identity.
-    first_kind, first, second_kind, second, identity = torch.cat((refs.flatten(), identity)).tolist()
+    return token_from_references(pool, store, *torch.cat((refs.flatten(), identity)).tolist())
+
+
+def token_from_references(pool, store, first_kind, first, second_kind, second, identity):
+    from Memory import STMChunks as chunks
     if second_kind == chunks.IDENTITY_REF:
         key = ('candidate', second)
         return key if key in pool.entries else None

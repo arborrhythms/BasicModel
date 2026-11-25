@@ -7266,6 +7266,39 @@ class ConceptAllocator:
         """The physical block's order, or None before a concept has a row."""
         return None if cid is None or self.order_from_row is None else self.order_from_row(int(cid))
 
+    def structural_pair(self, part, whole, edge):
+        """Whether a Part row could supply a constituent when its positive lane is set."""
+        return (part != whole and self.class_member(part, whole)
+                and 'definition' not in self.parts.readings(edge,
+                    lambda ref: self.symbol_types.get(ref[1], ()) if ref[0] == self.parts.SYMBOL else ()))
+
+    def symbolic_part_edges(self):
+        """The live symbolic (whole, member) edges in ascending whole order."""
+        from Memory import SYMBOL
+        edges = {(whole, ref[1]): -1
+                 for whole, records in self.layer()._constituents.items()
+                 for role, ref in records
+                 if role == 'part' and isinstance(ref, tuple) and ref[0] == 'sym'}
+        self.parts._index()
+        for (part, whole), row in self.parts._pairs.items():
+            key = (whole[1], part[1])
+            if (part[0] == whole[0] == SYMBOL and key not in edges
+                    and self.structural_pair(part, whole, row)):
+                edges[key] = row
+        # Typing and seating can change in place. Reuse device addresses only
+        # while their actual projection agrees, and read truth from LTM1.
+        entries = tuple((whole, member, edges[whole, member]) for whole, member in sorted(edges))
+        table = getattr(self, '_symbolic_part_table', None)
+        if table is None or table[0] != entries or table[1].device != self.parts.refs.device:
+            indices = self.parts.refs.new_tensor(entries).reshape(-1, 3).T.contiguous()
+            self._symbolic_part_table = table = (entries, indices)
+        parents, children, evidence = table[1]
+        if not entries:
+            return parents, children
+        live = (evidence < 0) | (self.parts.truth_plus[evidence.clamp_min(0)] > 0)
+        positions = live.nonzero().flatten()
+        return parents[positions], children[positions]
+
     def records(self, cid):
         from Memory import NULL_CONCEPT
         if cid == NULL_CONCEPT:
@@ -7275,20 +7308,15 @@ class ConceptAllocator:
             # A reflexive Part proposition does not create a constituent.
             # Keep its evidence in LTM1, matching index_part_row's identity
             # case instead of turning the fact into a recursive definition.
-            if self.parts.reference(part) == self.parts.reference(whole):
-                return False
             # The physical owner is shared, but a name is not a taxonomic
             # parent and a word's objects are not its composing constituents.
             # An unasserted or negative-only Part row records a proposition,
             # not a member of the whole's implicit definition.
             member, parent = self.parts.reference(part), self.parts.reference(whole)
-            if not self.class_member(member, parent):
-                return False
             edge = self.parts.find(part, whole)
             # These records establish order and construction, before a seat
             # can have a radius; they are not an authority read.
-            return bool(self.parts.truth_plus[edge] > 0) and 'definition' not in self.parts.readings(
-                edge, lambda ref: self.symbol_types.get(ref[1], ()) if ref[0] == self.parts.SYMBOL else ())
+            return self.structural_pair(member, parent, edge) and bool(self.parts.truth_plus[edge] > 0)
         from Memory import SYMBOL, OCCURRENCE, RELATION
         tags = {SYMBOL: 'sym', OCCURRENCE: 'occ', RELATION: 'rel'}
         return list(dict.fromkeys((*raw,

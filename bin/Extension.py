@@ -68,19 +68,28 @@ def combine(operands, operation):
 
 def _stored_values(owner, ids, values):
     """Read declared members once across the whole batch and reading axis."""
-    from ConceptHierarchy import members
+    from Meaning import require_sentence_tensor
     active = values.detach().reshape(len(ids), -1).any(1) if len(ids) else ids.bool()
-    positions = (active & (ids >= 0)).nonzero().flatten()
-    sources, targets = [], []
-    for position, identity in zip(positions.tolist(), ids[positions].tolist()):
-        children = members(owner, identity)
-        for child in children or (identity,):
-            sources.append(position)
-            targets.append(child)
-    targets, inverse = ids.new_tensor(targets).unique(sorted=True, return_inverse=True)
+    require_sentence_tensor(~(active & (ids == 0)).any(), 'invalid tagged relation reference')
+    active = active & (ids >= 0)
+    parents, children = owner._concept_allocator.symbolic_part_edges()
+    if len(parents):
+        start = torch.searchsorted(parents, ids.contiguous())
+        count = torch.searchsorted(parents, ids.contiguous(), right=True) - start
+        repeats = count.clamp_min(1) * active
+        sources = torch.arange(len(ids), device=ids.device).repeat_interleave(repeats)
+        offset = torch.arange(len(sources), device=ids.device) - (repeats.cumsum(0) - repeats)[sources]
+        # Every active atomic identity emits itself, including when the only
+        # recorded relation has an empty positive lane.
+        child = torch.nn.functional.pad(children, (0, 1))[start[sources] + offset]
+        targets = torch.where(count[sources] > 0, child, ids[sources])
+    else:
+        sources = active.nonzero().flatten()
+        targets = ids[sources]
+    targets, inverse = targets.unique(sorted=True, return_inverse=True)
     result = values.new_zeros((len(targets), *values.shape[1:]))
-    if sources:
-        gathered = values[ids.new_tensor(sources)]
+    if len(sources):
+        gathered = values[sources]
         index = inverse.reshape(-1, *([1] * (values.ndim-1))).expand_as(gathered)
         result = result.scatter_reduce(0, index, gathered, reduce='amax', include_self=False)
     return targets, result

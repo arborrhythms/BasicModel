@@ -62,6 +62,13 @@ def replay(record, monkeypatch):
     owner = Reads(record['reads'], 'owner')
     owner.definitions = SimpleNamespace(word_ids=inputs['word_ids'])
     owner._concept_allocator = Reads(record['reads'], 'allocator')
+    # The old recording queried members by parent. Expose that same input as
+    # the ordered pair columns the current extension reader consumes.
+    members = sorted((parent, ref[1])
+                     for ((parent, role), _), refs in record['reads']['allocator.refs'].items()
+                     if role == 'part' for ref in refs if isinstance(ref, tuple) and ref[0] == 'sym')
+    member_table = torch.tensor(members, dtype=torch.long).reshape(-1, 2).T.contiguous()
+    owner._concept_allocator.symbolic_part_edges = lambda: member_table.unbind()
     owner.similarity_codebook = Reads(record['reads'], 'bank')
     owner.similarity_codebook.mereology = SimpleNamespace(percept_event_width=inputs['percept_width'])
     interpreter = InterpretLayer(conceptualSpace=owner)
