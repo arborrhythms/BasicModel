@@ -230,8 +230,8 @@ def link(owner, occurrence, candidates, *, value, where, when, stream):
                     match(value.detach().to(owner.similarity_codebook.W),
                           covered_before.detach().to(owner.similarity_codebook.W),
                           codebook=owner.similarity_codebook))
-            if not bool((a == 1) | (b == 1)):
-                raise ValueError('a link requires containment with its collection')
+            from Meaning import require_sentence_tensor
+            require_sentence_tensor((a == 1) | (b == 1), 'a link requires containment with its collection')
     if site.kind != 'reference':
         target = pool.append_path(target, site.address, kind=site.kind, when=when,
             where=where, stream=stream, order=order, concept=site.concept)

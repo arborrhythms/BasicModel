@@ -471,7 +471,14 @@ def identity_origins(identities, known, metadata, selected, journalled, position
     return origins, leaves
 
 
-def capture(owner, state, scope, records, values, *, batch, positions, columns, actions):
+def identity_activity(scope, records):
+    """Can this page's scope or any recorded operation introduce an identity?"""
+    columns = (2, 3, 4, 6, 12 + IDENTITY - 2, 24 + IDENTITY - 2)
+    return (scope[..., IDENTITY] > 0).any(1) | (records[..., columns] > 0).any((1, 2))
+
+
+def capture(owner, state, scope, records, values, *, batch, positions, columns, actions,
+            may_have_identities=True):
     """Translate the kept journal to closing handles, after the tensor walk.
 
     These compact host records have the Reading's lifetime. Their values are
@@ -491,9 +498,11 @@ def capture(owner, state, scope, records, values, *, batch, positions, columns, 
     selected = row.index_select(0,torch.where(journalled,columns,0))
     selected = torch.where(journalled[:,None],selected,0)
     metadata = torch.cat((row[:,12:24],row[:,24:36],scope[batch,:,2:]),0)
-    mentioned = torch.cat((metadata[:, IDENTITY-2], selected[:, (2, 3, 4, 6)].reshape(-1)))
-    ids = list(dict.fromkeys(member for member in mentioned.tolist() if member > 0))
-    ids.sort(key=lambda identity: pool.token_of(identity) is None)
+    ids = []
+    if may_have_identities:
+        mentioned = torch.cat((metadata[:, IDENTITY-2], selected[:, (2, 3, 4, 6)].reshape(-1)))
+        ids = list(dict.fromkeys(member for member in mentioned.tolist() if member > 0))
+        ids.sort(key=lambda identity: pool.token_of(identity) is None)
     known = []
     actual,alternative = [],[]
     identity_ids = row.new_tensor(ids)

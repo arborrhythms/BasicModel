@@ -13044,10 +13044,17 @@ class BasicModel(BaseModel):
         sizes = torch.stack(((positions >= 0).sum(1), (actions[..., 0] >= 0).sum(1)), 1)
         if complete is not None:
             sizes[:, 0] = torch.where(complete, sizes[:, 0], 0)
-        metadata = torch.cat((sizes, positions), 1).tolist()
+        issued = self.symbolSpace.ltm_store.names_issued
+        stamp = issued._version if torch.is_tensor(issued) and not torch.is_inference(issued) else None
+        floors = torch.as_tensor(issued, device=positions.device).reshape(1, 1).expand(len(positions), 1)
+        identities = torch.zeros_like(floors)
+        if chunk_state is not None and transactions is not None:
+            from ChunkJournal import identity_activity
+            identities = identity_activity(chunk_scope[:len(sizes)], transactions[:len(sizes)])[:, None]
+        metadata = torch.cat((sizes, floors, identities, positions), 1).tolist()
         lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
         entries = []
-        for b, (n, L, *source_positions) in enumerate(metadata):
+        for b, (n, L, name_floor, may_have_identities, *source_positions) in enumerate(metadata):
             if not n:
                 entries.append(None)
                 continue
@@ -13127,7 +13134,8 @@ class BasicModel(BaseModel):
             if chunk_state is not None and transactions is not None:
                 from ChunkJournal import capture
                 identity_record = capture(owner(),chunk_state,chunk_scope,transactions,journal,
-                    batch=b,positions=pos,columns=columns[b,:L],actions=acts[:L])
+                    batch=b, positions=pos, columns=columns[b,:L], actions=acts[:L],
+                    may_have_identities=may_have_identities)
             def operation_rows(table, *, fill=0):
                 if table is None:
                     return None
@@ -13181,8 +13189,12 @@ class BasicModel(BaseModel):
                        ('symbol_where', word_view(getattr(self, 'inputSpace', None), 'symbol_where')),
                        ('symbol_when', word_view(getattr(self, 'inputSpace', None), 'symbol_when')))
                    if torch.is_tensor(value)})
-            self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b,
-                after=int(self.symbolSpace.ltm_store.names_issued),
+            # An admission callback can write LTM while resolving a page's
+            # references. Respect a changed name floor before reserving STM.
+            current = self.symbolSpace.ltm_store.names_issued
+            if current is not issued or stamp is None or current._version != stamp:
+                name_floor = int(current)
+            self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b, after=name_floor,
                 **({} if kept is None else {'kept_tree': kept.tree}))
             entries.append(entry)
         return tuple(entries)

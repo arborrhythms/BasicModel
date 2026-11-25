@@ -590,7 +590,9 @@ class ClauseRows:
                         ref = self.semantic_reference(ref)
                     else:
                         ref = value.meaning.role_refs[role]
-                    refs.append(ref if bool(value.meaning.role_mask[role]) else None)
+                    if ref is not None and not bool(value.meaning.role_mask[role]):
+                        ref = None
+                    refs.append(ref)
                 written_rows['meaning', id(value)] = replace(value.meaning, role_refs=tuple(refs))
 
             for value in nodes:
