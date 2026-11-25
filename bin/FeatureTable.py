@@ -53,17 +53,11 @@ class FeatureTable:
                     percepts.append(percept)
                     members.append(member)
             self.towers.append((indices(percepts), indices(members)))
-        # Place definitions change when this inventory changes. Transfer their
-        # kept columns together here, then gather only the requested rows.
+        # Keep the nominated places' contents on the percept table's device.
         place_rows = sorted(basic.place_rows)
         self.place_ids = indices(place_rows)
         if place_rows:
-            values = torch.zeros(len(place_rows), basic.width, device='cpu', dtype=torch.float32)
-            for seat, row in enumerate(place_rows):
-                what = basic.place_rows[row][2]
-                if what is not None:
-                    values[seat] = what
-            self.place_values = values.to(basic.value_codes)
+            self.place_values = basic.place_rows.contents(place_rows).to(basic.value_codes)
         else:
             self.place_values = None
         self.revision = revision

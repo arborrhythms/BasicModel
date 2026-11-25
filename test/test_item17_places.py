@@ -7,6 +7,27 @@ import os
 import torch
 
 
+def test_nominated_place_definitions_survive_growth_precision_changes_and_restore():
+    from BasicPercepts import BasicPercepts
+    basic = BasicPercepts(None, 2, 1, 32)
+    for n in range(18):
+        plus = torch.full((4,), .1234567 + n / 32)
+        kept = torch.tensor([.1111111, 0., .7777777]) if n % 2 else None
+        basic.reserve_place(plus, 1 - plus, kept)
+    expected = {row: tuple(None if v is None else v.clone() for v in point)
+                for row, point in basic.place_rows.items()}
+    basic.half()
+    restored = BasicPercepts(None, 2, 1, 32)
+    restored.load_state_dict(basic.state_dict())
+    for model in (basic, restored):
+        assert list(model.place_rows) == list(expected)
+        for row, point in expected.items():
+            torch.testing.assert_close(model.place_rows[row], point, rtol=0, atol=0)
+        actual = model.place_rows.contents([17, 4, 17])
+        torch.testing.assert_close(actual, torch.stack((expected[17][2], torch.zeros(3), expected[17][2])),
+                                   rtol=0, atol=0)
+
+
 def test_each_nominated_place_keeps_only_its_prefix(monkeypatch):
     from types import SimpleNamespace
     import Places
@@ -23,7 +44,9 @@ def test_each_nominated_place_keeps_only_its_prefix(monkeypatch):
     bank = SimpleNamespace(registry=object(), token=has, identity_width=2)
     monkeypatch.setattr(Places, 'readings', lambda bank: (c, has, what))
     observed = []
-    def admit(owner, plus, minus, kept):
+    def admit(owner, plus, minus, kept, *, key):
+        assert key[1:3] == tuple(tuple(round(v, 6) for v in wire.tolist()) for wire in (plus, minus))
+        assert key[3] == (() if kept is None else tuple(kept.nonzero().flatten().tolist()))
         observed.append((plus.clone(), minus.clone(), None if kept is None else kept.clone()))
         return len(observed)
     monkeypatch.setattr(Places, 'admit', admit)

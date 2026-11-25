@@ -601,6 +601,57 @@ class PlaceEntries(nn.Module):
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
 
 
+class PlaceRows(nn.Module):
+    """The immutable where and what of each nominated place in the first Pi."""
+    def __init__(self, capacity, width):
+        super().__init__()
+        self.seats = {}
+        self.width = width
+        self.capacity = capacity
+        # Preserve the binary32 observation through half-precision model casts.
+        self.register_buffer('bits', torch.zeros(min(16, capacity), 2 * WHERE_WIRES + width,
+                                                 dtype=torch.int32), persistent=False)
+
+    def append(self, row, plus, minus, what):
+        seat = len(self.seats)
+        if seat >= len(self.bits):
+            storage = self.bits.new_zeros((min(2 * seat, self.capacity), self.bits.shape[1]))
+            storage[:seat].copy_(self.bits)
+            self.bits = storage
+        point = self.bits[seat].view(torch.float32)
+        point[:WHERE_WIRES].copy_(plus)
+        point[WHERE_WIRES:2 * WHERE_WIRES].copy_(minus)
+        if what is None:
+            point[2 * WHERE_WIRES:].zero_()
+        else:
+            point[2 * WHERE_WIRES:].copy_(what)
+        self.seats[row] = seat, what is not None
+
+    def __iter__(self):
+        return iter(self.seats)
+
+    def __len__(self):
+        return len(self.seats)
+
+    def __contains__(self, row):
+        return row in self.seats
+
+    def __getitem__(self, row):
+        seat, kept = self.seats[row]
+        plus, minus, what = self.bits[seat].view(torch.float32).split((WHERE_WIRES, WHERE_WIRES, self.width))
+        return plus, minus, what if kept else None
+
+    def items(self):
+        return ((row, self[row]) for row in self.seats)
+
+    def values(self):
+        return (self[row] for row in self.seats)
+
+    def contents(self, rows):
+        seats = self.bits.new_tensor([self.seats[row][0] for row in rows], dtype=torch.long)
+        return self.bits.view(torch.float32)[:, 2 * WHERE_WIRES:].index_select(0, seats)
+
+
 class BasicPercepts(nn.Module):
     #: Entries of the first Pi allocated for each row, on average.
     ENTRIES_PER_ROW = 16
@@ -649,7 +700,8 @@ class BasicPercepts(nn.Module):
         self.runs = {}
         # A place's row: its kept where wires (on their two lanes) and the
         # what it keeps (:mod:`Places`); the cones met at each band.
-        self.place_rows, self._place_cone_rows = {}, {}
+        self.place_rows = PlaceRows(self.capacity, self.width)
+        self._place_cone_rows = {}
         # Store binary32 observations even when a model casts its parameters
         # to a lower precision. These live counts and cones expire on restore.
         self.register_buffer('_place_cone_bits', torch.zeros(0, 2 * WHERE_WIRES + self.width,
@@ -897,18 +949,18 @@ class BasicPercepts(nn.Module):
             self._place_cone_bits = grown
         return self._place_cone_bits.view(torch.float32)
 
-    def reserve_place(self, plus, minus, what=None):
+    def reserve_place(self, plus, minus, what=None, *, key=None):
         """A row of the first Pi whose entries are on the where wires: on
         each wire's first lane ``plus`` (its least for lane over the
         occurrences met), on its second ``minus`` (the least of its against
         lane); and the what it keeps, a code of the what columns (``None``
         for a place that keeps none)."""
-        plus = torch.as_tensor(plus, dtype=torch.float32).detach().cpu()
-        minus = torch.as_tensor(minus, dtype=torch.float32).detach().cpu()
-        what = None if what is None else torch.as_tensor(what, dtype=torch.float32).detach().cpu()
-        kept = () if what is None else tuple(what.nonzero().flatten().tolist())
-        key = ('place', tuple(round(v, 6) for v in plus.tolist()),
-               tuple(round(v, 6) for v in minus.tolist()), kept)
+        plus = torch.as_tensor(plus, dtype=torch.float32).detach()
+        minus = torch.as_tensor(minus, dtype=torch.float32, device=plus.device).detach()
+        what = None if what is None else torch.as_tensor(what, dtype=torch.float32, device=plus.device).detach()
+        if key is None:
+            from Places import definition_keys
+            key, = definition_keys(plus[None], minus[None], None if what is None else what[None])
         row = self.index.get(key)
         if row is None:
             row = len(self.index)
@@ -917,7 +969,7 @@ class BasicPercepts(nn.Module):
             self.index[key] = row
             self._keys[row] = key
             self.occurrences[row] = (), ()
-            self.place_rows[row] = plus, minus, what
+            self.place_rows.append(row, plus, minus, what)
             self._form_roots[row] = None
             if self.pi.append(self.member_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
@@ -1882,7 +1934,8 @@ class BasicPercepts(nn.Module):
         places = state.get('places', [-1] * len(state['occurrences']))
         place_rows = dict(state.get('place_rows', ()))
         self.places.fill_(-1)
-        self.place_rows, self._place_cone_rows = {}, {}
+        self.place_rows.seats.clear()
+        self._place_cone_rows = {}
         self._place_cone_bits.zero_()
         learned = self.where_entries.detach().clone()
         for row, ((parts, wholes), place) in enumerate(zip(state['occurrences'], places)):

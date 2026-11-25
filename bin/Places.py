@@ -48,6 +48,16 @@ def cone_prefixes(points, predecessors, parts_end, rounds):
     return points
 
 
+def definition_keys(plus, minus, what):
+    """Existing Pi address keys for the integer membership and rounded where wires."""
+    width = plus.shape[-1]
+    columns = (plus, minus) if what is None else (plus, minus, what.ne(0))
+    return [('place', tuple(round(v, 6) for v in row[:width]),
+             tuple(round(v, 6) for v in row[width:2*width]),
+             tuple(i for i, live in enumerate(row[2*width:]) if live))
+            for row in torch.cat(columns, -1).tolist()]
+
+
 def meet(owner, bank):
     """Count the occurrences of a sentence's bank at their places and
     nominate a place's row on the count that nominates a form."""
@@ -106,23 +116,25 @@ def meet(owner, bank):
     made = []
     if not chosen:
         return made
-    nominated = points.index_select(0, seats.new_tensor(chosen)).cpu()
-    for point in nominated.unbind():
-        plus, minus, kept = point.split((width, width, basic.width))
-        row = admit(owner, plus, minus, kept if bool(kept[:iw].any()) else None)
+    nominated = points.index_select(0, seats.new_tensor(chosen))
+    plus, minus, kept = nominated.split((width, width, basic.width), -1)
+    for i, key in enumerate(definition_keys(plus, minus, kept)):
+        has_part = bool(key[-1] and key[-1][0] < iw)
+        row = admit(owner, plus[i], minus[i], kept[i] if has_part else None,
+                    key=key if has_part else (*key[:3], ()))
         if row is not None:
             made.append(row)
     return made
 
 
-def admit(owner, plus, minus, what):
+def admit(owner, plus, minus, what, *, key=None):
     """A place's row of the first Pi, promoted, and its concept of order zero
     reading it; ``None`` where there is no room."""
     from Spaces import _concept_alloc_of
     basic = owner.basic_percepts
     try:
         owner._preflight_concept_row(0, context='place admission')
-        row = basic.reserve_place(plus, minus, what)
+        row = basic.reserve_place(plus, minus, what, key=key)
     except (RuntimeError, OverflowError):
         return None
     basic.promote(row)

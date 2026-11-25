@@ -329,6 +329,14 @@ def main():
                     buffers[f'{name}._place_cone_bits'] = (torch.stack(
                         [torch.cat(lanes) for lanes in cones.values()]).cpu().view(torch.int32) if cones else
                         torch.empty(0, 2 * WHERE_WIRES + module.width, dtype=torch.int32, device='cpu'))
+                    places = list(module.place_rows.items())
+                    buffers[f'{name}._place_addresses'] = torch.tensor(
+                        [(row, what is not None) for row, (_, _, what) in places],
+                        device='cpu', dtype=torch.long).reshape(-1, 2)
+                    buffers[f'{name}.place_rows.bits'] = (torch.stack([
+                        torch.cat((plus, minus, plus.new_zeros(module.width) if what is None else what))
+                        for _, (plus, minus, what) in places]).cpu().view(torch.int32) if places else
+                        torch.empty(0, 2 * WHERE_WIRES + module.width, dtype=torch.int32, device='cpu'))
                 if type(module).__name__ == 'WordIdentity' and not hasattr(module, '_witness_counts'):
                     from WordIdentity import text_of
                     counts = torch.full((module.store._capacity,), -1, dtype=torch.long, device='cpu')
