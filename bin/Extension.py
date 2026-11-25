@@ -107,26 +107,26 @@ def stored_field(owner, field):
     return ConceptualField(ids, evidence, field.where, field.when, None)
 
 
-def interpreted(owner, source, *, stream=0):
-    """Read the same declared word-to-object links as the native interpretation.
+def _interpreted_values(owner, ids, values, stream):
+    """Denote each source once and join equal references on each evidence lane."""
+    targets = owner.interpret.denoted_ids(ids, batch=stream)
+    keys, inverse = targets.unique(sorted=True, return_inverse=True)
+    if not len(keys):
+        return keys, values.new_zeros(0, *values.shape[1:])
+    shape = (len(keys), *values.shape[1:])
+    index = inverse.reshape(-1, *([1] * (values.ndim - 1))).expand_as(values)
+    # No emitted row is empty. A sentinel outside the evidence range avoids
+    # counting the initial value as a vote in the gradient of a tied zero.
+    lower = -torch.inf if values.is_floating_point() else 0
+    joined = values.new_full(shape, lower).scatter_reduce(0, index, values, 'amax', include_self=False)
+    return keys, joined
 
-    A mandatory symbol shift has already interpreted its numerical leaf;
-    an optional interpretation performs this read at its explicit operator.
-    Both transform existing memberships without identifying any vector.
-    """
-    contributions = {}
-    words = owner.definitions.word_ids
-    for identity,value in zip(source.ids.tolist(),source.values):
-        if identity < 0:
-            continue
-        objects = owner.interpret.preferred(identity, batch=stream) if identity in words else ()
-        for reference in objects or (identity,):
-            contributions.setdefault(reference,[]).append(value)
-    ordered = sorted(contributions)
-    ids = source.ids.new_tensor(ordered)
-    values = (torch.stack([torch.stack(contributions[cid]).amax(0) for cid in ordered])
-              if ordered else source.values.new_zeros(0,2))
-    return ConceptSet(ids,values,source.missing)
+
+def interpreted(owner, source, *, stream=0):
+    """Read the same declared word-to-object links as the native interpretation."""
+    valid = source.ids >= 0
+    ids, values = _interpreted_values(owner, source.ids[valid], source.values[valid], stream)
+    return ConceptSet(ids, values, source.missing)
 
 
 def content_index(operator, operands, context):
@@ -158,13 +158,14 @@ def compose(operator, operands, context=None):
         if context.rows:
             if name == 'universal':
                 return source
-            count = int((source.values[:,0] > 0).sum())
-            number = max(2,count//2) if name == 'some' and count >= 3 else 0 if name == 'some' else min(1,count)
+            count = (source.values[:,0] > 0).sum()
+            number = (torch.where(count >= 3, (count // 2).clamp_min(2), 0)
+                      if name == 'some' else count.clamp_max(1))
             # Rows arrive in chronological order; equal relevance chooses
             # the newer row, as the content recall does.
             order = source.values[:,0].flip(0).argsort(descending=True,stable=True)
-            keep = torch.zeros_like(source.values[:,0])
-            keep[len(order)-1-order[:number]] = 1
+            ranked = torch.arange(len(order), device=order.device) < number
+            keep = torch.empty_like(ranked).scatter(0, len(order) - 1 - order, ranked)
             return ConceptSet(source.ids,source.values*keep[:,None])
         if context.owner is None:
             raise ValueError('a determiner extension requires its concept owner')
@@ -182,11 +183,10 @@ def compose(operator, operands, context=None):
         elif name == 'some':
             # No proper plural subset exists for a kind with fewer than three
             # members. Such a kind therefore supplies no answer to this form.
-            count = int(present.sum())
-            keep = torch.zeros_like(present)
-            if count >= 3:
-                ranked = values.amax(-1).argsort(descending=True, stable=True)
-                keep[ranked[:max(2, count//2)]] = True
+            count = present.sum()
+            number = torch.where(count >= 3, (count // 2).clamp_min(2), 0)
+            ranked = values.amax(-1).argsort(descending=True, stable=True)
+            keep = torch.empty_like(present).scatter(0, ranked, torch.arange(len(ranked), device=ranked.device) < number)
             values = values * keep[:, None]
         return ConceptSet(source.ids, values)
     if name in CONTENT:
@@ -287,6 +287,8 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
     # on the device across the entire grammatical traversal.
     positions = torch.as_tensor(positions, dtype=torch.long, device=values.device)
     leaf_values = values[:, positions[:len(program.concept_ids)]]
+    if program.interpret_forced and len(program.concept_ids):
+        ids, leaf_values = _interpreted_values(owner, ids, leaf_values, row)
     stack = []
     tree = program.tree if evaluation is None else None
     dispatch = language._tree_layer(2)
@@ -297,7 +299,7 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
             reference = (int(program.concept_ids[word]) if evaluation is None else evaluation.leaf(word))
             source = ConceptSet(ids, leaf_values[:, word])
             if program.interpret_forced:
-                source = stored(owner,interpreted(owner,source,stream=row))
+                source = stored(owner, source)
             node=Node(source,reference=('sym',reference) if reference > 0 else None)
             stack.append(node)
             if evaluation is not None:

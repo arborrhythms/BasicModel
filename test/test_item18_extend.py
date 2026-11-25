@@ -64,7 +64,8 @@ def test_36_determiners_read_the_stored_members_and_mtm(monkeypatch):
     import ConceptHierarchy
     monkeypatch.setattr(ConceptHierarchy,'members',lambda owner,cid: (1,2,3) if cid == 4 else ())
     codes = torch.eye(3)
-    owner = SimpleNamespace(_concept_row_of=lambda cid: cid-1, _row_order=lambda row: 0,
+    edges = SimpleNamespace(symbolic_part_edges=lambda: (torch.tensor([4, 4, 4]), torch.tensor([1, 2, 3])))
+    owner = SimpleNamespace(_concept_allocator=edges, _concept_row_of=lambda cid: cid-1, _row_order=lambda row: 0,
         similarity_codebook=SimpleNamespace(lookup_rows=lambda rows: codes[rows]))
     kind, = sets([[0.,0.],[0.,0.],[0.,0.],[1.,0.]])
     op = LowerLayer()

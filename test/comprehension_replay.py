@@ -60,7 +60,14 @@ def replay(record, monkeypatch):
 
     inputs = record['inputs']
     owner = Reads(record['reads'], 'owner')
-    owner.definitions = SimpleNamespace(word_ids=inputs['word_ids'])
+    # The frozen stream supplies its recorded word-to-object choices.
+    choices = sorted((word, refs[0]) for ((word,), kwargs), refs in record['reads']['interpret.preferred'].items()
+                     if word in inputs['word_ids'] and dict(kwargs).get('batch') == 0 and refs)
+    table = torch.tensor(choices, dtype=torch.long).reshape(-1, 2).T.contiguous()
+    def object_table(device):
+        words, objects = table.to(device).unbind()
+        return words, objects, words[:0], ()
+    owner.definitions = SimpleNamespace(word_ids=inputs['word_ids'], object_table=object_table)
     owner._concept_allocator = Reads(record['reads'], 'allocator')
     # The old recording queried members by parent. Expose that same input as
     # the ordered pair columns the current extension reader consumes.

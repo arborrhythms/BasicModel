@@ -124,3 +124,33 @@ def test_device_members_follow_live_truth_and_preserve_repeated_source_gradients
         torch.testing.assert_close(actual, reference, rtol=0, atol=0)
         torch.testing.assert_close(torch.autograd.grad(actual.sum(), points)[0],
                                    torch.autograd.grad(reference.sum(), points)[0], rtol=0, atol=0)
+
+
+def test_batched_interpretation_preserves_leaf_ties_and_stream_choices(declared_object):
+    from Extension import _interpreted_values
+    model, word, obj, _ = declared_object
+    cs = model._concept_owner()
+    other = cs.new_concept()
+    force_order(cs, other, 1)
+    row = cs._csw_concept_row(1, other)
+    cs.similarity_codebook.trust.lengths[row, 0] = 1.
+    cs.interpret.define(word, other, evidence=(1., 0.))
+    assert cs.interpret.denotations(word) == tuple(sorted((obj, other)))
+    obj_row = cs._concept_row_of(obj)
+    expected = torch.zeros(2, cs.nVectors, 2)
+    cs._expected_knowing = expected
+    expected[0, obj_row, 0] = expected[1, row, 0] = .8
+    ids = torch.tensor([word, obj, word, other])
+    values = torch.tensor([[[0., .5], [.4, 0.]], [[0., .5], [.1, .3]],
+                           [[0., .5], [.1, .3]], [[.2, 0.], [.1, .3]]], requires_grad=True)
+    for stream, selected in ((0, obj), (1, other)):
+        groups = [selected, obj, selected, other]
+        names = sorted(set(groups))
+        reference = torch.stack([values[[i for i, cid in enumerate(groups) if cid == name]].amax(0)
+                                 for name in names])
+        actual_names, actual = _interpreted_values(cs, ids, values, stream)
+        assert actual_names.tolist() == names
+        torch.testing.assert_close(actual, reference, rtol=0, atol=0)
+        grad, = torch.autograd.grad(actual.sum(), values)
+        expected_grad, = torch.autograd.grad(reference.sum(), values)
+        torch.testing.assert_close(grad, expected_grad, rtol=0, atol=0)

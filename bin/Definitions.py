@@ -6,6 +6,8 @@ rebuild it from the surviving rows.
 """
 import weakref
 
+import torch
+
 
 def form_key(value):
     return value.decode('utf-8', errors='surrogateescape') if isinstance(value, bytes) else value
@@ -36,6 +38,7 @@ class DefinitionIndex:
 
     def rebuild(self):
         self._forms, self._units, self._objects, self._words, self._rows = {}, {}, {}, {}, {}
+        self._object_table = None
         self._descriptions = {}
         self._identities = {}
         store = self._store()
@@ -72,6 +75,7 @@ class DefinitionIndex:
             return
         if (word, obj) in self._rows and self._rows[word, obj] != row:
             raise ValueError('duplicate word DEF object row')
+        self._object_table = None
         self._rows[word, obj] = row
         self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
         self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
@@ -85,6 +89,18 @@ class DefinitionIndex:
     def object_ids(self):
         self._ensure()
         return self._words.keys()
+
+    def object_table(self, device):
+        """Sorted word references and their first denotation in this live LTM index."""
+        self._ensure()
+        if getattr(self, '_object_table', None) is None or self._object_table[0].device != device:
+            words = sorted(self._objects)
+            alternatives = [(i, self._objects[w]) for i, w in enumerate(words) if len(self._objects[w]) > 1]
+            columns = torch.tensor((words, [self._objects[w][0] for w in words]),
+                                   dtype=torch.long, device=device)
+            seats = columns.new_tensor([i for i, _ in alternatives])
+            self._object_table = (*columns.unbind(), seats, tuple(group for _, group in alternatives))
+        return self._object_table
 
     def bound_words(self):
         self._ensure()

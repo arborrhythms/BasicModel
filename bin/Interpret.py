@@ -211,14 +211,50 @@ class InterpretLayer(GrammarLayer):
             candidates = matching or candidates
             if len(candidates) == 1:
                 return candidates
-        expected = getattr(cs, '_expected_knowing', None)
-        def key(cid):
-            row = cs._concept_row_of(cid)
-            value = (float(expected[int(batch), row, 0].detach()) if row is not None
-                     and batch is not None and torch.is_tensor(expected) and 0 <= int(batch) < len(expected)
-                     and row < expected.shape[1] else 0.)
-            return value > 0, cs._concept_source_order(cid), value, -cid
-        return (max(candidates, key=key),)
+        scores = self._expected_objects(batch)
+        if scores is None:
+            return (max(candidates, key=lambda cid: (cs._concept_source_order(cid), -cid)),)
+        return (int(self._preferred_id(candidates, scores)),)
+
+    def _expected_objects(self, batch):
+        expected = getattr(self.owner, '_expected_knowing', None)
+        if (batch is None or not torch.is_tensor(expected) or not 0 <= batch < len(expected)
+                or not expected.shape[1]):
+            return None
+        return expected[batch, :, 0].detach()
+
+    def _preferred_id(self, candidates, scores):
+        """Choose an object by positive expectation, order, score, then smallest ID."""
+        cs = self.owner
+        ids = torch.tensor(candidates, dtype=torch.long, device=scores.device)
+        orders = ids.new_tensor([cs._concept_source_order(cid) for cid in candidates])
+        rows = [cs._concept_row_of(cid) for cid in candidates]
+        rows = ids.new_tensor([r if r is not None and 0 <= r < len(scores) else -1 for r in rows])
+        values = torch.where(rows >= 0, scores[rows.clamp_min(0)], 0.)
+        eligible = (values > 0) == (values > 0).any()
+        eligible = eligible & (orders == orders.masked_fill(~eligible, torch.iinfo(orders.dtype).min).amax())
+        first = eligible.int().argmax().reshape(1)
+        # The scalar maximum keeps its first contender if that score is NaN.
+        usable = eligible & ~values.isnan()
+        best = values.masked_fill(~usable, -torch.inf).amax()
+        winner = ids.masked_fill(~(usable & (values == best)), torch.iinfo(ids.dtype).max).amin()
+        return torch.where(values.gather(0, first)[0].isnan(), ids.gather(0, first)[0], winner)
+
+    def denoted_ids(self, ids, *, batch=0):
+        """Resolve a field's word references in the current stream's expected context."""
+        cs = self.owner
+        words, objects, seats, alternatives = cs.definitions.object_table(ids.device)
+        if not len(words):
+            return ids
+        if alternatives:
+            scores = self._expected_objects(batch)
+            if scores is None:
+                chosen = ids.new_tensor([self.preferred_objects(group, batch=batch)[0] for group in alternatives])
+            else:
+                chosen = torch.stack([self._preferred_id(group, scores) for group in alternatives])
+            objects = objects.index_copy(0, seats, chosen.to(objects))
+        at = torch.searchsorted(words, ids.contiguous()).clamp_max(len(words) - 1)
+        return torch.where(words[at] == ids, objects[at], ids)
 
     def remembered_objects(self, word):
         """Names retained in the concepts, independent of live definition rows."""
