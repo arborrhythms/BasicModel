@@ -18,7 +18,8 @@ class RequestRead(nn.Module):
         # Two native place codes and the present.
         self.state_weight = nn.Parameter(self.first.weight.new_zeros(int(width), 2 * WHERE_WIRES + WHEN_WIRES))
         self.where = nn.Linear(int(width), WHERE_WIRES, device=device)
-        for top in (self.ask, self.stop, self.where):
+        self.where_end = nn.Linear(int(width), WHERE_WIRES, device=device)
+        for top in (self.ask, self.stop, self.where, self.where_end):
             nn.init.zeros_(top.weight)
             nn.init.zeros_(top.bias)
 
@@ -39,7 +40,7 @@ class RequestRead(nn.Module):
 
     def forward(self, units):
         """One query over concept evidence and the native location band."""
-        location = self.where(units).T
+        location = torch.cat((self.where(units), self.where_end(units)), dim=-1).T
         return torch.cat((self.request(units), torch.stack((location, torch.zeros_like(location)), -1)))
 
     def stopping(self, h):
@@ -67,18 +68,53 @@ def install(model):
         model.request_read.ask.bias.fill_(float(TheXMLConfig.get('architecture.requestReadStart')))
 
 
-def spatial_match(bank, direction, starts):
-    """Match the request's location channels to native places in the open field."""
+def place_axes(bank):
+    """Normalize start coordinates across the page and ends among parts sharing a start."""
     if bank.registry is None or not bank.span.shape[1]:
-        return direction.new_zeros(starts.shape)
-    spans = bank.span
-    live = (spans[..., 1] > spans[..., 0]) & (bank.activity[..., 0] > 0)
-    wires = bank.registry.encode('text', spans[..., 0]).detach()
-    center = (wires * live[..., None]).sum(1) / live.sum(1, keepdim=True).clamp_min(1)
-    scale = ((wires - center[:, None]) * live[..., None]).abs().amax(1, keepdim=True)
-    at = bank.registry.encode('text', starts).detach()
-    normalized = (at - center[:, None]) / scale.clamp_min(torch.finfo(at.dtype).eps)
-    return (normalized * direction[:, None]).sum(-1)
+        return None
+    def endpoints(spans):
+        start, stop = spans.unbind(-1)
+        places = torch.stack((start, torch.maximum(start, stop - 1)), -1)
+        return bank.registry.encode('text', places).detach().unbind(-2)
+    def normalize(value, live):
+        center = (value * live[..., None]).sum(1, keepdim=True) / live.sum(1)[:, None, None].clamp_min(1)
+        scale = ((value - center) * live[..., None]).abs().amax(1, keepdim=True)
+        return center, scale.clamp_min(torch.finfo(value.dtype).eps)
+    first, last = endpoints(bank.span)
+    live = (bank.span[..., 1] > bank.span[..., 0]) & (bank.activity[..., 0] > 0)
+    center, scale = normalize(first, live)
+    def basis(spans, first, last, live):
+        # Alternatives at this byte share the positional log weight. Their
+        # end coordinates distinguish extents without rewarding the position twice.
+        start = spans[..., 0]
+        index = torch.where(live, start, 0)[..., None]
+        count = last.new_zeros(len(spans), max(1, bank.registry.slices['text'][1]), 1)
+        count = count.scatter_add(1, index, live[..., None].to(count))
+        index = index.expand_as(last)
+        total = torch.zeros_like(count.expand(-1, -1, last.shape[-1])).scatter_add(
+            1, index, last * live[..., None])
+        relative = last - (total / count.clamp_min(1)).gather(1, index)
+        return (first - center) / scale, torch.where(live[..., None], relative / scale, 0.)
+    observed = basis(bank.span, first, last, live)
+    first, last = endpoints(bank.where)
+    readings = basis(bank.where, first, last, bank.where[..., 1] > bank.where[..., 0])
+    return observed, readings
+
+
+def spatial_match(bank, direction, *, readings=None, choose_extent=True):
+    """Apply the request to observed parts, or to the first requested reading spans."""
+    axes = bank.place_axes
+    if axes is None and bank.registry is not None and bank.span.shape[1]:
+        axes = place_axes(bank)
+        object.__setattr__(bank, 'place_axes', axes)
+    if axes is None:
+        return direction.new_zeros((len(direction), bank.span.shape[1] if readings is None else readings))
+    start, end = axes[0 if readings is None else 1]
+    if readings is not None:
+        start, end = start[:, :readings], end[:, :readings]
+    position, extent = direction.chunk(2, -1)
+    score = (start * position[:, None]).sum(-1)
+    return score + (end * extent[:, None]).sum(-1) if choose_extent else score
 
 
 def at_rows(rows, field, V, B, index=None):

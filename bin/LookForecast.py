@@ -187,9 +187,10 @@ class LookForecast:
 class OccurrenceCredit:
     """Predict basic percept activity from the query, then grade the observed region."""
 
-    def __init__(self, owner, bank):
+    def __init__(self, owner, bank, *, choose_extent=True):
         from Salience import rows_read
         self.owner, self.bank = owner, bank
+        self.choose_extent = choose_extent
         self.terms = []
         # Keep the open sensory reading independent of the request that will
         # select a region. Channels are the basic percepts' two evidence lanes.
@@ -211,7 +212,7 @@ class OccurrenceCredit:
         rows = self.owner.nVectors
         concepts = concepts_asked(self.owner, request[:rows])
         what = rows_asked(self.owner.order_zero, self.bank.rows, concepts).transpose(0, 1).flatten(1)
-        where = spatial_match(self.bank, request[rows:, :, 0].T, self.bank.span[..., 0])
+        where = spatial_match(self.bank, request[rows:, :, 0].T, choose_extent=self.choose_extent)
         return what.clamp(0., 1.)[:, None] * where.sigmoid()[..., None]
 
     def observe(self, anticipated, span):

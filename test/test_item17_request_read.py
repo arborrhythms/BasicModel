@@ -6,6 +6,29 @@ import pytest
 import torch
 
 
+def test_endpoint_request_separates_same_start_parts_and_has_a_live_gradient():
+    from types import SimpleNamespace
+    from RequestRead import RequestRead, spatial_match
+    from WhereRegistry import WhereRegistry
+    spans = torch.tensor([[[0, 1], [0, 5], [0, 5], [5, 6], [0, 0]]])
+    bank = SimpleNamespace(span=spans, where=spans[:, [1, 3]], registry=WhereRegistry([('text', 6)]),
+                           activity=(spans[..., 1:] > spans[..., :1]).expand(-1, -1, 2), place_axes=None)
+    reader = RequestRead(3, 8)
+    hidden = torch.ones(1, 8)
+    def scores(**options):
+        direction = reader(hidden)[reader.rows:, :, 0].T
+        return spatial_match(bank, direction, **options)[0]
+    score = scores()
+    assert torch.equal(score[:1], score[1:2])
+    (score[1] - score[0]).backward()
+    assert not reader.where.weight.grad.any() and reader.where_end.weight.grad.abs().sum() > 0
+    with torch.no_grad():
+        reader.where_end.weight.add_(reader.where_end.weight.grad)
+    score = scores()
+    assert score[1] > score[0] and score[1] == score[2]
+    assert torch.equal(scores(readings=2), torch.zeros(2))
+
+
 def test_the_request_starts_small_on_every_concept_and_is_taught_from_its_read():
     from RequestRead import RequestRead
     read = RequestRead(6, 8)

@@ -109,7 +109,7 @@ def narrow(model, bank, request, own, concepts, known, eligible):
     prior = own.new_zeros(concepts.shape)
     if general:
         from RequestRead import spatial_match
-        prior = spatial_match(bank, request[rows:, :, 0].T, bank.where[:, :concepts.shape[1], 0])
+        prior = spatial_match(bank, request[rows:, :, 0].T, readings=concepts.shape[1])
     # A located hypothesis has the query's spatial log weight and the
     # returned whole's content evidence. Apply the spatial weight once.
     # Feeding it through the percept detector as well could hide a real
@@ -151,7 +151,7 @@ def request_occurrences(model, bank, request, own, eligible):
     score = activity.sum(-1)
     responsive = score > 0
     if request.shape[0] > rows:
-        prior = spatial_match(bank, request[rows:, :, 0].T, bank.span[..., 0])
+        prior = spatial_match(bank, request[rows:, :, 0].T)
         responsive = responsive | (prior > 0)
         score = score + prior
     live = eligible & (own[..., 0] > 0)
@@ -345,7 +345,7 @@ class Looks:
         if model.training and torch.is_grad_enabled() and self.supplied is None:
             from LookForecast import OccurrenceCredit
             self.look_credit = (self.prior.look_credit.fork() if self.prior is not None and self.prior.look_credit is not None
-                                else OccurrenceCredit(owner, bank))
+                                else OccurrenceCredit(owner, bank, choose_extent=False))
         stream = torch.arange(B, device=own.device)
         word_slots = torch.arange(W, device=own.device)[None]
         while True:

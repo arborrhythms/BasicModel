@@ -89,6 +89,7 @@ class PerceptBank:
     # part, whole, added, outside, live location factor, stored location factor.
     # replace(bank, ...) deliberately drops these: another table is another read.
     read_basis: tuple = field(default=None, init=False, repr=False, compare=False)
+    place_axes: tuple = field(default=None, init=False, repr=False, compare=False)
 
 
 @dataclass(frozen=True)
@@ -1744,6 +1745,7 @@ class BasicPercepts(nn.Module):
     def release(bank):
         """Release the prepared Pi reads when their opening ends."""
         object.__setattr__(bank, 'read_basis', None)
+        object.__setattr__(bank, 'place_axes', None)
 
     def read_bank(self, bank, activity=None, look=None, *, fixation=None):
         """The basic percepts of a bank's readings over a look's table
