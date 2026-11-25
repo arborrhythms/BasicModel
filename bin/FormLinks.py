@@ -9,6 +9,7 @@ UNUSED_KEY = torch.iinfo(torch.int64).max
 HALF = 64  # coordinates of a code written here; the rest stay zero
 SCALE = 2.0 ** 32  # fixed point of the holder sums: integer adds are exact in any order
 MASK32 = 0xFFFFFFFF
+PASSES = 4  # pull passes up and down a new unit's levels at insertion, each step the whole way
 
 
 class FormLinks(nn.Module):
@@ -28,8 +29,9 @@ class FormLinks(nn.Module):
     to its target: with direct holders (forms it is a link of), the midpoint
     of its links' mean and its holders' mean; with none,
     ``clamp(1 - step + m - mean(m), 0, 1)`` for m its links' mean. Steps are
-    taken by the rows read (``recentre_rows``) and over the whole table at
-    a save (``sweep``, ``rounds`` steps).
+    taken by the rows read (``recentre_rows``), by every form of a unit that
+    gained a row at insertion (``passes`` whole steps up and down its levels),
+    and over the whole table at a save (``sweep``, ``rounds`` steps).
 
     ``holder_sum`` [capacity, HALF] (int64, units of 1/SCALE) and
     ``holder_count`` [capacity]: the codes and number of a row's direct
@@ -37,11 +39,11 @@ class FormLinks(nn.Module):
     adding each inserted form and each movement to its two links.
     """
 
-    def __init__(self, capacity, longest, threshold=3, step=1 / 16, rate=.1, rounds=2000):
+    def __init__(self, capacity, longest, threshold=3, step=1 / 16, rate=.1, rounds=2000, passes=PASSES):
         super().__init__()
         self.capacity, self.longest = int(capacity), int(longest)
         self.threshold, self.step = int(threshold), float(step)
-        self.rate, self.rounds = float(rate), int(rounds)
+        self.rate, self.rounds, self.passes = float(rate), int(rounds), int(passes)
         if self.capacity <= LEAVES:
             raise ValueError(f'FormLinks capacity must exceed {LEAVES}, got {self.capacity}')
         if self.longest < 1:
@@ -54,6 +56,8 @@ class FormLinks(nn.Module):
             raise ValueError(f'FormLinks rate must lie in (0, 1], got {self.rate}')
         if self.rounds < 0:
             raise ValueError(f'FormLinks rounds must not be negative, got {self.rounds}')
+        if self.passes < 0:
+            raise ValueError(f'FormLinks passes must not be negative, got {self.passes}')
         self.register_buffer('left', torch.full((self.capacity,), -1, dtype=torch.int32))
         self.register_buffer('right', torch.full((self.capacity,), -1, dtype=torch.int32))
         length = torch.zeros(self.capacity, dtype=torch.int32)
@@ -291,7 +295,10 @@ class FormLinks(nn.Module):
         """Insert every unit with the substrings it lacks, shortest first; returns the unit rows [B].
 
         Fixed shape, no host read. A new row takes its hashed point and is
-        added to its links' holder sums. A full table raises by a device
+        added to its links' holder sums; then every form of a unit that
+        gained a row takes ``passes`` pull steps of the whole way to its
+        target, level by level up and down (each level's forms are the links
+        of the next). A full table raises by a device
         assertion. ``longest``, a static Python bound on the units' lengths,
         limits the levels built; a unit above it raises by a device assertion.
         """
@@ -302,7 +309,8 @@ class FormLinks(nn.Module):
         torch._assert_async((lengths <= total).all(), 'FormLinks: a unit is longer than its bound')
         cur = self._leaves(data, lengths)
         unit = torch.where(lengths == 1, cur[:, 0], -1)
-        added = []
+        added, levels = [], []
+        fresh = torch.zeros_like(lengths, dtype=torch.bool)
         for n in range(2, total + 1):
             width = data.shape[1] - n + 1
             a, b = cur[:, :width], cur[:, 1:width + 1]
@@ -312,10 +320,15 @@ class FormLinks(nn.Module):
             added.append((new, new_rows))
             place = torch.searchsorted(new, key).clamp_max(new.shape[0] - 1)
             row = torch.where((found < 0) & (key != UNUSED_KEY) & (new[place] == key), new_rows[place], found)
+            fresh = fresh | ((found < 0) & (key != UNUSED_KEY)).any(1)
+            levels.append(row)
             cur = F.pad(row, (0, n - 1), value=-1)
             unit = torch.where(lengths == n, cur[:, 0], unit)
         if added:
             self._merge(torch.cat([k for k, _ in added]), torch.cat([r for _, r in added]))
+        for _ in range(self.passes):
+            for row in levels + levels[-2::-1]:
+                self._pull_distinct(torch.where(fresh[:, None], row, -1).reshape(-1), 1.)
         return unit
 
     # -- the pull ---------------------------------------------------------------
@@ -333,8 +346,9 @@ class FormLinks(nn.Module):
             self.holder_count.index_add_(0, L, counted.to(self.holder_count.dtype))
             self.holder_count.index_add_(0, R, (counted & other).to(self.holder_count.dtype))
 
-    def _pull(self, rows, keep):
+    def _pull(self, rows, keep, rate=None):
         """One step for ``rows`` [N] where ``keep`` (kept rows distinct, all forms); targets from the codes before the step."""
+        rate = self.rate if rate is None else rate
         L = self.left[rows].long().clamp_min(0)
         R = self.right[rows].long().clamp_min(0)
         x = self.code[rows, :HALF]
@@ -343,7 +357,7 @@ class FormLinks(nn.Module):
         held = self.holder_sum[rows].to(x.dtype) / (n.clamp_min(1).to(x.dtype) * SCALE)
         top = (1 - self.step + m - m.mean(1, keepdim=True)).clamp(0, 1)
         target = torch.where(n > 0, (m + held) / 2, top)
-        moved = torch.where(keep[:, None], x + self.rate * (target - x), x)
+        moved = torch.where(keep[:, None], x + rate * (target - x), x)
         self.code[:, :HALF].index_copy_(0, rows, moved)
         self._register(L, R, torch.where(keep[:, None], self._quantise(moved) - self._quantise(x), 0))
 
@@ -356,10 +370,14 @@ class FormLinks(nn.Module):
         flat = rows.reshape(-1).long()
         real = flat >= LEAVES
         at = flat.clamp_min(0)
-        links = torch.cat((flat, torch.where(real, self.left[at].long(), -1), torch.where(real, self.right[at].long(), -1)))
-        ordered = torch.sort(links).values
+        self._pull_distinct(torch.cat((flat, torch.where(real, self.left[at].long(), -1),
+                                       torch.where(real, self.right[at].long(), -1))))
+
+    def _pull_distinct(self, rows, rate=None):
+        """One pull step for each distinct form in ``rows`` [N] (-1 and bytes stay)."""
+        ordered = torch.sort(rows.long()).values
         keep = F.pad(ordered[1:] != ordered[:-1], (1, 0), value=True) & (ordered >= LEAVES)
-        self._pull(torch.where(keep, ordered, 0), keep)
+        self._pull(torch.where(keep, ordered, 0), keep, rate)
 
     @torch.no_grad()
     def sweep(self, rounds=None):

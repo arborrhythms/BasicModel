@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 from torch.utils._python_dispatch import TorchDispatchMode
 
-from FormLinks import FormLinks, HALF, LEAVES, SCALE, UNUSED_KEY
+from FormLinks import FormLinks, HALF, LEAVES, PASSES, SCALE, UNUSED_KEY
 
 DEVICES = ['cpu', 'mps']
 LONGEST = 8
@@ -44,8 +44,8 @@ def _host_spellings(table):
     return spelled
 
 
-def _table(device, rng, capacity=8192, threshold=0):
-    table = FormLinks(capacity, LONGEST, threshold).to(device)
+def _table(device, rng, capacity=8192, threshold=0, passes=PASSES):
+    table = FormLinks(capacity, LONGEST, threshold, passes=passes).to(device)
     words = _vocabulary(rng)
     half = len(words) // 2
     for batch in (words[:half], words[half:]):
@@ -373,7 +373,7 @@ def test_running_holder_sums_equal_the_gathered_ones(device):
 def test_recentre_rows_moves_the_rows_given_and_their_links_only(device):
     dev = _device(device)
     rng = random.Random(16)
-    table, words = _table(dev, rng)
+    table, words = _table(dev, rng, passes=0)  # no insertion steps: every form is off its target
     spelled = _host_spellings(table)
     row_of = {s: r for r, s in enumerate(spelled)}
     given = [row_of[w] for w in words[:6] if len(w) > 1] + [row_of[b'an'], row_of[b'a'], -1]
@@ -524,30 +524,34 @@ def test_whole_words_grow_closer_with_shared_substrings(dictionary):
     assert means == sorted(means) and means[0] < means[-1]
 
 
-def test_new_words_in_a_settled_table_by_readings_alone(dictionary):
-    """Report how readings alone place new forms; only the order over the whole table is asserted."""
+@pytest.mark.parametrize('count', [30, 300])
+def test_new_words_take_their_order_at_insertion(dictionary, count):
+    """Insertion alone places a new unit's forms above their parts; closeness is reported."""
     words, settled, _ = dictionary
     device = settled.code.device
     table = copy.deepcopy(settled)
     before = int(table.used)
-    late = [w for w in _dictionary(3300, seed=5) if w not in set(words)][:30]
+    late = [w for w in _dictionary(3600, seed=5) if w not in set(words)][:count]
     table.insert(*_pack(late, device))
     spelled = _host_spellings(table)
     whole, part = _part_pairs(spelled, range(before, int(table.used)))
     old = random.Random(2).sample(words, 300)
     rng = random.Random(3)
-    lines, done = [], 0
-    for k in (0, 100, 300, 1000):
+    lines, done, shares = [], 0, []
+    for k in (0, 100):
         while done < k:
             batch = [rng.choice(late) if rng.random() < .5 else rng.choice(words) for _ in range(12)]
             table.recentre_rows(table.read(*_pack(batch, device), longest=16))
             done += 1
-        lines.append(f'{k} readings: order {_order(table, whole, part):.3f}, closeness new x old '
-                     + ', '.join(f'{v:.2f}' for v in _closeness(table, spelled, late, old)))
-    every = _order(table, *_part_pairs(spelled, range(LEAVES, int(table.used))))
-    print(f'\n{len(late)} new words, {int(table.used) - before} new forms, {len(whole)} pairs with a new whole; '
-          f'readings of 12 words, half new:\n  ' + '\n  '.join(lines) + f'\n  order over the whole table: {every:.4f}')
-    assert every >= .95
+        shares.append(_order(table, whole, part))
+        lines.append(f'{k} readings: order {shares[-1]:.3f}, closeness new x old '
+                     + ', '.join(f'{v:.2f}' for v in _closeness(table, spelled, late[:100], old)))
+    used = int(table.used)
+    every = _order(table, *_part_pairs(spelled, range(LEAVES, used)))
+    print(f'\n{len(late)} new words, {used - before} new forms, {len(whole)} pairs with a new whole, '
+          f'{table.passes} passes at insertion:\n  ' + '\n  '.join(lines) + f'\n  order over the whole table: {every:.4f}')
+    assert shares[0] >= .9 and every >= .99
+    assert torch.unique(table.code[:used, :HALF].cpu(), dim=0).shape[0] == used
 
 
 @pytest.mark.skipif(not torch.backends.mps.is_available(), reason='requires Metal')
