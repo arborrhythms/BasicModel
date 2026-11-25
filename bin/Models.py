@@ -21404,7 +21404,7 @@ class BasicModel(BaseModel):
                 path_forecast = word_forecast.begin_path(reading_walk)
                 forecast_paths.append(path_forecast)
                 def arrival(word, rows):
-                    nonlocal sub, sym, source_columns
+                    nonlocal sub, sym, source_columns, shared_sources
                     from ModelAttention import forecast_percept, observe_percept
                     from SentenceAttention import masked_payload
                     index = word_slots[word]
@@ -21429,8 +21429,14 @@ class BasicModel(BaseModel):
                             else:
                                 sources = word_sources(index)
                                 if not source_columns & column:
-                                    for bank, value in zip(shared_sources, sources):
-                                        bank[word].copy_(value)
+                                    if exploit is None:
+                                        for bank, value in zip(shared_sources, sources):
+                                            bank[word].copy_(value)
+                                    else:
+                                        # Earlier explorations may hold views of this
+                                        # slab for backward. Publish a new version.
+                                        shared_sources = tuple(bank.index_copy(0, index.reshape(1), value[None])
+                                                               for bank, value in zip(shared_sources, sources))
                                     source_columns |= column
                             payload, sub = perceive(words[:,word:word+1],fresh[:,None],index,None,sub,
                                                     sources=sources)
