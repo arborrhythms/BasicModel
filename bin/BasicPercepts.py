@@ -327,7 +327,7 @@ def parts_for_units(raw, spans, spellings, rows, added_rank, padding, *, escaped
     return torch.where(present.gather(-1, order), rows[order], padding), present.sum(-1)
 
 
-def _utf8_boundaries(raw, remaining):
+def _utf8_boundaries(raw, remaining, *, with_stride=False):
     """A cut through a multibyte character exposes each truncated byte as an element."""
     width = raw.shape[1]
     padded = F.pad(raw, (0, 3))
@@ -340,12 +340,17 @@ def _utf8_boundaries(raw, remaining):
             & continuation(third) & continuation(fourth)
             & ((first != 0xF0) | (second >= 0x90)) & ((first != 0xF4) | (second < 0x90)))
     interior = torch.zeros_like(raw, dtype=torch.bool)
-    for offset, starts in enumerate((two | three | four, three | four, four), start=1):
-        interior |= F.pad(starts & continuation(second), (offset, 0))[:, :width]
-    return F.pad(~interior, (0, 1), value=True)
+    steps = tuple(starts & continuation(second) for starts in (two | three | four, three | four, four))
+    for offset, step in enumerate(steps, start=1):
+        interior |= F.pad(step, (offset, 0))[:, :width]
+    cuts = F.pad(~interior, (0, 1), value=True)
+    if with_stride:
+        return cuts, 1 + steps[0].long() + steps[1] + steps[2]
+    return cuts
 
 
-def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False, form_rows=None):
+def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped_elements=False,
+                         form_rows=None, unseen_elements=False):
     """Tile each ordered unit with its longest proper part at each surviving start."""
     batch, width = raw.shape
     units = spans.shape[1]
@@ -359,8 +364,11 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
     parent = seat.clamp_min(0)
     left, right = lo.gather(1, parent), hi.gather(1, parent)
     live = (seat >= 0) & (pos < right)
-    boundaries = _utf8_boundaries(raw, torch.where(live, right - pos, 0)) if escaped_elements else None
-    stride = torch.ones_like(pos)
+    if unseen_elements:
+        boundaries, stride = _utf8_boundaries(raw, torch.where(live, right - pos, 0), with_stride=True)
+    else:
+        boundaries = _utf8_boundaries(raw, torch.where(live, right - pos, 0)) if escaped_elements else None
+        stride = torch.ones_like(pos)
     address = torch.full_like(pos, padding)
     base = 0
     for group in spellings:
@@ -408,6 +416,26 @@ def disjoint_occurrences(raw, spans, spellings, rows, ranks, padding, *, escaped
     extents = torch.stack((order, successor.gather(1, take)), -1)
     result = torch.where(valid, address.gather(1, take), padding), counts, torch.where(valid[..., None], extents, 0)
     return result if form_rows is None else (*result, recognized)
+
+
+def fill_new_elements(raw, flat, extents, codepoints, rows):
+    """Install newly admitted UTF-8 element addresses at the cover's unfilled seats."""
+    if not len(codepoints):
+        return flat
+    start, end = extents.unbind(-1)
+    length = end - start
+    padded = F.pad(raw.to(dtype=torch.long), (0, 3))
+    first = padded.gather(1, start)
+    # A non-ASCII single byte exposed by an invalid or cut sequence has
+    # Python's surrogateescape code point. Multi-byte seats are valid UTF-8.
+    element = torch.where(first < 128, first, 0xDC00 + first)
+    prefix = torch.where(length == 2, first & 31, torch.where(length == 3, first & 15, first & 7))
+    for offset in (1, 2, 3):
+        prefix = (prefix << 6) | (padded.gather(1, start + offset) & 63)
+        element = torch.where(length == offset + 1, prefix, element)
+    seat = torch.searchsorted(codepoints, element).clamp_max(len(codepoints) - 1)
+    use = (flat < 0) & (length > 0) & (length <= 4) & (codepoints[seat] == element)
+    return torch.where(use, rows[seat], flat)
 
 
 def pack_disjoint_units(ids, counts, extents, padding, capacity):

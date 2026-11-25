@@ -232,6 +232,26 @@ def test_disjoint_cover_decodes_utf8_within_each_cut_when_escaped_bytes_are_know
         assert spans[b, 0, :n].tolist() == [[lo + start, lo + end] for _, start, end in cover]
 
 
+def test_new_element_seats_match_rereading_every_utf8_cut():
+    import torch
+    from BasicPercepts import fill_new_elements
+    from WordIdentity import text_of
+    identity, *_ = coded((b'ab',))
+    raw = 'abé中🙂z'.encode() + bytes((0xff, 0xc0, 0xaf))
+    cuts = [(lo, hi) for lo in range(len(raw)) for hi in range(lo + 1, len(raw) + 1)]
+    surface = torch.tensor(list(raw)).expand(len(cuts), -1)
+    spans = torch.tensor(cuts)[:, None]
+    flat, counts, extents, forms = identity.sentence_cover(surface, spans, -1, identify=True, unseen_elements=True)
+    missing = sorted({char for lo, hi in cuts for char in text_of(raw[lo:hi])
+                      if ('part', char) not in identity.atoms})
+    table = flat.new_tensor([(ord(char), identity._atom(('part', char))) for char in missing]).T.contiguous()
+    fill = torch.compile(fill_new_elements, backend='eager', fullgraph=True)
+    installed = fill(surface.to(torch.uint8), flat, extents, *table)
+    reread = identity.sentence_cover(surface, spans, -1, identify=True)
+    for value, expected in zip((installed, counts, extents, forms), reread, strict=True):
+        torch.testing.assert_close(value, expected, rtol=0, atol=0)
+
+
 def test_full_unit_matches_count_exposures_without_becoming_spelling_operands():
     import torch
     from BasicPercepts import disjoint_occurrences

@@ -327,7 +327,7 @@ class WordIdentity(nn.Module):
         return parts_for_units(surface, spans, spellings, rows, ranks, padding,
                                escaped_elements=self.escaped_elements(surface.device))
 
-    def sentence_cover(self, surface, spans, padding, *, identify=False):
+    def sentence_cover(self, surface, spans, padding, *, identify=False, unseen_elements=False):
         """Read ordered parts, including escaped bytes at a unit's UTF-8 boundaries."""
         from BasicPercepts import disjoint_occurrences
         bank = self._occurrences(surface.device, False)
@@ -336,7 +336,8 @@ class WordIdentity(nn.Module):
             bank = self._occurrences(surface.device, True)
         spellings, rows, _, ranks, forms = bank
         return disjoint_occurrences(surface, spans, spellings, rows, ranks, padding,
-                                    escaped_elements=escapes, form_rows=forms if identify else None)
+                                    escaped_elements=escapes, form_rows=forms if identify else None,
+                                    unseen_elements=unseen_elements)
 
     @contextmanager
     def record_repairs(self, repairs, source):

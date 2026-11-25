@@ -11313,9 +11313,10 @@ class PartSpace(Space):
             # Legacy reporting and omission still consume host intervals. When
             # the alphabet is known, gather their counts in the same transfer.
             delivered_layout = layout[:, :byte_count]
-            if simple_parts and identity.atoms:
+            if simple_parts:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
-                                                        delivered_layout[:, :word_capacity], -1, identify=True)
+                    delivered_layout[:, :word_capacity], -1, identify=True,
+                    unseen_elements=any(not raw.isascii() for raw in raw_rows))
             if prepared_parts is None:
                 unit_spans_rows = delivered_layout.detach().tolist()
             else:
@@ -11414,7 +11415,25 @@ class PartSpace(Space):
             missing_atoms = [('part', char) for char in alphabet if ('part', char) not in identity.atoms]
             for atom in missing_atoms:
                 identity._atom(atom)
-            if missing_atoms or prepared_parts is None:
+            if missing_atoms and prepared_parts is not None and all(
+                    char.encode('utf-8', 'surrogateescape') not in identity.word_rows for _, char in missing_atoms):
+                # The cover reserved one seat for each unseen character
+                # inside its own cut. Admission only supplies its address.
+                flat, lengths, extents, forms = prepared_parts
+                if all(char.isascii() for _, char in missing_atoms):
+                    address = [-1] * 256
+                    for atom in missing_atoms:
+                        address[ord(atom[1])] = identity.atoms[atom]
+                    starts, ends = extents.unbind(-1)
+                    elements = flat.new_tensor(address)[compact.gather(1, starts)]
+                    filled = torch.where((flat < 0) & (ends == starts + 1), elements, flat)
+                else:
+                    from BasicPercepts import fill_new_elements
+                    table = sorted((ord(atom[1]), identity.atoms[atom]) for atom in missing_atoms)
+                    keys, rows = flat.new_tensor(table).T.contiguous()
+                    filled = fill_new_elements(compact[:, :byte_count], flat, extents, keys, rows)
+                prepared_parts = filled, lengths, extents, forms
+            elif missing_atoms or prepared_parts is None:
                 prepared_parts = identity.sentence_cover(compact[:, :byte_count],
                                                         layout[:, :min(byte_count, word_capacity)], -1, identify=True)
                 prepared_counts = None
