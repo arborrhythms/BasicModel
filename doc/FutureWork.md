@@ -2363,7 +2363,13 @@ Animus, and Augustine", and a fourth, Basho, differs only in its speech.
   exchanged anywhere, so every concept it has is a positive one, with a
   positive meaning and no negation, and it speaks only of what is
   ([Logic](Logic.md): "the removal of the NOT is exactly what is necessary
-  to speak only of the good in Augustine's sense").
+  to speak only of the good in Augustine's sense"). It need not be all or
+  nothing: "by modulating the amount of negation, we can control to what
+  degree the model operates in terms of counterfactuals. This can apply to
+  speech analysis as well as synthesis" (Alec, 2026-11-24). With the Not
+  one weight that exchanges a concept's lanes, a single scale on those
+  weights, from nothing to all, sets how far the model thinks in what is
+  not the case, in what it understands of speech as in what it says.
 - **Basho** is "the basic model that only speaks using basic level
   grammar": it "writes without using any relations, only ideas". "I think
   that is still permitting higher-order and thus negation, but the grammar
@@ -2380,7 +2386,8 @@ To specify: the grammatical change that defines Animus, as a setting of the
 model and not a second code path; the switch that turns the higher orders off
 in a trained model, the removal of the Not at every order in Augustine once
 the Not is one weight that exchanges a concept's lanes (the item 1.4 plan,
-§10), and whether Augustine goes on learning after it; how
+§10), the scale on negation and where it is applied in understanding and in
+speaking, and whether Augustine goes on learning after it; how
 a user selects a personality; and the measurements on which the four are
 compared.
 

@@ -597,4 +597,9 @@ as Claude's. The record of how it arose is the item 1.6 plan
   over the orders beneath it, the list of a word and its object needs no
   symbol made for either.
 - *The order of two words* (item 1.6, §44.3), which he placed here.
-
+- *The amount of negation as a setting* (Alec, 2026-11-24, for Augustine:
+  "by modulating the amount of negation, we can control to what degree the
+  model operates in terms of counterfactuals. This can apply to speech
+  analysis as well as synthesis"). Once the Not is one weight, a scale on
+  it is that setting; it is recorded with the named variants in
+  `doc/FutureWork.md`.
