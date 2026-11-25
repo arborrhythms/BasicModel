@@ -9034,3 +9034,72 @@ room at order zero and one for the corpus (33.9). The slow tier, once, at
 submission. `doc/Training.md` does not yet say that the corpus is taught
 through the model, because it is not.
 
+
+## 45. Alec on the codebook of intensity, XOR and a Pi for every concept (2026-11-24)
+
+Told that the catalogs of intensity are 64 cuts given beforehand, so that
+one value's steps fall in several rows, and that XOR's certificate rests
+on a rule beside the readout (44.4):
+
+> "a cut enters the codebook only when it is met and recurs, as a form's
+> parts do" sounds like a good idea in general. But I don't think it is a
+> problem that "one values steps fall into several rows"; that is just to
+> say that a scalar may have many bounding values (parts), and since they
+> are sorted mereologically, the maximal such part is the most important
+> or definitive. The situation is more interesting when adjacent values
+> are combined, which creates spatial image features. As for how many
+> intensity levels we should have, or how big the sprites should be, let's
+> train a VQ over that space since we are sampling a codebook, with the
+> size set as a model parameter. Probably we want a Gaussian distribution
+> in terms of precision vs spread over pixels.
+>
+> The xor problem, if I understand it correctly, is that the 1 and 0 values
+> are combined (presumably by the PI, since they are kept separate by the
+> width limit parameter). So the problem is that the pixel value 1 should
+> be treated as [1 0], and the zero should be [0,0] . That gives them both
+> a place, and makes the pi unable to combine them because they do not
+> combine elementwise. Note that if the pi does combine them, the product
+> over elements will be zero in all cases except [1,1], so we need a way to
+> limit the pi aperture to 1 element (which is just the identity). Perhaps
+> the simplest rule is "a pi should be formed for every concept", which is
+> equivalent to saying that a concept should be able to apply to the
+> elements at its own order as well as lower orders (which is probably a
+> better implementation, and allows sigma to operate on basic percepts and
+> symbols from all orders). Note the width parameter can be implemented as
+> controlling the sigma on the Gaussian codebook distribution, in the xor
+> case to be just one pixel wide. Then we need only one other parameter,
+> the codebook cardinality.
+
+### 45.1 What it decides (Claude's reading)
+
+1. *Several rows for one value are no fault.* A scalar has many bounding
+   parts, sorted, and the greatest is the definitive one. Nothing need
+   gather them. 37.9's and 41.9's "nothing gathers them" is withdrawn as a
+   fault; what reads a value takes its greatest part.
+2. *The codebook of intensity is learned by vector quantization.* Its
+   entries are sprites, patterns of intensity over neighbouring places.
+   It has two parameters of the model: its cardinality, and the width of
+   a Gaussian that sets how far an entry spreads over places against how
+   finely it tells intensities. This stands in the place of the 64 cuts
+   given beforehand (36.2, point 1) and of things found as runs of
+   touching places (40.1).
+3. *XOR.* With the width at one pixel an entry is of one place. A 1 at the
+   first place is [1 0] and at the second [0 1], and nothing is [0 0]: each
+   has its place in its code, and a Pi cannot combine the two since their
+   product, element by element, is nothing. `intensityWhereWidth` becomes
+   the Gaussian's width.
+4. *A Pi is formed for every concept:* a concept applies to the elements
+   of its own order as well as of lower orders, and a Sigma operates on
+   basic percepts and on symbols of all orders. This stands over 39.11's
+   rule for text alone.
+
+*What Claude told him of XOR, kept for the record.* As built, the two
+inputs are not combined by a Pi. A value's concept has no place, the
+readout takes each concept as the greatest over its readings
+(`OutputSpace.read_field`), and that is an OR of the two places. His
+point 3 removes it at its root: when the code of a 1 holds its place,
+there is no concept of "1" without a place to be pooled, and
+`NumericPercepts.pooled` goes.
+
+*Not built.* It is a step of its own, and it replaces parts of steps T2
+and E and the rule of step D3.
