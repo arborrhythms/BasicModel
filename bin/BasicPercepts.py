@@ -647,9 +647,9 @@ class PlaceRows(nn.Module):
     def values(self):
         return (self[row] for row in self.seats)
 
-    def contents(self, rows):
-        seats = self.bits.new_tensor([self.seats[row][0] for row in rows], dtype=torch.long)
-        return self.bits.view(torch.float32)[:, 2 * WHERE_WIRES:].index_select(0, seats)
+    @property
+    def contents(self):
+        return self.bits[:len(self.seats)].view(torch.float32)[:, 2 * WHERE_WIRES:]
 
 
 class BasicPercepts(nn.Module):

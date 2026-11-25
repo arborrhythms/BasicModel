@@ -23,7 +23,7 @@ def test_nominated_place_definitions_survive_growth_precision_changes_and_restor
         assert list(model.place_rows) == list(expected)
         for row, point in expected.items():
             torch.testing.assert_close(model.place_rows[row], point, rtol=0, atol=0)
-        actual = model.place_rows.contents([17, 4, 17])
+        actual = model.place_rows.contents[[17, 4, 17]]
         torch.testing.assert_close(actual, torch.stack((expected[17][2], torch.zeros(3), expected[17][2])),
                                    rtol=0, atol=0)
 

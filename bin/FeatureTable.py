@@ -53,13 +53,9 @@ class FeatureTable:
                     percepts.append(percept)
                     members.append(member)
             self.towers.append((indices(percepts), indices(members)))
-        # Keep the nominated places' contents on the percept table's device.
-        place_rows = sorted(basic.place_rows)
-        self.place_ids = indices(place_rows)
-        if place_rows:
-            self.place_values = basic.place_rows.contents(place_rows).to(basic.value_codes)
-        else:
-            self.place_values = None
+        # Percept IDs are issued in increasing order. Their positions in
+        # this index are the physical seats in the owning place table.
+        self.place_ids = indices(list(basic.place_rows))
         self.revision = revision
 
     def codes(self, basic, percepts, band=0):
@@ -91,9 +87,10 @@ class FeatureTable:
         result = torch.cat(blocks, -1)
         # A place's row has no parts and no wholes to be read from: its what
         # is the what it keeps.
-        if self.place_values is not None:
+        if len(self.place_ids):
             seats = torch.searchsorted(self.place_ids, percepts.contiguous()).clamp_max(len(self.place_ids) - 1)
-            result = torch.where((self.place_ids[seats] == percepts)[:, None], self.place_values[seats], result)
+            kept = basic.place_rows.contents.index_select(0, seats).to(result)
+            result = torch.where((self.place_ids[seats] == percepts)[:, None], kept, result)
         if band:
             result = torch.cat((result, basic.place_code(percepts, band).to(result)), -1)
         return result
