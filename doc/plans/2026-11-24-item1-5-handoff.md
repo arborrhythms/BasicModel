@@ -1,6 +1,16 @@
 # Item 1.5 integration handoff
 
-**Item 1.5 remains open.** Local main started at `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains reviewed 1.7 commit `d38029113103ce5e9cf1223eaa55c9181010d649`. The earlier throughput table measured `926b8e58e08e13da7e9126f576436f5b7f196366`. Integration and push belong to Alec.
+**Item 1.5 remains open on the local branch `item1-5`.** Its base is `ad8fafea927839c0d7f92d0aee35c913d02b2612`, which contains reviewed 1.7 commit `d38029113103ce5e9cf1223eaa55c9181010d649`. Local main was returned to that base at Alec's request. The latest implementation checkpoint below is `1f053da4d59be3a0089d72f62f2f985dd12202af`. Integration and push belong to Alec.
+
+## Branch checkpoint
+
+At `1164b7cc167feeca35fb129d3b1ddcff8fe54756`, four independent pages with one explore and one exploit per sentence trained at **9.772 sentences/s on CPU and 2.181 on Metal**, versus **6.991 and 0.786** on the base. These are nine eager updates with backward and Adam, counting 36 sentences. Including delivery and reset gave 9.737 and 2.174 sentences/s. The three excluded warm-ups took 0.645, 0.439 and 0.521 seconds on CPU and 1.705, 1.970 and 2.166 seconds on Metal. The Metal profile timed the exploit walk and score at 0.374 and 0.090 seconds, and the explore walk and score at 0.388 and 0.091 seconds. The lookup audit recorded 418 addresses, including 402 repeats.
+
+Strict capture of the whole training sentence still stops at the learned-span endpoint filter in `PartSpace._embed_ladder_word_major`. The Metal sentence census recorded 197 transfers to the host, 201 scalar reads and 12 equality checks. The chooser can distinguish two observed spans with the same start in the grammar-free reader. The paced grammatical reader still limits landing to its preselected extents. Its endpoint credit must follow the action it can actually take. The new disjoint grammar witness lookup compiled with strict CPU Inductor on a real update. Receipts are in `output/item1-5/branch-witnesses-{cpu,mps,strict}` and `witness-column-compile`.
+
+Two fresh CPU readers with the revised endpoint scoring restored at 122/122 sampled and 122/122 evaluated in 51.28 and 32.31 seconds. The fresh Metal reader at seed 1505 took 161.73 seconds to the same scores. The base at that seed took 97.89 and 652.01 seconds on CPU and Metal. On the STM history revision, fresh verbal XOR at seed 1859289298 passed 4/4 at grammar input and 4/4 through its inverse in 209.43 seconds. Numeric XOR and the raised-class assertion both passed. Each of the subsequent span and teaching-index changes matched its CPU parent through 12 full updates and a separate gradient audit with three explorations, including sparse indices, absent gradients, Adam state and RNG.
+
+STM history, compose and attention tests passed 24/24. The span and grammar suite passed 105 with 16 skips. A separate reset and decoding run passed 18. The spread and symbol suite had 49 passes and three failures. With seed 1505, two of those three assertions passed on both the branch and reviewed 1.7. The word-teacher threshold failed on both. The item 1.8 omitted-word failure remains open. Claude's closest new review surfaces are `WordSurfaces.witnessed_columns`, `BasicModel._stage_reading_grammar_references`, `ShortTermMemory.reserve_look_history`, and the shared stream selection in `CandidateGrowth.read_streams`.
 
 ## MTM candidate pools and spelling repair
 
