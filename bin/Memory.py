@@ -1366,9 +1366,11 @@ class MediumTermMemory(MemoryStore):
 
     @staticmethod
     def _value(value):
-        if (not torch.is_tensor(value) or value.ndim != 1 or not value.is_floating_point()
-                or not bool(torch.isfinite(value).all())):
-            raise ValueError('an identity requires one finite working value')
+        from Meaning import require_sentence_tensor
+        message = 'an identity requires one finite working value'
+        if not torch.is_tensor(value) or value.ndim != 1 or not value.is_floating_point():
+            raise ValueError(message)
+        require_sentence_tensor(torch.isfinite(value).all(), message)
         return MemoryStore._snapshot_tensor(value)
 
     def token_of(self, occurrence):
@@ -2352,18 +2354,28 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         value = self.raw_meaning_of(index)
         return self.read_reference_bindings(index,value)
 
-    def evidence_of(self, index):
-        value = float(self.trust[int(index)])
-        return max(value,0.),max(-value,0.)
+    @staticmethod
+    def _idea_evidence(value):
+        return max(value, 0.), max(-value, 0.)
 
-    def row(self,index):
-        if isinstance(index,tuple):
+    def evidence_of(self, index):
+        return self._idea_evidence(float(self.trust[int(index)]))
+
+    def sentence_row(self, index):
+        """The retained meaning, order and evidence consumed at sentence close."""
+        if isinstance(index, tuple):
             return self.part_row(index[1])
-        return dict(point=self.slots[int(index)],trust=float(self.trust[int(index)]),
-            referent=self.referent_of(index),activity=float(self.activity[int(index)]),
-            evidence=self.evidence_of(index),order=self.order_of_row(index),
-            row_id=self.row_name(index),time=self.entry_time(index).clone(),
-            occurrence=self.occurrence_of(index),meaning=self.meaning_of(index))
+        trust = float(self.trust[int(index)])
+        return dict(trust=trust, evidence=self._idea_evidence(trust),
+                    order=self.order_of_row(index), meaning=self.meaning_of(index))
+
+    def row(self, index):
+        if isinstance(index, tuple):
+            return self.part_row(index[1])
+        return dict(self.sentence_row(index), point=self.slots[int(index)],
+                    referent=self.referent_of(index), activity=float(self.activity[int(index)]),
+                    row_id=self.row_name(index), time=self.entry_time(index).clone(),
+                    occurrence=self.occurrence_of(index))
 
     def ideas(self):
         return torch.arange(len(self),device=self.slots.device)

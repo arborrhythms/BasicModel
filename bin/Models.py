@@ -20785,7 +20785,7 @@ class BasicModel(BaseModel):
                         owner.__dict__.setdefault('_mtm_placement_contexts', {})[b] = (context, key)
                         consolidate(owner, store, context=context, key=key, batch=b)
                 if row is not None and row != -1 and retain:
-                    disc.include_occurrence(b, store.row(row)['occurrence'],
+                    disc.include_occurrence(b, store.occurrence_of(row),
                         symbols=written_clauses[b].get(('symbols', id(clause)), ()),
                         activations=written_clauses[b].get(('activations', id(clause)), ()))
         if store is not None:
@@ -20808,7 +20808,7 @@ class BasicModel(BaseModel):
                 continue
             index = None if store is None or row_addresses[b] in (-1, 0) else store.location(row_addresses[b])
             if index is not None:
-                retained = store.row(index)
+                retained = store.sentence_row(index)
                 meaning = retained['meaning']
                 if isinstance(index, tuple):
                     left, right = retained['refs'].tolist()
@@ -22489,7 +22489,9 @@ class BasicModel(BaseModel):
                     log_probability_slab, post_op, unary_op, post_valid,
                     unary_valid, next_symbol_activations,
                     row_gate, commit, intermediate_end, occupation_words, case_state)
-            for round_index in range(3):
+            # A separate NULL close never shifts a word. A separate word
+            # turn cannot join a closing fork or have an intermediate end.
+            for round_index in range(0 if at_close is True else 3):
                 if (not torch.compiler.is_compiling() and not bool(round_active.any())
                         and (fork is None or not fork.pending(index, closing=False, width=width))):
                     break
@@ -22580,7 +22582,7 @@ class BasicModel(BaseModel):
 
             end_stm = final_stm
             closing_active = intermediate_end
-            for closing_index in range(closing_budget):
+            for closing_index in range(0 if at_close is False else closing_budget):
                 if (not torch.compiler.is_compiling() and not bool(closing_active.any())
                         and (fork is None or not fork.pending(index, closing=True, width=width))):
                     break
