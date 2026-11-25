@@ -21597,7 +21597,11 @@ class BasicModel(BaseModel):
                 parts = torch.stack(cost_parts, 1)
                 audit = path_comparison(parts, present)
                 selected = audit['winner']
-                winner_indices = selected.tolist()
+                # The host readers of retained trees share one publication.
+                # An absent page has no objective or thought and carries the
+                # exploit state through the existing stream interfaces.
+                active_winners = torch.where(present, selected, -1).tolist()
+                winner_indices = [max(0, index) for index in active_winners]
                 WordForecast.keep(forecast_paths, selected)
                 if speculative:
                     NativeReading.select(self, native_paths, selected)
@@ -21646,7 +21650,8 @@ class BasicModel(BaseModel):
                             candidate.registry.add('output.interpret_score_function',policy,
                                 category='output',objective=policy_objective(self,'compose','chooser'),side='A')
                         path_credit(self, complete_paths[0], candidate, present)
-                    single_costs, weights = path_objectives(complete_paths, parts, present, draws, selected=selected)
+                    single_costs, weights = path_objectives(complete_paths, parts, present, draws,
+                        selected=selected, active_winners=active_winners)
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
                         p.registry.total(objective='output') is not None for p in complete_paths))
@@ -21765,7 +21770,7 @@ class BasicModel(BaseModel):
                 from WholePaths import keep_output, think_kept
                 if not self.inputSpace.data.has_supervised_outputs:
                     publish(self, field)
-                    think_kept(self, complete_paths, selected, sid, present)
+                    think_kept(self, complete_paths, selected, sid, present, active_winners=active_winners)
                 keep_output(self, complete_paths, winner_indices, sid)
                 from Omission import observe as observe_omission
                 for index, path in enumerate(complete_paths):

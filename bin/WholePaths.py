@@ -371,13 +371,15 @@ def credit(model, exploit, path, active):
             category='output', objective=policy_objective(model, 'compose', 'chooser') if category == 'reconstruction' else category, side='A')
 
 
-def objectives(paths, parts, active, draws, *, selected=None):
+def objectives(paths, parts, active, draws, *, selected=None, active_winners=None):
     """Train the sentence inverse on its admitted reading in each stream."""
     from SentenceCredit import costs_and_winner, reader_weights
     from ObjectiveOwnership import registry_costs
     from SentenceTraining import combine
     if selected is None:
         _, selected = costs_and_winner(parts, active)
+    if active_winners is None:
+        active_winners = torch.where(active, selected, -1).tolist()
     weights = reader_weights(parts, active, draws, winner=selected)
     result = {}
     scale = 2. / len(paths)
@@ -391,7 +393,7 @@ def objectives(paths, parts, active, draws, *, selected=None):
         for name, term in tuple(registry._terms.items()):
             if term['category'] == 'reconstruction' and term['side'] == 'R':
                 del registry._terms[name]
-                if bool(kept.any()):
+                if index in active_winners:
                     final._terms[name] = dict(term, multiplier=term.get('multiplier', 1.) * kept)
             elif name.startswith('output.walk_residual.'):
                 if not bool(weights[:, index].any()):
@@ -410,17 +412,18 @@ def objectives(paths, parts, active, draws, *, selected=None):
     return result, weights
 
 
-def think_kept(model, paths, selected, sid, active):
+def think_kept(model, paths, selected, sid, active, *, active_winners=None):
     """Without an answer target, only the reconstruction-kept path thinks."""
     from ThoughtClosing import close
+    if active_winners is None:
+        active_winners = torch.where(active, selected, -1).tolist()
     for index, path in enumerate(paths):
-        ready_mask = active & (selected == index)
-        if not bool(ready_mask.any()):
+        if index not in active_winners:
             continue
         preview = fields(model, path.observation, sid, trust=path.observation['incoming_trust'])
         inputs = {row: field.query if field.query is not None else field.meaning
                   for row, field in enumerate(preview) if field is not None}
-        ready = tuple(row for row, field in enumerate(preview) if field is not None and bool(ready_mask[row]))
+        ready = tuple(row for row, field in enumerate(preview) if field is not None and active_winners[row] == index)
         model._sentence_fields[sid] = tuple(preview)
         model._path_thinking = path.thinking
         try:
