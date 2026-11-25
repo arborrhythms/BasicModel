@@ -1085,6 +1085,10 @@
                   type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="chunkPromotionMinLength"
                   type="xs:positiveInteger" minOccurs="0"/>
+      <!-- The table of forms (FormLinks): rows allocated once, the 256
+           byte leaves included, and the longest form recognise returns. -->
+      <xs:element name="formCapacity" type="xs:positiveInteger" minOccurs="0"/>
+      <xs:element name="formLongest" type="xs:positiveInteger" minOccurs="0"/>
     </xs:all>
   </xs:complexType>
 

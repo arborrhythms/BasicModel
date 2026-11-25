@@ -10613,6 +10613,12 @@ class PartSpace(Space):
                 int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=self.nVectors)))
         else:
             object.__setattr__(self, 'basic_percepts', self.percept_store.basic_percepts)
+        # The table of forms, by two links a row; text models only.
+        self.form_links = None
+        if self.percept_store is not None:
+            from FormLinks import FormLinks
+            self.form_links = FormLinks(int(TheXMLConfig.space(section, 'formCapacity')),
+                                        int(TheXMLConfig.space(section, 'formLongest')))
         # Numeric carriers have no lexical dictionary. Native text prototype
         # storage has one optimizer owner; admission preserves its moments.
         self._optimize_radix_codebook = self.percept_store is not None

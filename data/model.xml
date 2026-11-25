@@ -575,6 +575,9 @@
     <!-- Radix promotion: the count and the least length of a chunk. -->
     <chunkPromotionThreshold>4</chunkPromotionThreshold>
     <chunkPromotionMinLength>2</chunkPromotionMinLength>
+    <!-- The table of forms: rows (256 byte leaves included) and the longest form recognised. -->
+    <formCapacity>262144</formCapacity>
+    <formLongest>32</formLongest>
     <!-- Reverse-retrieval attention: off | primer | second-order | low-rank. -->
     <attention>off</attention>
     <codebookGrowthEpsilon>0.0</codebookGrowthEpsilon>
