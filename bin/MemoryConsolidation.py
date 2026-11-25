@@ -1,10 +1,27 @@
 """Promote an active idea once, preserving its selected reference's order."""
+import math
+
 import torch
 
 
-def _content(store, row):
-    """The row's whole point: a concept keeps its .where and its .when."""
-    return store.slots[row].detach().clone()
+def _content(store, rows):
+    """Copy each selected idea's whole point, including .where and .when."""
+    if torch.is_tensor(rows) and rows.ndim == 1:
+        return store.slots.detach().index_select(0, rows)
+    return store.slots[rows].detach().clone()
+
+
+def eligible_activity(activity, promotion, written_now):
+    """Compare stored activity to the binary64 teaching threshold on device."""
+    # A scalar PyTorch comparison rounds promotion to the activity dtype.
+    # Round it *up* to the first representable eligible value, including in
+    # the subnormal range. All three quantities here are configuration data.
+    fmt = torch.finfo(activity.dtype)
+    exponent = math.frexp(max(fmt.tiny, promotion))[1] - 1
+    spacing = math.ldexp(fmt.eps, exponent)
+    cutoff = math.ceil(promotion / spacing) * spacing
+    eligible = activity >= cutoff
+    return eligible if written_now else eligible & (activity != 1.)
 
 
 def _fold(owner, store, rows, *, order=1, members=None):
@@ -59,19 +76,16 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
     else:
         selected = torch.as_tensor(rows if torch.is_tensor(rows) else list(rows),
                                    device=store.activity.device, dtype=torch.long)
-    activity = store.activity[selected]
-    eligible = activity >= store.activity_config.promotion
-    # An unwritten row at activity one has already been promoted.
-    if not written_now:
-        eligible &= activity != 1.
-    # Compare only hits at the host admission boundary. The final comparison
-    # retains the configured binary64 threshold even on a float32 chart.
+    eligible = eligible_activity(store.activity[selected], store.activity_config.promotion, written_now)
     selected = selected[eligible]
-    strengths = store.activity[selected].tolist()
-    plans, sources = [], []
-    for index, strength in zip(selected.tolist(), strengths, strict=True):
-        if strength < store.activity_config.promotion:
-            continue
+    sources = selected.tolist()
+    if not sources:
+        return ()
+    points = _content(store, selected).to(owner.similarity_codebook.W)
+    width = owner.similarity_codebook.W.shape[-1]
+    points = torch.nn.functional.pad(points[:, :width], (0, max(0, width - points.shape[-1])))
+    plans = []
+    for index, value in zip(sources, points.unbind(), strict=True):
         reference = store.referent_of(index)
         if reference is not None:
             order = store.order_of_row(index)
@@ -80,12 +94,7 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
             order = max(orders, default=-1) + 1
         if order < 0:
             raise ValueError('an active idea refers to an unavailable concept')
-        point = _content(store, index)
-        value = owner.similarity_codebook.W.new_zeros(owner.similarity_codebook.W.shape[-1])
-        value[:min(len(point),len(value))] = point[:len(value)].to(value)
-        plans.append((order, value)); sources.append(index)
-    if not plans:
-        return ()
+        plans.append((order, value))
     _preflight(owner, plans)
     store._promoting = True
     try:

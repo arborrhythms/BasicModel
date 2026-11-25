@@ -16,6 +16,21 @@ from test_reference_close import fixture
 from test_medium_term_memory import mention, snapshot, unchanged
 
 
+@pytest.mark.parametrize('dtype', [torch.float16, torch.bfloat16, torch.float32, torch.float64])
+def test_promotion_threshold_compares_at_the_configured_precision(dtype):
+    import math
+    from MemoryConsolidation import eligible_activity
+    tiny = torch.finfo(dtype).tiny
+    values = torch.tensor([0., tiny / 2, tiny, .25, .7, .9, 1.], dtype=dtype)
+    for value in values.tolist():
+        for threshold in (value, math.nextafter(value, 1.), math.nextafter(value, 0.)):
+            for written in (False, True):
+                expected = [x >= threshold and (written or x != 1.) for x in values.tolist()]
+                assert eligible_activity(values, threshold, written).tolist() == expected
+    compiled = torch.compile(eligible_activity, backend='eager', fullgraph=True)
+    assert compiled(values, .9, True).tolist() == [x >= .9 for x in values.tolist()]
+
+
 def kept(resolver, clause, frames=(), *, document='consolidation', position=0, stream=0):
     plan = resolver.preview(clause, chunk_context(resolver, frames), stream=stream)
     prepared = resolver.prepare(clause, plan)
