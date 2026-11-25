@@ -169,7 +169,6 @@ class WordIdentity(nn.Module):
                 or not 0 < self.ones <= self.pair_dim):
             raise ValueError('Radix bank width must be identity + property, with 0 < s <= D')
         object.__setattr__(self, 'properties', None)
-        self._property_revision = None
         self._fixed_bytes = {}
         self._codes = {}
         self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
@@ -190,8 +189,12 @@ class WordIdentity(nn.Module):
         self.given = {}
         self.order = {}
         self._ordered = []
-        self._packed = torch.zeros(0, self.limbs, dtype=torch.long, device='cpu')
-        self.usage = torch.zeros(self.total, dtype=torch.long, device='cpu')
+        # Every admitted form occupies a radix row. Restore rebuilds these
+        # derived rows in place from the saved definitions.
+        device = store._basis.W.device
+        self.register_buffer('_packed', torch.zeros(store._capacity, self.limbs, dtype=torch.long,
+                                                    device=device), persistent=False)
+        self.register_buffer('usage', torch.zeros(self.total, dtype=torch.long, device=device), persistent=False)
         self._given_revision = 0
         self._parts_key = {}
         # The earlier forms whose code the last admission changed, and those
@@ -654,7 +657,7 @@ class WordIdentity(nn.Module):
         if not self.property_width or self.properties is None:
             return
         # BasicPercepts reads the property lanes live; identity atoms own no fill.
-        self._property_revision = self.properties.revision
+        _ = self.properties.revision  # Observe writes at the same boundary as the live property reader.
 
     def _storage_code(self, identity_code):
         """Admission reserves both subspaces; _fixed writes the property fill."""
@@ -743,8 +746,9 @@ class WordIdentity(nn.Module):
         self.order = {word: index for index, word in enumerate(self.words)}
         self._ordered = list(self.words)
         codes = [self.code(raw) for raw in self._ordered]
-        self._packed = (self._pack(torch.stack(codes)) if codes
-                        else torch.zeros(0, self.limbs, dtype=torch.long, device='cpu'))
+        self._packed.zero_()
+        if codes:
+            self._packed[:len(codes)].copy_(self._pack(torch.stack(codes)))
         collision = None
         for raw, code in zip(self._ordered, codes):
             key = self.key(code)
@@ -785,11 +789,7 @@ class WordIdentity(nn.Module):
         index = len(self._ordered)
         self.order[raw] = index
         self._ordered.append(raw)
-        if index >= len(self._packed):
-            grown = torch.zeros(max(1024, 2 * len(self._packed)), self.limbs, dtype=torch.long, device='cpu')
-            grown[:len(self._packed)] = self._packed
-            self._packed = grown
-        self._packed[index] = self._pack(self.code(raw))[0]
+        self._packed[index].copy_(self._pack(self.code(raw))[0])
 
     def packed_code(self, raw):
         """A stored form's code as the packed rows hold it."""
@@ -803,7 +803,7 @@ class WordIdentity(nn.Module):
         forms = sorted(forms, key=self.order.__getitem__)
         if not forms:
             return []
-        packed = self._packed[torch.tensor([self.order[word] for word in forms], device='cpu')]
+        packed = self._packed.index_select(0, self._packed.new_tensor([self.order[word] for word in forms]))
         bits = self._unpack(packed)
         basis = self.store._basis
         rows = torch.tensor([self.word_rows[word] for word in forms], device=basis.W.device)
@@ -811,8 +811,12 @@ class WordIdentity(nn.Module):
         basis.fixed_row_mask[rows] = True
         basis.fixed_row_codes[rows] = value
         basis.W[rows] = value
-        keys = packed.numpy().view(np.uint8)[:, :(self.total + 7) // 8]
-        parts = np.packbits(bits[:, :self.width].numpy().astype(bool), axis=-1, bitorder='little')
+        # The legacy trie still accepts byte keys. Only the packed rows
+        # cross this boundary, and the native basis already has its values.
+        keys = packed.cpu().numpy().view(np.uint8)[:, :(self.total + 7) // 8]
+        parts = keys[:, :(self.width + 7) // 8].copy()
+        if self.width % 8:
+            parts[:, -1] &= (1 << (self.width % 8)) - 1
         collided = []
         for word, key, parts_key in zip(forms, keys, parts):
             key = key.tobytes()
@@ -954,8 +958,8 @@ class WordIdentity(nn.Module):
                     self.store.radix_trie.insert(word, row)
         if affected:
             ordered = sorted(affected, key=self.order.__getitem__)
-            self._packed[torch.tensor([self.order[word] for word in ordered], device='cpu')] = self._pack(
-                torch.stack([self.code(word) for word in ordered]))
+            index = self._packed.new_tensor([self.order[word] for word in ordered])
+            self._packed.index_copy_(0, index, self._pack(torch.stack([self.code(word) for word in ordered])).to(index))
             self._rewrite(ordered)
         return affected
 
@@ -1047,26 +1051,30 @@ class WordIdentity(nn.Module):
         nothing changed, where an outer code has no zero to give."""
         order = self.order.__getitem__
         own = self._packed[order(inner)]
-        lacking = self._unpack(~self._packed[torch.tensor([order(o) for o in outers], device='cpu')] & ~own).bool()
+        lacking = self._unpack(~self._packed.index_select(0, own.new_tensor([order(o) for o in outers])) & ~own).bool()
         holders = sorted(self.holders[inner], key=order)
-        added = (len(holders) - self._unpack(self._packed[torch.tensor([order(h) for h in holders], device='cpu')]).sum(0)
-                 if holders else torch.zeros(self.total, dtype=torch.long, device='cpu'))
+        added = (len(holders) - self._unpack(self._packed.index_select(0, own.new_tensor([order(h) for h in holders]))).sum(0)
+                 if holders else torch.zeros_like(self.usage))
         # What tells against inner, the parts its nearest holders add (rule
         # 51), is kept: a coordinate of it is taken only where no other will do.
-        opposed = torch.zeros(self.total, dtype=torch.bool, device='cpu')
+        opposed = torch.zeros(self.total, dtype=torch.bool, device=own.device)
         against = self.against_atoms(inner)
         if against:
             opposed[:self.width] = torch.stack([self.atom_code(atom) for atom in against]).amax(0).eq(1)
-        kept = self._kept(inner)
+        kept = self._kept(inner, device=own.device)
         pending = torch.ones(len(outers), dtype=torch.bool, device=own.device)
         given, pending = distinguishing_coordinates(lacking, kept, opposed, added, self.usage, pending)
-        if bool(pending.any()):
-            self.failures.append((inner, tuple(o for o, p in zip(outers, pending.tolist()) if p)))
+        # A new identity atom is still named in the host catalog. Gather
+        # its repair and any unsatisfied constraints in one transfer.
+        report = torch.cat((given, pending)).cpu()
+        remaining = report[self.total:].tolist()
+        if any(remaining):
+            self.failures.append((inner, tuple(o for o, p in zip(outers, remaining) if p)))
             return None
         text = text_of(inner)
         atom = ('part', text)
         touched = sorted(self.holders[inner] | {inner}, key=order)
-        value = given.to(torch.float32)
+        value = report[:self.total].to(torch.float32)
         before = self._repair_coordinates(atom)
         if atom in self.atoms:
             old = self.given.get(atom)
@@ -1081,9 +1089,9 @@ class WordIdentity(nn.Module):
             for word in touched:
                 self.words[word] = self.words[word] + (atom,)
         self._record_coordinates(atom, before, (inner, *outers), containment=True)
-        index = torch.tensor([order(word) for word in touched], device='cpu')
+        index = own.new_tensor([order(word) for word in touched])
         old = self._packed[index]
-        new = old | self._pack(value)[0]
+        new = old | self._pack(given)[0]
         self._packed[index] = new
         self._altered.update(touched[i] for i in (old != new).any(1).nonzero().flatten().tolist())
         self.usage += given.long()
@@ -1156,8 +1164,8 @@ class WordIdentity(nn.Module):
             self._admit_atoms(self.words[raw])
             self._place(raw)
             if carriers:
-                index = torch.tensor([self.order[word] for word in carriers], device='cpu')
-                self._packed[index] = self._pack(torch.stack([self.code(word) for word in carriers]))
+                index = self._packed.new_tensor([self.order[word] for word in carriers])
+                self._packed.index_copy_(0, index, self._pack(torch.stack([self.code(word) for word in carriers])).to(index))
             self._keep(self._settle(carriers + [raw]), new=raw)
             self.retain_spelling(raw, opening=opening)
         return self.parts(raw)
@@ -1348,7 +1356,6 @@ class WordIdentity(nn.Module):
         self._marker_pattern = None
         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}
         self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})
-        self._property_revision = None
         self._atom_rows, self._catalog = {}, {}
         if 'holders' in value and 'inside' in value:
             self.holders = {word: set(found) for word, found in value['holders'].items()}
@@ -1359,7 +1366,7 @@ class WordIdentity(nn.Module):
         for atom, coordinates in value.get('given', {}).items():
             self.given[atom] = torch.zeros(self.total, device='cpu')
             self.given[atom][list(coordinates)] = 1
-        self.usage = torch.tensor(value.get('usage', [0] * self.total), dtype=torch.long, device='cpu')
+        self.usage.copy_(self.usage.new_tensor(value.get('usage', [0] * self.total)))
         self._given_revision += 1
         self.failures = []
         self.last_changed = self.last_touched = frozenset()

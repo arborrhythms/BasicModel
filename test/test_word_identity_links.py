@@ -631,3 +631,33 @@ def test_simultaneous_collision_repairs_match_separate_pages_even_outside_the_co
     versions = revisions(basic, [rows[b'bab']], block).at(torch.zeros(2, 1, dtype=torch.long))[0, :, 0]
     torch.testing.assert_close(versions, torch.stack(isolated), atol=0, rtol=0)
     assert (isolated[1][0] > basic.bank_codes([rows[b'bab']])[0, 0]).any()
+
+
+def test_form_repairs_and_restore_reuse_the_reserved_native_rows():
+    import torch
+    from Layers import RadixLayer
+    from WordIdentity import WordIdentity
+    from test_item17_code import table
+    words = (b'aab', b'baa', b'bab', b'baab', b'baba', b'abab', b'aabb', b'calaba', b'cabala')
+    results = []
+    for device in ('cpu', 'mps') if torch.backends.mps.is_available() else ('cpu',):
+        store = RadixLayer(128, initial_cap=256).to(device)
+        identity = WordIdentity(store, property_width=64, basic_capacity=32).to(device)
+        store.identity = identity
+        properties = table().to(device)
+        identity.basic.bind(properties)
+        buffers = (identity._packed.data_ptr(), identity.usage.data_ptr())
+        for word in words:
+            identity.admit(word)
+        saved = identity.vocab_extras()
+        before = identity._packed[:len(words)].clone()
+        assert identity._packed.device.type == device
+        assert len(identity._packed) == store._capacity
+        identity.load_vocab_extras(saved)
+        assert (identity._packed.data_ptr(), identity.usage.data_ptr()) == buffers
+        assert torch.equal(identity._packed[:len(words)], before)
+        assert identity.accidents() == ([], [])
+        results.append((before.cpu(), saved['usage'], saved['given'], identity.word_keys))
+    for packed, usage, given, keys in results[1:]:
+        assert torch.equal(packed, results[0][0])
+        assert (usage, given, keys) == results[0][1:]
