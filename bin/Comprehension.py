@@ -226,7 +226,6 @@ class Evaluation:
         from ReferenceContext import denoted_order, OrderReference
         from Queries import StructuralGrammarContext, ConceptualSpaceCapability
         from ChunkJournal import action_context
-        from RowTime import compared
         offset = max(0, word) if kind == 2 else 0
         if offset:
             self.stack.append(self.stack.pop(-1-offset))
@@ -239,16 +238,16 @@ class Evaluation:
             # A selected external operand is a recorded input, never a copied
             # operator result. Unsubstituted operands come from this evaluation.
             point = (self.program.operation_values[at, role] if selected else
-                     compared(self.model, child.point))
+                     child.point)
             if self.program.held_refresh is not None and not selected:
-                refreshed = self.held.read(self.program.held_refresh[at,role],relative=True)
+                refreshed = self.held.read(self.program.held_refresh[at,role])
                 if refreshed is not None:
                     point = refreshed
             # Occurrence coordinates were read before the reference choice:
             # choose_operation reads relative time, then STMChunks.refresh can
             # take an off-stack value (whose occurrence band may be empty).
-            # Carry that recorded input band, never synthesize a word address
-            # into the numerical face's comprehended operands.
+            # Read the recorded band directly. Computing a relative clock here
+            # would only produce four coordinates discarded by this splice.
             start = self.model.symbolSpace.ltm_store.when_start
             if start is not None:
                 low = max(0, start-4)
@@ -291,7 +290,7 @@ class Evaluation:
         counts = None if self.program.operand_counts is None else self.program.operand_counts[at].unbind()
         context = StructuralGrammarContext(None, ConceptualSpaceCapability(operands[0].shape[-1]), None,
             'compose', selected_cases=selected_cases, leaf_counts=counts, form_context=form,
-            action_context=action_context(self.program, at), case_view=case)
+            action_context=action_context(self.program, at, operator), case_view=case)
         from EqualityLearning import observation
         equality = observation(rule, operands)
         if equality is not None:

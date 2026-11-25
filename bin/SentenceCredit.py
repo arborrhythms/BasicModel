@@ -35,7 +35,7 @@ def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
                 from ChunkJournal import action_context
                 children = inverse_step(language, kind, operation, frame[2:3].detach(),
                     frame.detach(), case_bank=None if case_bank is None else case_bank.for_stream(b),
-                    action_context=action_context(program, index),
+                    action_context=action_context(program, index, op),
                     **inverse_context(program, index))
                 undefined = torch.cat([~domain[:, meaning_start:] for _, domain in children])
                 inputs = frame[:len(children), meaning_start:].detach().abs()

@@ -57,8 +57,10 @@ def value_record(operands, choice):
     return torch.cat((operands[:, 0], operands[:, 1], value, action), -1)
 
 
-def action_context(program, index):
+def action_context(program, index, operator=None):
     """Read one recorded witness; a missing record is explicitly absent."""
+    if operator is not None and getattr(operator, 'meaning_action', None) is None:
+        return None
     records = getattr(program, 'action_records', None)
     if records is None or not bool(records[index, -1]):
         return None

@@ -234,7 +234,7 @@ def reconstruct(language, record, programs, positions, stm=None):
             children = inverse_step(language, kind, operation, parent,
                 frame, coordinates=coordinates,
                 case_bank=None if bank is None else bank.for_stream(b), live_witness=native_exact,
-                action_context=action_context(program, index),
+                action_context=action_context(program, index, face),
                 **inverse_context(program, index))
             for role, (child, (value, domain)) in enumerate(zip(reading.operands[index], children, strict=True)):
                 operand = frame[role:role+1]
