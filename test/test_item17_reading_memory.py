@@ -265,6 +265,66 @@ def test_identical_words_carry_distinct_locations_between_looks(tmp_path, monkey
         model.End()
 
 
+def test_fixating_a_repeated_letter_keeps_its_own_content_and_extent(tmp_path, monkeypatch, eager_reading):
+    import Attention
+    import ReadingMemory
+    import SentenceLooks
+    from test_item18_expect import read
+    model = _grammar_free_text_model(tmp_path, monkeypatch)
+    try:
+        nominate(model, ('Felix', 'Felix Felix.'))
+        real_request = SentenceLooks.request_occurrences
+        draw = Attention.select_occurrence
+        commit = ReadingMemory.commit
+        selected, wanted = [], []
+        state = model.conceptualSpace.stm.model_state
+
+        def request_at_letter(model, bank, request, own, eligible):
+            if len(selected) < 2:
+                start = (7, 1)[len(selected)]
+                desired = (bank.span == bank.span.new_tensor([start, start + 1])).all(-1)
+                assert desired.sum() == 1
+                index = desired.int().argmax(-1)
+                place = bank.registry.encode('text', bank.span[..., 0]).detach()
+                direction = place[0, index] - place.mean(1)
+                query = request.clone()
+                query[model.request_read.rows:, :, 0] = direction.T
+                scores, activity = real_request(model, bank, query, own, eligible)
+                assert torch.isfinite(scores[0, index])
+                selected.append(index)
+                wanted.append(bank.table[0, index[0]].clone())
+                return scores, activity
+            scores, activity = real_request(model, bank, request, own, eligible)
+            return torch.full_like(scores, -torch.inf), activity
+
+        def choose(probabilities, **kwargs):
+            if probabilities.any():
+                return draw(probabilities, **kwargs, replay=selected[-1])
+            return draw(probabilities, **kwargs)
+
+        def retained(stores, heads, target):
+            store, = stores
+            leaves = list(store.parts.leaves(heads[0]))
+            assert len(leaves) == 2
+            for (_, name), muxed in zip(leaves, wanted, strict=True):
+                row = store.index_of_row(name)
+                assert store.referent_of(row) is None
+                end = store.when_start - 4
+                point = store._fit(muxed[:-8, 0])
+                torch.testing.assert_close(store.slots[row, :end], point[:end])
+                torch.testing.assert_close(store.slots[row, end:end+4], muxed[-8:-4, 0])
+            assert state.last_where.tolist() == [[1, 2]]
+            return commit(stores, heads, target)
+
+        monkeypatch.setattr(SentenceLooks, 'request_occurrences', request_at_letter)
+        monkeypatch.setattr(Attention, 'select_occurrence', choose)
+        monkeypatch.setattr(ReadingMemory, 'commit', retained)
+        read(model, 'Felix Felix.')
+        assert len(selected) == 2 and selected[0] != selected[1]
+    finally:
+        model.End()
+
+
 def test_reduced_head_copies_only_reachable_payload_and_original_stamp():
     from Memory import LTM0, STM0, OCCURRENCE, RELATION, SYMBOL
     from ReadingMemory import commit

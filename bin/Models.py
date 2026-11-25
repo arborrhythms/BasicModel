@@ -17658,14 +17658,16 @@ class BasicModel(BaseModel):
         if (self.numeric_percepts is None and not self.grammar_phases.vector
                 and self.request_read is not None and pass_idx == len(self.body_stages) - 1
                 and native is not None and native.get('word_intervals') is not None):
-            from ReadingMemory import brackets
-            reading = brackets(self, percepts)
-            if reading is None:
-                self._reading_heads = (None,) * part_ids.shape[0]
+            from ReadingMemory import named_extents
+            names_where, identities = named_extents(self, percepts)
+            if names_where.shape[1]:
+                extents = names_where
             else:
-                extents, identities = reading
-                bank = owner.cs_lookup(percepts, extents)
-                self._perceptual_reading = bank, identities
+                # The opening can contain located percepts before any form
+                # has a name. Its evidence still drives the next request.
+                identities = torch.full_like(extents[..., 0], -1)
+            bank = owner.cs_lookup(percepts, extents)
+            self._perceptual_reading = bank, identities
         field = (owner.cs_read_memberships(percepts, extents) if self._perceptual_reading is None
                  else owner.cs_read_bank(bank))
         object.__setattr__(owner, '_cs_last_a0', field.detach())

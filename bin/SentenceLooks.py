@@ -18,12 +18,13 @@ from BasicPercepts import reading_scope
 from RequestRead import at_rows, spread_once
 
 
-def perceive(model, activity, bank):
+def perceive(model, activity, bank, *, fixation=None):
     """A look's read of the sentence's bank with each occurrence present to
     the degree of ``activity`` ``[B, occurrences, 2]``: no lookup and no read
     on the host."""
     owner = model._concept_owner()
-    evidence = owner.cs_read_bank(bank, activity)
+    evidence = (owner.cs_read_bank(bank, activity) if fixation is None
+                else owner.cs_read_bank(bank, activity, fixation=fixation))
     owner._cs_last_a0 = evidence.detach()
     knowing = owner.cs_forward_content(evidence)
     from Understanding import ConceptualField
@@ -140,6 +141,27 @@ def lower(own, bank, index, rows):
 def attend(model, units):
     """Predict one located concept from the open field and STM context."""
     return model.request_read(units)
+
+
+def request_occurrences(model, bank, request, own, eligible):
+    """The neural request's scores at every observed occurrence of the sentence."""
+    from RequestRead import spatial_match
+    from Salience import salience
+    rows = model.request_read.rows
+    share = salience(model._concept_owner(), bank, request[:rows]).events
+    activity = torch.where(share < own, share, own)
+    score = activity.sum(-1)
+    responsive = score > 0
+    if request.shape[0] > rows:
+        prior = spatial_match(bank, request[rows:, :, 0].T, bank.span[..., 0])
+        responsive = responsive | (prior > 0)
+        score = score + prior
+    live = eligible & (own[..., 0] > 0)
+    # A first encounter can have no learned response anywhere. The observed
+    # percepts still provide the same sensory fallback as an unnamed whole.
+    found = live & responsive
+    score = torch.where(found.any(-1, keepdim=True), score.masked_fill(~found, -torch.inf), own[..., 0])
+    return score.masked_fill(~live, -torch.inf), activity
 
 
 def word_request(model, concepts, index):

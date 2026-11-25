@@ -90,6 +90,9 @@ def test_two_observed_fixations_train_the_shared_request(tmp_path, monkeypatch, 
     model = build(tmp_path, monkeypatch)
     try:
         nominate(model, ('This', 'is', 'This is'))
+        # This check measures learning from two model-chosen fixations.
+        # The trained "is" can also occur inside "This".
+        model.attention_budget = 2
         recorded = []
         register = OccurrenceCredit.register
 

@@ -1742,7 +1742,7 @@ class BasicPercepts(nn.Module):
         """Release the prepared Pi reads when their opening ends."""
         object.__setattr__(bank, 'read_basis', None)
 
-    def read_bank(self, bank, activity=None, look=None):
+    def read_bank(self, bank, activity=None, look=None, *, fixation=None):
         """The basic percepts of a bank's readings over a look's table
         (``look``, or the :func:`attended` ones, chosen by ``activity``'s
         share where a sentence does not fit), each occurrence present to the
@@ -1764,18 +1764,31 @@ class BasicPercepts(nn.Module):
         index = look.index[..., None].expand(-1, -1, 2)
         presence = (own.to(look.table).gather(1, index) * look.filled[..., None])[..., 0]   # [B, A]
         rows = bank.rows
-        K = bank.where.shape[1]
-        slot = torch.where(look.token >= 0, look.token, K)
-        # The wide-open reading and its reconstruction use the original
-        # placements. A narrowed look can also see wholes around its aperture.
-        scope = None if activity is None else reading_scope(bank, K)
-        if scope is not None:
-            scope = scope.gather(2, look.index[:, None].expand(-1, K, -1)) & look.filled[:, None]
+        if fixation is None:
+            where, when, band = bank.where, bank.when, bank.when_band
+            token = look.token
+            scope = None if activity is None else reading_scope(bank, where.shape[1]).gather(
+                2, look.index[:, None].expand(-1, where.shape[1], -1)) & look.filled[:, None]
+        else:
+            # One row of the muxed table supplies both the chosen location
+            # and its time. The aperture may start within a larger percept.
+            page = torch.arange(len(fixation), device=fixation.device)
+            row = fixation.clamp_min(0)
+            where = torch.where(fixation[:, None] >= 0, bank.span[page, row], -1)[:, None]
+            tick = torch.where(fixation >= 0, bank.time[page, row], -1)
+            when = torch.stack((tick, tick + (tick >= 0)), -1)[:, None]
+            band = bank.table[page, row, bank.width + WHERE_WIRES:, 0]
+            band = torch.where(fixation[:, None] >= 0, band, 0.)[:, None]
+            inside, around = extent_members(look.span, where)
+            scope = (inside | around) & look.filled[:, None]
+            token = torch.where(scope[:, 0], 0, -1)
+        K = where.shape[1]
 
         def by_reading(x):
             """``[n, B, A, 2]`` joined over each reading's attended percepts."""
             if scope is not None:
                 return scoped_max(x, scope)
+            slot = torch.where(token >= 0, token, K)
             out = x.new_zeros(x.shape[0], x.shape[1], K + 1, 2)
             return out.scatter_reduce(2, slot[None, ..., None].expand_as(x), x, 'amax')[:, :, :K]
         B, A = presence.shape
@@ -1809,7 +1822,7 @@ class BasicPercepts(nn.Module):
             values = look.table.new_zeros(0, B, K, 2)
             boundaries = values.new_zeros(2, *values.shape)
         return PerceptField(tuple(('bp', row) for row in rows), values, events, look.span,
-            bank.where, bank.when, None, bank.when_band, boundaries, None, look.token, look.index, scope is not None)
+            where, when, None, band, boundaries, None, token, look.index, scope is not None)
 
     def outside(self, table, rows, width):
         """How far each row's own wholes are witnessed outside over each

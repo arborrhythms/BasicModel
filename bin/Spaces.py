@@ -15427,15 +15427,24 @@ class ConceptualSpace(Space):
         meet(self, bank)
         return basic.prepare(bank)
 
-    def cs_read_bank(self, bank, activity=None, *, publish=True):
+    def cs_read_bank(self, bank, activity=None, *, publish=True, fixation=None):
         """The order-zero concepts of a bank's readings, each event present
         to the degree of ``activity`` ``[B, events, 2]`` (all of them where
         it is not given)."""
-        field = self.cs_read_percept_field(self.basic_percepts.read_bank(bank, activity), publish=publish)
+        percepts = (self.basic_percepts.read_bank(bank, activity) if fixation is None
+                    else self.basic_percepts.read_bank(bank, activity, fixation=fixation))
+        field = self.cs_read_percept_field(percepts, publish=publish)
         if publish:
             # Each reading's own .where wires, from its percept's muxed row.
             from Places import readings
-            object.__setattr__(self, '_cs_field_wires', readings(bank)[0])
+            if fixation is None:
+                wires = readings(bank)[0]
+            else:
+                from BasicPercepts import WHERE_WIRES
+                page = torch.arange(len(fixation), device=fixation.device)
+                wires = bank.table[page, fixation.clamp_min(0), bank.width:bank.width + WHERE_WIRES, 0]
+                wires = torch.where(fixation[:, None] >= 0, wires, 0.)[:, None]
+            object.__setattr__(self, '_cs_field_wires', wires)
         return field
 
     def cs_read_percept_field(self, perception, *, publish=True):

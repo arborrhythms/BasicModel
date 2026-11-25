@@ -3,8 +3,8 @@ import torch
 from Memory import OCCURRENCE, SYMBOL, RELATION
 
 
-def brackets(model, percepts):
-    """Name lexical occurrences from complete, visible native percepts. MTM owns nomination."""
+def named_extents(model, percepts):
+    """Annotate complete, visible native forms with their MTM names."""
     from WordSurfaces import is_lexical_form
     ps, owner = model.perceptualSpace, model._concept_owner()
     ids, spans = percepts[:2]
@@ -34,7 +34,7 @@ def brackets(model, percepts):
         words.append(row)
     width = max(map(len, words), default=0)
     if not width:
-        return None
+        return spans[:, :0], ids[:, :0]
     table = ids.new_tensor([row + [(0, 0, -1)] * (width - len(row)) for row in words])
     return table[..., :2], table[..., 2]
 
@@ -283,11 +283,10 @@ def read(model, bank, concepts):
 
 def _read(model, bank, concepts):
     """Narrow until the request stops, STM fills or nothing is found."""
-    from Places import readings
     from Attention import occurrence_probabilities, select_occurrence
     from LookForecast import OccurrenceCredit
-    from SentenceLooks import attend, narrow, lower
-    from dataclasses import replace
+    from SentenceLooks import attend, perceive, request_occurrences
+    from BasicPercepts import extent_members
     from EpisodicMemory import select, unkept, uncertain
     from SentenceField import inventory
     from RequestRead import at_rows, spread_once
@@ -299,16 +298,25 @@ def _read(model, bank, concepts):
     for store in stores:
         store.expire()
         store.to(bank.table)
+    if not bank.span.shape[1]:
+        return tuple(heads)
     current = owner._cs_open_field
     def located(field, index=None):
         return at_rows(inventory(owner, field), field, reader.rows, B, index)
     opened = located(current)
     memory, own = torch.zeros_like(opened), bank.activity.clone()
-    left = bank.where[..., 1] > bank.where[..., 0]
-    known = concepts >= 0
-    _, _, percept_codes = readings(bank)
+    left = bank.activity[..., 0] > 0
+    from WordSurfaces import grammar_leaves
+    surface = model._staged_concepts_in
+    surface = surface[:, 0] if surface.ndim == 3 else surface
+    content = grammar_leaves(surface, bank.span.clamp(0, surface.shape[-1]), left)
+    # A named whole can annotate its exact occurrence. A smaller fixation
+    # at the same start keeps its own content and native address.
+    exact = (bank.span[:, :, None] == bank.where[:, None]).all(-1) & left[:, :, None]
+    names_at = (torch.where(exact, concepts[:, None], -1).amax(-1) if concepts.shape[1]
+                else torch.full_like(bank.time, -1))
     observation = model.conceptualSpace.stm.model_state
-    observation.begin_looks(bank.where, left.any(-1))
+    observation.begin_looks(bank.span, left.any(-1))
     credit = OccurrenceCredit(owner, bank) if model.training and torch.is_grad_enabled() else None
     excluded, ambiguous = unkept(owner), uncertain(owner)
     for _ in range(min(model.attention_budget, model.conceptualSpace.stm.capacity)):
@@ -320,43 +328,45 @@ def _read(model, bank, concepts):
         request = attend(model, units)
         if credit is not None:
             anticipated = credit.forecast(request)
-        field, _, scores = narrow(model, bank, request, own, concepts,
-                                  known, left & active[:, None])
+        scores, activity = request_occurrences(model, bank, request, own, left & active[:, None])
         probabilities = occurrence_probabilities(scores)
         index = select_occurrence(probabilities, sample=model.training)
         index = torch.where(active, index, -1)
-        observation.observe(bank.where, index)
+        observation.observe(bank.span, index)
         found = index >= 0
         if not found.any():
             break
         if credit is not None:
             credit.observe(anticipated, torch.where(found[:, None], observation.last_where, -1))
         batch = torch.arange(B, device=index.device)
-        evidence = field.evidence[:, batch, index.clamp_min(0)].unsqueeze(2)
-        episode = select(replace(field, evidence=evidence), stores[0].episodic_capacity,
-                         found, unkept=excluded, uncertain=ambiguous)
+        field = perceive(model, activity, bank, fixation=index)
+        episode = select(field, stores[0].episodic_capacity, found, unkept=excluded, uncertain=ambiguous)
         # The row writers still take native names. Gather the selected
         # metadata once per look before writing each stream's own store.
         seats = index.clamp_min(0)
-        names = concepts[batch, seats].tolist()
+        names = names_at[batch, seats].tolist()
         trust = scores[batch, seats].detach().clamp(0, 1).tolist()
-        for b, (w, cid) in enumerate(zip(index.tolist(), names, strict=True)):
+        # A separator is a real fixation and updates the next request's
+        # location. The existing grammar leaf rule excludes it from the head.
+        leaves = torch.where(content[batch, seats], index, -1)
+        for b, (w, cid) in enumerate(zip(leaves.tolist(), names, strict=True)):
             if w < 0:
                 continue
             store = stores[b]
-            code = percept_codes[b, w]
+            code = bank.table[b, w, :bank.width, 0]
             if cid >= 0:
                 row = owner._concept_row_of(cid)
                 code = owner.similarity_codebook.lookup_rows(index.new_tensor([row]), stream=b)[0]
             point = store._fit(code).clone()
-            point[store.when_start-4:store.when_start] = field.wires[b, w]
-            point[store.when_start:store.when_start+4] = bank.when_band[b, w]
+            point[store.when_start-4:store.when_start] = field.wires[b, 0]
+            point[store.when_start:store.when_start+4] = bank.table[b, w, -4:, 0]
             row = store.append_idea(point, referent=None if cid < 0 else ('sym', cid),
                 trust=trust[b], entry=(episode[0][b], episode[1][b]))
             heads[b] = store.parts.append_occurrence(heads[b], store.row_name(row))
-        left = left & ~(found[:, None] & (index[:, None] == torch.arange(left.shape[1], device=index.device)))
-        memory = torch.where(found[:, None, None], spread_once(owner, located(field, index)), memory)
-        own = lower(own, bank, index, found)
+        seen, _ = extent_members(bank.span, field.where)
+        left = left & ~seen[:, 0]
+        memory = torch.where(found[:, None, None], spread_once(owner, located(field)), memory)
+        own = torch.where(left[..., None], own, 0.)
     if credit is not None:
         credit.register(model.errors)
     durable = model.symbolSpace.ltm_store
