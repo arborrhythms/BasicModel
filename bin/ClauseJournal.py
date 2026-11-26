@@ -871,7 +871,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                                  zero if predicate is None else predicate.to(zero),
                                  zero if right is None else right))
             occupied = (True, True, right is not None or right_ref != -1)
-            mask = torch.tensor(occupied, device=roles.device)
+            mask = torch.ones(3, dtype=torch.bool, device=roles.device)
+            mask[2] = occupied[2]
             described = ConceptualMeaning(roles, mask, polarity=polarity,
                                           sentence_kind='relation' if relation else 'idea')
             references = ((left_ref, predicate_ref, right_ref) if relation is not None else
