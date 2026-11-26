@@ -696,7 +696,7 @@ def test_numeric_grammar_replays_reverse_word_arrivals(monkeypatch):
         return interpret(word, allowed, **options)
 
     captured = []
-    program = model._derivation_program
+    program = model._parse_program
     def capture(*args, **kwargs):
         result = program(*args, **kwargs)
         if result is not None:
@@ -704,7 +704,7 @@ def test_numeric_grammar_replays_reverse_word_arrivals(monkeypatch):
         return result
 
     monkeypatch.setattr(chooser, 'choose_interpret', read)
-    monkeypatch.setattr(model, '_derivation_program', capture)
+    monkeypatch.setattr(model, '_parse_program', capture)
     try:
         inputs, targets, *_ = next(iter(data.data_loader(split='validation', num_streams=4)))
         model.runBatch(train=False, batchSize=4, split='validation',
@@ -712,7 +712,8 @@ def test_numeric_grammar_replays_reverse_word_arrivals(monkeypatch):
         assert captured
         for positions, actions in captured:
             for words, row in zip(positions, actions, strict=True):
-                assert words == [2, 0]
+                # The device event table retains its constructed word width.
+                assert words[:2] == [2, 0] and all(word == -1 for word in words[2:])
                 assert [kind for kind, _, _ in row if kind >= 0] == [0, 0, 1]
     finally:
         model.End()

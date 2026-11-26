@@ -272,32 +272,44 @@ def selected_field(first, second, wins):
 
 
 def select_fields(fields, winners):
-    """Select streams by concept identity, including differently sized reviews."""
-    indices = winners.tolist() if torch.is_tensor(winners) else winners
-    picked = [fields[int(index)] for index in indices]
-    columns = [field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, b]
-               for b, field in enumerate(picked)]
-    ids, positions = torch.cat(columns).unique(sorted=True, return_inverse=True)
-    aligned = positions.split([len(column) for column in columns])
-    width = max(field.evidence.shape[2] for field in picked)
-    evidence, where, when, wires = [], [], [], []
-    placed = all(field.wires is not None for field in picked)
-    for b, (field, position) in enumerate(zip(picked, aligned, strict=True)):
-        # Repeated identities (including padding) resolve to their last seat.
-        size = len(position)
-        indices = position.new_full((len(ids),), size)
-        indices.scatter_reduce_(0, position, torch.arange(size, device=position.device),
-                                'amax', include_self=False)
-        zero = field.evidence.new_zeros(1, field.evidence.shape[2], 2)
-        values = torch.cat((field.evidence[:, b], zero), 0)
-        evidence.append(F.pad(values[indices], (0, 0, 0, width - values.shape[1])))
-        where.append(F.pad(field.where[b], (0, 0, 0, width - field.where.shape[1])))
-        when.append(F.pad(field.when[b], (0, 0, 0, width - field.when.shape[1])))
+    """Align candidate identities once, then gather all retained streams."""
+    from SentenceCompose import select_streams
+    if not torch.is_tensor(winners):
+        winners = torch.as_tensor(winners, device=fields[0].evidence.device, dtype=torch.long)
+    # These two host schema choices preserve the compact public field shape.
+    # All numerical retention below is independent of the number of streams.
+    indices = winners.tolist()
+    width = max(fields[index].evidence.shape[2] for index in indices)
+    placed = all(fields[index].wires is not None for index in indices)
+    wire_width = next(field.wires.shape[-1] for field in fields if field.wires is not None) if placed else 0
+    batch, count = len(winners), max(len(field.concept_ids) for field in fields)
+    sentinel = torch.iinfo(torch.long).min
+    names, values, where, when, wires = [], [], [], [], []
+    for field in fields:
+        ids = field.concept_ids
+        ids = ids[None].expand(batch, -1) if ids.ndim == 1 else ids.T
+        names.append(F.pad(ids, (0, count - ids.shape[1]), value=sentinel))
+        value = field.evidence.permute(1, 0, 2, 3)[:, :, :width]
+        values.append(F.pad(value, (0, 0, 0, width - value.shape[2], 0, count - value.shape[1])))
+        for source, target in ((field.where, where), (field.when, when)):
+            target.append(F.pad(source[:, :width], (0, 0, 0, max(0, width - source.shape[1]))))
         if placed:
-            wires.append(F.pad(field.wires[b], (0, 0, 0, width - field.wires.shape[1])))
-    return ConceptualField(ids, torch.stack(evidence, 1),
-                           torch.stack(where), torch.stack(when), None,
-                           torch.stack(wires) if placed else None)
+            source = field.wires
+            wires.append(field.where.new_zeros(batch, width, wire_width) if source is None else
+                F.pad(source[:, :width], (0, 0, 0, max(0, width - source.shape[1]))))
+    selected_names = select_streams(names, winners)
+    ids = selected_names[selected_names != sentinel].unique(sorted=True)
+    positions = torch.searchsorted(ids, selected_names.contiguous())
+    positions = torch.where(selected_names == sentinel, len(ids), positions)
+    # Repeated identities keep the last seat, with one extra sink for padding.
+    seats = positions.new_full((batch, len(ids) + 1), count)
+    seats = seats.scatter_reduce(1, positions,
+        torch.arange(count, device=positions.device)[None].expand(batch, -1), 'amax', include_self=False)[:, :-1]
+    selected = select_streams(values, winners)
+    selected = torch.cat((selected, selected.new_zeros(batch, 1, width, 2)), 1)
+    evidence = selected.gather(1, seats[..., None, None].expand(-1, -1, width, 2)).transpose(0, 1)
+    return ConceptualField(ids, evidence, select_streams(where, winners), select_streams(when, winners), None,
+                           select_streams(wires, winners) if placed else None)
 
 
 def native_target(model, field):

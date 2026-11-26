@@ -295,8 +295,16 @@ def test_extension_attachment_keeps_reference_plans_on_the_scored_clause(tmp_pat
     monkeypatch.setattr(model, '_capture_reading_programs', lambda **kw: (None, {0: (None,)}))
     root = point[None]
     depth = torch.ones(1, dtype=torch.long)
-    lang = [None]*12
+    lang = [None]*31
     lang[6], lang[10], lang[11] = root[:, None], root.repeat(1,3)[:, None], depth[:, None]
+    # This fixture supplies its completed clause directly, with no arrivals
+    # or chooser events. Supply the native carry's empty cost columns too.
+    model.inputSpace._word_active_mask = torch.ones(1, 4, dtype=torch.bool)
+    model.inputSpace._packed_sentence_ids = torch.zeros(1, 4, dtype=torch.long)
+    lang[15] = torch.full((1, 12), -1, dtype=torch.long)
+    lang[28] = torch.full((1, 12), -1, dtype=torch.long)
+    lang[29] = torch.full((1, 4, 3), -1, dtype=torch.long)
+    lang[30] = torch.zeros(1, 12, dtype=torch.long)
     field = ConceptualField(torch.empty(0,dtype=torch.long), point.new_zeros(0,1,4,2),
         point.new_zeros(1,4,2), point.new_zeros(1,4,2), None)
     record = SentenceUnderstanding(root,root[:,None].expand(-1,3,-1),depth,root[:,None],

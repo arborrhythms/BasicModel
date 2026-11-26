@@ -31,10 +31,8 @@ class Thinking:
 
     def eligible(self, active):
         width = max((len(trace['eligible']) for trace in self.traces.values()), default=0)
-        result = active.new_zeros(len(active), width)
-        for row, trace in self.traces.items():
-            result[row, :len(trace['eligible'])] = result.new_tensor(trace['eligible'])
-        return result
+        rows = [self.traces.get(row, {}).get('eligible', ()) for row in range(len(active))]
+        return active.new_tensor([list(row) + [False] * (width - len(row)) for row in rows]).reshape(len(active), width)
 
 
 @dataclass
@@ -363,17 +361,23 @@ def credit(model, exploit, path, active):
         value = generate_credit(model.languageSpace, audit, other[-1], other[-2])
         path.registry.add('output.walk_credit', value, category='output',
             objective=policy_objective(model, 'generate', 'chooser'), side='A')
-    for row, at in enumerate(draw['thought_round'].tolist()):
-        if at < 0:
-            continue
-        choice = path.thinking.traces[row]['choices'][at]
-        value, _ = score_function(choice['probability'].reshape(1, 1),
-            costs.new_tensor([[float(draw['walk_count'][row] * draw['walk_rounds'][row]) * choice['alternatives']]]),
-            active[row:row+1, None], costs[row:row+1])
-        category = choice.get('category', 'reconstruction')
-        rows = costs.new_zeros(len(active))
-        rows[row] = value[0]
-        path.registry.add('output.thought_score_function', rows,
+    # The close supplies host-owned thought records once. Price the selected
+    # departures together; no per-stream scorer or scalar device read.
+    choices = [None if at < 0 else path.thinking.traces[row]['choices'][at]
+               for row, at in enumerate(draw['thought_round'].tolist())]
+    first_choice = next((choice for choice in choices if choice is not None), None)
+    if first_choice is not None:
+        probabilities = torch.stack([costs.new_zeros(()) if choice is None else
+            choice['probability'].reshape(()) for choice in choices])[:, None]
+        alternatives = costs.new_tensor([0 if choice is None else choice['alternatives']
+                                          for choice in choices])
+        correction = (draw['walk_count'] * draw['walk_rounds']).to(costs) * alternatives
+        value, _ = score_function(probabilities, correction[:, None],
+            (active & (draw['thought_round'] >= 0))[:, None], costs)
+        # Error.add has always retained the first contribution's owner for
+        # this term. Keep that routing contract while batching its values.
+        category = first_choice.get('category', 'reconstruction')
+        path.registry.add('output.thought_score_function', value,
             category='output', objective=policy_objective(model, 'compose', 'chooser') if category == 'reconstruction' else category, side='A')
 
 

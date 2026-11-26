@@ -124,6 +124,14 @@ def fork_perception(cache):
     return trial, pullback
 
 
+def select_streams(values, winners, *, batch_dim=0):
+    """Gather each stream's complete tensor from its chosen path, in one call."""
+    bank = torch.stack(values).movedim(batch_dim + 1, 1)
+    winners = winners.to(bank.device)
+    selected = bank[winners, torch.arange(len(winners), device=winners.device)]
+    return selected.movedim(0, batch_dim)
+
+
 def select_rows(exploit, explore, wins):
     """Swap scratch tensor rows; no blended path and no model snapshot."""
     if torch.is_tensor(exploit):

@@ -214,14 +214,16 @@ class ThoughtTrialState:
         chosen = copy(states[0])
         batch = len(winners)
         indices = winners.tolist()
+        from SentenceCompose import select_streams
+        def gather(values, batch_dim=0):
+            return select_streams(values, winners, batch_dim=batch_dim)
         def rows(values, name=None):
             first = values[0]
             if name == 'last_where' and any(value is None for value in values):
                 extent = next((value for value in values if value is not None), None)
                 if extent is None:
                     return None
-                return torch.stack([extent.new_full((2,), -1) if values[index] is None else
-                                    values[index][row] for row, index in enumerate(indices)])
+                return gather([torch.full_like(extent, -1) if value is None else value for value in values])
             if name == '_thought_next_id':
                 # Histories are selected per stream; their shared allocator
                 # must remain beyond every selected history's frontier.
@@ -232,48 +234,45 @@ class ThoughtTrialState:
                     for cid in (values[index] if values[index].ndim == 1 else values[index][:, row])}))
             if name in ('_cs_field_where', '_cs_field_when', '_cs_field_wires') and torch.is_tensor(first):
                 width = max(value.shape[1] for value in values)
-                return torch.stack([torch.nn.functional.pad(values[index][row],
-                    (0, 0, 0, width - values[index].shape[1]))
-                    for row, index in enumerate(indices)])
+                return gather([torch.nn.functional.pad(value,
+                    (0, 0, 0, width - value.shape[1])) for value in values])
             if name == '_percept_field' and first is not None:
                 keys = tuple(sorted(set().union(*(value.keys for value in values))))
                 R, E = max(v.values.shape[2] for v in values), max(v.events.shape[2] for v in values)
                 lookup = {key: i for i, key in enumerate(keys)}
-                data = first.values.new_zeros(len(keys), batch, R, 2)
-                events = first.events.new_zeros(len(keys), batch, E, 2)
-                where, when = first.where.new_zeros(batch, R, 2), first.when.new_zeros(batch, R, 2)
-                spans = first.spans.new_zeros(batch, E, 2)
-                reading = first.reading.new_full((batch, E), -1)
-                index = first.index.new_zeros(batch, E)
-                bands = None if first.when_band is None else first.when_band.new_zeros(batch, R, 4)
-                for row, index_ in enumerate(indices):
-                    value = values[index_]
-                    r, e = value.values.shape[2], value.events.shape[2]
-                    for old, key in enumerate(value.keys):
-                        data[lookup[key], row, :r] = value.values[old, row]
-                        events[lookup[key], row, :e] = value.events[old, row]
-                    where[row, :r], when[row, :r] = value.where[row], value.when[row]
-                    spans[row, :e] = value.spans[row]
-                    reading[row, :e], index[row, :e] = value.reading[row], value.index[row]
-                    if bands is not None:
-                        bands[row, :r] = value.when_band[row]
-                return replace(first, keys=keys, values=data, events=events, where=where,
-                               when=when, spans=spans, when_band=bands, reading=reading, index=index)
+                from torch.nn.functional import pad
+                banks = []
+                for value in values:
+                    rows = value.index.new_tensor([lookup[key] for key in value.keys])
+                    data = value.values.new_zeros(len(keys), batch, R, 2).index_copy(
+                        0, rows, pad(value.values, (0, 0, 0, R - value.values.shape[2])))
+                    events = value.events.new_zeros(len(keys), batch, E, 2).index_copy(
+                        0, rows, pad(value.events, (0, 0, 0, E - value.events.shape[2])))
+                    banks.append(dict(values=data, events=events,
+                        where=pad(value.where, (0, 0, 0, R - value.where.shape[1])),
+                        when=pad(value.when, (0, 0, 0, R - value.when.shape[1])),
+                        spans=pad(value.spans, (0, 0, 0, E - value.spans.shape[1])),
+                        reading=pad(value.reading, (0, E - value.reading.shape[1]), value=-1),
+                        index=pad(value.index, (0, E - value.index.shape[1])),
+                        when_band=None if first.when_band is None else
+                            pad(value.when_band, (0, 0, 0, R - value.when_band.shape[1]))))
+                selected = {key: gather([bank[key] for bank in banks],
+                    batch_dim=1 if key in ('values', 'events') else 0)
+                    for key in banks[0] if banks[0][key] is not None}
+                return replace(first, keys=keys, **selected)
             if name == '_sentence_answer_predictions' and torch.is_tensor(first) and first.ndim == 3:
                 # Realized text has a path-dependent byte extent. Keep each
                 # selected stream, with zero padding just as at public output.
                 width = max(value.shape[-1] for value in values)
-                return torch.stack([torch.nn.functional.pad(values[index][row],
-                    (0, width - values[index].shape[-1]))
-                    for row, index in enumerate(indices)])
+                return gather([torch.nn.functional.pad(value,
+                    (0, width - value.shape[-1])) for value in values])
             if (name is not None and name.startswith('_live_') and torch.is_tensor(first)
                     and first.ndim and first.shape[0] >= batch):
                 # STM reserves more streams than this microbatch may use.
                 # Select its active prefix, retaining the unused reservation.
-                return torch.cat((torch.stack([values[index][row]
-                    for row, index in enumerate(indices)]), first[batch:]), 0)
+                return torch.cat((gather([value[:batch] for value in values]), first[batch:]), 0)
             if torch.is_tensor(first) and first.ndim and first.shape[0] == batch:
-                return torch.stack([values[index][row] for row, index in enumerate(indices)])
+                return gather(values)
             if (name in ('_what_slots', '_thought_contents', '_what_closure_pressure') and isinstance(first, (list, tuple))
                     and len(first) >= batch):
                 return type(first)(values[indices[row]][row] if row < batch else value
@@ -285,10 +284,10 @@ class ThoughtTrialState:
                 if all(type(key) is int and 0 <= key < batch for key in keys):
                     return {key: values[indices[key]][key] for key in keys if key in values[indices[key]]}
             return first
-        chosen.clock = torch.stack([states[index].clock for index in set(indices)]).amax(0)
+        chosen.clock = torch.stack([state.clock for state in states])[winners.to(states[0].clock.device)].amax(0)
         if chosen.store_names is not None:
             chosen.store_names = (chosen.store_names[0],
-                torch.stack([states[index].store_names[1] for index in set(indices)]).amax(0))
+                torch.stack([state.store_names[1] for state in states])[winners.to(chosen.store_names[1].device)].amax(0))
         from MemoryActivity import select
         chosen.activity = select([state.activity for state in states], winners)
         chosen.saved = []
