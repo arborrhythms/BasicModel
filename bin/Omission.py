@@ -9,6 +9,8 @@ class Draw:
     words: torch.Tensor
     forms: torch.Tensor
     protected: torch.Tensor
+    # False only for a draw that took no random numbers and hid nothing.
+    drawn: bool = True
 
 
 class Omission(nn.Module):
@@ -41,7 +43,7 @@ class Omission(nn.Module):
         # This branch consumes no RNG, including when explicitly disabled.
         self.idle = not training or self.target == 1 or not bool(self.rates.any())
         if self.idle:
-            return Draw(torch.zeros_like(words), empty, protected)
+            return Draw(torch.zeros_like(words), empty, protected, drawn=False)
         from WalkTrials import departure_at
         protected = departure_at(words)
         kept = torch.arange(words.shape[1], device=words.device)[None] == protected[:, None]
@@ -118,18 +120,18 @@ def prepare(model, surface, spans, cover):
     isp._finalize_sentence_word_layout(active)
     sentences = isp._packed_sentence_ids
     forms, words, protected = torch.zeros_like(valid), torch.zeros_like(active), {}
-    idle = getattr(policy.draw, '__func__', None) is Omission.draw
+    drawn = False
     for sid in range(isp._packed_sentence_slot_mask.shape[1]):
         draw = model.omission.draw(valid & (sentences == sid)[..., None], training=model.training)
-        idle = idle and policy.idle
+        drawn = drawn or draw.drawn
         forms |= draw.forms
         words |= draw.words
         protected[sid] = draw.protected
     raw_target = model._staged_concepts_in.detach().clone()
     model._omission_prepared = dict(raw=raw_target, units=units,
-        draw=Draw(words, forms, protected), sentences=sentences.detach().clone())
-    if not idle:
-        # The covered bytes at fixed shape; the stage decides whether any form was hidden.
+        draw=Draw(words, forms, protected, drawn), sentences=sentences.detach().clone())
+    if drawn:
+        # The covered bytes at fixed shape; all false where the draw hid nothing.
         model._omission_prepared['bytes'] = covered_bytes(extents, forms, raw_target.shape[-1])
     return model._omission_prepared
 
@@ -191,7 +193,7 @@ def stage(model):
     if not model.word_brackets:
         return
     prepared = model.__dict__.pop('_omission_prepared')
-    # Hiding is the host act of a drawn form.
+    # Only a drawn sentence has 'bytes'; its hiding is host work (identity.form below).
     if 'bytes' in prepared and not bool(prepared['draw'].forms.any()):
         del prepared['bytes']
     valid = isp._ar_word_part_mask
@@ -203,13 +205,13 @@ def stage(model):
         if forms.shape[-1] > width and bool(forms[..., width:].any()):
             raise ValueError('an omitted percept disappeared from its staged layout')
         forms = forms[..., :width]
-        prepared['draw'] = Draw(draw.words, forms, draw.protected)
+        prepared['draw'] = Draw(draw.words, forms, draw.protected, draw.drawn)
     else:
         active = isp._word_active_mask
         forms = torch.zeros_like(valid)
         protected = active.new_full((len(active),), -1, dtype=torch.long)
         slots = isp._packed_sentence_slot_mask.shape[1]
-        prepared['draw'] = Draw(torch.zeros_like(active), forms, dict.fromkeys(range(slots), protected))
+        prepared['draw'] = Draw(torch.zeros_like(active), forms, dict.fromkeys(range(slots), protected), False)
         prepared['sentences'] = isp._packed_sentence_ids.detach().clone()
     source = ps._forward_input
     # The element stem emits fresh byte, address and extent tensors for each
@@ -289,4 +291,4 @@ def observe(model, sid, reverse, *, active=None):
         valid = valid & active[:, None, None]
     correct = valid & correct_spans(raw, decoded, targets['spans'])
     draw = targets['draw']
-    model.omission.observe(correct, valid, Draw(draw.words, draw.forms, draw.protected[sid]))
+    model.omission.observe(correct, valid, Draw(draw.words, draw.forms, draw.protected[sid], draw.drawn))

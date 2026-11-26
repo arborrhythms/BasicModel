@@ -142,7 +142,9 @@ def test_omission_protects_a_whole_word_and_never_draws_padding():
     assert not bool((draw.forms & ~valid).any())
     assert not bool(draw.forms[torch.arange(len(valid)), draw.protected].any())
     assert draw.words.sum(-1).tolist() == [1] * len(valid)
+    assert draw.drawn
     assert not bool(policy.draw(valid, training=False).forms.any())
+    assert not policy.draw(valid, training=False).drawn
 
 
 def test_omission_rates_checkpoint_and_disabled_rng_identity():
@@ -155,7 +157,7 @@ def test_omission_rates_checkpoint_and_disabled_rng_identity():
     policy.observations.fill_(10)
     before = torch.random.get_rng_state().clone()
     draw = policy.draw(torch.ones(2, 3, 4, dtype=torch.bool), training=True)
-    assert not bool(draw.forms.any())
+    assert not bool(draw.forms.any()) and not draw.drawn
     assert torch.equal(torch.random.get_rng_state(), before)
     restored = Omission(1., .5, 1024)
     restored.load_state_dict(policy.state_dict())
