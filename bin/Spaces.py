@@ -9791,8 +9791,8 @@ class InputSpace(Space):
 
         B, W, _ = embedded.shape
         active = active.to(device=embedded.device, dtype=torch.bool)
-        # The ladder emits the active slots as a prefix; a traced loop runs all W.
-        self._valid_len_host = W if torch.compiler.is_compiling() else int(active.sum(1).amax()) if B else 0
+        # A static bound; the eager staging narrows it where it spells the units.
+        self._valid_len_host = W
 
         self._ar_embedded = embedded
         self._ar_embedded_N = embedded

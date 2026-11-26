@@ -13708,6 +13708,8 @@ class BasicModel(BaseModel):
             # spelling: the word-major stem's units are spelled here, after it.
             from WordSurfaces import unit_texts
             fi['word_texts'], fi['word_intervals'] = unit_texts(fi['sentence_bytes'], fi['unit_spans'])
+            isp = self.inputSpace
+            isp._valid_len_host = min(isp._valid_len_host, max(map(len, fi['word_intervals']), default=0))
         stage_input(self)
         attention = self._attention_words
         self._attention_words = None
