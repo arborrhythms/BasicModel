@@ -1001,7 +1001,8 @@ class ShortTermMemory(MemoryStore, Layer):
         return STMChunks.deposit(state, ideas, gate_b_1, stack=True,
             order=inserted_orders, grammar_order=inserted_grammar_orders,
             row=inserted_concept_rows, activation=inserted_concept_activations,
-            truth=(1., 0.))[0]
+            # A pushed idea is witnessed true: (for, against) = (1, 0).
+            truth=torch.eye(2, dtype=state[STMChunks.TRUTH].dtype, device=ideas.device)[0])[0]
 
     @staticmethod
     def functional_snapshot_mask(buffer, depth, active_rows=None):
