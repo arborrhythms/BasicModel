@@ -1,4 +1,7 @@
 """Lexical form admission and constructed byte capacity for surface tables."""
+from collections.abc import Mapping
+from typing import NamedTuple
+
 import torch
 from torch.nn import functional as F
 
@@ -265,6 +268,110 @@ def witnessed_columns(witnesses, starts, active, width):
     return torch.where(hi > lo, columns.gather(1, lo.clamp(0, width)), -1)
 
 
+class MixingWords(NamedTuple):
+    bounds: torch.Tensor
+    columns: torch.Tensor
+    names: torch.Tensor
+    forms: torch.Tensor
+
+
+def mixing_columns(units, seats, spans, active, witnessed):
+    """The unique grammar location ending at each completed reading."""
+    batch, count = units.shape[:2]
+    width = active.shape[1]
+    if witnessed:
+        return units[..., 4]
+    if spans is None:
+        positions = torch.arange(seats.shape[1], device=seats.device).expand_as(seats)
+        last = seats.new_full((batch, count + 1), -1).scatter_reduce_(
+            1, torch.where(seats >= 0, seats, count), positions, 'amax')[:, :-1]
+        return torch.where(last < width, last, -1)
+    spans = spans[:, :width]
+    n = spans.shape[1]
+    # The units are disjoint, ordered runs. Exactly one active native span
+    # must finish at the right boundary, with its left end inside the run.
+    lo, hi = units[..., 0], units[..., 1]
+    starts, stops = spans.unbind(-1)
+    # Incomplete runs have hi == lo. Their starts remain in source order.
+    # Padded spans end at zero and cannot match a nonempty native event.
+    ordered = torch.where((hi > lo), hi, torch.iinfo(hi.dtype).max)
+    ends, index = ordered.sort(dim=1, stable=True)
+    at = torch.searchsorted(ends, stops.contiguous())
+    index = F.pad(index, (0, 1), value=count).gather(1, at)
+    first = F.pad(lo, (0, 1)).gather(1, index)
+    valid = ((at < count) & (F.pad(ends, (0, 1)).gather(1, at) == stops)
+             & (first <= starts) & (starts < stops) & active[:, :n])
+    target = torch.where(valid, index, count)
+    counts = torch.zeros_like(F.pad(lo, (0, 1))).scatter_add_(1, target, valid.long())
+    locations = torch.arange(n, device=seats.device).expand_as(target)
+    last = torch.full_like(counts, -1).scatter_reduce_(1, target, locations, 'amax')
+    return torch.where(counts[:, :-1] == 1, last[:, :-1], -1)
+
+
+class WitnessedForms(Mapping):
+    """The actual alias read at each word seat during one presentation."""
+    def __init__(self, seats, forms, valid, capacity, labels):
+        words = seats.flatten()
+        target = torch.where(valid.flatten(), words, capacity)
+        position = torch.arange(len(words), device=words.device) + 1
+        latest = words.new_zeros(capacity + 1).scatter_reduce_(0, target, position, 'amax')
+        self.forms = F.pad(forms.flatten(), (1, 0), value=-1)[latest[:capacity]]
+        self.labels = labels
+        self._materialized = None
+
+    def read(self, rows):
+        valid = (rows >= 0) & (rows < len(self.forms))
+        forms = F.pad(self.forms, (0, 1), value=-1)[torch.where(valid, rows, len(self.forms))]
+        return [tuple(self.labels.get(form) for form in stream) for stream in forms.tolist()]
+
+    def _mapping(self):
+        if self._materialized is None:
+            self._materialized = {seat: self.labels[form] for seat, form in enumerate(self.forms.tolist()) if form >= 0}
+        return self._materialized
+
+    def __len__(self):
+        return len(self._mapping())
+
+    def __iter__(self):
+        return iter(self._mapping())
+
+    def __getitem__(self, key):
+        return self._mapping()[key]
+
+
+def mixing_reference_rows(owner, words, width):
+    """Place word and referent identities in their witnessed grammar columns."""
+    from Meaning import require_sentence_tensor
+    from WordConceptPool import basic_word_rows
+    names = words.names
+    objects, object_seats, orders = owner.interpret.sentence_objects(names)
+    matrix = owner._concept_allocator.layer(0)
+    word_seats = matrix.concept_rows(names)
+    keys, rows = owner.basic_percepts.word_row_index(None, names.device)
+    basic = basic_word_rows(names, keys, rows)
+    ends = names.new_tensor(owner._order_caps()).cumsum(0)[:-1]
+    word_order = torch.bucketize(word_seats, ends, right=True)
+    valid = (names >= 0) & (words.columns >= 0) & (words.columns < width)
+    require_sentence_tensor((~valid | (basic >= 0)).all(), 'a witnessed word has no basic percept')
+    # Multiple witnesses at a seat were written in source order.
+    target = torch.where(valid, words.columns, width)
+    positions = torch.arange(names.shape[1], device=names.device).expand_as(names)
+    source = names.new_full((len(names), width + 1), -1).scatter_reduce_(1, target, positions, 'amax')[:, :width]
+    def placed(column, present):
+        values = F.pad(torch.where(present, column, -1), (0, 1), value=-1)
+        return values.gather(1, torch.where(source >= 0, source, names.shape[1])).contiguous()
+    word_live, object_live = word_seats >= 0, object_seats >= 0
+    word_ids = placed(names, word_live | object_live)
+    word_rows = placed(word_seats, word_live)
+    referents = placed(objects, object_live)
+    # A grammar leaf's historical lexical form is the witnessed alias. Keep
+    # the last occurrence for each physical WORD seat, as in the host writer.
+    forms = WitnessedForms(word_seats, words.forms, valid & word_live, owner.nVectors,
+                           owner.mtm.word_pool.form_labels)
+    return ((placed(basic, valid), word_ids, word_rows, placed(word_order, word_live),
+             placed(object_seats, object_live), referents.clone(), referents, placed(orders, object_live)), forms)
+
+
 def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=None):
     """Translate located byte evidence once for the existing MTM word writer."""
     from Spaces import _analysis_property_signature
@@ -285,7 +392,6 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
     units, seats = reading_witnesses(surface, ids, spans, signatures, discard, clipped, fixations)
     # Unit records preserve source order, including several events covering
     # the same span. The byte column belongs to the input, not to a tiling.
-    events = torch.stack((seats, ids), -1)
     if grammar_starts is not None:
         columns = witnessed_columns(units, grammar_starts, model.inputSpace._word_active_mask, surface.shape[1])
         # A column holds the witness only when its unit spans it with the same bytes.
@@ -313,7 +419,13 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
             names = torch.where(exact, words.gather(1, at), -1)
         else:
             names = torch.full_like(units[..., 0], -1)
-        units = torch.cat((units, names[..., None]), -1)
+        forms = (torch.where(exact, fi['pool_form_rows'].gather(1, at), -1)
+                 if limits.shape[1] else torch.full_like(names, -1))
+        columns = mixing_columns(units, seats, fi.get('part_spans'), model.inputSpace._word_active_mask,
+                                 grammar_starts is not None)
+        names = torch.where((units[..., 1] > units[..., 0]) & units[..., 2].bool(), names, -1)
+        return MixingWords(units[..., :2], columns, names, forms)
+    events = torch.stack((seats, ids), -1)
     fields = (units.flatten(1), events.flatten(1), surface)
     records = torch.cat(fields, 1).tolist()
     stride = units.shape[-1]
@@ -337,8 +449,7 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
                 members = grouped[seat]
                 wholes = tuple(row for row in range(min(int(model.wholeSpace.nVectors), 63)) if bits & (1 << row))
                 column = members[-1][0] if grammar_starts is None else record[offset + 4]
-                name = None if words is None else record[offset + stride - 1]
-                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], column, wholes, name))
+                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], column, wholes, None))
         extents.append(located)
     return extents, observations
 

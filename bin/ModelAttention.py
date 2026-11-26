@@ -29,6 +29,64 @@ def reference_evidence(model, presences, consumer):
     return pair
 
 
+def group_expansions(ids, leaves):
+    """Expand already formed rows into their terminal native part ids."""
+    groups = sorted(leaves)
+    width = max(map(len, leaves.values()))
+    addresses = ids.new_tensor(groups)
+    table = ids.new_tensor([list(leaves[part]) + [-1] * (width - len(leaves[part])) for part in groups])
+    sizes = ids.new_tensor([len(leaves[part]) for part in groups])
+    at = torch.searchsorted(addresses, ids.contiguous()).clamp_max(len(groups) - 1)
+    formed = addresses[at] == ids
+    lengths = torch.where(formed, sizes[at], 1)
+    expanded = torch.where(formed[..., None], table[at], F.pad(ids[..., None], (0, width - 1), value=-1))
+    return lengths, expanded
+
+
+def canonical_starts(atoms, live, choices):
+    """Select the longest admitted formation at each successive start."""
+    capacity = atoms.shape[1]
+    places = torch.arange(capacity, device=atoms.device).expand_as(atoms)
+    total = live.sum(1, keepdim=True)
+    stride, canonical = torch.ones_like(atoms), atoms
+    for part, group in choices:
+        size = len(group)
+        stop = capacity - size + 1
+        matches = (atoms.unfold(1, size, 1) == atoms.new_tensor(group)).all(-1)
+        matches = F.pad(matches & (places[:, :stop] + size <= total), (0, size - 1))
+        stride = torch.where(matches, size, stride)
+        canonical = torch.where(matches, part, canonical)
+    ends = (places + stride).clamp_max(capacity)
+    jump = F.pad(ends, (0, 1), value=capacity)
+    reached = F.pad(places == 0, (0, 1))
+    for _ in range(capacity.bit_length()):
+        reached = reached | torch.zeros_like(jump).scatter_add(1, jump, reached.long()).bool()
+        jump = jump.gather(1, jump)
+    return reached[:, :capacity] & live, canonical, ends
+
+
+def canonical_word_parts(parts, leaves):
+    """Retile all words independently in native order, preserving repeats."""
+    if not leaves or not parts.shape[-1]:
+        return parts
+    width = parts.shape[-1]
+    ids = parts.reshape(-1, width)
+    span = width * max(map(len, leaves.values()))
+    if not ids.shape[0]:
+        return parts.new_empty((*parts.shape[:-1], span))
+    choices = sorted(leaves.items(), key=lambda pair: (len(pair[1]), -pair[0]))
+    rows = []
+    for chunk in ids.split(max(1, (1 << 20) // span)):
+        sizes, expanded = group_expansions(chunk, leaves)
+        offsets = torch.arange(expanded.shape[-1], device=parts.device)
+        valid = ((chunk >= 0)[..., None] & (offsets < sizes[..., None])).flatten(1)
+        order = (~valid).long().argsort(dim=1, stable=True)
+        take, values, _ = canonical_starts(expanded.flatten(1).gather(1, order),
+                                           valid.gather(1, order), choices)
+        rows.append(torch.where(take, values, -1))
+    return torch.cat(rows).reshape(*parts.shape[:-1], span)
+
+
 def canonical_native_events(model, ids, positions, brackets):
     """Contract observed contiguous parts using retained native ancestry.
 
@@ -46,15 +104,8 @@ def canonical_native_events(model, ids, positions, brackets):
     leaves, _ = native._canonical_group_cache
     if not leaves:
         return ids, positions
-    groups = sorted(leaves)
-    width = max(map(len, leaves.values()))
-    addresses = ids.new_tensor(groups)
-    table = ids.new_tensor([list(leaves[part]) + [-1] * (width - len(leaves[part])) for part in groups])
-    sizes = ids.new_tensor([len(leaves[part]) for part in groups])
-    at = torch.searchsorted(addresses, ids.contiguous()).clamp_max(len(groups) - 1)
-    formed = addresses[at] == ids
-    lengths = torch.where(formed, sizes[at], 1)
-    expanded = torch.where(formed[..., None], table[at], F.pad(ids[..., None], (0, width - 1), value=-1))
+    lengths, expanded = group_expansions(ids, leaves)
+    width = expanded.shape[-1]
     offsets = torch.arange(width, device=ids.device)
     B, E = ids.shape
     capacity = E * width
@@ -69,31 +120,15 @@ def canonical_native_events(model, ids, positions, brackets):
         selected = ((ids >= 0) & (positions[..., 0] >= lo[:, None])
                     & (positions[..., 1] <= hi[:, None]) & (positions[..., 1] > positions[..., 0]))
         count = selected.sum(1)
-        event_order = (~selected).int().argsort(1, stable=True)
+        event_order = (~selected).int().argsort(dim=1, stable=True)
         ordered = positions.gather(1, event_order[..., None].expand(-1, -1, 2))
         contiguous = ((slots[1:] >= count[:, None]) | (ordered[:, :-1, 1] == ordered[:, 1:, 0])).all(1)
         occupied = selected[..., None] & (offsets < lengths[..., None])
-        order = (~occupied).flatten(1).int().argsort(1, stable=True)
+        order = (~occupied).flatten(1).int().argsort(dim=1, stable=True)
         atoms = expanded.flatten(1).gather(1, order)
         live = occupied.flatten(1).gather(1, order)
         extent = torch.where(selected, lengths, 0).cumsum(1)
-        total = extent[:, -1:]
-        stride, canonical = torch.ones_like(atoms), atoms
-        for part, group in choices:
-            size = len(group)
-            stop = capacity - size + 1
-            matches = (atoms.unfold(1, size, 1) == ids.new_tensor(group)).all(-1)
-            matches = F.pad(matches & (places[:, :stop] + size <= total), (0, size - 1))
-            stride = torch.where(matches, size, stride)
-            canonical = torch.where(matches, part, canonical)
-
-        ends = (places + stride).clamp_max(capacity)
-        jump = F.pad(ends, (0, 1), value=capacity)
-        reached = F.pad(places == 0, (0, 1))
-        for _ in range(capacity.bit_length()):
-            reached = reached | torch.zeros_like(jump).scatter_add(1, jump, reached.long()).bool()
-            jump = jump.gather(1, jump)
-        starts = reached[:, :capacity] & live
+        starts, canonical, ends = canonical_starts(atoms, live, choices)
         kept = starts.sum(1)
         boundaries = ids.new_full((B, capacity + 1), sentinel)
         begin = extent - torch.where(selected, lengths, 0)

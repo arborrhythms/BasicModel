@@ -11159,9 +11159,23 @@ class BasicModel(BaseModel):
                     and fi.get('word_active_mask') is getattr(self.inputSpace, '_word_active_mask', None)
                     and fi.get('unit_spans') is not None and fi.get('sentence_bytes') is not None)
         if torch.is_tensor(fi.get('unit_spans')) and torch.is_tensor(fi.get('sentence_bytes')):
-            from WordSurfaces import mixing_word_witnesses
-            extents, observations = mixing_word_witnesses(self, raw, ids, spans, attention,
+            from WordSurfaces import MixingWords, mixing_word_witnesses
+            reading = mixing_word_witnesses(self, raw, ids, spans, attention,
                 grammar_starts=offsets[:, :, 0] if disjoint else None)
+            if isinstance(reading, MixingWords):
+                self._stage_reading_grammar_references(reading, fi, disjoint)
+                bounds = reading.bounds
+                present = bounds[..., 1] > bounds[..., 0]
+                width = int(present.sum(1).amax()) if len(bounds) else 0
+                if width:
+                    at = (~present).long().argsort(dim=1, stable=True)[:, :width]
+                    brackets = bounds.gather(1, at[..., None].expand(-1, -1, 2))
+                    self._reading_word_extents = torch.where(present.gather(1, at)[..., None], brackets, 0)
+                    positions, _ = ws.concept_evidence_layout(raw, int(ws.inputShape[0]))
+                    self._reading_word_percepts = (ids, spans,
+                        getattr(ws.subspace.what, 'primitive_properties', None), raw, positions)
+                return
+            extents, observations = reading
         else:
             extents, legacy = BasicModel._legacy_word_witnesses(self, raw, ids, spans, attention)
             observations = ((*item, None) for item in legacy)
@@ -11289,8 +11303,51 @@ class BasicModel(BaseModel):
         active = getattr(isp, '_word_active_mask', None)
         if not getattr(self, 'word_brackets', False) or not torch.is_tensor(active):
             return
-        B, W = active.shape
+        from WordSurfaces import MixingWords, mixing_reference_rows
         owner = self._concept_owner()
+        if isinstance(words, MixingWords):
+            columns, lexical_forms = mixing_reference_rows(owner, words, active.shape[1])
+        else:
+            columns, lexical_forms = BasicModel._legacy_grammar_reference_rows(
+                self, words, percepts, witnessed, active, owner)
+        (basic_ids, word_ids, word_rows, word_orders, rows, object_ids,
+         referent_ids, object_orders) = columns
+        book = owner.similarity_codebook
+        derived = getattr(book, 'mereology', None)
+        if derived is not None:
+            addresses = torch.cat((rows, word_rows), 1)
+            atoms, word_atoms = book.lookup_rows(addresses.clamp_min(0), streams=True).chunk(2, dim=1)
+        else:
+            atoms = book.lookup_rows(rows.clamp_min(0), streams=True)
+            word_atoms = book.lookup_rows(word_rows.clamp_min(0), streams=True)
+        atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
+        # The observed word and its seat have already been resolved together.
+        # Only a higher-order referent borrows that word's perceptual lanes.
+        if derived is not None:
+            width = derived.percept_event_width
+            named = owner._concept_allocator.layer(0).concept_rows(word_ids)
+            use_word = (rows >= owner._order_caps()[0]) & (word_ids > 0) & (named == word_rows) & (named >= 0)
+            form = torch.where(use_word[..., None], word_atoms[..., :width], atoms[..., :width])
+            atoms = torch.cat((form, atoms[..., width:]), -1)
+        # Interpretation can return a transient or a shared object. The kept
+        # mention needs the identified word that supplied this particular leaf.
+        isp._ar_word_concept_ids = word_ids
+        isp._ar_word_concept_rows = word_rows
+        isp._ar_word_concept_orders = word_orders
+        isp._ar_word_concept_atoms = torch.where(word_rows[..., None] >= 0, word_atoms, 0.)
+        isp._ar_word_lexical_forms = lexical_forms
+        isp._ar_basic_percept_ids = basic_ids
+        isp._ar_word_object_ids = referent_ids
+        isp._ar_word_object_rows = rows
+        isp._ar_word_object_orders = object_orders
+        isp._ar_word_object_atoms = atoms
+        isp._ar_grammar_object_rows = rows
+        isp._ar_grammar_object_ids = object_ids
+        isp._ar_grammar_object_orders = object_orders
+        isp._ar_grammar_object_atoms = atoms
+
+    def _legacy_grammar_reference_rows(self, words, percepts, witnessed, active, owner):
+        B, W = active.shape
         # The MTM writer already holds these resolved integer references.
         # Send the completed columns together, preserving their contiguous
         # layout for the grammar and its inverse.
@@ -11331,42 +11388,7 @@ class BasicModel(BaseModel):
                 object_ids[b, p] = owner.concept_id_at_row(int(row))
                 referent_ids[b, p] = int(object_id)
                 object_orders[b, p] = int(object_order)
-        # Public columns can be edited independently after staging.
-        (basic_ids, word_ids, word_rows, word_orders, rows, object_ids,
-         referent_ids, object_orders) = torch.unbind_copy(metadata.to(active.device))
-        book = owner.similarity_codebook
-        derived = getattr(book, 'mereology', None)
-        if derived is not None:
-            addresses = torch.cat((rows, word_rows), 1)
-            atoms, word_atoms = book.lookup_rows(addresses.clamp_min(0), streams=True).chunk(2, dim=1)
-        else:
-            atoms = book.lookup_rows(rows.clamp_min(0), streams=True)
-            word_atoms = book.lookup_rows(word_rows.clamp_min(0), streams=True)
-        atoms = atoms * rows.ge(0)[..., None].to(atoms.dtype)
-        # The observed word and its seat have already been resolved together.
-        # Only a higher-order referent borrows that word's perceptual lanes.
-        if derived is not None:
-            width = derived.percept_event_width
-            named = owner._concept_allocator.layer(0).concept_rows(word_ids)
-            use_word = (rows >= owner._order_caps()[0]) & (word_ids > 0) & (named == word_rows) & (named >= 0)
-            form = torch.where(use_word[..., None], word_atoms[..., :width], atoms[..., :width])
-            atoms = torch.cat((form, atoms[..., width:]), -1)
-        # Interpretation can return a transient or a shared object. The kept
-        # mention needs the identified word that supplied this particular leaf.
-        isp._ar_word_concept_ids = word_ids
-        isp._ar_word_concept_rows = word_rows
-        isp._ar_word_concept_orders = word_orders
-        isp._ar_word_concept_atoms = torch.where(word_rows[..., None] >= 0, word_atoms, 0.)
-        isp._ar_word_lexical_forms = lexical_forms
-        isp._ar_basic_percept_ids = basic_ids
-        isp._ar_word_object_ids = referent_ids
-        isp._ar_word_object_rows = rows
-        isp._ar_word_object_orders = object_orders
-        isp._ar_word_object_atoms = atoms
-        isp._ar_grammar_object_rows = rows
-        isp._ar_grammar_object_ids = object_ids
-        isp._ar_grammar_object_orders = object_orders
-        isp._ar_grammar_object_atoms = atoms
+        return torch.unbind_copy(metadata.to(active.device)), lexical_forms
 
     def _publish_reading_symbols(self, concept_sub):
         """Publish the native word evidence through its concept identities."""
@@ -11394,6 +11416,58 @@ class BasicModel(BaseModel):
         object.__setattr__(concept_sub, '_concept_code_owner',
                            next(i for i, cs in enumerate(self.conceptualSpaces) if cs is owner))
         return self.symbolSpace.forward_concept_to_symbol(concept_sub)
+
+    def _legacy_serial_word_rows(self, owner, ws, basic, parts, admitted, word_texts, anchors):
+        """Resolve non-pool lexical units supplied by the older text interface."""
+        from WordConceptPool import raw_part_ids
+        from WordSurfaces import is_lexical_form
+        metadata = torch.cat((admitted[..., None], parts), -1).tolist()
+        batch, width = admitted.shape
+        addresses = [[(-1,) * 6 for _ in range(width)] for _ in range(batch)]
+        basic_rows = [[-1] * width for _ in range(batch)]
+        boundaries = set()
+        support = owner._ordered_fold_support((), ())
+        for b, stream in enumerate(metadata):
+            texts = word_texts[b] if b < len(word_texts) else ()
+            for p, (active, *values) in enumerate(stream):
+                value = texts[p] if p < len(texts) else None
+                if not active or value is None or not is_lexical_form(value):
+                    continue
+                key = str(value)
+                word = owner.definitions.word(form=key)
+                wholes = set(ws.property_rows_for_bytes(key))
+                ordered = [part for part in values if part >= 0]
+                current = set(self.perceptualSpace.fuse_parts(ordered))
+                if word is None:
+                    triple = owner.interpret_word(ordered, sorted(wholes), key=key,
+                        occurrence=(int(getattr(self, '_word_observation_serial', 0)), b, p),
+                        reading=owner.reading(b))
+                    if triple is None:
+                        continue
+                    word = int(triple[0])
+                word = int(word)
+                percept = basic.words.get(word, -1)
+                basic_rows[b][p] = percept
+                if percept < 0:
+                    continue
+                obj, object_row, order = owner.interpret.reading(word, batch=b)
+                stored = raw_part_ids(owner.concept_parts(word))
+                if not current.issubset(self.perceptualSpace.fuse_parts(stored)):
+                    continue
+                row = owner._concept_row_of(word)
+                if row is None or row < 0 or object_row is None:
+                    continue
+                forms = self.inputSpace._ar_word_lexical_forms
+                if row not in forms:
+                    form = anchors.get(value.casefold()) if isinstance(value, str) else None
+                    forms[row] = form if isinstance(form, str) else None
+                if hasattr(owner, 'propose_utility_observation'):
+                    owner.propose_utility_observation(word, sorted(current) + [10_000_000 + w for w in sorted(wholes)])
+                owner.record_concept_fold_support(word, support)
+                boundaries.add(percept)
+                addresses[b][p] = row, word, owner._row_order(row), object_row, obj, order
+        columns = parts.new_tensor(addresses).reshape(batch, width, 6).unbind(-1)
+        return columns, parts.new_tensor(basic_rows).reshape(batch, width), boundaries
 
     def _stage_serial_concept_rows(self):
         """Resolve each staged word to one exact joint CS identity eagerly.
@@ -11455,7 +11529,6 @@ class BasicModel(BaseModel):
 
         spaces = list(getattr(self, "conceptualSpaces", None) or ())
         owner = spaces[0] if spaces else getattr(self, "conceptualSpace", None)
-        alloc = getattr(owner, "_concept_allocator", None)
         if owner is None or ws is None:
             rows = torch.full(
                 active.shape, -1, dtype=torch.long, device=part_ids.device)
@@ -11484,171 +11557,55 @@ class BasicModel(BaseModel):
         admitted = active if attention is None else active & attention.accepted
         parts = torch.where(part_mask.bool(), part_ids, -1)
         pool_readings = ps_fwd.get('pool_word_ids')
-        if pool_readings is not None:
-            # Only this compatibility reader needs integer PS/WS witnesses
-            # on the host. Its input bank holds no spellings or padding bytes.
+        basic = owner.basic_percepts
+        basic.bind(ws.subspace.what)
+        language = getattr(self, 'languageSpace', None)
+        if language is None:
+            language = getattr(getattr(self, 'symbolSpace', None), 'languageSpace', None)
+        anchors = getattr(language, '_surface_anchors', {})
+        if pool_readings is None:
+            columns, basic_rows, boundary_percepts = self._legacy_serial_word_rows(
+                owner, ws, basic, parts, admitted, word_texts, anchors)
+            rows, ids, orders, object_rows, object_ids, object_orders = columns
+        else:
+            from ModelAttention import canonical_word_parts
+            from WordConceptPool import basic_word_rows, supported_parts, word_membership
             witnesses = torch.stack((pool_readings, ps_fwd['pool_concept_rows'],
                                      ps_fwd['pool_properties']), -1)
             witnesses = F.pad(witnesses[:, :W], (0, 0, 0, max(0, W - witnesses.shape[1])), value=-1)
-            metadata = torch.cat((admitted[..., None], witnesses, parts), -1).tolist()
-        else:
-            metadata = torch.cat((admitted[..., None], parts), -1).tolist()
-        # A native read already has its word names and seats. The remaining
-        # host definition supplies the chosen object and its witnessed order.
-        address_width = 6 if pool_readings is None else 2
-        addresses = [[(-1,) * address_width for _ in range(W)] for _ in range(B)]
-        pending = []
-        # Perceptual passes change attention, not conceptual order. Native
-        # word definitions are order 0; only symbolization raises an object.
-        fold_support = owner._ordered_fold_support((), ())
-        definitions = owner.definitions
-        language = getattr(self, "languageSpace", None)
-        if language is None:
-            language = getattr(getattr(self, "symbolSpace", None),
-                               "languageSpace", None)
-        anchors = getattr(language, "_surface_anchors", {})
-        lexical_forms = isp._ar_word_lexical_forms
-
-        def _raw_int_refs(refs):
-            out = set()
-            for ref in refs or ():
-                if isinstance(ref, tuple):
-                    continue
-                try:
-                    out.add(int(ref))
-                except (TypeError, ValueError):
-                    continue
-            return out
-
-        basic = owner.basic_percepts
-        basic.bind(ws.subspace.what)
-        # Existing reads share one denotation table. Where a live presentation
-        # can mint a blank, preserve the original read/definition order.
-        from WordSurfaces import is_lexical_form
-        resolved_objects = None
-        native_basic = None
-        if pool_readings is not None:
-            from WordConceptPool import basic_word_rows
+            words, seats, properties = witnesses.unbind(-1)
+            native = self.perceptualSpace.percept_store
+            native.canonical_parts(())  # Refresh the store's admitted group ancestry.
+            canonical = canonical_word_parts(parts, native._canonical_group_cache[0])
+            membership = word_membership(owner, native, parts)
+            supported = supported_parts(canonical, seats, membership, native.capacity)
             labels = word_texts.labels
             names, percepts = basic.word_row_index(labels, part_ids.device)
-            native_basic = basic_word_rows(witnesses[..., 0], names, percepts)
-            native_basic = torch.where(admitted, native_basic, -1)
-            if owner.interpret.mandatory:
-                can_mint = (not getattr(owner, '_online_learning_frozen', False)
-                            and any(name in basic.words and is_lexical_form(labels.get(name, ''))
-                                    and not definitions.objects(name) and not alloc.named_identities.get(name)
-                                    for name in {row[1] for stream in metadata for row in stream if row[0]}))
-                if not can_mint:
-                    readable = torch.where(native_basic >= 0, witnesses[..., 0], -1)
-                    resolved_objects = owner.interpret.sentence_referents(readable).tolist()
-        basic_rows = None if native_basic is not None else [[-1]*W for _ in range(B)]
-        boundary_percepts = set()
-        for b in range(B):
-            texts_b = word_texts[b] if pool_readings is None and b < len(word_texts) else ()
-            for p in range(W):
-                if not metadata[b][p][0]:
-                    continue
-                if pool_readings is not None:
-                    value = labels.get(metadata[b][p][1], '')
-                else:
-                    value = texts_b[p] if p < len(texts_b) else None
-                if value is None:
-                    pending.append((b, p, None))
-                    continue
-                if not is_lexical_form(value):
-                    continue
-                key = str(value)
-                if pool_readings is None:
-                    word_id = definitions.word(form=key)
-                    seat = None
-                    current_wholes = set(ws.property_rows_for_bytes(key))
-                    part_values = metadata[b][p][1:]
-                else:
-                    _, word_id, seat, bits, *part_values = metadata[b][p]
-                    if word_id < 0:
-                        continue
-                    current_wholes = {i for i in range(min(int(ws.nVectors), 63)) if bits & (1 << i)}
-                ordered_parts = [part for part in part_values if part >= 0]
-                current_parts = set(self.perceptualSpace.fuse_parts(ordered_parts))
-                if word_id is None:
-                    # First sight is admitted here, at the same eager boundary
-                    # that already owns radix admission and WS analysis. The
-                    # aligned dictionary is physically fixed-capacity, so this
-                    # mutates only bounded relation records, the active-prefix
-                    # mask, and row metadata before any graph uses them. Exhaustion
-                    # raises with nVectors named before partial admission.
-                    triple = owner.interpret_word(
-                        ordered_parts, sorted(current_wholes), key=key,
-                        occurrence=(int(getattr(self, '_word_observation_serial', 0)), b, p),
-                        reading=owner.reading(b))
-                    if triple is None:
-                        pending.append((b, p, key))
-                        continue
-                    word_id = int(triple[0])
-                    alloc = getattr(owner, "_concept_allocator", None)
-                A = int(word_id)
-                # The word's basic percept is a row only once MTM nominated it.
-                basic_row = basic.words.get(A, -1)
-                if basic_rows is not None:
-                    basic_rows[b][p] = basic_row
-                if basic_row < 0:
-                    pending.append((b, p, key))
-                    continue
-                if resolved_objects is None:
-                    object_id, object_row, object_order = owner.interpret.reading(A, batch=b)
-                else:
-                    object_id = resolved_objects[b][p]
-                    object_row = owner._concept_row_of(object_id)
-                    object_order = owner._concept_source_order(object_id)
-                stored_parts = _raw_int_refs(owner.concept_parts(A))
-                # Surface identity alone is not enough: the active PS/WS
-                # support must already belong to the durable concept. A trie
-                # promotion or newly-discovered property therefore receives an
-                # honest unknown tick, then autobind accrues it at Reset.
-                if not current_parts.issubset(set(self.perceptualSpace.fuse_parts(stored_parts))):
-                    pending.append((b, p, key))
-                    continue
-                row = owner._concept_row_of(A) if seat is None else seat
-                if row is None or row < 0:
-                    pending.append((b, p, key))
-                    continue
-                if object_row is None:
-                    pending.append((b, p, key))
-                    continue
-                # Resolve lexical anchoring while the forward owns the word's
-                # segmented surface and exact WORD row.  A canonical OBJECT
-                # may be shared by converse forms, so it is not this key.
-                # Capture later reads only this per-staging provenance; it
-                # must not reclassify a completed word from transient text.
-                if int(row) not in lexical_forms:
-                    form = (anchors.get(value.casefold())
-                            if isinstance(value, str) else None)
-                    lexical_forms[int(row)] = form if isinstance(form, str) else None
-                # One utility observation per resolved unit (contract 4):
-                # counted once per presentation at the boundary Reset.
-                if hasattr(owner, "propose_utility_observation"):
-                    owner.propose_utility_observation(
-                        A, sorted(current_parts) + [10_000_000 + w for w in sorted(current_wholes)])
-                owner.record_concept_fold_support(A, fold_support)
-                boundary_percepts.add(basic_row)
-                if pool_readings is None:
-                    addresses[b][p] = (row, A, owner._row_order(row), object_row, object_id, object_order)
-                else:
-                    addresses[b][p] = (object_id, object_order)
-
-        isp._ar_basic_percept_ids = (native_basic if native_basic is not None
-                                     else part_ids.new_tensor(basic_rows, dtype=torch.long))
-        address_table = part_ids.new_tensor(addresses, dtype=torch.long).reshape(B, W, address_width)
-        if pool_readings is None:
-            rows, ids, orders, object_rows, object_ids, object_orders = address_table.unbind(-1)
-        else:
-            object_ids, object_orders = address_table.unbind(-1)
-            object_rows = alloc.layer(0).concept_rows(object_ids)
-            known = object_rows >= 0
-            ids = torch.where(known, witnesses[..., 0], -1)
-            rows = torch.where(known, witnesses[..., 1], -1)
+            basic_rows = torch.where(admitted, basic_word_rows(words, names, percepts), -1)
+            readable = torch.where(basic_rows >= 0, words, -1)
+            object_ids, object_rows, object_orders = owner.interpret.sentence_objects(readable)
+            known = (readable >= 0) & supported & (seats >= 0) & (object_rows >= 0)
+            ids = torch.where(known, words, -1)
+            rows = torch.where(known, seats, -1)
+            object_ids = torch.where(known, object_ids, -1)
+            object_rows = torch.where(known, object_rows, -1)
+            object_orders = torch.where(known, object_orders, -1)
             ends = rows.new_tensor(owner._order_caps()).cumsum(0)[:-1]
             orders = torch.where(known, torch.bucketize(rows, ends, right=True), -1)
+            owner.propose_word_utility(ids, canonical, properties)
+
+            # Public provenance belongs to the identified word. Repetitions
+            # write the same anchor and fold record regardless of their page.
+            schema = torch.stack((words, seats, basic_rows), -1)[known].unique(dim=0)
+            boundary_percepts = set()
+            support = owner._ordered_fold_support((), ())
+            for name, seat, percept in schema.tolist():
+                label = labels[name]
+                form = anchors.get(label.casefold()) if isinstance(label, str) else None
+                isp._ar_word_lexical_forms[seat] = form if isinstance(form, str) else None
+                owner.record_concept_fold_support(name, support)
+                boundary_percepts.add(percept)
+        isp._ar_basic_percept_ids = basic_rows
         isp._ar_word_concept_rows = rows
         isp._ar_word_concept_ids = ids
         isp._ar_word_concept_orders = orders
@@ -11766,7 +11723,6 @@ class BasicModel(BaseModel):
                 isp._ar_word_object_atoms = lookup_atoms[
                     :, object_start:object_start + int(object_rows.shape[1])
                 ].clone()
-        object.__setattr__(self, "_pending_sparse_concept_support", pending)
         return rows
 
     # -- per-step lifecycle (model-level) ------------------------------
@@ -12026,6 +11982,11 @@ class BasicModel(BaseModel):
         if (not torch.is_tensor(rows) or rows.ndim != 2
                 or not hasattr(resolved, "get")):
             return empty
+        from WordSurfaces import WitnessedForms
+        if isinstance(resolved, WitnessedForms):
+            named = resolved.read(rows[:batch, :width])
+            return tuple((tuple(named[b]) + (None,) * (width - len(named[b]))) if b < len(named)
+                         else empty[b] for b in range(batch))
         retained = rows[:batch, :width].detach().to("cpu").tolist()
         forms = []
         for b in range(batch):

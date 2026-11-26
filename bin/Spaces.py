@@ -13528,6 +13528,11 @@ class ConceptualSpace(Space):
         self.__dict__.setdefault("_cu_proposals", []).append(
             (int(concept_id), tuple(int(f) for f in features)))
 
+    def propose_word_utility(self, words, parts, properties):
+        """Keep the native evidence together until the presentation's Reset."""
+        batch = torch.cat((words[..., None], properties[..., None], parts), -1)
+        self.__dict__.setdefault('_cu_proposals', []).append(batch.flatten(0, 1).detach())
+
     def category_utility(self, concept_id, smoothing=None, min_count=None):
         """Corter & Gluck (1992) utility of one concept from the counters:
         ``P(c) * (sum_f P(f|c)^2 - sum_f P(f)^2)`` over the concept's
@@ -13554,13 +13559,25 @@ class ConceptualSpace(Space):
         proposals = self.__dict__.pop("_cu_proposals", None) or []
         if not proposals:
             return
-        cu = self.utility_counts()
-        cu["n"] += 1
         # A presentation counts a concept (and a concept-feature pair) at
         # most once: P(c) is the fraction of presentations containing c.
         per_concept = {}
-        for concept_id, feats in proposals:
-            per_concept.setdefault(concept_id, set()).update(feats)
+        for proposal in proposals:
+            if torch.is_tensor(proposal):
+                for concept_id, bits, *parts in proposal[proposal[:, 0] >= 0].tolist():
+                    features = per_concept.setdefault(concept_id, set())
+                    features.update(sorted({part for part in parts if part >= 0}))
+                    while bits > 0:
+                        least = bits & -bits
+                        features.add(10_000_000 + least.bit_length() - 1)
+                        bits -= least
+            else:
+                concept_id, feats = proposal
+                per_concept.setdefault(concept_id, set()).update(feats)
+        if not per_concept:
+            return
+        cu = self.utility_counts()
+        cu["n"] += 1
         seen_f = set()
         for concept_id, feats in per_concept.items():
             cu["n_c"][concept_id] = cu["n_c"].get(concept_id, 0) + 1

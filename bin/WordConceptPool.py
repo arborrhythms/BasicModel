@@ -201,6 +201,7 @@ def prepare(model):
                 raw.append(value)
                 words.append(word)
                 unique.append(len(description['forms']) == 1)
+    pool.form_labels = {}
     pool.longest_spelling = max(map(len, raw), default=1)
     pool.stored_spellings = True
     mapping = torch.full_like(pool.words, -1)
@@ -214,6 +215,8 @@ def prepare(model):
         rows = table.read(data, lengths, admit=False) if frozen else table.insert(data, lengths)
         # A restored frozen model can have definitions predating its form
         # table. Its missing form remains unknown; inference admits nothing.
+        pool.form_labels = {row: spelling.decode('latin1') for row, spelling in zip(rows.tolist(), raw)
+                            if row >= 0}
         valid = rows >= 0
         word_ids = rows.new_tensor(words)
         mapping.scatter_reduce_(0, rows.clamp_min(0), torch.where(valid, word_ids, -1), 'amax')
@@ -311,6 +314,53 @@ def basic_word_rows(words, names, rows):
     return torch.where((words >= 0) & (keys[at] == words), values[at], -1)
 
 
+def supported_parts(parts, seats, entries, capacity):
+    """Test every observed part against the stored membership of its own word."""
+    keys = seats[..., None] * capacity + parts
+    at = torch.searchsorted(entries, keys.contiguous())
+    stored = torch.nn.functional.pad(entries, (0, 1), value=-1)
+    valid = (seats >= 0)[..., None] & (parts < capacity) & (stored[at] == keys)
+    return ((parts < 0) | valid).all(-1)
+
+
+def raw_part_ids(refs):
+    raw = set()
+    for ref in refs:
+        if not isinstance(ref, tuple):
+            try:
+                raw.add(int(ref))
+            except (ValueError, TypeError):
+                continue
+    return raw
+
+
+def word_membership(owner, store, like):
+    """The sorted (word seat, canonical native part) index of the live schema."""
+    matrix = owner._concept_allocator.layer(0)
+    basic = owner.basic_percepts
+    capacity = store.capacity
+    stamp = (getattr(matrix, '_record_revision', 0), id(matrix._constituents), len(matrix._tensor_row_keys),
+             id(basic.words), len(basic.words), capacity, like.device)
+    cached = vars(matrix).get('_word_membership')
+    groups = store._canonical_group_cache
+    if cached is None or cached[0] != stamp or cached[1] is not groups:
+        entries = []
+        for name in basic.words:
+            seat = owner._concept_row_of(name)
+            if seat is None:
+                continue
+            # Added structural relations have tagged endpoints. Only the
+            # native records supply raw percept ids. Preserve concept_parts'
+            # ordering before it hands those ids to the recurrent retile.
+            refs = {ref for role, ref in matrix.iter_constituents(name) if role == 'part'}
+            raw = raw_part_ids(sorted(refs, key=repr))
+            canonical = set(store.canonical_parts(raw))
+            entries.extend(seat * capacity + part for part in canonical if 0 <= part < capacity)
+        cached = stamp, groups, like.new_tensor(sorted(entries), dtype=torch.long)
+        matrix._word_membership = cached
+    return cached[2]
+
+
 class WordLabels:
     """Display labels of the nominated words, materialized by a text reader."""
     def __init__(self, words, labels):
@@ -374,6 +424,7 @@ def stage(model, fi):
                         witnesses=(characters, payload[3 * width:]))
                     if installed is None:
                         raise RuntimeError('MTM nominated a word without a free concept row')
+                    pool.form_labels[form] = raw.decode('latin1')
                     description = owner._concept_allocator.word_descriptions[word]
                     labels[word] = next(iter(description['forms']), '')
             pool.labels = labels

@@ -847,6 +847,59 @@ class InterpretLayer(GrammarLayer):
             resolved = torch.where(keys[at] == words, values[at], resolved)
         return resolved
 
+    def sentence_objects(self, words):
+        """Resolve this presentation, allocating needed blank objects in reading order."""
+        from WordConceptPool import basic_word_rows
+        cs = self.owner
+        alloc = cs._concept_allocator
+        if self.mandatory:
+            if not getattr(cs, '_online_learning_frozen', False):
+                possible = sorted(name for name in alloc.word_descriptions
+                                  if not alloc.named_identities.get(name) and not cs.definitions.objects(name))
+                if possible:
+                    names = words.new_tensor(possible)
+                    places = torch.arange(words.numel(), device=words.device)
+                    at = basic_word_rows(words.flatten(), names, torch.arange(len(names), device=words.device))
+                    first = words.new_full((len(names) + 1,), words.numel())
+                    first.scatter_reduce_(0, torch.where(at >= 0, at, len(names)), places, 'amin')
+                    newly_read = sorted((place, name) for place, name in zip(first[:-1].tolist(), possible)
+                                        if place < words.numel())
+                    for place, name in newly_read:
+                        self.reading(name, batch=place // words.shape[1])
+            objects = self.sentence_referents(words)
+        else:
+            objects = words
+        matrix = alloc.layer(0)
+        seats = matrix.concept_rows(objects)
+        if not self.mandatory:
+            from Meaning import require_sentence_tensor
+            require_sentence_tensor(((words < 0) | (seats >= 0)).all(), 'an identified word has no conceptual row')
+        # Seated concepts take the order of their physical block. A seated
+        # relation instead takes the order of its denotation, and an old
+        # occurrence name can refer back into the store.
+        if alloc.order_from_row == cs._seated_concept_order:
+            ends = seats.new_tensor(cs._order_caps()).cumsum(0)[:-1]
+            orders = torch.where(seats >= 0, torch.bucketize(seats, ends, right=True), -1)
+            alloc.parts._index()
+            unusual = sorted(key[1] for key in matrix._tensor_rows if isinstance(key, tuple)
+                             and key[0] == 'concept' and
+                             (key[1] in alloc.parts._endpoints or key[1] not in alloc.concepts))
+            if not unusual:
+                return objects, seats, orders
+            # Query only exceptional names this sentence actually addresses.
+            exceptional = objects.new_tensor(unusual)
+            which = basic_word_rows(objects, exceptional, exceptional)
+            names = which[which >= 0].unique()
+        else:
+            names = objects[seats >= 0].unique()
+            orders = torch.full_like(objects, -1)
+        host = names.tolist()
+        overrides = names.new_tensor([cs._concept_source_order(name) for name in host])
+        at = torch.searchsorted(names, objects.contiguous())
+        known = (at < len(names)) & (torch.nn.functional.pad(names, (0, 1), value=-1)[at] == objects)
+        orders = torch.where(known, torch.nn.functional.pad(overrides, (0, 1), value=-1)[at], orders)
+        return objects, seats, orders
+
     def reading(self, word, *, batch=0):
         """Identify a read site's object; a word with no object is given its
         blank object (:meth:`blank`), and the word that names it is the meta

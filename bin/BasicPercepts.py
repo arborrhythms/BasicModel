@@ -764,7 +764,7 @@ class BasicPercepts(nn.Module):
         cached = self._word_row_index
         if cached is None or cached[0] is not labels or cached[1].device != device:
             pairs = sorted((name, row) for name, row in self.words.items()
-                           if is_lexical_form(labels.get(name, '')))
+                           if labels is None or is_lexical_form(labels.get(name, '')))
             index = torch.tensor(pairs, dtype=torch.long, device=device).reshape(-1, 2).T.contiguous()
             self._word_row_index = labels, index
         return self._word_row_index[1].unbind(0)

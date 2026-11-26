@@ -373,3 +373,28 @@ def test_wide_containment_uses_one_address_per_form():
     # escaped character. The character-aligned occurrence takes precedence.
     assert addresses[0, 0xa9].item() == 2 * 0xa9 + 1
     assert chars[0, -1].tolist() == [0xa9, 1]
+
+
+def test_native_word_support_retiles_formed_parts_before_membership(device):
+    from ModelAttention import canonical_word_parts
+    from WordConceptPool import supported_parts
+    leaves = {7: (1, 2), 8: (2, 3), 9: (1, 2, 1)}
+    words = torch.tensor([[[7, 8, -1], [1, -1, 8]], [[7, 1, 2], [-1, -1, -1]]], device=device)
+    def read(parts, seats, entries):
+        current = canonical_word_parts(parts, leaves)
+        return current, supported_parts(current, seats, entries, 16)
+    seats = words.new_tensor([[0, 0], [1, -1]])
+    allowed = words.new_tensor([3, 7, 8, 16 + 9])
+    canonical, known = torch.compile(read, backend='eager', fullgraph=True)(words, seats, allowed)
+    assert [[r[r >= 0].tolist() for r in page] for page in canonical] == [[[7, 8], [7, 3]], [[9, 2], []]]
+    assert known.tolist() == [[True, True], [False, True]]
+
+
+def test_mixing_columns_require_one_active_ending_within_the_word(device):
+    from WordSurfaces import mixing_columns
+    units = torch.tensor([[[0, 3], [4, 7], [8, 10], [0, 0]]], device=device)
+    spans = units.new_tensor([[[0, 3], [1, 3], [3, 7], [4, 7], [8, 10]]])
+    active = units.new_tensor([[1, 1, 1, 1, 0]]).bool()
+    seats = units.new_tensor([[0, 0, -1, 1, 2]])
+    assert mixing_columns(units, seats, spans, active, False).tolist() == [[-1, 3, -1, -1]]
+    assert mixing_columns(units, seats, None, active, False).tolist() == [[1, 3, 4, -1]]
