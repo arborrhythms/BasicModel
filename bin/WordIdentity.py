@@ -792,8 +792,9 @@ class WordIdentity(nn.Module):
 
     def load_vocab_extras(self, value):
         if value.get('given') or value.get('bits'):
-            raise ValueError('this vocabulary was saved with coordinates given to its forms to tell their codes '
-                             'apart; a stored form is now known by its row, and those codes are not restored')
+            import warnings
+            warnings.warn('this vocabulary was saved with coordinates given to its forms to tell their codes '
+                          'apart; a stored form is now known by its row, and those codes are dropped')
         for name in ('atoms', 'words', 'word_rows', 'added', 'revision'):
             setattr(self, name, value[name])
         self.__dict__.pop('_by_byte', None)

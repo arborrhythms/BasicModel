@@ -429,7 +429,8 @@ What the curriculum orders is the operations the model learns; the parts of spee
 generalization and an object generalization are each learned from their own
 occurrences, each a row that MTM nominates on recurrence with its concept;
 the object may be of another modality than the word. An occurrence keeps its
-place and time, and a generalization holds neither. Then the meta concept of
+place and time, and so does its concept of order zero; the noun, a symbol of
+the Pi of order one, holds neither ([Orders](Orders.md)). Then the meta concept of
 the two, one order above the higher of them, is learned from their consistent
 association, when the word's concept and the object's have been present
 together on enough occasions; after it a word that is found raises its
@@ -568,6 +569,51 @@ rebuild only its hash manifest with
 `.venv/bin/python bin/image_corpus.py freeze-mnist --out data/images`.
 Part A's schema has no evaluation-set slot, so these images are not added
 to the staged training manifest.
+
+Sentences read beside small images live under `data/felt/`. An image is
+pixel values on a plane of 8 by 8 places: nine values, each a band of seven
+steps of intensity, over a background of zero. A thing is a set of touching
+places of one value, and a digit's word names a value: "three is above
+four." says that the pixel value 3 is above the pixel value 4. A document is
+a list of entries, each a text, which may be empty, with one image or none.
+Successive entries are successive moments, so a movement is shown by the
+images before the sentence that tells it. A document seen with no image
+(`null`) is told from one whose image holds nothing (`[]`).
+
+The 27 categories are constructions of English, from a word alone to a
+clause inside a phrase, and counting. Each has a recipe under
+`data/felt/recipes/` that holds its frames, and `cast.json` there holds
+every word; `bin/felt_world_corpus.py` holds none. It draws a world until
+every statement of a document is true of its images, and records each
+statement's meaning so that `verify` can evaluate it again on the frozen
+row. The splits of a category:
+
+| Split | What it is |
+|---|---|
+| `train`, `validation`, `test` | 100, 20 and 20 documents, true of their images |
+| `generalization` | a cast held out of the category |
+| `witness` | one statement false of its image, marked so |
+| `inference` | said with no image; the answer follows from what is said and is not among it |
+| `contrast` | for the place of two things: sets of twelve that exchange two things in one column and ask of both orders |
+| `haystack` | a construction of train in a crowded image, six things or more |
+
+One step of intensity and eight places are kept back for each value from
+every split but the naming category's `generalization`, which shows each
+value there and asks its name. Of six and of seven, that it is not of the
+other kind is said nowhere but in an `inference` split, where it is asked
+after "six is even.": the answer has to come through the kinds, which are
+said of each other ("no even is odd."). Of the sums said in words, four
+are kept back in one order and taught in the other, and four are kept back
+in both with their differences; a row's `probe` says which it asks. Rebuild the files and their manifest with
+`.venv/bin/python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt`.
+The same module's `load(category, split)` returns the documents with their
+images, and `rows(document)` gives a document as the rows a model takes, one
+for each entry in order, each its `text` and its `scene`, with the
+document's question and answer. A model that declares a scene's box
+(`architecture.sceneShape`) takes every such row at `prepInput`, reads its
+image with its sentence at the opening, and is charged for putting the
+image back. No loader of the model
+reads these files, and they are not in the staged training manifest.
 
 Learning is judged by four measurements, each reported per epoch: the cost
 on the held-out cost set (`data/eval/heldout-cost.json`, the union of part A's

@@ -23,15 +23,16 @@ def test_nested_clause_retains_its_own_field_without_program_or_targets(monkeypa
 
 def test_closing_copies_encoded_field_bands_without_coordinatewise_pooling(monkeypatch):
     _, registry, language, entry, _ = _nested(monkeypatch)
-    where = WhereEncoding(nWhere=4).set_capacity(1024)
+    from architecture import WHERE_WIRES, WHERE_AXES
+    where = WhereEncoding(nWhere=WHERE_WIRES, axes=WHERE_AXES).set_capacity(1024)
     when = WhenStartDurationEncoding(n_when=4).set_capacity(128)
-    stamps = where.encode(torch.tensor([3, 512, 923]))
+    stamps = where.encode_place(where.point(torch.tensor([3, 512, 923])))
     times = when.encode(torch.tensor([27, 27, 27]))
     entry = replace(entry, symbol_where=stamps, symbol_when=times)
     clause = finish_reading(language, entry,
         meaning=language.program_meaning(entry, registry), registry=registry)
     for value in (clause, *clause.children):
-        assert int(where.decode_index(value.where)) == 3
+        assert where.decode_place(value.where).tolist() == [3, 0, 0]
         assert int(when.decode_index(value.when)) == 27
         torch.testing.assert_close(value.where, stamps[0])
         torch.testing.assert_close(value.when, times[0])
@@ -71,7 +72,9 @@ def test_three_slot_closing_registers_its_composite_operand(monkeypatch):
     clause = finish_reading(language, entry, meaning=meaning, depth=3, registry=registry)
     assert clause.refs[0] == ('clause', 0)
     assert len(clause.children) == 1 and clause.children[0].relation == 'part'
-    store = LTM0(leaves.shape[-1], capacity=8)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # A long-term store holds at least a percept's band.
+    store = LTM0(max(leaves.shape[-1], WHERE_WIRES + WHEN_WIRES), capacity=8)
     from ClauseRow import attach_clause_index
     from types import SimpleNamespace
     attach_clause_index(SimpleNamespace(languageSpace=language), store, registry.space)

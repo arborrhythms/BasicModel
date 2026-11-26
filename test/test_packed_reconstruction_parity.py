@@ -8,6 +8,8 @@ from pathlib import Path
 import pytest
 import torch
 
+from architecture import WHERE_WIRES, WHEN_WIRES
+
 
 ATOL, RTOL = 1e-6, 1e-5
 
@@ -119,15 +121,17 @@ def measure_layout(model, rows, *, packed):
                     words = mask.nonzero().flatten()
                     stamps = torch.cat((word_view(isp,'symbol_where')[b,words],
                                         word_view(isp,'symbol_when')[b,words]), -1).detach()
-                    start = model.symbolSpace.ltm_store.when_start-4
-                    carried = (stamps == root[0,start:start+8]).all(-1)
+                    # The root's place and time: [when_start - WHERE_WIRES, when_start + WHEN_WIRES).
+                    start = model.symbolSpace.ltm_store.when_start-WHERE_WIRES
+                    end = start+WHERE_WIRES+WHEN_WIRES
+                    carried = (stamps == root[0,start:end]).all(-1)
                     assert bool(carried.any()), (
-                        f'{(b, sentence)}: the root stamp {root[0,start:start+8].tolist()} '
+                        f'{(b, sentence)}: the root stamp {root[0,start:end].tolist()} '
                         f'is no word of its sentence: {stamps.tolist()}')
                     head = int(carried.long().argmax())
                     stamp = stamps[head].clone()
                     content = root.clone()
-                    content[:,start:start+8] = 0
+                    content[:,start:end] = 0
                     recovered = model._recon_ideas[b, mask].detach().clone()
                     percept = model.perceptualSpace.subspace
                     # Native readback now includes its own placement/time

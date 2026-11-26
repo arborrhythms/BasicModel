@@ -373,7 +373,7 @@ def test_open_closing_and_later_binding_are_reference_driven(surface):
     from ClauseRow import Clause
     from Understanding import SentenceEndState
     model,registry,store,(a,b,c)=world()
-    source=ConceptualMeaning.from_description(torch.linspace(0.,1.,8))
+    source=ConceptualMeaning.from_description(torch.linspace(0.,1.,model.conceptualSpace.nDim))
     clause=Clause(source,point=source.roles[0],evidence=(0.,0.))
     parsed=replace(source) if surface!='unicorn' else None
     q=closing_question(source,clause,parsed,SimpleNamespace(lexical_forms=(surface,)))

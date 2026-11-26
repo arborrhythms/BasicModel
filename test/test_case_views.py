@@ -161,7 +161,7 @@ def test_accessible_event_stages_before_change_after_with_bilateral_memberships(
         code.new_zeros(1, 1, 2), torch.ones(1, 1, dtype=torch.bool))
     before = f.cs.mtm.state()
     staged = stage_event_cases(bank, f.cs.components.reference_close, [(frame,)], limit=4)
-    assert staged.codes.shape == (1, 4, 8)
+    assert staged.codes.shape == (1, 4, f.cs.nDim)
     for actual, expected in zip(staged.codes[0, 1:], (event.before, code, f.cs.mtm.event_value(event))):
         torch.testing.assert_close(actual, expected)
     torch.testing.assert_close(staged.cases[0, 0, 1:], code.new_tensor([[.8, .2]]).expand(3, -1))
@@ -184,8 +184,11 @@ def test_phase_question_uses_selected_content_and_never_the_event_clock(monkeypa
         actions=(action, modifier), evidence=(.8, .2))
     token, entry = next(iter(f.cs.mtm.entries.items()))
     event = entry.events[0]
-    wanted = torch.tensor([1., 1., 0., 0., 1., 1., 0., 0.])
-    partial = torch.tensor([1., 0., 0., 0., 1., 0., 0., 0.])
+    # Two evidence lanes of half the concept's width (_D: 8 -> 16): the
+    # first two wires of each lane, and the first wire of each.
+    lane = f.cs.nDim // 2
+    wanted = torch.zeros(2, lane); wanted[:, :2] = 1.; wanted = wanted.flatten()
+    partial = torch.zeros(2, lane); partial[:, 0] = 1.; partial = partial.flatten()
     reader = ThoughtLTMCapability(store=lambda: f.store, equal=lambda a,b: 1., tau_id=.9)
     query_value = f.cs.mtm.value_of(token)
     def ask(content):
@@ -248,10 +251,10 @@ def test_close_transports_phase_content_as_a_query_constituent(monkeypatch):
     _, frame, row, _ = close(f, recording(f, ('change', ('lower_unary', 'subject'), 'move')),
         actions=(action, modifier), evidence=(1., 0.))
     program = recording(f, ('change', ('bind', 'subject'), 'move'), (frame,))
-    values = torch.zeros(len(program.actions), 8)
+    values = torch.zeros(len(program.actions), f.cs.nDim)
     selected = torch.zeros(len(program.actions), dtype=torch.bool)
     root = len(program.actions)-1
-    values[root, 1] = values[root, 5] = .6
+    values[root, 1] = values[root, f.cs.nDim // 2 + 1] = .6  # wire 1 of each lane
     selected[root] = True
     program = replace(program, case_values=values, case_selected=selected)
     clause, _, _, written = close(f, program, (frame,), position=1, question=True)

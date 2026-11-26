@@ -8,7 +8,10 @@ import torch
 @pytest.mark.parametrize('legacy', ('episodic_percepts', 'episodic_poles', 'episodic_where'))
 def test_legacy_percept_entry_is_dropped_and_named(legacy):
     from Memory import LTM0
-    store = LTM0(12, capacity=4, percept_width=12, episodic_concepts=2)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # Four wires of what and the percept band, all of it the percept.
+    width = 4 + WHERE_WIRES + WHEN_WIRES
+    store = LTM0(width, capacity=4, percept_width=width, episodic_concepts=2)
     state = copy.deepcopy(store.state_dict())
     state[legacy] = torch.ones(4, 2) if legacy == 'episodic_percepts' else torch.ones(4, 2, 2)
     with pytest.warns(UserWarning, match='dropped.*' + legacy) as warnings:

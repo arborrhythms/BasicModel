@@ -1,4 +1,5 @@
 """Learned unions of byte primitives and folds over observed extents."""
+from contextlib import contextmanager
 import torch
 from torch import nn
 
@@ -85,6 +86,22 @@ class _PropertySupportRead(torch.autograd.Function):
         return (torch.cat(chunks, 0) if chunks else torch.zeros_like(weights)), None, None
 
 
+def leaf_groups(sets, width):
+    """The coordinate of each leaf of a whole space ``width`` wide, the one
+    construction for characters and for values: ``sets`` names, for each
+    leaf, the classes that hold it; the leaves held by exactly the same
+    classes are one group, and each group takes one coordinate, the groups
+    in the order of their sets of classes. A class's code is then the OR of
+    its leaves', and the top the OR of all."""
+    sets = [tuple(held) for held in sets]
+    order = sorted(set(sets))
+    if len(order) > int(width):
+        raise ValueError(f'{len(order)} groups of leaves exceed the {int(width)} '
+                         'coordinates of the wholes half')
+    place = {held: i for i, held in enumerate(order)}
+    return tuple(place[held] for held in sets)
+
+
 #: The row of the table of wholes for the class of all characters.
 TOP = -1
 
@@ -130,13 +147,11 @@ class PrimitiveProperties(nn.Module):
         if not self.property_width:
             return
         holds = (self.coefficients().detach() > .5).t().cpu().tolist()
-        sets = [tuple(r for r, held in enumerate(byte) if held) for byte in holds]
-        order = sorted(set(sets))
-        if len(order) > self.property_width:
-            raise ValueError(f'{len(order)} groups of bytes exceed the {self.property_width} '
-                             'coordinates of the wholes half')
-        place = {held: i for i, held in enumerate(order)}
-        coordinate = tuple(place[held] for held in sets)
+        coordinate = leaf_groups((tuple(r for r, held in enumerate(byte) if held) for byte in holds),
+                                 self.property_width)
+        self._place_bytes(coordinate)
+
+    def _place_bytes(self, coordinate):
         if coordinate == self.byte_coordinate:
             return
         self.byte_coordinate = coordinate
@@ -147,6 +162,22 @@ class PrimitiveProperties(nn.Module):
                                    for i in range(self.property_width))
         self.layout += 1
         self._revision += 1
+
+    @contextmanager
+    def _declaring(self):
+        """A declaration whose groups do not fit the wholes half is refused
+        whole: the table is left as it stood before it."""
+        saved = (self.members.detach().clone(), self.observed.clone(), self.fixed_rows.clone(),
+                 self.fixed_members.clone(), dict(self.given_by))
+        try:
+            yield
+        except ValueError:
+            with torch.no_grad():
+                self.members.copy_(saved[0])
+                for name, value in zip(('observed', 'fixed_rows', 'fixed_members'), saved[1:4]):
+                    getattr(self, name).copy_(value)
+            self.given_by = saved[4]
+            raise
 
     def _member_versions(self):
         return tuple((id(value), value._version) for value in
@@ -204,19 +235,24 @@ class PrimitiveProperties(nn.Module):
         rows = tuple(sorted(dict.fromkeys(map(int, rows))))
         if int(row) in rows or not rows or not all(0 <= r < len(self.members) for r in rows):
             raise ValueError('a row of the table is given by two or more other rows of it')
-        self.given_by[int(row)] = rows
-        self.members[row].copy_(self.coefficients()[list(rows)].amin(0))
-        self.observed[row] = self.observed[list(rows)].all(0)
-        self._revision += 1
-        self.regroup()
+        with self._declaring():
+            self.given_by[int(row)] = rows
+            self.members[row].copy_(self.coefficients()[list(rows)].amin(0))
+            self.observed[row] = self.observed[list(rows)].all(0)
+            self._revision += 1
+            self.regroup()
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
-        return _pack_state(dict(given_by=tuple(self.given_by.items())))
+        # The layout is saved: training moves coefficients without regrouping,
+        # so the memberships alone do not give back the codes in use.
+        return _pack_state(dict(given_by=tuple(self.given_by.items()), byte_coordinate=self.byte_coordinate))
 
     def set_extra_state(self, state):
         from IndependentComponents import _unpack_state
-        self.given_by = {int(k): tuple(v) for k, v in _unpack_state(state).get('given_by', ())}
+        state = _unpack_state(state)
+        self.given_by = {int(k): tuple(v) for k, v in state.get('given_by', ())}
+        self._saved_coordinate = state.get('byte_coordinate')
 
     def top(self):
         """The code of the class of all characters, the row ``TOP`` of the
@@ -260,11 +296,12 @@ class PrimitiveProperties(nn.Module):
         """An immutable whole over exactly the reader's letter predicate."""
         from Meronomy import _letter
         value=torch.tensor([_letter(i) for i in range(256)],device=self.members.device,dtype=self.members.dtype)
-        self.fixed_rows[row]=True
-        self.fixed_members[row].copy_(value)
-        self.members[row].copy_(value)
-        self.observed[row]=True
-        self.regroup()
+        with self._declaring():
+            self.fixed_rows[row]=True
+            self.fixed_members[row].copy_(value)
+            self.members[row].copy_(value)
+            self.observed[row]=True
+            self.regroup()
 
     def coefficients(self, rows=None):
         if self.given_by:
@@ -369,12 +406,13 @@ class PrimitiveProperties(nn.Module):
             if not torch.equal(targets,self.fixed_members[row,ids]):
                 raise ValueError('a fixed property cannot be taught conflicting memberships')
             return 0., 0.
-        self.observed[row, ids] = True
-        before = (self.members[row, ids] - targets).square().mean()
-        for _ in range(int(steps)):
-            self.members[row, ids] += float(rate) * (targets - self.members[row, ids])
-        self.project()
-        self.regroup()
+        with self._declaring():
+            self.observed[row, ids] = True
+            before = (self.members[row, ids] - targets).square().mean()
+            for _ in range(int(steps)):
+                self.members[row, ids] += float(rate) * (targets - self.members[row, ids])
+            self.project()
+            self.regroup()
         after = (self.members[row, ids] - targets).square().mean()
         return float(before), float(after)
 
@@ -409,4 +447,10 @@ class PrimitiveProperties(nn.Module):
         state_dict.pop(prefix + 'byte_bits', None)
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)
-        self.regroup()
+        saved = getattr(self, '_saved_coordinate', None)
+        self._saved_coordinate = None
+        if (self.property_width and saved is not None and len(saved) == 256
+                and all(0 <= int(c) < self.property_width for c in saved)):
+            self._place_bytes(tuple(int(c) for c in saved))
+        else:
+            self.regroup()

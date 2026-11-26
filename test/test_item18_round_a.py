@@ -180,15 +180,19 @@ def test_75_checkpoint_reallocation_preserves_every_row_and_identity():
 
 def test_retained_row_lookup_reads_names_and_native_writes_update_it():
     from Memory import LTM0
-    store = LTM0(12, capacity=16, percept_width=8)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    band = WHERE_WIRES + WHEN_WIRES
+    # The percept band and four wires of content.
+    width = band + 4
+    store = LTM0(width, capacity=16, percept_width=band)
     for value in range(8):
-        store.append_idea(torch.full((12,), value / 8.))
+        store.append_idea(torch.full((width,), value / 8.))
     store.clear_caches()
     for _ in range(3):
         for row in range(8):
             assert store.index_of_row(store.row_name(row)) == row
     saved = {key: value.clone() for key, value in store.state_dict().items()}
-    row = store.append_idea(torch.ones(12))
+    row = store.append_idea(torch.ones(width))
     name = store.row_name(row)
     assert store.index_of_row(name) == row
     store.restore_runtime_state(saved)
@@ -196,23 +200,26 @@ def test_retained_row_lookup_reads_names_and_native_writes_update_it():
 
 def test_retained_exclusion_counts_follow_append_compaction_and_restore():
     from Memory import LTM0
-    store = LTM0(12, capacity=24, percept_width=8)
-    points = torch.zeros(2, 12)
-    points[0, 8], points[1, 9] = 1., 1.
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # C: the percept band's width, the first wire of content past it.
+    C = WHERE_WIRES + WHEN_WIRES
+    store = LTM0(C + 4, capacity=24, percept_width=C)
+    points = torch.zeros(2, C + 4)
+    points[0, C], points[1, C + 1] = 1., 1.
     for point in points:
         for _ in range(8):
             store.append_idea(point)
-    assert store.coordinate_exclusions(8,order=0) == ((8, 9),)
+    assert store.coordinate_exclusions(C,order=0) == ((C, C + 1),)
     before = {key: value.clone() for key, value in store.state_dict().items()}
     counts = store._coordinate_counts
     joint = store._coordinate_joint
     store.append_idea(points.sum(0))
-    assert store.coordinate_exclusions(8,order=0) == ()
+    assert store.coordinate_exclusions(C,order=0) == ()
     assert store._coordinate_counts is counts and store._coordinate_joint is joint
     store.restore_runtime_state(before)
-    assert store.coordinate_exclusions(8,order=0) == ((8, 9),)
+    assert store.coordinate_exclusions(C,order=0) == ((C, C + 1),)
     store.compact_rows(range(1, 16))
-    assert store.coordinate_exclusions(8,order=0) == ()
+    assert store.coordinate_exclusions(C,order=0) == ()
 
 
 def test_derived_concept_projection_and_rebuild_are_identical():

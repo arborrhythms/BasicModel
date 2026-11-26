@@ -49,7 +49,7 @@
   </SymbolSpace>
 
   <InputSpace>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>128</nVectors>
     <nOutput>128</nOutput>
     <codebook>quantize</codebook>
@@ -57,7 +57,7 @@
 
   <PartSpace>
     <nOutput>128</nOutput>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
   </PartSpace>
@@ -67,7 +67,7 @@
   <ConceptualSpace>
     <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
     <nOutput>128</nOutput>
-    <nDim>232</nDim>
+    <nDim>240</nDim>
     <nVectors>128</nVectors>
     <invertible>true</invertible>
     <tetralemmaOverride enabled="false" />
@@ -76,7 +76,7 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nOutput>128</nOutput>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>128</nVectors>
     <tetralemmaOverride enabled="false" />
   </WholeSpace>

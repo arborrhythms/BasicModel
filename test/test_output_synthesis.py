@@ -374,6 +374,10 @@ def test_numeric_field_inverse_scores_identity_and_a_changed_target(synth_config
     m = _build(synth_config)
     x, _ = _batch(m)
     with torch.no_grad():
+        # An input is put back once its places are known: it is presented
+        # as often as nominates a place's row.
+        for _ in range(m._concept_owner().concept_mint_count):
+            m.forward(x)
         u = m.understand(x)
         rev, cost = m.reverseReconstruct(u, target=u.execution[0])
         assert cost is not None and float(cost) == 0.

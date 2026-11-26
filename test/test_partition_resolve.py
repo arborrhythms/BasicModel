@@ -32,6 +32,7 @@ if _TEST not in sys.path:
 
 import Models
 import Spaces
+from architecture import WHERE_WIRES, WHEN_WIRES
 from test_basicmodel import _populate_test_config
 
 
@@ -39,7 +40,8 @@ from test_basicmodel import _populate_test_config
 # Builder
 # ---------------------------------------------------------------------------
 
-def _make_symbolic_space(nSymbols=3, symbolDim=8, conceptDim=8):
+def _make_symbolic_space(nSymbols=3, symbolDim=WHERE_WIRES + WHEN_WIRES,
+                         conceptDim=WHERE_WIRES + WHEN_WIRES):
     """Construct a minimal WholeSpace via TheXMLConfig + direct constructor.
 
     Uses the same _populate_test_config / TheXMLConfig approach used by the

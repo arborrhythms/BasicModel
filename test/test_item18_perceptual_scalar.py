@@ -58,13 +58,13 @@ def test_scalar_object_collects_value_bounded_basic_percepts(named_scalar_model)
     for percept in percepts:
         parts, wholes = basic.occurrences[percept]
         assert parts and wholes
-        # Rule 55: in each half, the bins of its place at or below the value.
-        place = int(basic.places[percept])
+        # Rule 55: in the parts half, the bins at or below the value, in
+        # order; in the wholes half, its level's group.
         code = basic.code(percept)
         torch.testing.assert_close(code[:basic.identity_width],
-                                   basic.value_code(value, basic.identity_width, place))
+                                   basic.value_code(value, basic.identity_width))
         torch.testing.assert_close(code[basic.identity_width:],
-                                   basic.value_code(value, basic.property_width, place))
+                                   basic.value_whole(value.to(basic.value_codes)))
         assert basic.felt([percept]).item() == pytest.approx(value.item())
 
 

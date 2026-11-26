@@ -608,7 +608,8 @@ Feeling has a carrier of its own: a continuous value read beside the
 discrete words. Alec (2026-11-11): "so feelings are continuous, concepts are
 discrete, and we have a better model of nonconceptual knowing: continuity."
 The value is the continuous feeling that corresponds to the discrete
-boundaries symbolic discrimination establishes. A number n is felt as
+boundaries symbolic discrimination establishes. An intensity is a value from
+0 to 1; a number n that is not one is charted onto 0..1 before it is read, as
 g/(1+g), with g = ln(1+n): zero at absence, and one only in the limit. The
 felt value is categorized against perceptual parts and wholes whose codes
 are values, knit at basic percepts, and a word's concept over it is an

@@ -1,0 +1,144 @@
+{
+ "category": 6,
+ "construction": "Order of levels",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "inference": {
+  "alternate": true,
+  "converse_pairs": [
+   [
+    "less",
+    "greater"
+   ]
+  ],
+  "numeric": true,
+  "premises": [
+   "s01",
+   "s02"
+  ],
+  "questions": [
+   "q01",
+   "q02"
+  ],
+  "rule": "order",
+  "types": [
+   "converse",
+   "chain"
+  ]
+ },
+ "name": "order-of-levels",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "part",
+  "modifier"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "value"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "greater_of",
+   "text": "which is greater, {a} or {b} ?",
+   "wording": "greater"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "level_before",
+   "text": "is {a} less than {b} ?",
+   "wording": "less"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "inference": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "level_before",
+   "text": "{a} is less than {b}.",
+   "wording": "less"
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "level_before",
+   "text": "{b} is greater than {a}.",
+   "wording": "greater"
+  },
+  {
+   "args": [
+    "b",
+    "a"
+   ],
+   "id": "s03",
+   "predicate": "not_level_before",
+   "text": "{b} is not less than {a}."
+  }
+ ]
+}

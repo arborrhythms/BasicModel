@@ -79,17 +79,17 @@ def test_closing_uses_the_ordered_object_parent_and_deduplicates_it():
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
-    first = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((8,), .3))
+    first = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((cs.nDim,), .3))
     second = cs.new_concept(order=1)
     with torch.no_grad():
         cs.similarity_codebook.W[cs._concept_row_of(second)].fill_(.7)
     interpret.define(recurrent_word(interpret, [8], [1], form='animal'), second)
     predicate = interpret.forward(recurrent_word(interpret, [9], [1], form='part'))
-    store = LTM0(8, capacity=16)
+    store = LTM0(cs.nDim, capacity=16)
     model = SimpleNamespace()
     attach_clause_index(model, store, cs)
     store._predicate_kind = lambda ref: 'part' if ref == predicate else 'operator'
-    source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
+    source = Clause(ConceptualMeaning(torch.ones(3, cs.nDim), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(first, predicate, second), evidence=(1., 0.))
     row = store.write_clause(source)
     assert row == ('sym', store.parts.find(first, second))
@@ -108,11 +108,11 @@ def test_failed_closing_does_not_leave_a_taxonomy_prefix():
     from Memory import LTM0
     from Meaning import ConceptualMeaning
     cs, interpret = _operator()
-    left = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((8,), .3))
-    right = witness_object(cs, recurrent_word(interpret, [8], [1], form='animal'), point=torch.full((8,), .7))
-    store = LTM0(8, capacity=1)
+    left = witness_object(cs, recurrent_word(interpret, [7], [1], form='cat'), point=torch.full((cs.nDim,), .3))
+    right = witness_object(cs, recurrent_word(interpret, [8], [1], form='animal'), point=torch.full((cs.nDim,), .7))
+    store = LTM0(cs.nDim, capacity=1)
     attach_clause_index(SimpleNamespace(), store, cs)
-    source = Clause(ConceptualMeaning(torch.ones(3, 8), torch.ones(3, dtype=torch.bool)),
+    source = Clause(ConceptualMeaning(torch.ones(3, cs.nDim), torch.ones(3, dtype=torch.bool)),
                     relation='part', refs=(left, left, right))
     bad = replace(source, children=(source,), refs=(('clause', 0), left, 99999))
     alloc = _concept_alloc_of(cs)
@@ -167,9 +167,9 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
     assert clause.refs[2] == ('clause', 0)
     if invalid == 'width':
         child = clause.children[0]
-        child = replace(child, point=torch.zeros(9),
-                        meaning=ConceptualMeaning.from_description(torch.zeros(9)))
-        bad_term = replace(clause.composition.children[1], point=torch.zeros(9))
+        child = replace(child, point=torch.zeros(f.cs.nDim + 1),
+                        meaning=ConceptualMeaning.from_description(torch.zeros(f.cs.nDim + 1)))
+        bad_term = replace(clause.composition.children[1], point=torch.zeros(f.cs.nDim + 1))
         clause = replace(clause, children=(child,), composition=replace(
             clause.composition, children=(clause.composition.children[0], bad_term)))
     else:
@@ -182,8 +182,8 @@ def test_referenced_phrase_admission_is_atomic(monkeypatch, invalid):
         # The layout's documented _fit accepts an operand width and keeps
         # exactly the store-width leading coordinates, without a new row shape.
         f.store.write_clause(clause)
-        assert len(f.store) == 1 and f.store.slots.shape[1] == 8
-        torch.testing.assert_close(f.store.slots[0], torch.zeros(8), rtol=0, atol=0)
+        assert len(f.store) == 1 and f.store.slots.shape[1] == f.cs.nDim
+        torch.testing.assert_close(f.store.slots[0], torch.zeros(f.cs.nDim), rtol=0, atol=0)
     else:
         with pytest.raises(OverflowError, match='LTM1'):
             f.store.write_clause(clause)

@@ -1216,9 +1216,9 @@ class TestBaseModelFactory(unittest.TestCase):
   <architecture>
     <bindingDepth>2</bindingDepth>    <training><autoload>false</autoload></training>
   </architecture>
-  <InputSpace><nOutput>32</nOutput><nDim>10</nDim></InputSpace>
-  <PartSpace><nOutput>4</nOutput><nDim>10</nDim><nVectors>4</nVectors></PartSpace>
-  <ConceptualSpace><nOutput>2</nOutput><nDim>10</nDim><nVectors>2</nVectors></ConceptualSpace>
+  <InputSpace><nOutput>32</nOutput><nDim>18</nDim></InputSpace>
+  <PartSpace><nOutput>4</nOutput><nDim>18</nDim><nVectors>4</nVectors></PartSpace>
+  <ConceptualSpace><nOutput>2</nOutput><nDim>18</nDim><nVectors>2</nVectors></ConceptualSpace>
   <WholeSpace><nOutput>2</nOutput></WholeSpace>
   <OutputSpace><nOutput>2</nOutput><nDim>4</nDim></OutputSpace>
 </model>"""
@@ -1283,8 +1283,9 @@ class TestSymbolDimZero(unittest.TestCase):
         self.assertEqual(Models.TheXMLConfig.space("WholeSpace", "nDim"), 0)
         # Uniform-band convention (2026-06): WholeSpace carries the same
         # (nWhere, nWhen) band as every interior space_role -- the retired
-        # SS=(0,0) special case is gone. 2026-07-09 multi-rung pass: (4, 4).
-        self.assertEqual(canonical_shape("WholeSpace"), (4, 4))
+        # SS=(0,0) special case is gone. 2026-07-09 multi-rung pass: (4, 4);
+        # 2026-11-23, three axes: (12, 4).
+        self.assertEqual(canonical_shape("WholeSpace"), (12, 4))
 
     def test_objectencoding_adds_canonical_overhead(self):
         """ObjectEncoding adds the canonical .where/.when overhead (objectSize)
@@ -1778,7 +1779,7 @@ class TestModelTypeVariants(unittest.TestCase):
         # symbolDim=9 -> SS content 1 == CS.nWhat. (2026-07-04 encoding pass
         # widened (2,2)->(2,4), symbolDim 5 -> 7; 2026-07-09 multi-rung pass
         # widened (2,4)->(4,4), symbolDim 7 -> 9.)
-        _populate_test_config(nStreams=2,inputDim=1, perceptDim=1, conceptDim=1, symbolDim=9,
+        _populate_test_config(nStreams=2,inputDim=1, perceptDim=1, conceptDim=1, symbolDim=17,
                               wordDim=1, outputDim=1,
                               nInput=8, nPercepts=8, nConcepts=8, nSymbols=8, nOutput=4,
                               perceptPassThrough=True, symbolPassThrough=False,
@@ -2984,8 +2985,9 @@ class TestInputSpaceDemuxed(unittest.TestCase):
         result, _ = inp.forward(x)
         self.assertTrue(result.is_demuxed)
         self.assertEqual(list(result.what.getW().shape), [2, nInput, _idim])
-        # 2026-07-09 multi-rung pass: .where is the 4-dim 2-rung ladder.
-        self.assertEqual(list(result.where.getW().shape), [2, nInput, 4])
+        # 2026-07-09 multi-rung pass: .where is the 4-dim 2-rung ladder;
+        # 2026-11-23: on each of three axes, 12 wires.
+        self.assertEqual(list(result.where.getW().shape), [2, nInput, 12])
         # 2026-07-04 encoding pass: .when is the 4-dim start ladder.
         self.assertEqual(list(result.when.getW().shape), [2, nInput, 4])
 

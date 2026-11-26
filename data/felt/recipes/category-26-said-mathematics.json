@@ -1,0 +1,248 @@
+{
+ "category": 26,
+ "construction": "Said mathematics",
+ "distinct": false,
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "sums",
+ "name": "said-mathematics",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "add",
+  "subtract",
+  "part"
+ ],
+ "probes": [
+  "commuted",
+  "unseen"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "free": true,
+    "slot": "c",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b",
+    "c"
+   ],
+   "id": "q01",
+   "predicate": "sum",
+   "text": "what is {a} plus {b} ?"
+  },
+  {
+   "answer": {
+    "free": true,
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b",
+    "c"
+   ],
+   "id": "q02",
+   "predicate": "sum",
+   "text": "what is {c} minus {b} ?"
+  }
+ ],
+ "required": [
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 7,
+    "b": 2,
+    "c": 9
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 7,
+    "b": 2,
+    "c": 9
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 5,
+    "b": 3,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 5,
+    "b": 3,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 2,
+    "b": 6,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 2,
+    "b": 6,
+    "c": 8
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 4,
+    "b": 1,
+    "c": 5
+   },
+   "split": "train"
+  },
+  {
+   "frame": "s03",
+   "slots": {
+    "a": 4,
+    "b": 1,
+    "c": 5
+   },
+   "split": "train"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "succ",
+   "text": "{a} plus one is {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "succ",
+   "text": "{b} minus one is {a}."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    "c"
+   ],
+   "id": "s03",
+   "predicate": "sum",
+   "text": "{a} plus {b} is {c}."
+  },
+  {
+   "args": [
+    "a",
+    "b",
+    "c"
+   ],
+   "id": "s04",
+   "predicate": "sum",
+   "text": "{c} minus {b} is {a}."
+  }
+ ],
+ "sum_pairs": [
+  [
+   2,
+   7
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   6,
+   2
+  ],
+  [
+   1,
+   4
+  ]
+ ],
+ "sum_pairs_both": [
+  [
+   2,
+   3
+  ],
+  [
+   2,
+   5
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "world": "none"
+}

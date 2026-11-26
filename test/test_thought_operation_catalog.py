@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from Language import Grammar
-from test_cs_symbol_table import _cs
+from test_cs_symbol_table import _cs, _D
 from order_fixtures import force_order
 
 
@@ -412,7 +412,7 @@ def test_thought_boundary_detaches_executor_operands_and_recorded_request():
         (Mind.KNOWING,), (Mind.SERIAL,), "probe", execute)
     operation = SimpleNamespace(semantic_id="probe", operand_roles=("argin1",))
     signature = ThoughtSignature(operation, descriptor, ("argin1",))
-    value = torch.ones(8, requires_grad=True)
+    value = torch.ones(_D, requires_grad=True)
     stream = torch.ones(1, 8, requires_grad=True)
     primed = torch.ones(1, requires_grad=True)
     context = ThoughtGrammarContext(
@@ -934,7 +934,7 @@ def test_description_thought_preparation_uses_only_its_declared_ltm_view():
     space = _cs()
     registry = GrammaticalThoughtRegistry.install(space, grammar)
     description = ConceptualMeaning(
-        torch.ones(3, 8), torch.tensor([True, True, True]))
+        torch.ones(3, _D), torch.tensor([True, True, True]))
     occurrence = ("ltm", "fixture", 1)
 
     class LTMRead:
@@ -1028,14 +1028,14 @@ def test_model_boundary_builds_the_common_thought_context_without_a_reasoner(mon
     object.__setattr__(model, "symbolSpace", SimpleNamespace(
         discourse=None, what_memory=None))
     meaning = ConceptualMeaning(
-        torch.ones(3, 8, requires_grad=True), torch.tensor([True, True, True]))
+        torch.ones(3, _D, requires_grad=True), torch.tensor([True, True, True]))
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(
             meaning, row=0, work=QueryWorkBudget(8), continuation=None)
 
     assert isinstance(context, ThoughtGrammarContext)
     assert context.conceptual_space.matches(space)
-    assert context.conceptual_space.width == 8
+    assert context.conceptual_space.width == _D
     assert not context.word_stream.requires_grad
     assert context.primed_symbols is not primed
     torch.testing.assert_close(context.primed_symbols, primed[0])
@@ -1130,12 +1130,12 @@ def test_completed_structural_whole_and_what_program_forms_one_canonical_request
     owner = LanguageSpace.__new__(LanguageSpace)
     object.__setattr__(owner, "_compose_binary_rules", (whole_rule,))
     object.__setattr__(owner, "_compose_unary_rules", (what_rule,))
-    leaves = torch.stack((torch.full((8,), -0.25), torch.full((8,), 0.75)))
+    leaves = torch.stack((torch.full((_D,), -0.25), torch.full((_D,), 0.75)))
     program = Reading(
         rows=torch.tensor([3, 5]), word_rows=torch.tensor([7, 9]),
         activations=torch.tensor([-0.25, 0.75]), leaves=leaves,
         actions=torch.tensor([[0, -1, 0], [0, -1, 1], [1, 0, -1], [2, 0, -1]]),
-        targets=torch.tensor([0, -1]), end_state=torch.zeros(3, 8),
+        targets=torch.tensor([0, -1]), end_state=torch.zeros(3, _D),
         concept_ids=torch.tensor([whole[1], part[1]]))
 
     meaning = owner.program_meaning(program, registry)

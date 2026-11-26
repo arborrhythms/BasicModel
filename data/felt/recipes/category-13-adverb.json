@@ -1,0 +1,271 @@
+{
+ "category": 13,
+ "construction": "Adverb",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "adverb",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "modifier"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "roles": [
+     "a",
+     "b"
+    ],
+    "type": "value"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "slower_of",
+   "script": {
+    "events": [
+     {
+      "speed": 1,
+      "who": "@answer"
+     },
+     {
+      "speed": 2,
+      "who": "@other"
+     }
+    ]
+   },
+   "text": "which moved slowly, {a} or {b} ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    {
+     "=": [
+      0,
+      -1
+     ]
+    }
+   ],
+   "id": "q02",
+   "predicate": "moved_dir",
+   "script": {
+    "no": {
+     "events": [
+      {
+       "dir_not": [
+        0,
+        -1
+       ],
+       "who": "a"
+      }
+     ]
+    },
+    "yes": {
+     "events": [
+      {
+       "dir": [
+        0,
+        -1
+       ],
+       "who": "a"
+      }
+     ]
+    }
+   },
+   "text": "did {a} move up ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    {
+     "=": 1
+    }
+   ],
+   "id": "s01",
+   "predicate": "moved_speed",
+   "script": {
+    "events": [
+     {
+      "speed": 1,
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved slowly."
+  },
+  {
+   "args": [
+    "a",
+    {
+     "=": 2
+    }
+   ],
+   "id": "s02",
+   "predicate": "moved_speed",
+   "script": {
+    "events": [
+     {
+      "speed": 2,
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved quickly."
+  },
+  {
+   "args": [
+    "a",
+    {
+     "=": [
+      0,
+      -1
+     ]
+    }
+   ],
+   "id": "s03",
+   "predicate": "moved_dir",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       0,
+       -1
+      ],
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved up."
+  },
+  {
+   "args": [
+    "a",
+    {
+     "=": [
+      0,
+      1
+     ]
+    }
+   ],
+   "id": "s04",
+   "predicate": "moved_dir",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       0,
+       1
+      ],
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved down."
+  },
+  {
+   "args": [
+    "a",
+    {
+     "=": [
+      -1,
+      0
+     ]
+    }
+   ],
+   "id": "s05",
+   "predicate": "moved_dir",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       -1,
+       0
+      ],
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved to the left."
+  },
+  {
+   "args": [
+    "a",
+    {
+     "=": [
+      1,
+      0
+     ]
+    }
+   ],
+   "id": "s06",
+   "predicate": "moved_dir",
+   "script": {
+    "events": [
+     {
+      "dir": [
+       1,
+       0
+      ],
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved to the right."
+  }
+ ]
+}

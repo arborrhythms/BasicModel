@@ -202,6 +202,12 @@ class InterpretLayer(GrammarLayer):
         super().__init__(nInput=nInput, nOutput=nOutput)
         object.__setattr__(self, '_conceptual_space', conceptualSpace)
         self._description_revision = 0
+        from util import TheXMLConfig
+        # True: a word's meta concept is made here, with a blank object where
+        # the word names none. False: neither is made, and a word's object
+        # is the other member of a unit across modality that holds the
+        # word's symbol (:meth:`named`).
+        self.create_meta_concepts = bool(TheXMLConfig.get('architecture.createMetaConcepts'))
 
     @property
     def owner(self):
@@ -241,6 +247,14 @@ class InterpretLayer(GrammarLayer):
     def denotations(self, word):
         """All admitted objects of the word, without discarding lower orders."""
         return self.owner.definitions.objects(int(word))
+
+    def named(self, word, *, batch=0):
+        """Of a word, the other member of a unit across modality that holds
+        the word's symbol (the one expected, where there are several:
+        :meth:`preferred_objects`); the word itself where there is none."""
+        from FamiliarTier import across
+        found = self.preferred_objects(across(self.owner, word), batch=batch)
+        return found[0] if found else int(word)
 
     def preferred(self, word, *, batch=0, order=None):
         return self.preferred_objects(self.denotations(word), batch=batch, order=order)
@@ -572,7 +586,9 @@ class InterpretLayer(GrammarLayer):
         self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
-        if obj is not None:
+        if obj is not None and self.create_meta_concepts:
+            # The field's case is the word's object. Without one, the
+            # word's reading gives it its blank object.
             self.define(word, obj)
         if not discovering and identity_key is not None:
             alloc.word_descriptions[word]['identity_key'] = identity_key
@@ -747,7 +763,7 @@ class InterpretLayer(GrammarLayer):
         candidates = self.preferred(word, batch=batch, order=order)
         frozen = getattr(cs, '_online_learning_frozen', False)
         if self.no_object(word):
-            return word
+            return word if self.create_meta_concepts else self.named(word, batch=batch)
         if frozen and not candidates:
             return None
         if selected is not None:
@@ -956,8 +972,11 @@ class InterpretLayer(GrammarLayer):
             return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
         if self.owner._concept_row_of(word) is None:
             raise RuntimeError('an identified word has no conceptual row')
-        blank = self.blank(word)
-        obj = word if blank is None else blank
+        if self.create_meta_concepts:
+            blank = self.blank(word)
+            obj = word if blank is None else blank
+        else:
+            obj = self.named(word, batch=batch)
         return obj, self.owner._concept_row_of(obj), self.owner._concept_source_order(obj)
 
     def blank_of(self, word):

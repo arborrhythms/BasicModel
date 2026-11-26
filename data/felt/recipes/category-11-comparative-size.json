@@ -1,0 +1,138 @@
+{
+ "category": 11,
+ "construction": "Comparative of size",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "inference": {
+  "alternate": true,
+  "converse_pairs": [
+   [
+    "bigger",
+    "smaller"
+   ]
+  ],
+  "premises": [
+   "s01",
+   "s02"
+  ],
+  "questions": [
+   "q01"
+  ],
+  "rule": "order",
+  "types": [
+   "converse",
+   "chain"
+  ]
+ },
+ "name": "comparative-size",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "modifier",
+  "part"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "roles": [
+     "a",
+     "b"
+    ],
+    "type": "value"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "bigger_of",
+   "script": {
+    "size": {
+     "@answer": "big",
+     "@other": "small"
+    }
+   },
+   "text": "which is bigger, {a} or {b} ?",
+   "wording": "bigger"
+  }
+ ],
+ "schema": 1,
+ "sizes": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+ ],
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "inference": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "bigger",
+   "text": "{a} is bigger than {b}.",
+   "wording": "bigger"
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "bigger",
+   "text": "{b} is smaller than {a}.",
+   "wording": "smaller"
+  }
+ ]
+}

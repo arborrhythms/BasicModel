@@ -220,7 +220,7 @@ def test_nested_cutoff_drains_the_actual_depth_without_fresh_work(budget, with_e
     from Layers import SymbolExpectation
     from Memory import LTM0
     model, registry, memory, part, whole = _catalog_world()
-    model.symbolSpace.ltm_store = LTM0(8, capacity=32)
+    model.symbolSpace.ltm_store = LTM0(16, capacity=32)
     from ClauseRow import attach_clause_index
     from dataclasses import replace
     from ThoughtReferences import bindings

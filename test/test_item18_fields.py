@@ -49,14 +49,16 @@ def test_numeric_scale_order_and_level_code():
     torch.testing.assert_close(number(felt[:-1]).float(),values[:-1],atol=1e-5,rtol=1e-5)
     basic = BasicPercepts(None,4,4,8)
     basic.bind(None)
-    rows = [basic.perceive_value(value, place=0) for value in felt[1:]]
+    rows = [basic.perceive_value(value) for value in felt[1:]]
     codes = basic.lookup_rows(rows)
     assert len(basic.index) == len(rows)
-    # Rule 55: each half holds the bins of its place at or below the value.
+    # Rule 55: the parts half holds the bins at or below the value, in
+    # order; the wholes half its level's group. A lesser value is a part of
+    # a greater in the parts half.
     for row, value, code in zip(rows, felt[1:], codes):
-        torch.testing.assert_close(code, torch.cat((basic.value_code(value, 4, 0), basic.value_code(value, 4, 0))))
-    assert bool(Ops.partOf(codes[0],codes[1]))
-    assert not bool(Ops.partOf(codes[1],codes[0]))
+        torch.testing.assert_close(code, torch.cat((basic.value_code(value, 4), basic.value_whole(value))))
+    assert bool(Ops.partOf(codes[0][:4],codes[1][:4]))
+    assert not bool(Ops.partOf(codes[1][:4],codes[0][:4]))
 
 
 

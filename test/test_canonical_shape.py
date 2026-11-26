@@ -19,13 +19,14 @@ def test_canonical_shape_table():
     # 2026-07-09 multi-rung pass: (2, 4) -> (4, 4) -- .where is now the SAME
     # 2-rung ladder shape over the byte START (WhereEncoding; LF range rung +
     # HF resolution rung, <wherePeriod>/<whereRungRatio>).
-    assert canonical_shape("InputSpace")      == (4, 4)
-    assert canonical_shape("PartSpace") == (4, 4)
-    assert canonical_shape("ModalSpace")      == (4, 4)
+    # 2026-11-23 (item 1.6, §16): the .where is three axes of four wires.
+    assert canonical_shape("InputSpace")      == (12, 4)
+    assert canonical_shape("PartSpace") == (12, 4)
+    assert canonical_shape("ModalSpace")      == (12, 4)
     assert canonical_shape("ConceptualSpace") == (0, 0)   # concepts are opaque codes (2026-09-14)
-    assert canonical_shape("WholeSpace")   == (4, 4)
+    assert canonical_shape("WholeSpace")   == (12, 4)
     assert canonical_shape("OutputSpace")     == (0, 0)
-    assert canonical_shape("SymbolSpace")       == (4, 4)
+    assert canonical_shape("SymbolSpace")       == (12, 4)
 
 
 def test_mandatory_codebook_space_roles():

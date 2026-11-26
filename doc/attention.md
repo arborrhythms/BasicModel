@@ -98,11 +98,11 @@ cost, and how much iterative negotiation the routing needs to perform.
 
 ---
 
-## References (PDFs in this folder)
+## References (PDFs in `research/`)
 
-- `2006-lecun-energy-based-learning-tutorial.pdf` — LeCun, Chopra, Hadsell, Ranzato, Huang. *A Tutorial on Energy-Based Learning*. 2006.
-- `2017-vaswani-attention-is-all-you-need.pdf` — Vaswani et al. *Attention Is All You Need*. NeurIPS 2017.
-- `2017-sabour-dynamic-routing-capsules.pdf` — Sabour, Frosst, Hinton. *Dynamic Routing Between Capsules*. NeurIPS 2017.
+- [`2006-lecun-energy-based-learning-tutorial.pdf`](research/2006-lecun-energy-based-learning-tutorial.pdf) — LeCun, Chopra, Hadsell, Ranzato, Huang. *A Tutorial on Energy-Based Learning*. 2006.
+- [`2017-vaswani-attention-is-all-you-need.pdf`](research/2017-vaswani-attention-is-all-you-need.pdf) — Vaswani et al. *Attention Is All You Need*. NeurIPS 2017.
+- [`2017-sabour-dynamic-routing-capsules.pdf`](research/2017-sabour-dynamic-routing-capsules.pdf) — Sabour, Frosst, Hinton. *Dynamic Routing Between Capsules*. NeurIPS 2017.
 
 Other works cited (not stored locally):
 

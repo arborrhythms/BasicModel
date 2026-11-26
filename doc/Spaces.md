@@ -449,18 +449,18 @@ plain case, present or absent. A number is treated the same way.
   part, with a bound that contains it, its whole.
 - **A value is its place in one sorted table of values** ("we are enclosing the scalar by a lessthan sort"). The
   code's coordinates are bins of the felt value, 64 of them: the parts
-  half holds the bins at or below the value, the wholes half is all ones
-  with the bins above it cut away, and the against lane holds the bins
-  above it (`BasicPercepts.value_code`). It is the mechanism of a form's
+  half holds the bins at or below the value (`BasicPercepts.value_code`),
+  the wholes half is one at the group of the level the value falls to
+  (`BasicPercepts.value_whole`), and the against lane holds every other
+  group. It is the mechanism of a form's
   code with the bins as the catalog
   ([Mereology](Mereology.md#percept-code)).
 - **Order survives without magnitude.** A lower value's parts half lies
   inside a higher one's, so `Ops.partOf` on two of them is less-than. No
   percept carries an amount, and any two levels can still be compared. The
-  bins are fixed, 64 for each place, so a value's code does not change when
-  another value arrives; each place has a table of its own, on coordinates
-  of its own, and a collection of values is read by its bounds, not through
-  the Sigma.
+  bins are fixed, 64 of them in order for every place, so a value's code
+  does not change when another value arrives or where it lies; there is one
+  table of values.
 - **A concept generalizes levels.** A concept over several levels takes
   their common part and their covering whole: an interval on one
   dimension, a hyperrectangle on several.
@@ -470,89 +470,205 @@ plain case, present or absent. A number is treated the same way.
 - **What is left out.** "Im reserving the feeling of that continuity for
   direct perception, but that is not something that we can model."
 
-**The number modality.** A row of numbers of any shape is read this way:
-a level percept at each place. The XOR proofs are two places on one axis,
-and a 28 by 28 image (`data/MM_image.xml`) is 784 places on two axes, "the
-only different being the percept dims". One reader,
-`NumericPercepts`, serves any number of places.
+**The number modality.** A row of numbers of any shape is an image of
+intensities: XOR is an image of two places on one axis, and a 28 by 28 image
+(`data/MM_image.xml`) is 784 places on two axes, "the only different being
+the percept dims". One reader, `NumericPercepts`, serves any number of
+places.
 
-- **The feeling.** A number $n$ from zero to infinity is felt as
-  $f(n) = g/(1+g)$ with $g = \ln(1+n)$: zero at 0, one only at infinity,
-  and logarithmic between, so one is felt as .409 and ten as .706. The map
-  is fixed and has no state.
-- **A level at a place.** A reading felt above zero is a level percept at
-  its place: one basic percept for each pair of place and level met. The
-  same level at two places is two percepts, so XOR's two inputs stay
-  distinct. Zero is no presence. No coordinate of the percept cube is
-  set aside for one place, so the cube's width does not grow with the
-  number of places.
-- **A collection per place.** Each place has a table of values of its
-  own, on coordinates of its own. A collection of the level percepts met
-  at a place is read by its bounds, 0 or 1, and not through the Sigma
-  (`BasicPercepts.read_collection`); its for lane is the
-  reading's membership in that collection, not the felt value.
-- **Back from the field.** `NumericPercepts.reverse` returns each place's
-  number from the level its concept holds.
-- **The scalar beside the words** is the case with no place, and is
-  perceived, collected and read by the same functions.
+- **Intensities are in 0..1.** "The percept of a pixel is just a value,
+  0..1 like other percepts." The reader takes each number as it is and
+  refuses one below 0, above 1 or not a number. Numbers that are not in
+  0..1 are charted onto it before they are read: `NumericPercepts.feeling`
+  is the logarithmic chart $f(n) = g/(1+g)$ with $g = \ln(1+n)$, zero at 0
+  and one only at infinity ("the log chart was to avoid clipping, and
+  sensation seems to be log. But we can treat that as a preprocessing
+  step"). No reader of the numeric stem applies it.
+- **An alphabet of intensity.** As text has its character set, intensity
+  has a codebook over the value of one pixel:
+  `architecture.intensityPartCardinality` levels, 256, on the sorted line
+  of values. It is learned by vector quantization: a level moves toward
+  the intensities that fall to it, and the levels stay in order. Before
+  any learning the levels lie evenly on 0..1, so that each step of an
+  eight-bit pixel is a level.
+- **A basic percept of intensity identifies a region.** An atom's row is
+  over a part and a whole taken from the alphabet, its level and the set
+  of values allowed to it, with its entries in a Pi of the value space's
+  own (`BasicPercepts.value_pi`); the first Pi over forms is not used for
+  it. Its centroid is its level; it has no exact value. A code in the
+  percept's cube is the coarser image of a level, and levels are compared
+  by their values. The same region at two places is one percept met
+  twice. Zero is no presence.
+- **An image has a bank of occurrences,** as a sentence has
+  (`BasicPercepts.value_bank`): each place with a value above zero is an
+  occurrence, its `.what` the value's code on two lanes, its `.where` the
+  twelve wires of its place, its `.when` the moment's. The readings are
+  each place, then the bracket over the whole image.
+- **Read as a form is** (`BasicPercepts.read_values`, by `held_at`): for
+  where the occurrence holds the row's part and lies under its whole,
+  against where it holds the part and lies above the whole, nothing where
+  it lies below the part.
+- **Nominated on recurrence.** A row is promoted, and brings its concept,
+  when occurrences recur in its region, as a form's does.
+- **A thing is a run of touching places,** as a word is a run of letters
+  between spaces: the places of an image that are not background and touch
+  by a side are one thing, an occurrence beside its pixels' with the box
+  of its places as its `.where`. Its percept is made as a form's is: its
+  parts are its pixels' percepts in their order within its box, its whole
+  the OR of its pixels' own wholes (it is read by the least upper cut all
+  its pixels lie under), its row in the value
+  space's Pi, nominated when the thing recurs. The same thing at another
+  place is the same percept. It is read for and against as a form is. On
+  the way back a thing's concept gives its parts back in their order at
+  their places; where a thing and a pixel give back different values the
+  lesser is put back, and a sentence's image is charged the difference
+  (`reconstruction_order_zero.things`). A smaller thing found within a
+  larger gives nothing back.
+- **An image comes out as words do.** `reconstructModalities` gives, beside
+  the sentence and the value beside the words, the image of each row over
+  the scene's box, read from the field of the sentence the image was read
+  with (`ImagePercepts.given`); nothing for a row that had no image.
+- **Relations of place.** An axis of place is a sorted line, and the
+  relation of two things on it is less-than between their places.
+  `ImagePercepts.relations` reads, for every ordered pair of an image's
+  things and on each axis, whether the first lies wholly before the
+  second and whether the two touch, each for and against. In the corpus
+  the lesser y is the upper and the lesser x the left. Nothing of the
+  model reads these relations.
+- **A place is told by its wires.** A place's row of the first Pi is
+  nominated for an image as for a sentence, when occurrences recur at it
+  (`Places.meet`), and keeps the what met there; it is a part of an
+  occurrence at its own place alone. XOR's conjunction is over two places'
+  rows. The comparison needs the wires at single precision or better.
+- **The aperture.** `architecture.intensityPartSigma` is the width in
+  places of the Gaussian aperture about a part's centre: a part holds the
+  places nearer its centre than that width, each weighed by the Gaussian
+  in what reads for and against it. At nothing, its default, there is no
+  limit and a part is a whole run of touching places. The aperture limits
+  whatever reaches across places: the combining of adjacent atoms into a
+  part, and the pooling of a concept over its readings at the output
+  (`OutputSpace.read_field`). The XOR configurations set it to one: a part
+  is one place, and at the output a place's concept is pooled over its own
+  readings and every other concept is read at the reading over the whole
+  input, so that nothing but the conjunction joins the two inputs.
+- **A Sigma above order zero may read a basic percept's row.** An entry of
+  a definition above order zero may be on a basic percept's row
+  (`ConceptualAttentionLayer.percept_entries`); it reads the row's value or
+  not-value from the Not of order zero, by the entry's sign
+  (`FieldProjection.close`). Such entries are read on the numeric stem,
+  and nothing makes them or saves them yet.
+- **One Not.** The rows of an image's bank, its values, its places and its
+  conjunctions, go once through the Not and the Sigma of order zero
+  (`order_zero_field`).
+- **What a fresh model reads.** A value's row and a place's row are
+  nominated on recurrence, so an image's first presentations read no
+  concept, and the way back gives nothing for them.
+- **Back from the field.** `NumericPercepts.reverse` and
+  `ImagePercepts.put_back` give each place the centroid of the basic
+  percept that a concept of the field reads for there: the value itself
+  where one value recurred, and a value within the bin otherwise. Nothing
+  kept from the input is read.
+- **The scalar beside the words** is a row of the same table of values. It
+  is charted by `feeling` before it is read, and it keeps a reading of its
+  own, by its two bounds and not through the Sigma
+  (`BasicPercepts.read_collection`), and its own join to the sentence's
+  field.
 
 For images, intensity as a code and never an amplitude is in
 [FutureWork](FutureWork.md#intensity-as-codes-not-amplitude-alec-2026-10-25-decided).
 
-### Modalities: One Perceptual Space Each {#percept-modalities}
+### Modalities: One Space of Places {#percept-modalities}
 
-"the .where for imagery has to be 2D." He weighed one
-shared space for all the senses and chose otherwise: "perhaps the
-integration path is leave each modality in its own perceptual space with
-varying .where, and integrate only at the level of zero-order concepts by
-adding a .modality field according to the percepts that they unite. this
-still allows perceptual space to have basic-level perceptual objects on a
-modal basis."
+Every percept of every modality has its place in one space of three
+dimensions, the grid ([Glossary](Glossary.md)): "I would like to see .where
+as a 3D space for all models, it simplifies things." What lies on which
+axes: "Text will be 1D: zeros for dim 2 and 3. The perception of intensity
+(feelings) can be 1,2, or 3D. Images will generally be intensity, so zeros
+for dim 3."
 
-- **Each modality has its own perceptual space.** A modality declares how
-  many place axes it has. A place is one address in the modality's range
-  of `.where`, whatever its number of axes: a place on two axes is its
-  row-major index, which the declared shape decodes to row and column.
-  For example, row 3, column 5 of a 28 by 28 image is address
-  3 * 28 + 5 = 89 within the image's range. The band stays the four
-  coordinates of the one two-rung ladder, which recovers the exact
-  address (`WhereEncoding.decode_index`), and no vector is widened.
+- **A place is three whole numbers,** (x, y, z). Its code is twelve wires:
+  the four wires of the one two-rung ladder (`WhereEncoding`) for each
+  axis. One ladder serves the three axes, so a step along any axis moves
+  a place's code by the same amount.
+- **A range is a box.** Each range of the registry (`WhereRegistry`) has a
+  shape on the three axes and an origin. A range given by a count is a
+  line on the first axis that begins at x = its first address, so for it x
+  is the address. A numeric input of h rows of w numbers is a box, with x
+  its column and y its row. No two boxes share a place, and the registry
+  refuses a layout in which two would: the places of two modalities do
+  not overlap. No axis indexes the modality.
+- **An address stays.** Every place keeps a whole-number address in its
+  range, row by row within a box: row 3, column 5 of a 28 by 28 image is
+  address 3 * 28 + 5 = 89 within the image's range, at the place (5, 3, 0)
+  from the box's origin. The registry gives the place of an address and
+  the address of a place (`place`, `address`), and decodes twelve wires to
+  an address (`decode`). What keys a percept by its place uses the
+  address.
 
-  | Modality | Place axes | Place shape |
+  | Modality | Lies on | Places |
   |---|---|---|
-  | the scalar beside the words | 0 | one address |
-  | text | 1 | positions in a sentence |
-  | XOR | 1 | two positions |
-  | an image | 2 | 28 by 28; parts and wholes are boxes |
+  | the scalar beside the words | one place | one address |
+  | text | the first axis | positions in a sentence |
+  | XOR | the first axis | two positions |
+  | an image | two axes | 28 by 28; parts and wholes are boxes |
+  | a scene beside the words | three axes | 8 by 8 by 8, an image at z = 0 |
 
-- **A percept is a level at a place.** A pixel is a level percept at a
-  place on two axes, as a letter is a byte percept at a place on one.
+- **A scene's box.** A text model that declares `architecture.sceneShape`
+  has a range `scene` of that shape, given after every other range, so
+  that its stretch of the first axis begins where theirs end and no other
+  range moves. A row of input may then carry a `scene` beside its `text`:
+  pixels `[x, y, z, steps]`, each kept as its place and its value, the
+  steps over 255. No image (`null`) and an image with nothing in it (an
+  empty list) are kept apart (`InputSpace._scenes`).
+- **The image is read with its sentence** (`ImagePercepts`). At a
+  sentence's opening a row's image has a bank of its own in the box; its
+  rows, read by numerical parthood, and the sentence's, read by the first
+  Pi over forms, stand in one table and go through the one Not and the
+  Sigma of order zero together. A form's row reads nothing at an image's
+  reading and an image's row nothing at a sentence's. The image's readings
+  are columns of the opened field after the sentence's. Where no row of a
+  batch has an image the sentence is read as it is without one.
+- **Put back and charged.** At the opening the image is put back from the
+  field: at each place of the box, the greatest value whose row a concept
+  of the field reads for there. The opening's errors hold
+  `reconstruction_order_zero.image`, the squared difference place by place
+  over the box, weighted as the sentence's reconstruction is. A row with
+  no image is charged nothing for one; an empty image is charged for
+  whatever is put back.
+
+- **A percept is a level; its occurrence has the place.** A pixel is an
+  occurrence of its value's percept at a place on two axes, as a letter is
+  an occurrence of a byte's percept at a place on one.
   Parts and wholes, and so basic percepts, are knit within one modality,
   so basic-level perceptual objects are modal.
 - **Modalities meet at order-zero concepts.** An order-zero concept
   collects basic percepts from one modality or from several, and one that
-  collects from several is where the modalities are integrated. No shared
-  space of places lies below it. Text's `.where` is an order in a sequence
-  and an image's is a place on a surface, so one space for both would give
-  them distances that mean nothing.
+  collects from several is where the modalities are integrated. The places
+  of two modalities are in one space and are not compared with one
+  another: text's `.where` is an order in a sequence and an image's is a
+  place on a surface, each in a box of its own, and the way back matches a
+  place of text within the range of text.
 - **Modality and order are read from the place.** "the .where that
   is baked into all concepts in virtue of muxing the .where of a percept
   will include a .where in a range that can uniquely identify the modality
-  and order of a percept." The model's places are one address space,
-  divided into fixed, disjoint ranges (`WhereRegistry`), and every muxed
-  vector carries its address in its band. The ranges are one input range
+  and order of a percept." The model's addresses are divided into fixed,
+  disjoint ranges (`WhereRegistry`), each a box of the one space, and
+  every muxed vector carries its place in its band. The ranges are one input range
   for each modality (text, a numeric input, the scalar beside the words,
   each sized by its configuration; the scalar's has one address), the
-  part rows, the whole rows, the symbols and the live conceptual slots. A
+  part rows, the whole rows, the symbols and the live conceptual slots,
+  and last a scene's box where one is declared. A
   symbol has two addresses, one for each lane; rows lie in their order's
   block, so the range gives the order ([Orders §12](Orders.md)). Each
   modality's input has a range of its own, so the range gives the modality
-  too. Neither is stored beside the vector. The number of place axes would
-  not tell text from XOR, which both have one; the range does.
+  too. Neither is stored beside the vector. The axes a modality lies on
+  would not tell text from XOR, which both lie on the first; the range
+  does.
 - **The where is one fixed parameter** ("a pytorch param
   with the sinusoid written to it"). The `.where` stamped onto percepts
   flows from one tensor that holds the constant sinusoid, a row for each
-  address of the registry, written from `WhereEncoding.encode`. "The
+  address of the registry (`WhereRegistry.grid`), the twelve wires of the
+  address's place (`WhereEncoding.encode_place`). "The
   parameter itself must stay fixed if the sinusoid coding is to remain
   meaningful across all .where": nothing of it is learned, nothing is
   written into it as a state, and it is in no optimizer's groups. It takes
@@ -710,10 +826,11 @@ per-word residual-part capacity (at least the raw InputSpace extent). This
 converts unit counts into byte addresses using the fixed residual layout.
 The address guard still rejects overflow. Aligned readers retain their raw-byte
 extent. The mode is resolved before this fixed registry is constructed. Thought-produced symbols use their symbol-row
-address. The registry encodes locations through one model-owned `.where` ladder, held as
-the one fixed where parameter (see "Modalities" above). Its long period
-covers the registry and its short period resolves adjacent locations. The
-band carries the address; an integer location is decoded from it. Codebook
+address. The registry encodes a place through one model-owned `.where` ladder, applied to
+each of the place's three axes and held as the one fixed where parameter (see "Modalities"
+above). Its long period covers the registry and its short period resolves adjacent
+locations. The band carries the place; its address is decoded from it
+(`WhereRegistry.decode`). Codebook
 identity remains the row index. Every perceptual
 codebook reserves physical `nVectors` at construction, and admission changes
 occupancy in that allocation; checkpoint capacities must match.
@@ -1172,10 +1289,11 @@ of `(start, end, type)`. Each span $\to$ a vector with two components:
 
 - `nWhat` dims --- token content, encoded via `Basis` / `Codebook` (the word
   embedding lookup).
-- `nWhere` dims (4) — two quadrature pairs encode one registry location.
-  One model-owned encoding serves input positions, PartSpace, every
-  WholeSpace, and symbols, written once into one fixed parameter, a row
-  for each address (see "Modalities: One Perceptual Space Each"). The long period is the next power of two covering
+- `nWhere` dims (12): for each of the three axes of a place, two
+  quadrature pairs encode its number. One model-owned encoding serves input
+  positions, PartSpace, every WholeSpace, and symbols, written once into one
+  fixed parameter, a row for each address (see "Modalities: One Space of
+  Places"). The long period is the next power of two covering
   the complete registry plus its seam guard. The fine period is at least
   256 positions and grows with large registries to keep float32 coarse-phase
   error inside the branch bound. Integer modulo occurs before float conversion;
@@ -1205,8 +1323,8 @@ Result: `[nActive, nWhat + nWhere + nWhen]` tensor.
 codebook entry, then spans $\to$ characters via the stored offset table.
 
 **Numeric mode.** On a numeric file whose grammar declares field operators
-only (`data/MM_xor.xml`, `data/MM_image.xml`), `NumericPercepts` reads each
-number as a level percept at its place ([Level Sets](#percept-level-sets)),
+only (`data/MM_xor.xml`, `data/MM_image.xml`), `NumericPercepts` reads its
+input as an image of intensities in 0..1 ([Level Sets](#percept-level-sets)),
 and no layer is learned at the input. Otherwise tensor data passes through unchanged;
 `LiftingLayer` projects native input dim (e.g. 784 for MNIST) to `nDim`.
 Non-embedding inputs are scaled to `[-1, 1]` via the global data min/max.
@@ -1224,7 +1342,8 @@ Non-embedding inputs are scaled to `[-1, 1]` via the global data min/max.
 The band is architectural, not a per-Space setting:
 `architecture.canonical_shape(section)`
 ([`bin/architecture.py`](../bin/architecture.py)) gives (nWhere, nWhen) =
-(4, 4) on InputSpace, PartSpace, ModalSpace, WholeSpace and SymbolSpace, and
+(12, 4) on InputSpace, PartSpace, ModalSpace, WholeSpace and SymbolSpace (the
+`.where` is four wires for each of `architecture.whereAxes` axes), and
 (0, 0) on ConceptualSpace and OutputSpace. Percepts and symbols are located
 and timed; a concept is one opaque code that has generalised over where and
 when, and the answer has neither.
@@ -1756,5 +1875,5 @@ terminal rows, preserves both activation poles and supplies output coordinates.
 The same decoder then realizes the answer; a numeric output reads the field
 through `OutputSpace.read_field` where the file has a field readout, and
 otherwise uses its forward head. A numeric input's reverse returns each
-place's number from its level (`NumericPercepts.reverse`). Thought updates
+place's value from the table of values (`NumericPercepts.reverse`). Thought updates
 knowing at existing field brackets, without extra thought-occurrence columns.

@@ -45,7 +45,7 @@ def test_declared_not_is_a_thought_act_not_an_observation(tmp_path, monkeypatch)
     assert 'not' in registry.executable_operation_ids
     source = with_slots(registry.form('part', part, whole), (), pair=(.3,.7))
     request = registry.form('not', source)
-    store = LTM0(8, capacity=8)
+    store = LTM0(16, capacity=8)
     model.symbolSpace.ltm_store = store
     from ClauseRow import attach_clause_index
     attach_clause_index(model, store, model.conceptualSpace)

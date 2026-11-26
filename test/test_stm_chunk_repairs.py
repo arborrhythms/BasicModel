@@ -48,15 +48,20 @@ def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
     from Memory import LTM0
     from RowTime import encoder
     from Memory import STMChunks as chunks
-    width = 16
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # Four wires of what, the percept band, and four of content past it;
+    # the .when is the band's last WHEN_WIRES wires, [when, percept).
+    percept = 4 + WHERE_WIRES + WHEN_WIRES
+    when = percept - WHEN_WIRES
+    width = percept + 4
     predictor = SymbolExpectation(n_symbols=4, max_depth=8, n_dim=width,
                                   concept_dim=width, batch=1)
-    store = LTM0(width, capacity=8, percept_width=12)
+    store = LTM0(width, capacity=8, percept_width=percept)
     predictor._ltm_store = store
     predictor.set_symbol_bank(torch.eye(width)[:4])
     state = chunks.empty(1, 8, width)
     value = torch.arange(1, width+1).float().div(width)
-    value[8:12] = encoder().encode(2)
+    value[when:percept] = encoder().encode(2)
     state, _ = chunks.deposit(state, value[None], torch.tensor([True]))
     before = tuple(v.clone() for v in state)
     roles = torch.cat((state[chunks.BUFFER][0,:1], torch.zeros(2,width)))
@@ -80,8 +85,8 @@ def test_word_read_uses_current_time_without_changing_chunks(tmp_path):
     assert len(contexts)==2 and contexts[0].shape==(1,4*width+4)
     # Model-time contract (2026-11-10): learned inputs carry elapsed time.
     unchanged = torch.ones(4*width, dtype=torch.bool)
-    unchanged[8:12] = False
-    unchanged[width+8:width+12] = False
+    unchanged[when:percept] = False
+    unchanged[width+when:width+percept] = False
     torch.testing.assert_close(contexts[0][:,:4*width][:,unchanged],
                                contexts[1][:,:4*width][:,unchanged],rtol=0,atol=0)
     for context,tick in zip(contexts,(7,19)):

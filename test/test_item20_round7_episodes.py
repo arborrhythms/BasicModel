@@ -8,6 +8,7 @@ import torch
 
 from EpisodicMemory import select
 from Memory import LTM0
+from architecture import WHERE_WIRES, WHEN_WIRES
 from Meaning import ConceptualMeaning
 from Understanding import ConceptualField
 
@@ -51,7 +52,9 @@ def test_selection_keeps_strongest_signed_lanes_and_zero_stores_nothing():
 def test_episode_columns_compact_keep_prior_entries_and_load_empty_entries():
     from EpisodicMemory import write
     from clock_fixtures import install
-    store = LTM0(12, capacity=4, percept_width=12, episodic_concepts=2)
+    # Four wires of what and the percept band, all of it the percept.
+    width = 4 + WHERE_WIRES + WHEN_WIRES
+    store = LTM0(width, capacity=4, percept_width=width, episodic_concepts=2)
     owner = SimpleNamespace()
     model = install(SimpleNamespace(_episode_counts=dict(written=0)))
     model._open_sentence_slot = 0
@@ -62,7 +65,7 @@ def test_episode_columns_compact_keep_prior_entries_and_load_empty_entries():
     # Compaction only needs MTM's forgetting callback for an isolated store.
     from Memory import MediumTermMemory
     owner.mtm = MediumTermMemory()
-    meaning = ConceptualMeaning.from_description(torch.ones(12))
+    meaning = ConceptualMeaning.from_description(torch.ones(width))
     for b in range(2):
         row = store.append_meaning(meaning)
         write(store, row, tuple(value[b] for value in model._sentence_episodes[0]))
@@ -81,7 +84,7 @@ def test_episode_columns_compact_keep_prior_entries_and_load_empty_entries():
     saved = store.state_dict()
     saved['episodic_concepts'].fill_(-1)
     saved['episodic_values'].zero_()
-    restored = LTM0(12, capacity=4, percept_width=12, episodic_concepts=2)
+    restored = LTM0(width, capacity=4, percept_width=width, episodic_concepts=2)
     restored.load_state_dict(saved)
     assert (restored.episodic_concepts == -1).all() and not restored.episodic_values.any()
     assert int(restored.truth_schema) == 19

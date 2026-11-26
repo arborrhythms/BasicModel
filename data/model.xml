@@ -272,6 +272,29 @@
     <whatThinkingPressure>linear</whatThinkingPressure>
     <!-- Ratio between the two rungs of the .where code. -->
     <whereRungRatio>32</whereRungRatio>
+    <!-- The axes of the .where: a place is (x, y, z), each axis four
+         wires of the two-rung ladder; text lies on the first axis. -->
+    <whereAxes>3</whereAxes>
+    <!-- The alphabet of intensity: the number of levels on the sorted line
+         of values, learned by vector quantization; at 256, before any
+         learning, each step of an eight-bit pixel is a level. -->
+    <intensityPartCardinality>256</intensityPartCardinality>
+    <!-- The width in places of the Gaussian aperture about a part's centre:
+         a part of adjacent atoms holds the places nearer its centre than
+         this, each weighed by the Gaussian; a value's row is read at no
+         reading wider than the aperture, and the readout pools no concept
+         across places farther apart. 0 sets no limit (a part is a whole run);
+         1 makes every part one place. -->
+    <intensityPartSigma>0</intensityPartSigma>
+    <!-- The shape of a scene's box: up to whereAxes whole numbers
+         separated by spaces (8 8 8 is a box of 8 by 8 by 8 places).
+         Empty: the model feels no scene and has no box for one. -->
+    <sceneShape></sceneShape>
+    <!-- Whether interpret makes a word's meta concept directly, with a
+         blank object where the word names none. False: it makes neither,
+         and a word's object is what a unit across modality learned over
+         the word's symbol holds beside it. -->
+    <createMetaConcepts>true</createMetaConcepts>
 
     <data>
       <dataType>numeric</dataType>
@@ -522,9 +545,9 @@
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- Per-vector EVENT width (it embraces the .where/.when band: content
-         nWhat = nDim - nWhere - nWhen). Muxed tier default 9 = 1 content + 4
+         nWhat = nDim - nWhere - nWhen). Muxed tier default 17 = 1 content + 12
          .where + 4 .when. -->
-    <nDim>9</nDim>
+    <nDim>17</nDim>
     <!-- Raw data dims; 0 = use the loader's native dim. -->
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
@@ -548,8 +571,8 @@
     <propertyDim>64</propertyDim>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
-    <nDim>9</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 16. -->
+    <nDim>17</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -585,8 +608,8 @@
   <ModalSpace>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
-    <nDim>9</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 16. -->
+    <nDim>17</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>
@@ -622,8 +645,8 @@
     <latticeMargin>0</latticeMargin>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
-    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
-    <nDim>9</nDim>
+    <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 16. -->
+    <nDim>17</nDim>
     <nInputDim>0</nInputDim>
     <nOutputDim>0</nOutputDim>
     <nVectors>0</nVectors>

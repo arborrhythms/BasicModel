@@ -23,6 +23,7 @@ warnings.filterwarnings(
 )
 from Generative import WALK_FEATURE_WIDTH
 import torch
+from architecture import WHERE_WIRES
 from Memory import STMChunks
 import ChunkJournal
 import collections
@@ -3116,8 +3117,8 @@ class BaseModel(Mereology, nn.Module):
             if alloc is None:
                 continue
             # next_id is one past every restored stable concept handle.
-                required = max(required, int(getattr(alloc, "next_id", 1) or 1) - alloc.reclaimed_seats
-                               - len(alloc.reserved_word_symbols))
+            required = max(required, int(getattr(alloc, "next_id", 1) or 1) - alloc.reclaimed_seats
+                           - len(alloc.reserved_word_symbols))
             for layer in getattr(alloc, "_layers", {}).values():
                 tensor_rows = getattr(layer, "_tensor_rows", None) or {}
                 if tensor_rows:
@@ -8542,6 +8543,13 @@ class BasicModel(BaseModel):
             carriers['scalar_field'] = replace(field,evidence=field.evidence.clone())
             carriers['scalar_percepts'] = tuple(getattr(self, '_scalar_present', {}).get(batch, {}).get('percept')
                 for batch in range(field.evidence.shape[1]))
+        from ImagePercepts import imaged
+        if 0 in scalar_fields and imaged(self, 0):
+            # The field the image was read into, the first sentence's: only
+            # a pass that opened a sentence can have read an image.
+            from dataclasses import replace
+            field = scalar_fields[0]
+            carriers['image_field'] = replace(field, evidence=field.evidence.clone())
         return Understanding(
             perceptual_context=perceptual,
             conceptual_state=conceptual,
@@ -8628,12 +8636,17 @@ class BasicModel(BaseModel):
         return understanding
 
     def reconstructModalities(self, understanding):
-        """Return the common input inverse and its optional scalar modality."""
+        """Return the common input inverse, its optional scalar modality, and
+        the image read from the field the image was read into
+        (:func:`ImagePercepts.given`)."""
         from ScalarPercepts import decode
+        from ImagePercepts import given
         field = understanding.reconstruction_carriers.get('scalar_field')
+        image = understanding.reconstruction_carriers.get('image_field')
         return dict(input=self.reverseReconstruct(understanding)[0],
                     scalar=() if field is None else decode(self._concept_owner(), field,
-                        understanding.reconstruction_carriers.get('scalar_percepts', ())))
+                        understanding.reconstruction_carriers.get('scalar_percepts', ())),
+                    image=() if image is None else given(self, image))
 
     @_sentence_query_mask
     def reverseReconstruct(self, understanding, *, target=None, train=False, registry=None):
@@ -11614,17 +11627,19 @@ class BasicModel(BaseModel):
             orders = torch.where(known, torch.bucketize(rows, ends, right=True), -1)
             owner.propose_word_utility(ids, canonical, properties)
 
-            # Public provenance belongs to the identified word. Populate from
-            # the live label table without synchronizing device tensors to host.
+            # Public provenance belongs to the identified word: the words
+            # this sentence read, not the whole vocabulary.
             support = owner._ordered_fold_support((), ())
-            for name, label in labels.items():
+            read = ids[ids >= 0].unique().tolist()
+            for name in read:
+                label = labels.get(name)
                 seat = owner._concept_row_of(name)
                 if seat is None:
                     continue
                 form = anchors.get(label.casefold()) if isinstance(label, str) else None
                 isp._ar_word_lexical_forms[seat] = form if isinstance(form, str) else None
                 owner.record_concept_fold_support(name, support)
-            boundary_percepts = {basic.words[name] for name in labels if name in basic.words}
+            boundary_percepts = {basic.words[name] for name in read if name in basic.words}
         isp._ar_basic_percept_ids = basic_rows
         isp._ar_word_concept_rows = rows
         isp._ar_word_concept_ids = ids
@@ -12591,7 +12606,7 @@ class BasicModel(BaseModel):
         n_what = int(getattr(ss, "nWhat", 0) or 0)
         if 0 < n_what < int(event_width):
             return n_what
-        return max(0, int(event_width) - 8)
+        return max(0, int(event_width) - sum(canonical_shape('SymbolSpace')))
 
     @staticmethod
     def _answer_occupancy(derivation, idea):
@@ -12852,7 +12867,9 @@ class BasicModel(BaseModel):
     def _parse_program(self, sentence=None):
         """The chooser's event stamps and execution columns beside its parse."""
         trace, language = self._reconstruction_stack(), self.languageSpace
-        rule_ids = trace._choice_rule_ids
+        rule_ids = getattr(trace, '_choice_rule_ids', None)
+        if rule_ids is None or getattr(trace, '_parse_pairs', None) is None:
+            return None
         local_b, binary = language.local_op_from_rule_ids(rule_ids.flatten(), language._cs_binary_rule_ids)
         local_u, unary = language.local_op_from_rule_ids(rule_ids.flatten(), language._cs_unary_rule_ids)
         kind = torch.where(binary, 1, torch.where(unary, 2, -1)).reshape_as(rule_ids)
@@ -20595,8 +20612,8 @@ class BasicModel(BaseModel):
                 stamps[b] = self.when_encoding.encode(self._sentence_ticks[int(sid)]).to(stamps)
             if store is not None and store.when_start is not None:
                 point[b,store.when_start:store.when_start+4] = stamps[b]
-                if top >= 0 and store.when_start >= 4:
-                    point[b,store.when_start-4:store.when_start] = values[chunks.WHERE][b,top]
+                if top >= 0 and store.when_start >= WHERE_WIRES:
+                    point[b,store.when_start-WHERE_WIRES:store.when_start] = values[chunks.WHERE][b,top]
             gate = torch.arange(len(clauses),device=point.device) == b
             values = chunks.keep_close(values,gate,refs=references,value=point,when=stamps)
             strata = self.conceptualSpace.stm.strata
@@ -21214,6 +21231,9 @@ class BasicModel(BaseModel):
                               and native.get('unit_spans') is not None else None)
                 self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
                     self._sentence_order_zero_reverse, opened, present, hidden=False, text_width=text_width)
+                # A row's image is put back from the field and charged beside it.
+                from ImagePercepts import charge as charge_image
+                charge_image(self, self._opening_errors, sid, opened, present)
             from SentenceLooks import WordForecast, Looks
             word_forecast = WordForecast(self)
             forecast_paths = []
@@ -22385,7 +22405,7 @@ class BasicModel(BaseModel):
                     activation.reshape(B), evidence=leaf_evidence)
                 when_start = self.symbolSpace.ltm_store.when_start
                 if when_start is not None:
-                    band_start = max(0, when_start - 4)
+                    band_start = max(0, when_start - WHERE_WIRES)
                     word_idea[:, band_start:when_start + 4] = (
                         symbolic_event[:, 0, band_start:when_start + 4])
             fork = getattr(self, '_compose_fork', None) if sentence_transactions else None
@@ -22434,13 +22454,13 @@ class BasicModel(BaseModel):
                 bands = word_view(isp, name)
                 if torch.is_tensor(bands):
                     stamped[field] = STMChunks.write(resolved[field], physical,
-                        _gather_word(bands,index).reshape(B,4), commit.reshape(B))
+                        _gather_word(bands,index).reshape(B,-1), commit.reshape(B))
             when_start = self.symbolSpace.ltm_store.when_start
             if when_start is not None:
                 point = STMChunks.gather(resolved[0],physical.clamp_min(0)[:,None])[:,0].clone()
                 point[:,when_start:when_start+4] = STMChunks.gather(stamped[STMChunks.WHEN],physical.clamp_min(0)[:,None])[:,0]
-                if when_start >= 4:
-                    point[:,when_start-4:when_start] = STMChunks.gather(stamped[STMChunks.WHERE],physical.clamp_min(0)[:,None])[:,0]
+                if when_start >= WHERE_WIRES:
+                    point[:,when_start-WHERE_WIRES:when_start] = STMChunks.gather(stamped[STMChunks.WHERE],physical.clamp_min(0)[:,None])[:,0]
                 stamped[0] = STMChunks.write(resolved[0],physical,point,commit.reshape(B))
             resolved = tuple(stamped)
             trace_state = current_cs_lang[1:6]
@@ -24279,7 +24299,7 @@ class BasicModel(BaseModel):
         mask = offsets >= 0.0
         if not bool(mask.any()):
             return
-        stamp = w_enc.encode(offsets.clamp(min=0.0))
+        stamp = w_enc.encode_place(w_enc.point(offsets.clamp(min=0.0)))
         stamp = stamp * mask.unsqueeze(-1).to(stamp.dtype)
         out[..., idx] = stamp.to(out.dtype)
 

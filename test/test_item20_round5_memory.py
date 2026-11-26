@@ -8,6 +8,7 @@ from types import SimpleNamespace as NS
 
 import pytest
 import torch
+from architecture import WHERE_WIRES
 from test_meaning_kernels import paired
 from nomination_fixtures import recurrent_word
 
@@ -32,7 +33,7 @@ def test_all_link_callers_window_likeness_and_reference_values():
         row = store.append_idea(value, name=number)
         address = store.occurrence_of(row)
         key = owner.link(Occurrence(address, kind=kind, order=order), {},
-            value=value, where=torch.zeros(4), when=number, stream=0)
+            value=value, where=torch.zeros(WHERE_WIRES), when=number, stream=0)
         owner.mtm.close(store, stream=0)
         return key, address
     first, a = observed(atoms[0], 101)
@@ -784,9 +785,12 @@ def test_one_ltm_idea_generates_a_meaning_compatible_surface_without_input_stm(p
     monkeypatch.setattr(ChunkJournal, 'action_context', forbidden)
     monkeypatch.setattr(ChunkJournal, 'read_identity', forbidden)
     language, words, phrase, parent, bank, groups, structure = proposal('group')
-    store = LTM0(12, capacity=4).double()
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    # An LTM0 holds at least the band (12 >= 8 -> 16); the 12-wide idea is
+    # kept in its leading wires and read back at its own width.
+    store = LTM0(max(parent.shape[-1], WHERE_WIRES + WHEN_WIRES), capacity=4).double()
     row = store.append_idea(parent[0].detach())
-    idea = store.point_of_row(store.occurrence_of(row))[None]
+    idea = store.point_of_row(store.occurrence_of(row))[None, :parent.shape[-1]]
     class Owner:
         languageSpace = language
         stm = property(forbidden)

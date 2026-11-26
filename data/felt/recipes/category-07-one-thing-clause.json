@@ -1,0 +1,152 @@
+{
+ "category": 7,
+ "construction": "A clause with one thing",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "frame_digit",
+ "name": "one-thing-clause",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "change"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "moved",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what moved ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q02",
+   "predicate": "moved",
+   "script": {
+    "no": {},
+    "yes": {
+     "events": [
+      {
+       "who": "a"
+      }
+     ]
+    }
+   },
+   "text": "did {a} move ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s01",
+   "predicate": "moved",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s02",
+   "predicate": "did_not_move",
+   "script": {
+    "events": [
+     {
+      "who": "c"
+     }
+    ],
+    "hidden": [
+     "c"
+    ]
+   },
+   "text": "{a} did not move."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s03",
+   "predicate": "stopped",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} stopped."
+  }
+ ]
+}

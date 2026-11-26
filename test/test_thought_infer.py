@@ -164,7 +164,7 @@ def test_unused_derived_idea_is_forgotten_by_existing_configuration():
     from Memory import LTM0
     from ThoughtStream import write
     model, registry, store, refs = world()
-    store = LTM0(8, capacity=4)
+    store = LTM0(16, capacity=4)
     model.symbolSpace.ltm_store = store
     value = replace(idea(registry, refs[0], (.6, .2)), bindings={
         '_evidence_pair': (.6, .2), '_producing_operation': 'infer',
@@ -172,7 +172,7 @@ def test_unused_derived_idea_is_forgotten_by_existing_configuration():
     index = write(model, value, row=0)
     occurrence = store.occurrence_of(index)
     for number in range(store.capacity - len(store)):
-        store.append_meaning(ConceptualMeaning.from_description(torch.ones(8)), trust=1., surprise=1.)
+        store.append_meaning(ConceptualMeaning.from_description(torch.ones(16)), trust=1., surprise=1.)
     forget(store, ForgettingConfig(), document_boundary=True)
     assert store.location(occurrence) is None
 

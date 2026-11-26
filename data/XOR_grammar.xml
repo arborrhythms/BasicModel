@@ -60,7 +60,7 @@
   <!-- Round 3a: 64 pair bits, 32 exact length bits, and the 4+4 band.
        The binding view has 64 dense coordinates; row counts stay fixed. -->
   <InputSpace>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>8</nVectors>
     <nOutput>6</nOutput>
     <codebook>quantize</codebook>
@@ -68,7 +68,7 @@
 
   <PartSpace>
     <nOutput>6</nOutput>
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
     <invertible>true</invertible>
@@ -76,7 +76,7 @@
 
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>232</nDim>
+    <nDim>240</nDim>
     <!-- Round 4a: 64 for/against pairs after the unchanged 104-D form. -->
     <meaningWidth>128</meaningWidth>
     <!-- §14 addendum: symbol/concept pairs only; letters stay in PS. -->
@@ -91,7 +91,7 @@
   <WholeSpace>
     <nOutput>6</nOutput>
     <!-- Event width: 96 sparse form coordinates plus the 4+4 address band. -->
-    <nDim>104</nDim>
+    <nDim>112</nDim>
     <nVectors>9</nVectors>
   </WholeSpace>
 

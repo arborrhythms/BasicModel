@@ -40,7 +40,7 @@ class SentenceField:
         # it stands in the text, the address its word step was given.
         from PrependedSymbols import word_view
         band = word_view(self.model.inputSpace, 'symbol_where')[:, index]
-        start = registry.encoding.decode_index(band).to(torch.long)
+        start = registry.decode(band).to(torch.long)
         known = torch.where((identity >= 0)[:, None] & band.ne(0).any(-1, keepdim=True),
                             torch.stack((start, start + 1), -1), -1)
         pair = self.model._attention_words.poles[:,index]

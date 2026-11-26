@@ -1,0 +1,237 @@
+{
+ "counting": [
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine"
+ ],
+ "denial_held_out": [
+  6,
+  7
+ ],
+ "english": {
+  "article": "a",
+  "article_before_vowel": "an",
+  "clause_words": [
+   "after",
+   "and",
+   "before",
+   "but",
+   "if",
+   "or",
+   "that",
+   "then"
+  ],
+  "conjunction": "and",
+  "joined_marks": [
+   ".",
+   ","
+  ],
+  "plural_nouns": [
+   "evens",
+   "many",
+   "odds"
+  ],
+  "plural_verbs": [
+   "are"
+  ],
+  "question_mark": "?",
+  "singular_verbs": [
+   "has",
+   "is",
+   "was"
+  ],
+  "statement_mark": ".",
+  "verbs": [
+   "are",
+   "did",
+   "has",
+   "is",
+   "left",
+   "move",
+   "moved",
+   "moves",
+   "moving",
+   "reached",
+   "stays",
+   "stopped",
+   "touched",
+   "touches",
+   "was",
+   "will"
+  ],
+  "vowel_words": [
+   "eight",
+   "even",
+   "odd"
+  ]
+ },
+ "kinds": [
+  {
+   "adjective": "even",
+   "key": "even",
+   "members": [
+    2,
+    4,
+    6,
+    8
+   ],
+   "noun": "even",
+   "plural": "evens",
+   "with_article": "an even"
+  },
+  {
+   "adjective": "odd",
+   "key": "odd",
+   "members": [
+    1,
+    3,
+    5,
+    7,
+    9
+   ],
+   "noun": "odd",
+   "plural": "odds",
+   "with_article": "an odd"
+  }
+ ],
+ "schema": 1,
+ "truth_words": [
+  "no",
+  "yes"
+ ],
+ "values": [
+  {
+   "value": 1,
+   "word": "one"
+  },
+  {
+   "value": 2,
+   "word": "two"
+  },
+  {
+   "value": 3,
+   "word": "three"
+  },
+  {
+   "value": 4,
+   "word": "four"
+  },
+  {
+   "value": 5,
+   "word": "five"
+  },
+  {
+   "value": 6,
+   "word": "six"
+  },
+  {
+   "value": 7,
+   "word": "seven"
+  },
+  {
+   "value": 8,
+   "word": "eight"
+  },
+  {
+   "value": 9,
+   "word": "nine"
+  }
+ ],
+ "vocabulary": [
+  "above",
+  "after",
+  "all",
+  "an",
+  "and",
+  "are",
+  "away",
+  "before",
+  "below",
+  "between",
+  "big",
+  "bigger",
+  "both",
+  "but",
+  "by",
+  "did",
+  "down",
+  "eight",
+  "even",
+  "evens",
+  "every",
+  "far",
+  "faster",
+  "first",
+  "five",
+  "four",
+  "from",
+  "greater",
+  "has",
+  "here",
+  "how",
+  "if",
+  "is",
+  "it",
+  "left",
+  "less",
+  "many",
+  "minus",
+  "move",
+  "moved",
+  "moves",
+  "moving",
+  "near",
+  "next",
+  "nine",
+  "no",
+  "not",
+  "odd",
+  "odds",
+  "of",
+  "on",
+  "one",
+  "or",
+  "plus",
+  "quickly",
+  "reach",
+  "reached",
+  "right",
+  "second",
+  "seven",
+  "six",
+  "slower",
+  "slowly",
+  "small",
+  "smaller",
+  "some",
+  "stays",
+  "still",
+  "stopped",
+  "than",
+  "that",
+  "the",
+  "then",
+  "they",
+  "this",
+  "three",
+  "to",
+  "top",
+  "touched",
+  "touches",
+  "toward",
+  "two",
+  "under",
+  "up",
+  "was",
+  "what",
+  "which",
+  "will",
+  "yes"
+ ]
+}

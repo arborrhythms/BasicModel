@@ -13,15 +13,16 @@ from nomination_fixtures import recurrent_word
 def equality_fixture():
     from test_cs_sparse_weights import _cs
     from Spaces import _concept_alloc_of
-    cs = _cs(nS=128, order=3, dim=16)
+    cs = _cs(nS=128, order=3, dim=24)
     return cs, cs._fixture_occurrences, _concept_alloc_of(cs)
 
 
 def event(cs, store, place, *, order=0, value=.5, token=False):
     from Meaning import ConceptualMeaning
-    point = torch.zeros(16)
+    from architecture import WHERE_WIRES
+    point = torch.zeros(24)
     point[0] = value
-    point[-8] = place
+    point[-(WHERE_WIRES + 4)] = place
     meaning = ConceptualMeaning.from_description(point)
     if order:
         from dataclasses import replace
@@ -33,7 +34,7 @@ def event(cs, store, place, *, order=0, value=.5, token=False):
     address = store.row_name(row)
     if token:
         cs.mtm.open(store.occurrence_of(row), kind=17, when=place, value=point,
-                    pending=False, where=point[-8:-4])
+                    pending=False, where=point[-(WHERE_WIRES + 4):-4])
         # §50: the explicit state below belongs to an event, not a cached mention.
         cs.mtm.event(store.occurrence_of(row), store.occurrence_of(row), verb=17, role=0, when=place)
     return address

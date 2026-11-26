@@ -11,10 +11,15 @@ import torch
 
 from Memory import LTM0
 from Meaning import ConceptualMeaning
+from architecture import WHERE_WIRES, WHEN_WIRES
+
+#: The percept band of these stores, and their width: the band and four wires of content.
+BAND = WHERE_WIRES + WHEN_WIRES
+WIDTH = BAND + 4
 
 
 def meaning(value=1.):
-    return ConceptualMeaning.from_description(torch.full((12,), float(value)))
+    return ConceptualMeaning.from_description(torch.full((WIDTH,), float(value)))
 
 
 def write(store, document='book', position=0, value=1., evidence=(0., 0.)):
@@ -43,7 +48,7 @@ def test_when_is_unit_bracket_with_coarse_fine_roundtrip():
 
 
 def test_references_and_content_keys_survive_compaction_and_checkpoint():
-    store = LTM0(12, 8, percept_width=8)
+    store = LTM0(WIDTH, 8, percept_width=BAND)
     removed = write(store, 'discard')
     source = write(store, 'kept')
     child = ConceptualMeaning(meaning(2.).roles, meaning().role_mask,
@@ -54,18 +59,18 @@ def test_references_and_content_keys_survive_compaction_and_checkpoint():
     assert store.location(reference) == 0
     assert store.meaning_of(1).role_refs[0] == reference
     assert not hasattr(store, 'refs')
-    restored = LTM0(12, 8, percept_width=8)
+    restored = LTM0(WIDTH, 8, percept_width=BAND)
     restored.load_state_dict(copy.deepcopy(store.state_dict()))
     assert restored.location(reference) == 0
     assert restored.meaning_of(1).role_refs[0] == reference
 
 
 def test_pre_layout_checkpoint_is_rejected_without_migration():
-    store = LTM0(12, 8, percept_width=8)
+    store = LTM0(WIDTH, 8, percept_width=BAND)
     write(store)
     state = copy.deepcopy(store.state_dict())
     state['truth_schema'].fill_(10)
-    restored = LTM0(12, 8, percept_width=8)
+    restored = LTM0(WIDTH, 8, percept_width=BAND)
     before = copy.deepcopy(restored.state_dict())
     with pytest.raises(ValueError, match='before the one clock is refused'):
         restored.load_state_dict(state)
@@ -145,10 +150,10 @@ def test_prepared_dataset_value_retains_its_source_after_cursor_advances():
 
 
 def test_checkpoint_rejects_a_different_constructed_capacity():
-    source = LTM0(12, 2, percept_width=8)
+    source = LTM0(WIDTH, 2, percept_width=BAND)
     write(source, 'one', position=1)
     write(source, 'two', position=1)
-    restored = LTM0(12, 8, percept_width=8)
+    restored = LTM0(WIDTH, 8, percept_width=BAND)
     with pytest.raises(ValueError, match='capacity/width'):
         restored.load_state_dict(copy.deepcopy(source.state_dict()))
     assert restored.capacity == 8 and not len(restored)
@@ -166,7 +171,7 @@ def test_serving_source_is_conversation_and_turn_and_replay_is_stable():
 
 
 def test_explicit_rewitness_keeps_a_self_reference_without_inventing_evidence():
-    store = LTM0(12, 2, percept_width=8)
+    store = LTM0(WIDTH, 2, percept_width=BAND)
     row = write(store)
     before = copy.deepcopy(store.state_dict())
     reference = store.occurrence_of(row)

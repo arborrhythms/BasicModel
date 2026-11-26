@@ -280,7 +280,7 @@ def test_word_property_meet_keeps_tied_gradients_and_empty_rows(device):
     from BasicPercepts import BasicPercepts
     groups = [(0, 2), (), (1,), (-1, 0)]
     basic = SimpleNamespace(index={i: i for i in range(4)},
-        occurrences=[((), group) for group in groups],
+        occurrences=[((), group) for group in groups], is_value=lambda row: False,
         whole=SimpleNamespace(primitive_properties=SimpleNamespace(on_counts=lambda counts: counts)))
     primitive = torch.ones(2, 3, 4, 3, device=device, requires_grad=True)
     rows = torch.tensor([[[0, 0], [1, 2], [2, -1]], [[3, 0], [7, 2], [0, 1]]], device=device)

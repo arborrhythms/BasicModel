@@ -1,0 +1,1026 @@
+{
+ "cast": "recipes/cast.json",
+ "cast_sha256": "4467b7789dbf54aec38182d490ff17fc949b960017c10b3961901dfea1b326d8",
+ "command": "python bin/felt_world_corpus.py freeze --seed 20261118 --recipes data/felt/recipes --out data/felt",
+ "files": [
+  {
+   "attempts": 393,
+   "category": 1,
+   "name": "word-alone",
+   "path": "category-01-word-alone.jsonl",
+   "recipe": "recipes/category-01-word-alone.json",
+   "recipe_sha256": "a148af98afa7199f98fe8833e2c94aa68def5abf7bb4d632a8e34c3510ac0227",
+   "rows": {
+    "generalization": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20
+   },
+   "sha256": "e809f1843f7ad5d284e0fe07d2d7d8c035a7595c1d084c2f5b3e90cdeec57be7",
+   "verify": {
+    "accepted": 160,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 449,
+   "category": 2,
+   "name": "naming",
+   "path": "category-02-naming.jsonl",
+   "recipe": "recipes/category-02-naming.json",
+   "recipe_sha256": "1345179d0131449d767eef86d484ff67e6e74be3ad0b5f1f271b4854fe31c2cf",
+   "rows": {
+    "generalization": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "8a86514b43ec8f2c5356d88be805cbfce6ffcbba17a592f3d95034a3d53b9509",
+   "verify": {
+    "accepted": 180,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 9699,
+   "category": 3,
+   "name": "presence",
+   "path": "category-03-presence.jsonl",
+   "recipe": "recipes/category-03-presence.json",
+   "recipe_sha256": "e71bcb48357ac406134cc1e8e6be7c77e002abfd2cb68d6412ca81d976fba7f6",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "5d140825bb60695a9087186371df9aa3995fd06f5012a516ab580007f85a4025",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 361,
+   "category": 4,
+   "name": "kinds",
+   "path": "category-04-kinds.jsonl",
+   "recipe": "recipes/category-04-kinds.json",
+   "recipe_sha256": "01f5fc870e4416d877ff9876a4cca01c7c3c2111ecdf5fc4ae7fb063e94c903a",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20
+   },
+   "sha256": "cd27ac99614d30085bed6fcbee1034831f587ffa873d5a77a8f1fe07c28575eb",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 404,
+   "category": 5,
+   "name": "and-or",
+   "path": "category-05-and-or.jsonl",
+   "recipe": "recipes/category-05-and-or.json",
+   "recipe_sha256": "c399f19960c281a1c29ad838743bf436f98c4f1642c07a058f49a7dbb274007a",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "0922b24b6899f966d317f08888ec0e4ad635763ecb20180f2de01e4f28f3f53f",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 734,
+   "category": 6,
+   "name": "order-of-levels",
+   "path": "category-06-order-of-levels.jsonl",
+   "recipe": "recipes/category-06-order-of-levels.json",
+   "recipe_sha256": "061fa18eba6bb7dbe759c0ef0105916ff9fd9c7bbbfd81918903a7fcc158489c",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "ddfe504b2b77595eb1ee9f35e6ba6222ad04acf7c3725d7ad2dd28fd9c0ce2ea",
+   "verify": {
+    "accepted": 220,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 2979,
+   "category": 7,
+   "name": "one-thing-clause",
+   "path": "category-07-one-thing-clause.jsonl",
+   "recipe": "recipes/category-07-one-thing-clause.json",
+   "recipe_sha256": "ef7d1896ad67ed10dd0e5376dbb9643ef64cb205fc09ce1763c21c02ba30143a",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "73ced09fa5137161469e1e21691b8b4a87f1ea4aeaaf39fed3a02aa889c166d9",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 10480,
+   "category": 8,
+   "name": "two-thing-clause",
+   "path": "category-08-two-thing-clause.jsonl",
+   "recipe": "recipes/category-08-two-thing-clause.json",
+   "recipe_sha256": "c70d12e57900e373fcaecf2d529628ede9b37a7b341e48cc0a6747f7e71b9784",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "0f9d88c4083b83396b0d4c913a1b2296c1aa025badbc39dbb37eebdfda6464e0",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 1733,
+   "category": 9,
+   "name": "passive",
+   "path": "category-09-passive.jsonl",
+   "recipe": "recipes/category-09-passive.json",
+   "recipe_sha256": "a586f47f90c27bd5c678a571901848229da2c16cc2ad6576e5cd0948457782da",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "bd4b14d05bb5ce060ffc961f89e8289bdb7ec2c6ff4665802fa7e87edfb81cb1",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 11616,
+   "category": 10,
+   "name": "adjective",
+   "path": "category-10-adjective.jsonl",
+   "recipe": "recipes/category-10-adjective.json",
+   "recipe_sha256": "0bd5eda24ed430878437ca8246e2c8c96faa158d3cf0f21a3db082e5ff033cf5",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "6c31a8410986018fd81e2d5bd99ce18f4e2355f665f699506fb2303e74a86f11",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 534,
+   "category": 11,
+   "name": "comparative-size",
+   "path": "category-11-comparative-size.jsonl",
+   "recipe": "recipes/category-11-comparative-size.json",
+   "recipe_sha256": "d776fe9f91041df9b0e44f39111c92e39d0dac08c6f7a04cf5a6822137b6d301",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "05dbdf5fecd840174ecd47f4440acad670568610fced08250d75cfd40af6f01a",
+   "verify": {
+    "accepted": 220,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 9223,
+   "category": 12,
+   "name": "determiners",
+   "path": "category-12-determiners.jsonl",
+   "recipe": "recipes/category-12-determiners.json",
+   "recipe_sha256": "a191eeddcf395dc5476561082d2bc03ff195007c79ccdfe0817d7ce1c611220c",
+   "rows": {
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "668b1c5df5b07fe49f7ac4c2f0ae1addb798c1b5d6e4579caf89ac1803045848",
+   "verify": {
+    "accepted": 180,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 12378,
+   "category": 13,
+   "name": "adverb",
+   "path": "category-13-adverb.jsonl",
+   "recipe": "recipes/category-13-adverb.json",
+   "recipe_sha256": "bfbe7cf1409ad23590b74ae435af860e86039be70b313284de7fc13dbd27f1af",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "321e78e88b4aa5aeb9fadb5f427f5535ea00bad68cd2600048751dbe259030c7",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 1976,
+   "category": 14,
+   "name": "place-of-two",
+   "path": "category-14-place-of-two.jsonl",
+   "recipe": "recipes/category-14-place-of-two.json",
+   "recipe_sha256": "a28f6d87212e207f454943c5c0d5ba62783b94a2b1747afc88a8a0469a164ba2",
+   "rows": {
+    "contrast": 240,
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "1d763241967fe1424817030caf92c7ab681af314adf3df8fb29a7b5930ba7117",
+   "verify": {
+    "accepted": 460,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 7864,
+   "category": 15,
+   "name": "place-among-three",
+   "path": "category-15-place-among-three.jsonl",
+   "recipe": "recipes/category-15-place-among-three.json",
+   "recipe_sha256": "ff08c907cc4afd7adeb80e306be3202d72471af61269660f59a62ad8d69b920c",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "7245eba9240e3d429ffbe8b60445ecf6b4c24b49ea2511f9203a6894fbd1ecfe",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 43138,
+   "category": 16,
+   "name": "motion-direction",
+   "path": "category-16-motion-direction.jsonl",
+   "recipe": "recipes/category-16-motion-direction.json",
+   "recipe_sha256": "3d5e6993517a00471ac554d279bfd4fb9c6030224fd73456f91202bdb66c8817",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "52f15d67fc6e71bebf34b728898dad14333d4d17d7c673dcab3cc89bb8ee44de",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 9431,
+   "category": 17,
+   "name": "tense",
+   "path": "category-17-tense.jsonl",
+   "recipe": "recipes/category-17-tense.json",
+   "recipe_sha256": "95a788e5809f81dae41b0b2bb20e11e80ef105e064436cf1b2ce582892f766d2",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "bd6e5d142b2d735f3b2fae7fd0864a873734575639a94b53b57c57f7e83eeae3",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 21438,
+   "category": 18,
+   "name": "aspect",
+   "path": "category-18-aspect.jsonl",
+   "recipe": "recipes/category-18-aspect.json",
+   "recipe_sha256": "ec2af183b08ff60159a68713393d523916f6bda3b5a2022136b705648f824307",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "9ef80ef2ec73b9052e8d566aa4eb22d858bcfdc58c48b04229d62edfdcaa778b",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 8308,
+   "category": 19,
+   "name": "order-of-events",
+   "path": "category-19-order-of-events.jsonl",
+   "recipe": "recipes/category-19-order-of-events.json",
+   "recipe_sha256": "0c3ca2b6c7f04bddb4bb905a03719f45fda46ed713762b7eb801464eb50d44a9",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "36458c90bc26ef12a9af7a96da9ffb336693fb0fb8b671c042f3745eaf5ab097",
+   "verify": {
+    "accepted": 220,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 120628,
+   "category": 20,
+   "name": "events-compared",
+   "path": "category-20-events-compared.jsonl",
+   "recipe": "recipes/category-20-events-compared.json",
+   "recipe_sha256": "31d94f878223ce50ea19e9a67154ddee3995143a57e669b546b01c90676fd427",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "e8b7e830e117dd2c9d265a2e8380abee50c9479c568a6c9a21d2d10646a1be52",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 14652,
+   "category": 21,
+   "name": "later-mention",
+   "path": "category-21-later-mention.jsonl",
+   "recipe": "recipes/category-21-later-mention.json",
+   "recipe_sha256": "3fc7d6518558cecc054953acdddc09ec5ea98288dacfa4b9320e7e40679bb61f",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "25e54eca2820046a05b7f20d5eab8ae60b1e53f3c7784855b9c62710ad1dd130",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 4341,
+   "category": 22,
+   "name": "relative-clause",
+   "path": "category-22-relative-clause.jsonl",
+   "recipe": "recipes/category-22-relative-clause.json",
+   "recipe_sha256": "79dca424dc0af16e2012d2d37fe8ebb567c941a43cfc2f3fc0577b4347c6ba46",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "c2f6ee4f8a9dec5e07c6c301428e0d76a92db6800629f3d441dbd81e9e9e5d50",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 3712,
+   "category": 23,
+   "name": "two-clauses",
+   "path": "category-23-two-clauses.jsonl",
+   "recipe": "recipes/category-23-two-clauses.json",
+   "recipe_sha256": "c6e57ed08ab2ae85e88a04a7f9cbab9603784c0ed17fcc0c3b31be0d5caf834d",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "1baefe15fdc596366a53d8c16cc0c3415585fe18c5ab304f9442780c2cb9980d",
+   "verify": {
+    "accepted": 200,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 9567,
+   "category": 24,
+   "name": "if",
+   "path": "category-24-if.jsonl",
+   "recipe": "recipes/category-24-if.json",
+   "recipe_sha256": "cbf00294c8dfcdea5cfdb79c0a691be7cd1ce0ff316b81aa4bd359ebb53453fb",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "7b74cbe95bb587866c7ca7d0283f261f65b4218fc154d0550de6b3d399c46676",
+   "verify": {
+    "accepted": 220,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 1965,
+   "category": 25,
+   "name": "kind-follows",
+   "path": "category-25-kind-follows.jsonl",
+   "recipe": "recipes/category-25-kind-follows.json",
+   "recipe_sha256": "a2a5bf55349bcb9d8c857f8b459245a525b1497a7a62719444a89f2a8b6f7c9a",
+   "rows": {
+    "generalization": 20,
+    "haystack": 20,
+    "inference": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20,
+    "witness": 20
+   },
+   "sha256": "d63eb1142572ec31598999b6bd94e22a85cb22e2863391adffae576e7fce1c99",
+   "verify": {
+    "accepted": 220,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 9819,
+   "category": 26,
+   "name": "said-mathematics",
+   "path": "category-26-said-mathematics.jsonl",
+   "recipe": "recipes/category-26-said-mathematics.json",
+   "recipe_sha256": "354642f7fa18335d432aaaeb42175015890d98118b988834dc21cc05b00dc998",
+   "rows": {
+    "generalization": 20,
+    "test": 20,
+    "train": 100,
+    "validation": 20
+   },
+   "sha256": "b3c648af320d20538a3978d1ccf8ac1ffecdef25ff962d83ad40f9f34c4ef2d1",
+   "verify": {
+    "accepted": 160,
+    "rejected": 0
+   }
+  },
+  {
+   "attempts": 0,
+   "category": 27,
+   "name": "counting",
+   "path": "category-27-counting.jsonl",
+   "recipe": "recipes/category-27-counting.json",
+   "recipe_sha256": "14a2c1912f0260d96822d913bf7aaabc3417f29f1f9d4eb2f0a80ae76902ea9b",
+   "rows": {
+    "generalization": 40,
+    "test": 40,
+    "train": 200,
+    "validation": 40
+   },
+   "sha256": "043c62867b2f770a46623d934aaf7ed19aab5a56af7416455c23e5928e9147f3",
+   "verify": {
+    "accepted": 320,
+    "rejected": 0
+   }
+  }
+ ],
+ "generator": "bin/felt_world_corpus.py",
+ "held_out_pairs": [
+  [
+   2,
+   7
+  ],
+  [
+   4,
+   8
+  ],
+  [
+   7,
+   3
+  ],
+  [
+   9,
+   6
+  ]
+ ],
+ "longest_text": {
+  "bytes": 48,
+  "words": 10
+ },
+ "never_direct": "rows are sentences of words beside images of pixel steps; no digit, numeric code or readout reaches a text",
+ "reserved": {
+  "1": {
+   "places": [
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     0
+    ]
+   ],
+   "step": 26
+  },
+  "2": {
+   "places": [
+    [
+     0,
+     6
+    ],
+    [
+     1,
+     5
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     3
+    ],
+    [
+     4,
+     2
+    ],
+    [
+     5,
+     1
+    ],
+    [
+     6,
+     0
+    ],
+    [
+     7,
+     7
+    ]
+   ],
+   "step": 49
+  },
+  "3": {
+   "places": [
+    [
+     0,
+     5
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     2
+    ],
+    [
+     4,
+     1
+    ],
+    [
+     5,
+     0
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     6
+    ]
+   ],
+   "step": 76
+  },
+  "4": {
+   "places": [
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     3
+    ],
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     1
+    ],
+    [
+     4,
+     0
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     6,
+     6
+    ],
+    [
+     7,
+     5
+    ]
+   ],
+   "step": 99
+  },
+  "5": {
+   "places": [
+    [
+     0,
+     3
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     0
+    ],
+    [
+     4,
+     7
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     5
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "step": 126
+  },
+  "6": {
+   "places": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     0
+    ],
+    [
+     3,
+     7
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     5,
+     5
+    ],
+    [
+     6,
+     4
+    ],
+    [
+     7,
+     3
+    ]
+   ],
+   "step": 149
+  },
+  "7": {
+   "places": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     0
+    ],
+    [
+     2,
+     7
+    ],
+    [
+     3,
+     6
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     4
+    ],
+    [
+     6,
+     3
+    ],
+    [
+     7,
+     2
+    ]
+   ],
+   "step": 176
+  },
+  "8": {
+   "places": [
+    [
+     0,
+     0
+    ],
+    [
+     1,
+     7
+    ],
+    [
+     2,
+     6
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     4,
+     4
+    ],
+    [
+     5,
+     3
+    ],
+    [
+     6,
+     2
+    ],
+    [
+     7,
+     1
+    ]
+   ],
+   "step": 199
+  },
+  "9": {
+   "places": [
+    [
+     0,
+     7
+    ],
+    [
+     1,
+     6
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     3,
+     4
+    ],
+    [
+     4,
+     3
+    ],
+    [
+     5,
+     2
+    ],
+    [
+     6,
+     1
+    ],
+    [
+     7,
+     0
+    ]
+   ],
+   "step": 226
+  }
+ },
+ "schema": 1,
+ "seed": 20261118,
+ "short": {},
+ "vocabulary": [
+  "above",
+  "after",
+  "all",
+  "an",
+  "and",
+  "are",
+  "away",
+  "before",
+  "below",
+  "between",
+  "big",
+  "bigger",
+  "both",
+  "but",
+  "by",
+  "did",
+  "down",
+  "eight",
+  "even",
+  "evens",
+  "every",
+  "far",
+  "faster",
+  "first",
+  "five",
+  "four",
+  "from",
+  "greater",
+  "has",
+  "here",
+  "how",
+  "if",
+  "is",
+  "it",
+  "left",
+  "less",
+  "many",
+  "minus",
+  "move",
+  "moved",
+  "moves",
+  "moving",
+  "near",
+  "next",
+  "nine",
+  "no",
+  "not",
+  "odd",
+  "odds",
+  "of",
+  "on",
+  "one",
+  "or",
+  "plus",
+  "quickly",
+  "reach",
+  "reached",
+  "right",
+  "second",
+  "seven",
+  "six",
+  "slower",
+  "slowly",
+  "small",
+  "smaller",
+  "some",
+  "stays",
+  "still",
+  "stopped",
+  "than",
+  "that",
+  "the",
+  "then",
+  "they",
+  "this",
+  "three",
+  "to",
+  "top",
+  "touched",
+  "touches",
+  "toward",
+  "two",
+  "under",
+  "up",
+  "was",
+  "what",
+  "which",
+  "will",
+  "yes"
+ ]
+}

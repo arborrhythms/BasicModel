@@ -2,6 +2,7 @@
 from dataclasses import replace
 import pytest
 import torch
+from architecture import WHERE_WIRES, WHEN_WIRES
 from nomination_fixtures import recurrent_interpretation
 
 
@@ -77,17 +78,21 @@ def test_bare_scalar_terminal_uses_its_box_or_is_silent(named_scalar_model, valu
     assert answer.texts == (expected,)
 
 
+# A percept of 4 content wires and the band (.where and .when): 12 -> 20.
+_W = 4 + WHERE_WIRES + WHEN_WIRES
+
+
 def memory_brick():
     import weakref
     from types import SimpleNamespace
     from Memory import LTM0, MediumTermMemory
-    store = LTM0(12, capacity=8, percept_width=12, episodic_concepts=4, read_capacity=8)
+    store = LTM0(_W, capacity=8, percept_width=_W, episodic_concepts=4, read_capacity=8)
     owner = SimpleNamespace(_model=None, _concept_row_of=lambda cid: cid, _order_caps=lambda: (10,10,10),
                             _row_order=lambda cid: {10: 0, 20: 1, 30: 2}[cid],
                             components=SimpleNamespace(reference_close=None), mtm=MediumTermMemory())
     store._concept_owner = lambda: owner
     for i in range(4):
-        store.append_idea(torch.ones(12), trust=1.)
+        store.append_idea(torch.ones(_W), trust=1.)
     return store
 
 
@@ -139,7 +144,7 @@ def test_full_recall_window_materializes_only_the_selected_rows(monkeypatch):
     store = memory_brick()
     # Fill the already constructed window; no capacity is changed.
     for i in range(len(store), store.ltm_window):
-        store.append_idea(torch.ones(12), trust=1.)
+        store.append_idea(torch.ones(_W), trust=1.)
     store.episodic_concepts[:, 0] = 10
     store.episodic_values[:, 0] = 1.
     reads = []
@@ -150,7 +155,7 @@ def test_full_recall_window_materializes_only_the_selected_rows(monkeypatch):
     monkeypatch.setattr(store, 'row', read)
     frames = query(store, brick_question([10], [[1., 0.]]), max_records=3)['value']
     assert len(store) == store.ltm_window and reads == [7, 6, 5]
-    found = store.cued_rows(ConceptualMeaning.from_description(torch.ones(12)),
+    found = store.cued_rows(ConceptualMeaning.from_description(torch.ones(_W)),
                            episodic_frames=frames, max_records=3)
     assert {frame['index'] for frame in found['value']} == {5, 6, 7}
     assert found['records_scanned'] == 0 and reads == [7, 6, 5]
@@ -178,9 +183,10 @@ def test_an_old_ordered_entry_is_refused():
     state['truth_schema'] = torch.tensor(16)
     # The preceding checkpoint stored centered phase bands.
     layout = int(state['percept_layout'])
-    if layout >= 8:
+    band = WHERE_WIRES + WHEN_WIRES
+    if layout >= band:
         state['slots'] = state['slots'].clone()
-        bands = state['slots'][..., layout-8:layout].reshape(store.capacity, 2, 4)
+        bands = state['slots'][..., layout-band:layout].reshape(store.capacity, -1, 4)
         bands.copy_(torch.where(bands.ne(0).any(-1, keepdim=True), 2*bands-1, 0.))
     state['truth_plus'] = state.pop('trust')
     state['truth_minus'] = torch.zeros_like(state['truth_plus'])
@@ -220,8 +226,8 @@ def test_relation_write_updates_reference_indexes_without_rebuild(monkeypatch):
 def test_declared_caches_rebuild_and_are_not_checkpointed():
     from Memory import LTM0, LTM1, RELATION
     import copy
-    store = LTM0(12, capacity=8, percept_width=12)
-    row = store.append_idea(torch.ones(12), trust=.7)
+    store = LTM0(_W, capacity=8, percept_width=_W)
+    row = store.append_idea(torch.ones(_W), trust=.7)
     bank = LTM1(16)
     a = bank.add(20, 30, truth_plus=.8)
     b = bank.add((RELATION, a), 40, truth_plus=.6)
@@ -252,7 +258,7 @@ def test_cache_rebuild_preserves_mtm_forward_slots_and_entry_reads():
     store = memory_brick()
     owner = store._concept_owner()
     owner._concept_source_order = lambda cid, seen=None: owner._row_order(cid)
-    meaning = replace(ConceptualMeaning.from_description(torch.ones(12)), bindings={
+    meaning = replace(ConceptualMeaning.from_description(torch.ones(_W)), bindings={
         '_open_references': (('referent', 0),), '_forward_references': ((0, 10),)})
     pending = store.append_meaning(meaning)
     slot = slot_key(store.row_name(pending), 0)
@@ -260,7 +266,7 @@ def test_cache_rebuild_preserves_mtm_forward_slots_and_entry_reads():
     store.episodic_values[:4, 0] = 1.
     def reads():
         frames = query(store, brick_question([10], [[1., 0.]]), max_records=2)['value']
-        cued = store.cued_rows(ConceptualMeaning.from_description(torch.ones(12)), episodic_frames=frames)
+        cued = store.cued_rows(ConceptualMeaning.from_description(torch.ones(_W)), episodic_frames=frames)
         return (store.slot_of_reference(slot), store.semantic_reference(slot),
             store._forward_addresses((10,)), store.ideas().tolist(),
             tuple((frame['index'], frame['match']) for frame in cued['value']))
@@ -273,8 +279,8 @@ def test_cache_rebuild_preserves_mtm_forward_slots_and_entry_reads():
 def test_cued_read_only_reaches_explicit_or_recalled_rows():
     from Memory import LTM0
     from Meaning import ConceptualMeaning
-    store = LTM0(12, capacity=8, percept_width=12)
-    meaning = ConceptualMeaning.from_description(torch.ones(12))
+    store = LTM0(_W, capacity=8, percept_width=_W)
+    meaning = ConceptualMeaning.from_description(torch.ones(_W))
     row = store.append_meaning(meaning, evidence=(1., 0.))
     assert not store.cued_rows(meaning)['value']
     assert [x['index'] for x in store.cued_rows(meaning, references=(store.occurrence_of(row),))['value']] == [row]
@@ -284,10 +290,10 @@ def test_cued_read_only_reaches_explicit_or_recalled_rows():
 def test_entry_time_has_one_unambiguous_name():
     from Memory import LTM0
     import RowTime
-    store = LTM0(12, capacity=4, percept_width=12)
+    store = LTM0(_W, capacity=4, percept_width=_W)
     now = RowTime.encoder().encode(17)
     store._model_present = lambda: 17
-    row = store.append_idea(torch.ones(12))
+    row = store.append_idea(torch.ones(_W))
     torch.testing.assert_close(store.entry_time(row), now)
     torch.testing.assert_close(store.time[row], now)
     torch.testing.assert_close(store.row(row)['time'], now)
@@ -297,7 +303,7 @@ def test_entry_time_has_one_unambiguous_name():
     assert not hasattr(store, 'when')
     for retired in ('stamp', 'read_stamp', 'write_stamp'):
         assert not hasattr(RowTime, retired)
-    assert store.when_start == 8
+    assert store.when_start == 4 + WHERE_WIRES
 
 
 def test_relation_evidence_with_both_ends_reads_one_row(monkeypatch):
@@ -328,9 +334,9 @@ def test_an_empty_query_concludes_its_unanswered_operand_not_the_request(monkeyp
     from ThoughtReferences import evidence_pair, open_slots
     from test_normal_thought_controller import _catalog_world
     model, registry, memory, part, _whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = __import__('Memory').STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    store = model.symbolSpace.ltm_store = __import__('Memory').STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
     configure_model_index(model, store)
-    cue = replace(ConceptualMeaning.from_description(torch.eye(8)[0]), role_refs=(part, None, None))
+    cue = replace(ConceptualMeaning.from_description(torch.eye(16)[0]), role_refs=(part, None, None))
     row = store.append_meaning(cue)
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(256), continuation=None)
@@ -359,16 +365,16 @@ def test_an_empty_read_inside_a_conclusion_writes_its_operand_recursively(operat
     from ThoughtStream import integrate, write
     from test_normal_thought_controller import _catalog_world
     model, registry, _memory, part, _whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = __import__('Memory').STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    store = model.symbolSpace.ltm_store = __import__('Memory').STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
     configure_model_index(model, store)
-    cue = replace(ConceptualMeaning.from_description(torch.eye(8)[0]), role_refs=(part, None, None))
+    cue = replace(ConceptualMeaning.from_description(torch.eye(16)[0]), role_refs=(part, None, None))
     row = store.append_meaning(cue)
     with model._query_boundary_scope((0,)):
         context = model._thought_grammar_context(cue, row=0, work=QueryWorkBudget(256), continuation=None)
         request = registry.form(operation, store.occurrence_of(row), context=context)
         result = registry.execute(request, context)
         child = integrate(registry, request, result, (), stm=model.conceptualSpace.stm)
-        parent = with_slots(replace(ConceptualMeaning.from_description(torch.eye(8)[1]),
+        parent = with_slots(replace(ConceptualMeaning.from_description(torch.eye(16)[1]),
             role_refs=(('constituent', 0), None, None), constituents=(child,)), (), pair=(0., 0.))
         index = write(model, parent, row=0)
     retained = store.meaning_of(store.location(store.meaning_of(index).role_refs[0]))

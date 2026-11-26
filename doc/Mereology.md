@@ -580,11 +580,19 @@ and a class holds the form exactly when that code lies inside the
 class's.
 
 The same holds for values, with ranges in place of sets of characters.
-A value's code is, in each half, the bins of the felt value at or below
-it (`ScalarPercepts.code`, `BasicPercepts.value_code`). A range such as
-0.3 to 0.4 is a whole over the values inside it; two ranges, 0.3 to 0.4
-and 0.6 to 0.7, are ORed into the whole that holds both; and the top is
-again the whole that applies to all percepts.
+A value is the segment from zero to itself, so in the parts half its
+code is the bins of the felt value at or below it and a lesser value is a
+part of a greater (`BasicPercepts.value_code`). In the wholes half the
+leaves are the levels of the alphabet of intensity, grouped as the bytes
+are (`PerceptProperties.leaf_groups`): a value's own whole is one at the
+coordinate of the group of the level it falls to
+(`BasicPercepts.value_whole`). A range such as 0.3 to 0.4 is the OR of
+the levels inside it (`range_whole`); two ranges, 0.3 to 0.4 and 0.6 to
+0.7, OR into the whole that holds the values of both and no value
+between them; and the top is again the whole that applies to all
+percepts. A whole `r` holds a value `p` when `min_k max(1 - p_k, r_k)` is
+one. A collection of values is the range from its least to its greatest
+member, and a thing's whole is the OR of its pixels' own wholes.
 
 **The way back of a form starts from the form alone** ("we
 are not always doing reconstruction: sometimes we do generation"). No place
@@ -758,7 +766,7 @@ join/meet/projection primitives above — also carries the unrelated
 `Mereology` mixin: the contemplative-awareness measure family (`Contiguous`,
 `Continuous`, `Peaceful`, `Area`, `Luminosity`), mixed into `BaseModel` first
 in MRO (`class BaseModel(Mereology, nn.Module)`, `bin/Models.py`). See
-[doc/research/three-surfaces.md](research/three-surfaces.md) for that
+[doc/three-surfaces.md](three-surfaces.md) for that
 geometry — the two share a file and a name, not an implementation.
 
 ### `isPart` as a Grammar Layer

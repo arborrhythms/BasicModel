@@ -265,8 +265,9 @@ def stage_input(model):
     texts=fi.get('pool_word_texts', fi.get('word_texts')) or ()
     pool_words = fi.get('pool_word_ids')
     if pool_words is None and not any(row for row in texts) and not any(
-            value is not None for value in (getattr(isp, '_scalar_values', None) or ())):
-        return  # An absent text/scalar field has no bracket to examine.
+            value is not None for value in (getattr(isp, '_scalar_values', None) or ())) and not any(
+            scene is not None for scene in (getattr(isp, '_scenes', None) or ())):
+        return  # An absent text/scalar/scene field has no bracket to examine.
     owner=model._concept_owner()
     from WordSurfaces import is_lexical_form
     native_ids=fi.get('native_indices',fi.get('indices'))

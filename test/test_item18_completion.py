@@ -136,7 +136,9 @@ def test_stimulation_reads_positive_and_negative_meaning_lanes_independently():
     from types import SimpleNamespace
     from FieldProjection import stimulate
     from test_cs_sparse_weights import _cs, _mint_row
-    owner = _cs()
+    # The rows are a percept event of 4 and two lanes of 2; this concept
+    # holds no band, so it keeps its own width of 8 (not the fixtures' _D).
+    owner = _cs(dim=8)
     rows = [_mint_row(owner, 0, 700 + i) for i in range(2)]
     with torch.no_grad():
         owner.similarity_codebook.W[rows] = torch.tensor([

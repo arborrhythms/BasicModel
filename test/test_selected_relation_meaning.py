@@ -387,10 +387,10 @@ def test_observation_boundary_uses_selected_relation_before_prediction_and_ltm(
         monkeypatch, interrogative=False)
     entry = program()
     calls = []
-    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=8,
-        concept_dim=8)
+    discourse = SymbolExpectation(n_symbols=8, max_depth=8, n_dim=cs.nDim,
+        concept_dim=cs.nDim)
     discourse.set_symbol_bank(torch.eye(discourse.concept_dim))
-    store = LTM0(8, capacity=16)
+    store = LTM0(cs.nDim, capacity=16)
     monkeypatch.setattr(
         registry, "execute",
         lambda *args, **kwargs: pytest.fail("query executed during observation"))

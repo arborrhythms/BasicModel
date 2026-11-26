@@ -41,8 +41,8 @@ def test_selected_vp_validation_cannot_read_before_its_allowance(monkeypatch):
 def test_registry_description_resolution_and_fact_scan_use_one_budget():
     cs, registry, a, b, context = _world()
     del a, b, context
-    store = LTM0(8)
-    description = ConceptualMeaning.from_description(torch.eye(8)[0])
+    store = LTM0(cs.nDim)
+    description = ConceptualMeaning.from_description(torch.eye(cs.nDim)[0])
     slot = store.append_meaning(description,  trust=.6)
     context = _context(cs, store=store)
     question = registry.form("ask", store.occurrence_of(slot), context=context)
@@ -56,7 +56,7 @@ def test_registry_description_resolution_and_fact_scan_use_one_budget():
 
 def test_nested_executor_keeps_same_meter_and_does_not_start_an_allowance():
     from meaning_fixtures import unsupported as question
-    meaning = question(ConceptualMeaning.from_description(torch.eye(8)[0]), (('referent', 0),))
+    meaning = question(ConceptualMeaning.from_description(torch.eye(16)[0]), (('referent', 0),))
     meter = QueryWorkBudget(2)
     context = _context(_cs(), work=meter)
     query = _signature('ask', 'argin1')
@@ -71,7 +71,7 @@ def test_arma_reserves_context_reads_before_running_the_predictor(monkeypatch):
     before = context.work.spent
     for name in ('arma', 'expect'):
         with pytest.raises(ValueError, match='sentenceExpectation / gain'):
-            registry.form(name, ConceptualMeaning.from_description(torch.ones(8)), context=context)
+            registry.form(name, ConceptualMeaning.from_description(torch.ones(16)), context=context)
     assert context.work.spent == before
 
 
@@ -79,7 +79,7 @@ def test_quantize_does_not_materialize_basis_after_operation_uses_budget(monkeyp
     cs, registry, a, b, context = _world()
     monkeypatch.setattr(cs.similarity_codebook, 'active_prototypes', lambda: pytest.fail('retired read'))
     with pytest.raises(ValueError, match='symbolization'):
-        registry.form('quantize', torch.ones(8), context=context)
+        registry.form('quantize', torch.ones(16), context=context)
     assert context.work.spent == 0
 
 

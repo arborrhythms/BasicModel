@@ -3,6 +3,10 @@ import pytest
 import torch
 
 from Spaces import WhereEncoding, WhenStartDurationEncoding, DocumentWhenEncoding, WhenRangeEncoding
+from architecture import WHERE_WIRES, WHEN_WIRES
+
+# A percept's band, its .where and its .when (8 -> 16).
+BAND = WHERE_WIRES + WHEN_WIRES
 
 
 @pytest.mark.parametrize('kind', ['where', 'onset', 'document'])
@@ -38,16 +42,16 @@ def test_unsigned_range_preserves_extent_and_rotation():
 def test_centered_checkpoint_is_refused_and_the_current_one_keeps_addresses_and_content():
     from copy import deepcopy
     from Memory import LTM0
-    store = LTM0(12, capacity=4, percept_width=8)
-    value = torch.tensor([0.,0.,0.,0.,0.,0.,0.,0.,.2,.4,.6,.8])
+    store = LTM0(BAND + 4, capacity=4, percept_width=BAND)
+    value = torch.cat((torch.zeros(BAND), torch.tensor([.2,.4,.6,.8])))
     store.append_idea(value, trust=.7)
     state = deepcopy(store.state_dict())
     original = state['slots'].clone()
     state['truth_schema'].fill_(17)
-    restored = LTM0(12, capacity=4, percept_width=8)
+    restored = LTM0(BAND + 4, capacity=4, percept_width=BAND)
     with pytest.raises(ValueError, match='before the one clock is refused'):
         restored.load_state_dict(state)
-    again = LTM0(12, capacity=4, percept_width=8)
+    again = LTM0(BAND + 4, capacity=4, percept_width=BAND)
     again.load_state_dict(deepcopy(store.state_dict()))
     torch.testing.assert_close(again.slots, original, rtol=0, atol=0)
     assert again.occurrence_of(0) == store.occurrence_of(0)
@@ -56,32 +60,35 @@ def test_centered_checkpoint_is_refused_and_the_current_one_keeps_addresses_and_
 def test_checkpoint_sidecar_conversion_keeps_empty_bands_and_is_once_only():
     from CoordinateCheckpoint import migrate
     old = torch.tensor([0.,1.,0.,1.])
+    # A saved place has the four wires of each axis; a time has four.
+    where = old.repeat(WHERE_WIRES // 4)
     source = dict(state_dict={}, structural_extras=dict(
-        where=old, when=torch.zeros(4), point=torch.cat((old, old, torch.tensor([.3,.7])))),
+        where=where, when=torch.zeros(WHEN_WIRES), point=torch.cat((where, old, torch.tensor([.3,.7])))),
         training_state=dict(corpus_runtime=dict(stm=dict(owner=dict(fields=dict(
-            _live_chunk_where=old[None,None], _live_chunk_when=old[None,None]))))))
+            _live_chunk_where=where[None,None], _live_chunk_when=old[None,None]))))))
     with pytest.warns(UserWarning, match='observation bands'):
-        result = migrate(source, 8)
-    torch.testing.assert_close(result['structural_extras']['where'], (old+1)/2)
+        result = migrate(source, BAND)
+    torch.testing.assert_close(result['structural_extras']['where'], (where+1)/2)
     assert result['structural_extras']['when'].count_nonzero() == 0
-    for value in result['training_state']['corpus_runtime']['stm']['owner']['fields'].values():
-        torch.testing.assert_close(value, ((old+1)/2)[None,None])
-    torch.testing.assert_close(result['structural_extras']['point'][8:], torch.tensor([.3,.7]))
-    assert migrate(result, 8) is result
-    torch.testing.assert_close(source['structural_extras']['where'], old)
+    fields = result['training_state']['corpus_runtime']['stm']['owner']['fields']
+    for name, saved in (('_live_chunk_where', where), ('_live_chunk_when', old)):
+        torch.testing.assert_close(fields[name], ((saved+1)/2)[None,None])
+    torch.testing.assert_close(result['structural_extras']['point'][BAND:], torch.tensor([.3,.7]))
+    assert migrate(result, BAND) is result
+    torch.testing.assert_close(source['structural_extras']['where'], where)
 
 
 def test_checkpoint_learned_sparse_weights_are_not_located_observations():
     from CoordinateCheckpoint import migrate
     weights = torch.linspace(-1, 1, 24)
-    point = torch.tensor([0.,1.,0.,1.,0.,1.,0.,1.,.3,.7])
+    point = torch.cat((torch.tensor([0.,1.]).repeat(BAND // 2), torch.tensor([.3,.7])))
     source = dict(state_dict={'layer.truths': point[None]}, structural_extras=dict(
         allocator=dict(layers={1: dict(nInput=24, values=weights, values_requires_grad=True)},
                        singleton_members={9: (4, 7, point)})))
     with pytest.warns(UserWarning, match='observation bands'):
-        result = migrate(source, 8)
+        result = migrate(source, BAND)
     torch.testing.assert_close(result['structural_extras']['allocator']['layers'][1]['values'], weights)
-    expected = torch.cat(((point[:8]+1)/2, point[8:]))
+    expected = torch.cat(((point[:BAND]+1)/2, point[BAND:]))
     torch.testing.assert_close(result['structural_extras']['allocator']['singleton_members'][9][2], expected)
     torch.testing.assert_close(result['state_dict']['layer.truths'][0], expected)
 

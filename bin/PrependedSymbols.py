@@ -1,5 +1,6 @@
 """Construction-bounded symbol arrays with a leading MTM field."""
 import torch
+from architecture import WHERE_WIRES
 from torch import nn
 
 WORD_FIELDS = ('concept_ids', 'concept_rows', 'concept_orders', 'object_ids',
@@ -31,7 +32,8 @@ class SymbolEntries(nn.Module):
         # two W blocks (word and object), so its extent is base+2W.
         for name in WORD_FIELDS:
             band = name in ('symbol_where', 'symbol_when')
-            shape = (self.streams, self.prepend+self.words, *((4,) if band else ()))
+            wires = WHERE_WIRES if name == 'symbol_where' else 4
+            shape = (self.streams, self.prepend+self.words, *((wires,) if band else ()))
             self.register_buffer(name, torch.full(shape, 0. if band else -1,
                 dtype=torch.float32 if band else torch.long), persistent=False)
         for name in LOOKUP_FIELDS:
@@ -289,8 +291,8 @@ def stage(model, state, present):
             where = token.where.to(value)
             if store.when_start is not None and token.order is None:
                 value[store.when_start:store.when_start+4] = stamp
-                if store.when_start >= 4:
-                    value[store.when_start-4:store.when_start] = where
+                if store.when_start >= WHERE_WIRES:
+                    value[store.when_start-WHERE_WIRES:store.when_start] = where
             for field, member in (('concept_ids',identity), ('object_ids',identity),
                     ('concept_rows',-1 if row is None else row), ('object_rows',-1 if row is None else row),
                     ('concept_orders',order), ('object_orders',order), ('symbol_where',where), ('symbol_when',stamp),

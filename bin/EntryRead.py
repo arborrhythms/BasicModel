@@ -1,6 +1,7 @@
 """Bounded reads of explicitly addressed or extension-recalled records."""
 import math
 import torch
+from architecture import WHERE_WIRES
 
 
 class EntryRead:
@@ -88,7 +89,7 @@ class EntryRead:
                     pending.append(identity)
                 if owner.mtm.token_of(reference) is None:
                     kind = identity[1] if identity is not None and identity[0] == 'sym' else None
-                    where = self.slots[row,self.when_start-4:self.when_start] if self.when_start is not None and self.when_start >= 4 else None
+                    where = self.slots[row,self.when_start-WHERE_WIRES:self.when_start] if self.when_start is not None and self.when_start >= WHERE_WIRES else None
                     native = kind if kind in owner.components.individual_ids else None
                     pool = owner.mtm
                     existing = next((key for key, entry in pool.entries.items()
@@ -163,7 +164,7 @@ class EntryRead:
             token = owner.mtm.token_of(occurrence)
             entry = None if token is None else owner.mtm.entries[token]
             identity = -1 if entry is None else entry.symbol if entry.symbol is not None else entry.transient
-            where = point.new_zeros(4) if self.when_start is None or self.when_start < 4 else point[self.when_start-4:self.when_start]
+            where = point.new_zeros(WHERE_WIRES) if self.when_start is None or self.when_start < WHERE_WIRES else point[self.when_start-WHERE_WIRES:self.when_start]
             state,index = chunks.deposit(state,point.expand(state[0].shape[0],-1),gate,
                 refs=refs,order=frame['order'],identity=identity,where=where,when=when,
                 truth=frame['evidence'],stack=True)

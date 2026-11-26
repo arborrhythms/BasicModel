@@ -22,7 +22,9 @@
 
 Based on the Basic Model of Cognition at
 [cognitivesciencesociety.org/framework-cognitive-science](https://cognitivesciencesociety.org/framework-cognitive-science/);
-see also [The Whole Part](https://thewholepart.com).
+see also [The Whole Part](https://thewholepart.com). Both books are in this
+repository: [*The Whole Part*](background/theWholePart.epub) and
+[*Cognitive Set Theory*](background/cst.epub).
 
 ## Relation to the article and the book
 

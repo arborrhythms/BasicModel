@@ -33,20 +33,20 @@
     <!-- radix chunking consumes pre-lexed word tokens; pin word so it does
          not inherit the raw default (which targets analyse). -->
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
   </InputSpace>
 
   <PartSpace>
     <identityByParts>true</identityByParts>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>200</nVectors>
     <basicPerceptCapacity>200</basicPerceptCapacity>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
     <butterfly>true</butterfly>
@@ -54,11 +54,11 @@
 
   <ConceptualSpace>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>8</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
     <invertible>true</invertible>
     <butterfly>true</butterfly>
   </ConceptualSpace>
@@ -66,20 +66,20 @@
   <WholeSpace>
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <!-- Eight rows are reserved by the core symbolic taxonomy before the
          first learned word/whole/META is allocated.  Keep enough declared
          fixed capacity for the complete XOR epoch; runtime codebook growth
          would replace the optimizer-owned Parameter. -->
     <nVectors>64</nVectors>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>14</nOutputDim>
+    <nOutputDim>22</nOutputDim>
   </WholeSpace>
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>14</nInputDim>
+    <nInputDim>22</nInputDim>
     <nVectors>1</nVectors>
     <nOutput>1</nOutput>
   </OutputSpace>

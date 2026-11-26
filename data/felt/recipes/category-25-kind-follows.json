@@ -1,0 +1,189 @@
+{
+ "category": 25,
+ "construction": "What follows from a kind",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "inference": {
+  "premises": [
+   "s01",
+   "s02"
+  ],
+  "question": "q01",
+  "rule": "kind"
+ },
+ "name": "kind-follows",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "implies",
+  "infer",
+  "isPart"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "row_before",
+   "text": "is {a} above {b} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "inference": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "k",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "every_above",
+   "script": {
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "b": {
+      "kind_not": "k"
+     },
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "layout": [
+     [
+      "row_before",
+      "x",
+      "b"
+     ],
+     [
+      "row_before",
+      "y",
+      "b"
+     ]
+    ]
+   },
+   "text": "every {K} is above {b}."
+  },
+  {
+   "args": [
+    "k",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "every_below",
+   "script": {
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "b": {
+      "kind_not": "k"
+     },
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    },
+    "layout": [
+     [
+      "row_before",
+      "b",
+      "x"
+     ],
+     [
+      "row_before",
+      "b",
+      "y"
+     ]
+    ]
+   },
+   "text": "every {K} is below {b}."
+  },
+  {
+   "args": [
+    "k",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "none_next_to",
+   "script": {
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "b": {
+      "kind_not": "k"
+     },
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "no {K} is next to {b}."
+  }
+ ]
+}

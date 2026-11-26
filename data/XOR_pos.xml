@@ -22,14 +22,14 @@
   <!-- InputSpace: nOutput=6; objectSize=4, embSize=nDim+objectSize=10+4=14. -->
   <InputSpace>
     <nOutput>6</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>6</nVectors>
   </InputSpace>
 
   <!-- PartSpace: invertible, flattened input. -->
   <PartSpace>
     <nOutput>6</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
     <invertible>true</invertible>
@@ -38,7 +38,7 @@
   <!-- ConceptualSpace: nOutput=6, nVectors=6 (non-quantized: nVectors==nOutput). -->
   <ConceptualSpace>
     <nOutput>6</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>6</nVectors>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -46,7 +46,7 @@
   <!-- WholeSpace: nOutput = ConceptualSpace.nOutput = 6 -->
   <WholeSpace>
     <nOutput>6</nOutput>
-    <nDim>14</nDim>
+    <nDim>22</nDim>
     <nVectors>9</nVectors>
   </WholeSpace>
 

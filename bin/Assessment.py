@@ -486,6 +486,15 @@ def _text_row(model, cases):
     return dict(status=status, passed=passed, total=len(records), unavailable=unavailable, cases=records)
 
 
+def units_across_modality(model):
+    """The units across modality the model has learned, counted by order
+    (``{order: count}``): the concepts that join concepts of two modalities,
+    as a name joins its word and its object (``FamiliarTier.units``)."""
+    from collections import Counter
+    from FamiliarTier import units
+    return dict(sorted(Counter(order for _, order, _ in units(model._concept_owner())).items()))
+
+
 def _attained_age(rows):
     """Award complete, consecutive age groups in the measured chart."""
     if not rows:

@@ -58,7 +58,7 @@ def test_selected_operation_is_charged_before_its_executor():
     signature = ThoughtSignature(
         SimpleNamespace(semantic_id='what', operand_roles=('argin1',)),
         descriptor, ('argin1',))
-    question = ConceptualMeaning.from_description(torch.ones(8))
+    question = ConceptualMeaning.from_description(torch.ones(16))
     context = _context(_cs(), work=budget(0))
     result = signature.invoke(context, question)
     assert calls == [] and "work_budget" in result["incomplete"]
@@ -89,9 +89,9 @@ def test_addressed_truth_reads_share_one_budget_without_renewal(monkeypatch):
     ref = ('sym', cs.new_concept())
     force_order(cs, ref[1], 0)
     cs._csw_concept_row(0, ref[1])
-    meaning = replace(ConceptualMeaning.from_description(torch.ones(8)),
+    meaning = replace(ConceptualMeaning.from_description(torch.ones(16)),
                       role_refs=(ref, None, None))
-    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=1024, relation_capacity=8192)
     append_content(store, meaning, trust=.6)
     append_content(store, meaning, trust=-.4)
     read, original = [], store.row

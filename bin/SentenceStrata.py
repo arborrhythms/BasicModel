@@ -3,6 +3,7 @@ from dataclasses import replace
 import weakref
 
 import torch
+from architecture import WHERE_WIRES
 from torch import nn
 
 from Memory import STM0, OCCURRENCE, SYMBOL, RELATION
@@ -240,10 +241,10 @@ class Tree:
         points = trace.leaves.index_select(0, words).to(store.slots)
         if points.shape[-1] != store.nDim:
             points = torch.nn.functional.pad(points, (0, store.nDim - points.shape[-1]))
-        if start is not None and start >= 4:
-            for band, offset in ((where, start - 4), (when, start)):
+        if start is not None and start >= WHERE_WIRES:
+            for band, offset in ((where, start - WHERE_WIRES), (when, start)):
                 if band is not None:
-                    points[:, offset:offset + 4] = band.detach().index_select(0, words.to(band.device)).to(points)
+                    points[:, offset:offset + band.shape[-1]] = band.detach().index_select(0, words.to(band.device)).to(points)
         shifted = (concepts.index_select(0, words) if torch.is_tensor(concepts)
                    else [concepts[word] for word, _ in shifts])
         names = store.append_words(points, shifted)

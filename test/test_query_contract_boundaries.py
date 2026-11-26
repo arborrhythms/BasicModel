@@ -15,8 +15,8 @@ from test_query_vp_boundaries import _context, _signature
 
 
 def test_explicit_addresses_bound_decoding_without_establishing_content_match(monkeypatch):
-    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
-    meaning = ConceptualMeaning.from_description(torch.ones(8))
+    store = STM0(16, percept_width=0, capacity=1024, relation_capacity=8192)
+    meaning = ConceptualMeaning.from_description(torch.ones(16))
     for strength in (0.2, 0.8):
         store.append_meaning(meaning, trust=strength)
     rows = []
@@ -62,8 +62,8 @@ def test_nonfinite_native_concept_atom_fails_instead_of_becoming_identity_eviden
 
 
 def test_addressed_end_read_returns_complete_content_without_another_occurrence():
-    store = STM0(8, percept_width=0, capacity=1024, relation_capacity=8192)
-    meaning = ConceptualMeaning.from_description(torch.eye(8)[0])
+    store = STM0(16, percept_width=0, capacity=1024, relation_capacity=8192)
+    meaning = ConceptualMeaning.from_description(torch.eye(16)[0])
     row = store.append_meaning(meaning, trust=.9)
     context = replace(_context(_cs(), store=store),
         operand_references=(('argin1', store.occurrence_of(row)),))

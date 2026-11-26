@@ -565,6 +565,7 @@ def _optional_reading(f, tree):
     """Force the first decision through its ordinary reference menu."""
     from Understanding import Reading
     from ReferenceContext import ReferenceBank, prepare_operands
+    from architecture import WHERE_WIRES
     owner = f.cs
     words, ids, rows, word_rows, values, orders, actions, frames, references = [], [], [], [], [], [], [], [], []
     def visit(node):
@@ -622,7 +623,7 @@ def _optional_reading(f, tree):
         actions=torch.tensor(actions), targets=torch.tensor(targets), end_state=torch.stack((point, point*0, point*0)),
         leaf_orders=torch.tensor(orders), reference_orders=torch.tensor(orders),
         operation_values=torch.stack(frames), operation_refs=torch.tensor(references),
-        symbol_where=torch.arange(4, dtype=point.dtype).expand(len(words), 4).clone(),
+        symbol_where=torch.arange(WHERE_WIRES, dtype=point.dtype).expand(len(words), WHERE_WIRES).clone(),
         symbol_when=point.new_tensor([1., 0., 0., 1.]).expand(len(words), 4).clone(),
         interpret_forced=owner.interpret.mandatory)
 

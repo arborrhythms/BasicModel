@@ -942,9 +942,13 @@ that are present, in 304 of 304.
 
 **The where is a pathway of its own, on fixed wires**. The
 `.where` stamped onto percepts flows from one parameter that holds the
-constant sinusoid, with one row for each address of the registry
-(`WhereRegistry`), written from `WhereEncoding.encode`; it is the one where
-tensor of every space. A percept's band is its row, taken by its place. The
+constant sinusoid, the grid (`WhereRegistry.grid`): one row for each address
+of the registry, the twelve wires of its place, four for each of three axes
+(`WhereEncoding.encode_place`); it is the one where tensor of every space. A
+percept's band is its row, taken by its place. Where a row's entries read a
+place, they read it axis by axis and the three results are multiplied
+(`BasicPercepts.place_factor_by_axis`), so an axis on which every place
+agrees, as the second and third do for text, takes nothing from the others. The
 parameter takes a gradient and is in no optimizer's groups: "The parameter
 itself must stay fixed if the sinusoid coding is to remain meaningful across
 all .where". What lights on a band says where to look. An event's where share
@@ -1867,11 +1871,11 @@ entry, read by thought as references and never by perception.
 
 **A scalar** is the same mechanism over the bins of its value ("the exact same mechanism, except part growth and whole
 contraction become the same operation on scalars"). The catalog is 64 bins of
-the felt value, and each place has a table of its own, on coordinates of its
-own, so that two axes are not one code; a bin has one coordinate and shares
-none. The parts half is the bins at or below the value, the wholes half is
-all ones with the bins above it cut away, the two are one code, and its
-against lane is what the wholes half cuts away (`BasicPercepts.value_code`).
+the value, in order, and there is one table of values for every place: the
+same value at two places is one percept, and its places are told by their
+wires. A bin has one coordinate and shares none. The parts half is the bins at or below the value (`BasicPercepts.value_code`), the wholes half is
+one at the group of the level the value falls to (`BasicPercepts.value_whole`), and its
+against lane is what the wholes half cuts away.
 The way back reads the exact value from the table of values. A collection of
 values is read by its bounds, 0 or 1, and not through the Sigma:
 collections at 1, 1 and 2 read for, for and against at an input of 1, and a
@@ -3147,16 +3151,19 @@ word.
 
 ### Numbers and places
 
-A numeric input is percepts on a file with field operators. A reading is a
-level percept at its place, one basic percept for each place and level met.
-A value's code is its place among 64 bins of the felt value: the bins at or
-below it tell for it and the bins above it tell against it, by the mechanism
-of the parts and the wholes, where growing the parts and contracting the
-wholes are one operation, and each place has a table of its own
-([Sigma and Pi Layers](#sigma-and-pi-layers)). A
-collection of values is read by its bounds (`BasicPercepts.read_collection`). `NumericPercepts` is the one reader for
-any number of dimensions, and its reverse returns each number from its
-level. Output on such a file is one linear layer over the field
+A numeric input is an image of intensities in 0..1 on a file with field
+operators. A reading above zero is an occurrence of its value's percept, one
+basic percept for each value met whatever its place. A value's code is its
+place among 64 bins: the bins at or below it tell for it and the bins above
+it tell against it, by the mechanism of the parts and the wholes, where
+growing the parts and contracting the wholes are one operation
+([Sigma and Pi Layers](#sigma-and-pi-layers)). The image has a bank of
+occurrences, read by the Pi over values, numerical parthood (`BasicPercepts.read_values`); a
+place's row, nominated on recurrence, tells a place by its wires; and the
+rows go once through the Not and the Sigma of order zero
+([Spaces](Spaces.md#percept-level-sets)). `NumericPercepts` is the one reader for
+any number of dimensions, and its reverse returns each place's value from the
+table of values where the field reads a concept for it. Output on such a file is one linear layer over the field
 (`OutputSpace.read_field`); the XOR proofs read 0 and 1 on two dimensions,
 with XOR = x1 + x2 - 2(x1 and x2), and `data/MM_image.xml` reads 28 by 28
 images with field operators only. The scalar beside the words is read the

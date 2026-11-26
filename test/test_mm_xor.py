@@ -125,6 +125,10 @@ class TestMMXorConvergence(unittest.TestCase):
             inp_items, _ = next(iter(loader))
             inputTensor = m.inputSpace.prepInput(inp_items)
             with torch.no_grad():
+                # Symbols are read once the input's places are known: it is
+                # presented as often as nominates a place's row.
+                for _ in range(m._concept_owner().concept_mint_count):
+                    m.forward(inputTensor)
                 _, symbols, _, _ = m.forward(inputTensor)
         self.assertTrue(torch.isfinite(symbols).all())
         self.assertGreater(symbols.std().item(), 1e-6,

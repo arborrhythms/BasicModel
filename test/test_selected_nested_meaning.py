@@ -102,7 +102,7 @@ def test_completed_ask_program_offers_the_same_controller_without_inventing_hole
     cs, registry, language, entry, _leaves = _nested(monkeypatch, outer="ask")
     model = BasicModel()
     model.spaces = []
-    store = LTM0(8, capacity=16)
+    store = LTM0(cs.nDim, capacity=16)  # the world's concept width (_D)
     memory = WhatInteractionMemory(batch=1, capacity=64, detach_mode="episode")
     object.__setattr__(model, "conceptualSpace", cs)
     object.__setattr__(model, "languageSpace", language)
@@ -136,7 +136,7 @@ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_wri
                     word_ids=torch.full_like(entry.concept_ids, -1))
     from reading_fixtures import record_reading
     clause = finish_clause(language, record_reading(language, entry), registry=registry)
-    store = LTM0(8, capacity=1)
+    store = LTM0(_cs.nDim, capacity=1)  # the world's concept width (_D)
     attach_clause_index(SimpleNamespace(), store, _cs)
     with pytest.raises(OverflowError, match='capacity|forgetting'):
         store.write_clause(clause)
@@ -149,9 +149,10 @@ def test_constituent_capacity_failure_and_invalid_local_ref_do_not_partially_wri
 
 def _write_selected_observation(language, registry, entry, path):
     from Memory import STM0
-    # These eight coordinates are conceptual inputs, with no time band.
-    # The common writer retains them in working memory (§17.15).
-    store = STM0(8, capacity=16, percept_width=0)
+    # These coordinates (the world's concept width, _D) are conceptual
+    # inputs, with no time band. The common writer retains them in working
+    # memory (§17.15).
+    store = STM0(registry.space.nDim, capacity=16, percept_width=0)
     from ClauseRow import attach_clause_index
     host = SimpleNamespace(languageSpace=language, grammatical_thoughts=registry)
     attach_clause_index(host, store, registry.space)

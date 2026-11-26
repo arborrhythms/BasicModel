@@ -145,8 +145,10 @@ def episode_fixture(monkeypatch, capacity=2):
     from test_cs_sparse_weights import _cs
     from test_clause_acceptance import SentenceFixture
     from clock_fixtures import install
-    f = SentenceFixture(monkeypatch, cs=_cs(nS=512, order=5, dim=12), percept_width=12)
-    f.store = LTM0(12, capacity=64, percept_width=12, episodic_concepts=capacity)
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    width = 4 + WHERE_WIRES + WHEN_WIRES  # 4 of content and the band (12 -> 20)
+    f = SentenceFixture(monkeypatch, cs=_cs(nS=512, order=5, dim=width), percept_width=width)
+    f.store = LTM0(width, capacity=64, percept_width=width, episodic_concepts=capacity)
     f.model = install(f.model, tick=17)
     f.model.symbolSpace = SimpleNamespace(ltm_store=f.store)
     f.model._open_sentence_slot = 0

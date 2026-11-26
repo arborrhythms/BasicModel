@@ -64,17 +64,17 @@
   <InputSpace>
     <nOutput>8192</nOutput>
     <nVectors>256</nVectors>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>8192</nInput>
-    <nInputDim>1024</nInputDim>
+    <nInputDim>1032</nInputDim>
     <nVectors>512</nVectors>
     <basicPerceptCapacity>512</basicPerceptCapacity>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1024</nOutputDim>
+    <nOutputDim>1032</nOutputDim>
 
     <invertible>true</invertible>
     <!-- meronomy: word-bounded promotion + per-word tiling (todo item 2
@@ -91,9 +91,9 @@
     <nInputDim>0</nInputDim>
     <nVectors>64</nVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>1152</nDim>
+    <nDim>1160</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>1152</nOutputDim>
+    <nOutputDim>1160</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -102,11 +102,11 @@
     <lexer>raw</lexer>
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>1152</nInputDim>
+    <nInputDim>1160</nInputDim>
     <nVectors>512</nVectors>
-    <nDim>1024</nDim>
+    <nDim>1032</nDim>
     <nOutput>1024</nOutput>
-    <nOutputDim>8</nOutputDim>
+    <nOutputDim>16</nOutputDim>
 
     <invertible>true</invertible>
     <!-- quantize: the WS codebook is the word-substrate face the
@@ -117,7 +117,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>1152</nInputDim>
+    <nInputDim>1160</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

@@ -96,7 +96,7 @@ def test_what_cannot_turn_assertive_content_into_an_executed_subgoal():
     from ThoughtReferences import with_slots
     from meaning_fixtures import unsupported as question
     calls = []
-    content = ConceptualMeaning.from_description(torch.ones(8))
+    content = ConceptualMeaning.from_description(torch.ones(16))
     cs = _cs()
     context = _context(cs, continuation=lambda value: calls.append(value) or dict(
         value=value, meaning=value, support_true=0., support_false=0.))
@@ -145,8 +145,8 @@ def test_registry_installation_reuses_native_bindings_and_checkpoint(tmp_path):
 
 def test_occurrence_namespace_and_bound_are_never_rebound_to_matching_row():
     cs, _, registry, _, _, _ = _world()
-    store = LTM0(8)
-    description = ConceptualMeaning.from_description(torch.eye(8)[0])
+    store = LTM0(cs.nDim)
+    description = ConceptualMeaning.from_description(torch.eye(cs.nDim)[0])
     first = store.append_meaning(description)
     second = store.append_meaning(description)
     context = _context(cs, store=store, max_records=1)
@@ -193,7 +193,7 @@ def test_converse_only_interface_still_dispatches_canonical_roles():
 def test_query_proposition_preserves_live_operand_gradients_without_new_parameters():
     cs, _, registry, _, _, _ = _world()
     before = tuple(id(p) for p in cs.parameters())
-    a, b = (torch.randn(8, requires_grad=True) for _ in range(2))
+    a, b = (torch.randn(cs.nDim, requires_grad=True) for _ in range(2))
     question = registry.form('define', a, b)
     loss = question.roles[0].square().sum() + 2 * question.roles[2].square().sum()
     loss.backward()

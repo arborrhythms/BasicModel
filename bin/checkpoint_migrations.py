@@ -233,6 +233,8 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
     """Move persisted location bands; concept IDs and occurrence keys do not move."""
     import torch
     from Spaces import WhereEncoding, unsigned_phase, signed_phase
+    from architecture import WHERE_WIRES, WHEN_WIRES, WHERE_AXES
+    W, band = WHERE_WIRES, WHERE_WIRES + WHEN_WIRES
     start, end = slices['wholes']
     width = end - start
     delta = (copies - 1) * width
@@ -240,8 +242,8 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
         return checkpoint, 0
     old_end = end + delta
     capacity = max(hi for lo, hi in slices.values())
-    old = WhereEncoding(nWhere=4, nWhen=4).set_capacity(capacity + delta)
-    new = WhereEncoding(nWhere=4, nWhen=4).set_capacity(capacity)
+    old = WhereEncoding(nWhere=W, nWhen=WHEN_WIRES, axes=WHERE_AXES).set_capacity(capacity + delta)
+    new = WhereEncoding(nWhere=W, nWhen=WHEN_WIRES, axes=WHERE_AXES).set_capacity(capacity)
     changed = 0
 
     def address(ids):
@@ -257,14 +259,16 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
         finite = torch.isfinite(value).all(-1)
         safe = torch.where(finite[..., None], value, 0.)
         centered = checkpoint.get('coordinate_encoding') != 1
-        indices = old.decode_index(unsigned_phase(safe) if centered else safe)
-        encoded = old.encode(indices).to(value)
+        # The ranges moved are lines: a place (address, 0, 0).
+        places = old.decode_place(unsigned_phase(safe) if centered else safe)
+        indices = places[..., 0]
+        encoded = old.encode_place(old.point(indices)).to(value)
         if centered:
             encoded = signed_phase(encoded)
-        located = finite & (indices >= 0) & (indices < capacity + delta)
+        located = finite & (indices >= 0) & (indices < capacity + delta) & (places[..., 1:] == 0).all(-1)
         located &= torch.isclose(value, encoded, rtol=0, atol=2e-5).all(-1)
         moved = address(indices)
-        rewritten = new.encode(moved).to(value)
+        rewritten = new.encode_place(new.point(moved)).to(value)
         if centered:
             rewritten = signed_phase(rewritten)
         changed += int((located & (value != rewritten).any(-1)).sum())
@@ -277,12 +281,12 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
     for key, value in state.items():
         if not torch.is_tensor(value) or not value.is_floating_point() or value.ndim == 0:
             continue
-        if key.endswith('.percept') and value.shape[-1] == 8:
-            migrated[key] = torch.cat((bands(value[..., :4]), value[..., 4:]), -1)
+        if key.endswith('.percept') and value.shape[-1] == band:
+            migrated[key] = torch.cat((bands(value[..., :W]), value[..., W:]), -1)
         for prefix, layout in layouts.items():
-            if layout >= 8 and key in (prefix+'slots', prefix+'addressing.recurrence_codes'):
-                migrated[key] = torch.cat((value[..., :layout-8],
-                    bands(value[..., layout-8:layout-4]), value[..., layout-4:]), -1)
+            if layout >= band and key in (prefix+'slots', prefix+'addressing.recurrence_codes'):
+                migrated[key] = torch.cat((value[..., :layout-band],
+                    bands(value[..., layout-band:layout-WHEN_WIRES]), value[..., layout-WHEN_WIRES:]), -1)
     out = dict(checkpoint)
     out['state_dict'] = migrated
 
@@ -292,22 +296,22 @@ def _migrate_whole_addresses(checkpoint, slices, copies, percept_width):
             if value.ndim == 0:
                 return value
             if name in ('where', 'percept_where', 'symbol_where', '_live_where'):
-                if value.shape[-1] == 4 and value.is_floating_point():
+                if value.shape[-1] == W and value.is_floating_point():
                     return bands(value)
                 if value.shape[-1] == 2 and not value.is_floating_point():
                     first = address(value[..., 0])
                     changed += int((first != value[..., 0]).sum())
                     return torch.stack((first, first + value[..., 1] - value[..., 0]), -1)
-            if name == 'percept' and value.shape[-1] == 8 and value.is_floating_point():
-                return torch.cat((bands(value[..., :4]), value[..., 4:]), -1)
-            if (percept_width is not None and percept_width >= 8
+            if name == 'percept' and value.shape[-1] == band and value.is_floating_point():
+                return torch.cat((bands(value[..., :W]), value[..., W:]), -1)
+            if (percept_width is not None and percept_width >= band
                     and value.shape[-1] >= percept_width and value.is_floating_point()
                     and name in ('value', 'values', 'before', 'after', 'basis', 'slots',
                                  'codes', 'buffer', '_live_buffer', 'recurrence_codes',
                                  '_stm_end_states', '_inter_context', '_inter_context_lanes',
                                  '_inter_last_meaning')):
-                at = percept_width - 8
-                return torch.cat((value[..., :at], bands(value[..., at:at+4]), value[..., at+4:]), -1)
+                at = percept_width - band
+                return torch.cat((value[..., :at], bands(value[..., at:at+W]), value[..., at+W:]), -1)
             return value
         if isinstance(value, dict):
             # MTM v8-v10 serializes timeline values and event operands as

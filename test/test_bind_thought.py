@@ -43,7 +43,7 @@ def native(monkeypatch):
     f.frames = frames
     f.next_sentence = 0
     f.identities = {}
-    f.atoms = torch.eye(8)
+    f.atoms = torch.eye(f.cs.nDim)
     f.resolver = f.cs.components.reference_close
     return f
 
@@ -101,7 +101,7 @@ def occurrence(f, content, predicate, *, mode='mint', role=0, training=False, id
 
 
 def site(f, content, *, role=0, predicate=None, leaves=(0, 1), cue=None, occurrence=None):
-    roles = torch.zeros(3, 8)
+    roles = torch.zeros(3, f.cs.nDim)
     roles[role] = content
     mask = roles.ne(0).any(-1)
     mask[role] = True

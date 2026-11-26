@@ -1,0 +1,385 @@
+{
+ "category": 12,
+ "construction": "Determiners over kinds",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "none",
+ "name": "determiners",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "lower",
+  "modifier"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "k"
+   ],
+   "id": "q01",
+   "predicate": "kind_moved_all",
+   "script": {
+    "no": {
+     "events": [
+      {
+       "who": "x"
+      }
+     ],
+     "hidden": [
+      "x",
+      "y"
+     ],
+     "kinds": {
+      "x": {
+       "kind": "k"
+      },
+      "y": {
+       "kind": "k"
+      }
+     }
+    },
+    "yes": {
+     "events": [
+      {
+       "who": "x"
+      },
+      {
+       "who": "y"
+      }
+     ],
+     "hidden": [
+      "x",
+      "y"
+     ],
+     "kinds": {
+      "x": {
+       "kind": "k"
+      },
+      "y": {
+       "kind": "k"
+      }
+     }
+    }
+   },
+   "text": "did every {K} move ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "k"
+   ],
+   "id": "q02",
+   "predicate": "kind_moved_one",
+   "script": {
+    "no": {
+     "events": [
+      {
+       "who": "w"
+      }
+     ],
+     "hidden": [
+      "x",
+      "y",
+      "w"
+     ],
+     "kinds": {
+      "w": {
+       "kind_not": "k"
+      },
+      "x": {
+       "kind": "k"
+      },
+      "y": {
+       "kind": "k"
+      }
+     }
+    },
+    "yes": {
+     "events": [
+      {
+       "who": "x"
+      }
+     ],
+     "hidden": [
+      "x",
+      "y"
+     ],
+     "kinds": {
+      "x": {
+       "kind": "k"
+      },
+      "y": {
+       "kind": "k"
+      }
+     }
+    }
+   },
+   "text": "did {aK} move ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s01",
+   "predicate": "kind_moved_one",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "{aK} moved."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s02",
+   "predicate": "kind_moved_all",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     },
+     {
+      "who": "y"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "the {Ks} moved."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s03",
+   "predicate": "kind_moved_all",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     },
+     {
+      "who": "y"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "every {K} moved."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s04",
+   "predicate": "kind_moved_all",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     },
+     {
+      "who": "y"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "all the {Ks} moved."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s05",
+   "predicate": "kind_moved_both",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     },
+     {
+      "who": "y"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "both {Ks} moved."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s06",
+   "predicate": "kind_moved_some",
+   "script": {
+    "events": [
+     {
+      "who": "x"
+     },
+     {
+      "who": "y"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y",
+     "z"
+    ],
+    "kinds": {
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     },
+     "z": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "some {Ks} moved."
+  },
+  {
+   "args": [
+    "k"
+   ],
+   "id": "s07",
+   "predicate": "kind_moved_none",
+   "script": {
+    "events": [
+     {
+      "who": "w"
+     }
+    ],
+    "hidden": [
+     "x",
+     "y",
+     "w"
+    ],
+    "kinds": {
+     "w": {
+      "kind_not": "k"
+     },
+     "x": {
+      "kind": "k"
+     },
+     "y": {
+      "kind": "k"
+     }
+    }
+   },
+   "text": "no {K} moved."
+  }
+ ]
+}

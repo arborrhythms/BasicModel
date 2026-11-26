@@ -191,10 +191,15 @@ def fixture(monkeypatch):
     from types import SimpleNamespace
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    verb, modifier = action_with_basis(8,capacity=2), action_with_basis(8,modifier=True)
+    # The actions act on the fixture's concept, cs.nDim wide (_D).
+    width = f.cs.nDim
+    verb, modifier = action_with_basis(width,capacity=2), action_with_basis(width,modifier=True)
     with torch.no_grad():
-        verb.readout.fill_(.2)
-        modifier.readout.fill_(.15)
+        # A readout row sums the concept's wires. These are the spectra of
+        # the fixture's 8-wide concept (.2 and .15 to a wire), kept as the
+        # concept widens: 1.6 and 1.2 over the row.
+        verb.readout.fill_(1.6 / width)
+        modifier.readout.fill_(1.2 / width)
     for word,value in (('subject',.2),('move',.3),('shift',.4)):
         symbol=f.noun(word, order=int(word == 'subject'))
         with torch.no_grad():
@@ -278,8 +283,9 @@ def test_second_modal_acts_on_the_open_branch_and_bind_still_reads_actual(monkey
     assert sum(entry.refinement.get('member_kind', 'reference') == 'reference' for entry in f.cs.mtm.entries.values())==1 and len(updated.timelines)==2
     assert len(updated.timelines[1].events)==2 and not updated.events
     torch.testing.assert_close(f.cs.mtm.value_of(updated),f.cs.mtm.value_of(entry))
-    expected=(modifier(verb(before,torch.full((8,),.3)),torch.full((8,),.4)) if post else
-              verb(before,modifier(torch.full((8,),.3),torch.full((8,),.4))))
+    width=f.cs.nDim
+    expected=(modifier(verb(before,torch.full((width,),.3)),torch.full((width,),.4)) if post else
+              verb(before,modifier(torch.full((width,),.3),torch.full((width,),.4))))
     torch.testing.assert_close(f.cs.mtm.value_of(updated, timeline=1),expected)
 
 

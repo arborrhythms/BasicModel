@@ -63,7 +63,7 @@ def _fixture():
 
     def invoke(row=0):
         return signature.invoke(
-            replace(context, row=row), torch.ones(8), torch.ones(8)
+            replace(context, row=row), torch.ones(16), torch.ones(16)
         )
 
     return model, invoke, calls
@@ -201,7 +201,7 @@ def test_every_input_execution_entry_masks_checked_queries(monkeypatch, entry):
         boundary=model._assert_query_boundary)
 
     def query(*args, **kwargs):
-        signature.invoke(context, torch.ones(8), torch.ones(8))
+        signature.invoke(context, torch.ones(16), torch.ones(16))
         raise AssertionError("input execution escaped its phase mask")
 
     if entry == "explicit_state":
@@ -284,7 +284,7 @@ def test_reconstruction_completion_keeps_query_executors_masked(monkeypatch):
     import SentenceField
     model.word_brackets = True
     monkeypatch.setattr(SentenceField, "completed",
-        lambda *args: signature.invoke(context, torch.ones(8), torch.ones(8)))
+        lambda *args: signature.invoke(context, torch.ones(16), torch.ones(16)))
     with pytest.raises(RuntimeError, match="sentence|query|queries"):
         model._complete_input_reconstruction()
     assert calls == []
@@ -376,7 +376,7 @@ def test_compiled_input_cannot_execute_queries_during_trace_or_eager_island(
         boundary=model._assert_query_boundary)
 
     def body(value, **kwargs):
-        signature.invoke(context, torch.ones(8), torch.ones(8))
+        signature.invoke(context, torch.ones(16), torch.ones(16))
         return value.sin()
 
     if eager_island:

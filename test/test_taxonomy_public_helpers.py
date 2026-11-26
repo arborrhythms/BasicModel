@@ -27,7 +27,7 @@ def test_public_part_helpers_follow_typed_links_without_world_materialization():
     a, b, c = (("sym", known_concept(cs, torch.ones(cs.nDim))) for _ in range(3))
     cs.add_whole(a[1], b)
     cs.add_whole(b[1], c)
-    store = LTM0(8)
+    store = LTM0(cs.nDim)
     reasoner = TruthGroundedReasoner(SimpleNamespace(conceptualSpace=cs), store=store)
     assert reasoner.is_part_direct(a, b) == (1., "taxonomy")
     assert len(reasoner.is_part(a, c, materialize=True)[0]["path"]) == 2

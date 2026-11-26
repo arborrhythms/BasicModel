@@ -2625,7 +2625,7 @@ class GrammarLayer(Layer):
     surface_schema   = T4_BINARY_JUXTAPOSE
 
     # Chart authority registration -- Surface-3 wiring (see
-    # doc/research/three-surfaces.md). When a SyntacticLayer registers
+    # doc/three-surfaces.md). When a SyntacticLayer registers
     # itself as the class-level authority, every GrammarLayer instance
     # constructed afterwards adds itself to the authority's roster, and
     # its `gated_run(x, fn, *args)` helper consults the authority
@@ -2672,8 +2672,10 @@ class GrammarLayer(Layer):
         if TheXMLConfig.get('architecture.data.dataType', default=None) == 'embedding':
             form_width = int(TheXMLConfig.space('PartSpace', 'nDim'))
             code_width = int(TheXMLConfig.space('ConceptualSpace', 'nDim'))
-            if form_width >= 8 and code_width >= form_width and nInput in (0,code_width):
-                self.percept_band = (form_width-8,form_width,code_width)
+            from architecture import canonical_shape
+            band = sum(canonical_shape('PartSpace'))
+            if form_width >= band and code_width >= form_width and nInput in (0,code_width):
+                self.percept_band = (form_width-band,form_width,code_width)
             if code_width > form_width and nInput in (0, code_width):
                 self.meaning_layout = (form_width, code_width)
                 width = code_width - form_width
@@ -6468,6 +6470,12 @@ class ConceptualAttentionLayer(SparseLayer):
         # A square store's columns are things: see :meth:`square`.
         self._thing_columns = False
         self._room = None
+        # A definition's entries on rows of the first Pi, basic percepts'
+        # rows: ``{(concept row, basic percept row): signed number}``, each
+        # reading that row's options from the Not of order zero, its value
+        # at or above zero and its not-value below (``FieldProjection.close``).
+        # Written explicitly; nothing makes one by itself.
+        self.percept_entries = {}
         for name, value in (
                 ('assigned', torch.zeros(nOutput, dtype=torch.bool)),
                 ('witnessed', torch.zeros(nOutput, dtype=torch.bool)),
@@ -11428,7 +11436,7 @@ class ChunkLayer(Layer):
             where_idx = [D + i for i in where_encoding.index]  # e.g. [-4,-3] -> absolute
             for b in range(B):
                 for dense_idx, start, _end, _original in compact_map[b]:
-                    pos_enc = where_encoding.encode(float(start))  # [2] sin/cos
+                    pos_enc = where_encoding.encode_place(where_encoding.point(torch.tensor(float(start))))
                     dense[b, dense_idx, where_idx] = pos_enc
 
         return dense, compact_map

@@ -474,3 +474,132 @@ Each on the felt world of item 1.6, whose documents hold successive images:
 Settled since first written: one activation is a sentence (§5.9); how the change reaches the hierarchy (§5.8,
 in place of §5.2 and §5.7); not said is not lost (§5.7, 2: "OK"); the form
 of the difference (learned, §5.8).
+
+## 10. Added from item 1.6: evidence at order zero is positive, and the Not is an exchange of lanes (Alec, 2026-11-24)
+
+*Alec, while item 1.6 was being built: "Please add this work to 1.4. I am
+not clear that the intensity XOR will work until it is completed." His
+words are quoted whole; Claude's comments were given to him and are marked
+as Claude's. The record of how it arose is the item 1.6 plan
+(`2026-11-18-item1-6-felt-math-world.md`), §45 to §48.*
+
+### 10.1 His words
+
+> Again, a pi for every concept is not necessary as long as the sigma is
+> free to range over all lower order's percepts and symbols (which is a
+> better fix). But since NOTLayer combines those into signed values for
+> sigma, perhaps it should go after that for symbols? (we have the
+> difficulty that NOT occurs after PI at the basic level, so I'm not sure
+> if basic percepts get to be negated by higher-order sigmas?)
+
+> Two things I would like to propose, and have you comment on.
+>
+> One is that at order zero, there is no negative evidence.
+> The other is that there is no negation at order zero.
+> So percepts have only positive evidence, but can be represented by
+> concepts with signed weights (thus positive evidence for one object may
+> count as negative evidence for another).
+>
+> Perceptual space remains positive unit hypercube, conceptual space
+> remains signed unit hyperball with certainty for magnitude.
+>
+> In relation to our discussion about xor, this allows first-order concepts
+> to access all basic percepts without missing anything in virtue of not
+> attaching post-not.
+>
+> I think it is mathematically equivalent.
+
+> You mentioned. "The condition: someone has to put those negative weights
+> there. ". That's alarming, those weights are learned in a sigma...
+>
+> Also, you mentioned earlier that the NOT had to "choose" a channel. NOT is
+> a single weight in 0..1 that exchanges the two channels to the degree that
+> it is present. So positive percepts map to a positive conceptual vector,
+> the output of that is split over two positive symbols, one that
+> represents positive concept activation and one that represents negative,
+> NOT exchanges lanes, and the negative pole is subtracted from the
+> positive.
+>
+> I think this design will give positive concepts a positive meaning,
+> lacking any negation. Is that mathematically accurate?
+
+### 10.2 What is to be built
+
+1. *No evidence against at order zero.* The first Pi gives a basic percept
+   one positive value. Perceptual space is the positive unit hypercube.
+2. *No negation at order zero.* Nothing stands between the first Pi and
+   the Sigma of order zero. A concept represents its percepts by signed
+   weights, which the Sigma learns, so that evidence for one object may
+   count against another.
+3. *The Not is one weight from 0 to 1 that exchanges a concept's two lanes
+   to the degree it is present.* A concept's positive activation and its
+   negative are two positive lanes; the Not exchanges them; the negative is
+   taken from the positive. Conceptual space is the signed unit hyperball,
+   with certainty for magnitude.
+4. *A Sigma of any order ranges over the basic percepts and the symbols of
+   every order beneath it,* and reaches a basic percept directly, "without
+   missing anything in virtue of not attaching post-not". No Pi is formed
+   for a concept so that a Sigma may read it.
+5. *A positive concept* is one with no exchange anywhere in it: its meaning
+   is positive, lacking any negation.
+
+### 10.3 Claude's comments, as given to him
+
+- *The Not as an exchange is the source's signed entry.* With lanes P and N
+  and a Not of weight n, the lanes become (1-n)P + nN and (1-n)N + nP, and
+  their difference is (1-2n)(P-N). The source keeps one signed number v
+  for an entry and reads v times the row's value (`_EntryRead`); that is
+  his n with v = 1-2n. At n = 0 the evidence is for, at 1 against, at one
+  half the entry says nothing. An entry's certainty is the size of 1-2n.
+- *No negation at order zero changes no number,* since that is all the Not
+  of order zero does.
+- *No evidence against at order zero is equivalent where every "against"
+  is another percept's presence,* which it is in the source in each of its
+  three kinds: a longer form that holds this one, a value above this one's
+  whole, the other member of a conjunction. A concept then says each by a
+  weight below zero on that other percept. It is exact for evidence of 0
+  and 1; where evidence is of degrees, several holders are joined today as
+  a union and would be a sum. What changes is when it is known: today a
+  row carries what tells against it from the first, and after this the
+  Sigma learns it, so a certificate that reads "against" at a first
+  presentation needs teaching first.
+- *A positive concept is a monotone function of positive evidence:* never
+  below nothing, and never lowered by more evidence. It can mean that one
+  thing or another is present, and through a Pi that both are; it cannot
+  mean "not this", "this and not that", a bound from above, or XOR. Each
+  of those needs an exchange somewhere. So negation enters the model by
+  the Not's weight alone.
+- *Two things Claude would keep:* the two lanes at a concept, the evidence
+  weighed for and the evidence weighed against, so that no evidence and
+  evidence at odds stay apart, which MTM's promotion goes by; and wholes
+  as positive percepts, a property that holds, so that a basic percept
+  stays a region, the product of a part that is present and a whole that
+  holds.
+- *What it removes:* what tells against a row in the first Pi and what
+  reads it (`BasicPercepts.against`, `against_keys`, `held`, `outside`, the
+  second lane of `held_at` and of `read_values`), the Not of order zero
+  (`order_zero_not`), and the readings of both for and against at order
+  zero. Both stopping gates run through them.
+- *Proof first (Claude's proposal):* on the two gates' models, show that
+  signed weights on positive rows give every concept the value it has now,
+  before anything is removed.
+
+### 10.4 What waits on it
+
+- *The XOR of intensities.* In item 1.6 its certificate, that XOR is not
+  learned without its conjunction, holds by `intensityPartSigma` at one
+  and by what the readout does under that aperture (item 1.6, §47). He is
+  not sure it works until this is built; it is judged again then.
+- *The entry of a Sigma above order zero on a basic percept's row*
+  (item 1.6, step V) is built through the Not of order zero and is read
+  on the numeric stem alone; point 4 above makes it an entry on the row.
+- *The name formed by MTM* (item 1.6, §39): with a Sigma free to range
+  over the orders beneath it, the list of a word and its object needs no
+  symbol made for either.
+- *The order of two words* (item 1.6, §44.3), which he placed here.
+- *The amount of negation as a setting* (Alec, 2026-11-24, for Augustine:
+  "by modulating the amount of negation, we can control to what degree the
+  model operates in terms of counterfactuals. This can apply to speech
+  analysis as well as synthesis"). Once the Not is one weight, a scale on
+  it is that setting; it is recorded with the named variants in
+  `doc/FutureWork.md`.

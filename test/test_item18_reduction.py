@@ -2,18 +2,23 @@
 import copy
 import pytest
 import torch
+from architecture import WHERE_WIRES, WHEN_WIRES
+
+# The percept band (.where and .when); in fixture(percept=True) the first
+# wire past it (8 -> 16) is the first of its four content wires.
+C = WHERE_WIRES + WHEN_WIRES
 
 
 def test_appending_a_referent_keeps_the_row_names_aligned():
     from test_reference_close import fixture
 
     resolver, store, atoms = fixture(percept=True)
-    first = store.append_idea(atoms[8])
+    first = store.append_idea(atoms[C])
     reference = store.occurrence_of(first)
     # The exclusion cache reads a new row's order through its referent.
     store.coordinate_exclusions(order=0)
-    second = store.append_idea(atoms[9], referent=reference)
-    third = store.append_idea(atoms[10])
+    second = store.append_idea(atoms[C+1], referent=reference)
+    third = store.append_idea(atoms[C+2])
     references = [store.occurrence_of(row) for row in (first, second, third)]
     assert len(set(references)) == 3
     for row, address in zip((first, second, third), references):
@@ -41,16 +46,16 @@ def test_recent_relation_head_cannot_alias_a_later_retained_time():
 
     resolver, store, atoms = fixture(percept=True)
     owner = resolver.components.owner
-    strata = owner.stm.strata = SentenceStrata(1, 3, 3, 12, percept_width=8)
-    first = store.append_idea(atoms[8])
+    strata = owner.stm.strata = SentenceStrata(1, 3, 3, store.nDim, percept_width=C)
+    first = store.append_idea(atoms[C])
     strata.keep_close(0, store.slots[first], store.entry_time(first),
                      address=store.row_name(first), source=store.parts)
     # A relation closes without another LTM0 row, but its recent head is
     # still an addressed working idea. It must not take a future row's name.
-    head = strata.keep_close(0, atoms[9], False, source=store.parts)
-    rows = [store.append_idea(atoms[i]) for i in (10, 11)]
+    head = strata.keep_close(0, atoms[C+1], False, source=store.parts)
+    rows = [store.append_idea(atoms[i]) for i in (C+2, C+3)]
     assert head not in [store.occurrence_of(row) for row in rows]
-    torch.testing.assert_close(read(owner, head), atoms[9])
+    torch.testing.assert_close(read(owner, head), atoms[C+1])
     for row in rows:
         torch.testing.assert_close(read(owner, store.occurrence_of(row)), store.slots[row])
 
@@ -66,9 +71,9 @@ def test_23_9_all_retained_occurrences_supply_exclusion_after_mtm_expires():
     for mentioned in (False, True):
         resolver, store, atoms = fixture(percept=True)
         for i in range(8):
-            for coordinate in (8, 9):
+            for coordinate in (C, C+1):
                 point = atoms[coordinate]
-                tick = 100 * (2*i + coordinate-8)
+                tick = 100 * (2*i + coordinate-C)
                 store._model_present = lambda: tick
                 request = dict(mode='bind', compose_bind=0, leaves=(0,),
                     cue=point, predicate=point*0, role=0)
@@ -86,12 +91,12 @@ def test_23_9_all_retained_occurrences_supply_exclusion_after_mtm_expires():
         resolver.components.owner.mtm.restore(None)
         assert len(store) == 16
         assert all(store.referent_of(i) is None for i in range(len(store)))
-        assert resolver.exclusion_pairs(order=0) == ((8, 9),)
+        assert resolver.exclusion_pairs(order=0) == ((C, C+1),)
         histories.append({name: getattr(store, name)[:len(store)].clone()
                           for name in store.columns})
         # One joint occurrence removes the empirical exclusion. Repeated
         # access alone cannot substitute for another retained occurrence.
-        store.append_idea(atoms[8] + atoms[9])
+        store.append_idea(atoms[C] + atoms[C+1])
         assert resolver.exclusion_pairs(order=0) == ()
     for name in histories[0]:
         torch.testing.assert_close(histories[0][name], histories[1][name], rtol=0, atol=0)
@@ -189,10 +194,10 @@ def test_43_63_time_and_concept_with_the_same_integer_keep_their_native_orders()
     from test_reference_close import fixture, known_concept
     resolver, store, points = fixture(percept=True)
     owner = resolver.components.owner
-    other = known_concept(owner, points[8], order=2)
-    shared = known_concept(owner, points[9], order=0)
+    other = known_concept(owner, points[C], order=2)
+    shared = known_concept(owner, points[C+1], order=0)
     store.names_issued.fill_(other - 1)
-    row = store.append_idea(points[10])
+    row = store.append_idea(points[C+2])
     assert store.row_name(row) == other
     assert owner._concept_source_order((OCCURRENCE, other)) == 0
     assert owner._concept_source_order((SYMBOL, other)) == 2
@@ -254,9 +259,9 @@ def legacy_idea_state(store):
     state['truth_schema'] = torch.tensor(16)
     # The preceding checkpoint stored centered phase bands.
     layout = int(state['percept_layout'])
-    if layout >= 8:
+    if layout >= C:
         state['slots'] = state['slots'].clone()
-        bands = state['slots'][..., layout-8:layout].reshape(store.capacity, 2, 4)
+        bands = state['slots'][..., layout-C:layout].reshape(store.capacity, -1, 4)
         bands.copy_(torch.where(bands.ne(0).any(-1, keepdim=True), 2*bands-1, 0.))
     state['addressing.address_keys'] = torch.arange(store.capacity) + 100
     state.pop('referent'); state.pop('activity')
@@ -309,8 +314,8 @@ def test_42_activity_promotes_a_row_once_and_keeps_its_native_order():
     from test_reference_close import fixture, known_concept
     resolver, store, points = fixture(percept=True)
     owner = resolver.components.owner
-    concept = known_concept(owner, points[8], order=1)
-    value = replace(ConceptualMeaning.from_description(points[8]),
+    concept = known_concept(owner, points[C], order=1)
+    value = replace(ConceptualMeaning.from_description(points[C]),
         role_refs=(('sym', concept), None, None))
     row = store.append_meaning(value, trust=.6, surprise=.85)
     assert store.referent_of(row) == ('sym', concept)
@@ -465,11 +470,11 @@ def test_63_equal_member_extensions_keep_distinct_referents_and_native_orders():
     from Extension import ConceptSet, Context, Node
     from Language import LowerLayer
     from EpisodicMemory import for_meaning
-    owner = _cs(nS=512, order=3, dim=12)
-    store = LTM0(12, capacity=4, percept_width=8, episodic_concepts=2)
+    owner = _cs(nS=512, order=3, dim=C + 4)
+    store = LTM0(C + 4, capacity=4, percept_width=C, episodic_concepts=2)
     attach_clause_index(SimpleNamespace(), store, owner)
-    member = known_concept(owner, torch.eye(12)[8], order=0)
-    kind = known_concept(owner, torch.eye(12)[9], order=1)
+    member = known_concept(owner, torch.eye(C + 4)[C], order=0)
+    kind = known_concept(owner, torch.eye(C + 4)[C+1], order=1)
     owner.add_part(kind, ('sym', member))
     op = LowerLayer()
     entries = []

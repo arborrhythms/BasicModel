@@ -398,8 +398,8 @@ pullback from its recorded forward input; earlier sentence graphs stay cut.
 
 - **The where parameter is fixed.** The `.where` stamped
   onto percepts flows from one parameter that holds the constant sinusoid, a
-  row for each address of the registry (`WhereRegistry`), written from
-  `WhereEncoding.encode`: "The parameter itself must stay fixed if the
+  row for each address of the registry (`WhereRegistry.grid`), the code of
+  its place on three axes (`WhereEncoding.encode_place`): "The parameter itself must stay fixed if the
   sinusoid coding is to remain meaningful across all .where." It takes a
   gradient, so the salience map lights it, and it is in no optimizer's
   groups. Only the first Pi reads it, as a look's match of place, and no

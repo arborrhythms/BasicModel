@@ -262,7 +262,7 @@ def test_reading_event_cases_accept_native_part_rows_and_filter_open_questions(m
         code.new_zeros(1, 1, 2), torch.ones(1, 1, dtype=torch.bool))
     before = copy.deepcopy(f.cs.mtm.state())
     staged = stage_event_cases(bank, f.cs.components.reference_close, [(frame,)], limit=4)
-    assert staged.codes.shape == (1, 4, 8)
+    assert staged.codes.shape == (1, 4, f.cs.nDim)
     selected = event if pending else f.cs.mtm.entries[token].events[-1]
     for actual, expected in zip(staged.codes[0, 1:], (event.before, code, f.cs.mtm.event_value(selected))):
         torch.testing.assert_close(actual, expected)

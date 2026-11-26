@@ -3,6 +3,7 @@ from dataclasses import replace
 from types import SimpleNamespace
 
 import torch
+from architecture import WHERE_WIRES
 import pytest
 from nomination_fixtures import recurrent_word
 
@@ -148,7 +149,7 @@ def test_1_word_deposit_keeps_its_value_row_and_order(tmp_path, monkeypatch, eag
                                  evidence=caller['leaf_evidence'])
         start = model.symbolSpace.ltm_store.when_start
         if start is not None:
-            low = max(0, start-4)
+            low = max(0, start-WHERE_WIRES)  # the place's wires, then the time's
             expected[:, low:start+4] = caller['symbolic_event'][:, 0, low:start+4]
         active = caller['commit'].reshape(-1)
         torch.testing.assert_close(args[1][active], expected[active], rtol=0, atol=0)
@@ -165,7 +166,7 @@ def test_1_word_deposit_keeps_its_value_row_and_order(tmp_path, monkeypatch, eag
             value = expected[0][:, 0].clone()
             start = model.symbolSpace.ltm_store.when_start
             if start is not None:
-                value[:, start-4:start+4] = actual[0][:, 0, start-4:start+4]
+                value[:, start-WHERE_WIRES:start+4] = actual[0][:, 0, start-WHERE_WIRES:start+4]
             torch.testing.assert_close(actual[0][active, 0], value[active], rtol=0, atol=0)
             observed.extend(active.nonzero().flatten().tolist())
         return journal(state, scope, active, **kwargs)

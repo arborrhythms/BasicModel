@@ -60,16 +60,16 @@
   <InputSpace>
     <nOutput>128</nOutput>
     <nVectors>256</nVectors>
-    <nDim>64</nDim>
+    <nDim>72</nDim>
   </InputSpace>
   <PartSpace>
     <nInput>128</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>72</nInputDim>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
-    <nDim>64</nDim>
+    <nDim>72</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>64</nOutputDim>
+    <nOutputDim>72</nOutputDim>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
     <chunkPromotionThreshold>2</chunkPromotionThreshold>
@@ -77,29 +77,29 @@
   <ConceptualSpace>
     <!-- Item 1.8: preserve the form width; allocate the declared meaning lanes. -->
     <nInput>8</nInput>
-    <nInputDim>192</nInputDim>
+    <nInputDim>200</nInputDim>
     <nVectors>2048</nVectors>
     <activeVectors>1024</activeVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>192</nDim>
+    <nDim>200</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>192</nOutputDim>
+    <nOutputDim>200</nOutputDim>
     <invertible>true</invertible>
   </ConceptualSpace>
   <WholeSpace>
     <analysis>meronomy</analysis>
     <butterfly>true</butterfly>
     <nInput>8</nInput>
-    <nInputDim>192</nInputDim>
+    <nInputDim>200</nInputDim>
     <nVectors>9</nVectors>
-    <nDim>64</nDim>
+    <nDim>72</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>64</nOutputDim>
+    <nOutputDim>72</nOutputDim>
     <invertible>true</invertible>
   </WholeSpace>
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>192</nInputDim>
+    <nInputDim>200</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>1</nOutput>

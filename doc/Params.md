@@ -10,8 +10,8 @@ This document is the human-facing reference for common knobs and migrations.
 **Sizes.** Every constant set by hand that is a size (a
 capacity, horizon, budget, cap, cadence or width) is a power of two, for example
 `PartSpace.basicPerceptCapacity` $2^{18}$. A width made by adding such constants
-stays a sum: an event is its content plus the fixed eight-coordinate band (four
-`.where`, four `.when`), and a percept's code is $64 + 64$, a parts half and a
+stays a sum: an event is its content plus the fixed sixteen-coordinate band
+(twelve `.where`, four for each of three axes, and four `.when`), and a percept's code is $64 + 64$, a parts half and a
 wholes half (`identityPairDim`, `propertyDim`). Seeds, versions,
 booleans, 0 and 1, rates, weights and ratios are not sizes; nor are counts that
 the structure fixes (the eight canonical property rows plus the word row,
@@ -40,6 +40,10 @@ treat that as the same thing as `nOutput`.
 
 > `<nWhere>` / `<nWhen>` are not set in per-file configs.
 > The band widths are architectural (`canonical_shape` in `bin/architecture.py`).
+> The `.where` has four wires for each axis of a place; the number of axes is
+> `architecture.whereAxes`, 3, set in `data/model.xml` and in no other
+> configuration. A declared `nDim` that embraces the band counts all sixteen
+> of its coordinates.
 > Input, part, whole and symbol events use two quadrature pairs for `.where`
 > and two for `.when`; conceptual codes and final outputs have no local band.
 > A complete model shares **one** spatial ladder and **one** temporal ladder.
@@ -47,7 +51,8 @@ treat that as the same thing as `nOutput`.
 > registry capacity; the temporal long period covers the LTM allocation.
 > Short periods preserve one-location resolution. Integer spatial addresses
 > are decoded from the band, not saved beside it. Each input modality (text,
-> the numeric input of a numeric file, and the scalar beside the words) has a
+> the numeric input of a numeric file, the scalar beside the words, and a
+> scene where `architecture.sceneShape` declares its box) has a
 > range of its own in the registry, so the range of an address gives its
 > modality; a place on two axes, such as a pixel, is one row-major address in
 > its modality's range, decoded by the declared shape. Everything observed in one
@@ -306,7 +311,7 @@ Lifts raw data into the model's internal representation.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Sequence length: max tokens per input. For XOR: 2. For text models, OOV words are spelled out as individual characters, so a single word may consume multiple slots --- a short sentence with many OOV words can exceed this limit and trigger a truncation warning suggesting a lower `<minFrequency>`. |
-| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$. Default 9 = 1 content + 4 `.where` + 4 `.when`. |
+| `nDim` | int | `17` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$. Default 17 = 1 content + 12 `.where` + 4 `.when`. |
 | `nInputDim` / `nOutputDim` | int | `0` | Raw shape hints. `0` defers to the loader's native dim. |
 | `nVectors` | int | sentinel | Codebook size. Defaults to `nOutput`. |
 | `codebook` | mode | `none` | `none`, `quantize`, or `project`. Legacy `true`/`false` are accepted as `quantize`/`none`. |
@@ -340,7 +345,7 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
-| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
+| `nDim` | int | `17` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 17 = 1 + 12 + 4). |
 | `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
 | `propertyDim` | positive int | `64` | Width of the wholes half of a percept's code, after the parts half, at text-model construction. The characters are grouped by the exact set of rows of the table of wholes that hold them, one coordinate a group (`PrimitiveProperties.regroup`); a whole's code is the OR of its groups', so the class of all characters is all ones. Numeric layouts are unchanged. |
 | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
@@ -360,7 +365,7 @@ A form's code holds no length; a configuration that declares
 In an embedding configuration with `identityByParts` (the default),
 `WordIdentity.resolve_identity_layout` rewrites the declared widths before any
 space is built. Every input, percept and whole event is `identityPairDim` +
-`propertyDim` + the eight band coordinates, $64 + 64 + 8 = 136$ by default, and the conceptual width is that plus the declared difference
+`propertyDim` + the sixteen band coordinates, $64 + 64 + 16 = 144$ by default, and the conceptual width is that plus the declared difference
 between the ConceptualSpace and PartSpace `nDim`. The declared `nDim` values of
 such a configuration therefore matter only through that difference; numeric
 configurations, and those with `identityByParts` false, keep their declared
@@ -385,7 +390,7 @@ Grammatical lift/lower own their chart maps.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `nOutput` | int | sentinel | Active concept vectors. For XOR: 3. |
-| `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
+| `nDim` | int | `17` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 17 = 1 + 12 + 4). |
 | `nVectors` | int | sentinel | Physical conceptual-codebook capacity. ConceptualSpace owns the concept inventory and taxonomy; word–object DEF relations live in the common LTM store. Aligned property-basis stages share one table. Rows lie in their order's block (`order_slice`), so a concept's order is read from where its row lies and is stored nowhere beside the vector; a full block raises a capacity error naming its order. This value is independent of `WholeSpace.nVectors`, PartSpace's physical capacity, live `nOutput`, SymbolSpace references, and STM capacity. |
 | `invertible` | bool | `false` | Space construction flag. Aligned native binding retains both perceptual views for reconstruction; ConceptualSpace owns no unary chart fold. |
 | `hasAttention` | bool | `false` | Inert: the boolean constructs no attention pass and is kept as an alias. Use `<attention>`. |
@@ -905,16 +910,32 @@ accepts, and the code ignores, `sparseReplace` (with a `DeprecationWarning`),
 `dataType=numeric` with a grammar of field operators reads its input through
 `NumericPercepts`, the one reader for any number of dimensions; the input's
 shape gives the number. Each dimension is a place in the numeric input's own
-`.where` range. A reading whose felt value is above zero is a value percept at
-its place. Its code is its place in one sorted table of values, over 64 bins
-of the felt value: the parts half holds the bins at or below the value, the
-wholes half is all ones with the bins above it cut away, and the against lane
-holds what the wholes half cuts away, so a value lies between its parts and
-its wholes as a form does ([Mereology](Mereology.md)). There is one basic
-percept for each place and value met; each place has a table of its own, on
-coordinates of its own, and a collection of values is read by its bounds, 0
-or 1, not through the Sigma. Zero is no presence. Reverse
-returns each dimension's number from the level its concept holds. The output
+`.where` range. The input is intensities in 0..1, taken as they are; a number
+outside 0..1 is refused, and numbers that are not intensities are charted onto
+0..1 before they are read (`NumericPercepts.feeling`, the logarithmic chart).
+A reading above zero is an occurrence of its value's percept. Its code is its
+place in one sorted table of values, over 64 bins: the parts half holds the
+bins at or below the value, the wholes half is one at the group of the level
+the value falls to, and the against lane holds what the wholes half cuts away,
+so a value lies between its parts and its wholes as a form does
+([Mereology](Mereology.md)). There is one basic percept for each value met,
+whatever its place; a basic percept of intensity is a row over a part and a
+whole, the cuts of its bin, nominated when occurrences recur in its region
+and read as a form is, for inside the region and against above it. A place is told by
+its wires, through a place's row that is nominated when occurrences recur at
+it. Zero is no presence. Reverse returns at each place the centroid of the
+percept a concept of the field reads for there, so an input is put back once
+its regions and places are known. `architecture.intensityPartCardinality` (256) is the number of levels
+of the alphabet of intensity, a codebook over one pixel's value learned by
+vector quantization. `architecture.intensityPartSigma` is the width in places
+of the Gaussian aperture of a part of intensity (0, the default, no limit);
+the XOR configurations set it to 1, so that a part is one place and no
+concept is pooled across places at the output.
+`architecture.createMetaConcepts` (true) has `interpret` make a word's meta
+concept, and a blank object where the word has none; false, `interpret`
+makes neither and gives a word's object from a unit that MTM has made. No
+configuration sets it false: MTM's promotion does not yet make such a unit
+(`test/test_item16_naming.py` holds the certificates, expected to fail). The output
 reads the field (`OutputSpace.read_field`). The existing `raiseCount` and
 `attentionPromotion` govern recurrent intersections, and `trustViews` governs
 scalar definition evidence. No scalar scale, box-learning rate or per-value
@@ -922,9 +943,22 @@ inventory parameter exists. Scalar input is an optional `scalar` beside `text`
 in `prepInput` records; omitted and zero have distinct input representations,
 but neither asserts a perceptual negation.
 
+A record may also carry a `scene`, an image of intensities: `null` for no
+image, an empty list for an image with nothing in it, or pixels `[x, y, z,
+steps]` with steps from 1 to 255, one pixel at a place. The value of a pixel
+is its steps over 255. `architecture.sceneShape` declares the shape of the
+scene's box, up to `whereAxes` whole numbers separated by spaces (`8 8 8`);
+its default in `data/model.xml` is empty, and a model with no box refuses a
+record that carries an image. Where it is declared the registry has a range
+`scene` of that shape after every other range, on a stretch of the first
+axis of its own. `InputSpace` keeps the scenes of the last batch beside its
+texts, and a record with an image and no words is a moment of its own, as
+one with a value is. The image is read with its sentence at the opening,
+put back from the field and charged ([Spaces](Spaces.md#percept-modalities)). `data/scene/BasicModel_scene.xml` is `data/BasicModel.xml`
+with the box declared.
+
 `MM_xor.xml`, `MM_xor_fixture.xml` and `XOR_exact.xml` have two numeric
-dimensions; `XOR_exact.xml` runs 64 epochs and sets its output `lrScale` to 10
-for the fixed logarithmic input scale. `MM_text.xml`, `MM_text_fixture.xml` and
+dimensions; `XOR_exact.xml` runs 64 epochs and sets its output `lrScale` to 10. `MM_text.xml`, `MM_text_fixture.xml` and
 `XOR_symbols.xml` keep symbolic shapes for verbal and mechanism fixtures.
 `data/MM_image.xml` is numeric, with field operators only, a 28 by 28 input on
 two place axes, and reads two-level images from

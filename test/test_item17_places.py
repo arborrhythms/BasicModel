@@ -8,10 +8,10 @@ import torch
 
 
 def test_nominated_place_definitions_survive_growth_precision_changes_and_restore():
-    from BasicPercepts import BasicPercepts
+    from BasicPercepts import BasicPercepts, WHERE_WIRES
     basic = BasicPercepts(None, 2, 1, 32)
     for n in range(18):
-        plus = torch.full((4,), .1234567 + n / 32)
+        plus = torch.full((WHERE_WIRES,), .1234567 + n / 32)
         kept = torch.tensor([.1111111, 0., .7777777]) if n % 2 else None
         basic.reserve_place(plus, 1 - plus, kept)
     expected = {row: tuple(None if v is None else v.clone() for v in point)
@@ -31,12 +31,12 @@ def test_nominated_place_definitions_survive_growth_precision_changes_and_restor
 def test_each_nominated_place_keeps_only_its_prefix(monkeypatch):
     from types import SimpleNamespace
     import Places
-    from BasicPercepts import BasicPercepts
+    from BasicPercepts import BasicPercepts, WHERE_WIRES
 
     basic = BasicPercepts(None, 2, 1, 8)
     owner = SimpleNamespace(basic_percepts=basic, nominates=lambda key, reading: True,
                             reading=lambda b: b)
-    c = torch.zeros(2, 3, 4)
+    c = torch.zeros(2, 3, WHERE_WIRES)
     c[..., 0] = torch.tensor([[.2500001, .4, .2500002], [.4, .2500003, .5]])
     has = torch.tensor([[True, True, True], [False, True, True]])
     what = torch.tensor([[[1., 0., .3], [.5, .5, 1.], [.5, 1., .2]],
@@ -352,7 +352,8 @@ def test_reading_in_order_before_and_after_the_lesson(tmp_path, monkeypatch):
             # difference between two.
             codes = model._concept_owner().similarity_codebook.W.detach()[sorted(concept.values())]
             spread = (codes[:, None] - codes[None]).abs().amax(-1)
-            band = codes[:, basic.width:basic.width + 8]
+            from BasicPercepts import WHERE_WIRES, WHEN_WIRES
+            band = codes[:, basic.width:basic.width + WHERE_WIRES + WHEN_WIRES]
             place_codes = dict(norms=sorted(set(round(float(v), 4) for v in codes.norm(dim=-1))),
                                greatest_difference=round(float(spread.max()), 4) if len(codes) else None,
                                greatest_difference_of_where_and_when=round(float(

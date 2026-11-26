@@ -5,6 +5,7 @@ deposit advances it once; reads and updates keep the original address.
 """
 from dataclasses import replace
 import torch
+from architecture import WHERE_WIRES
 
 from Memory import STMChunks as chunks
 from ThoughtReferences import bindings, evidence_pair, open_slots, with_slots
@@ -111,7 +112,7 @@ def put(stm, meaning, when=None, row=0, *, pin=False, existing=False):
         if int(chunks.locate(state, when, band=chunks.WHEN)[row]) >= 0:
             raise ValueError('thought .when address is already occupied; use existing=True to update')
         state, index = chunks.deposit(state, value.expand(state[0].shape[0], -1), gate,
-            where=(-1.,) * 4, when=when, truth=pair, stack=pin)
+            where=(-1.,) * WHERE_WIRES, when=when, truth=pair, stack=pin)
         if int(index[row]) < 0:
             raise OverflowError('thought focus cannot exceed the constructed STM capacity')
     meaning = retain(stm, meaning, when, row, int(index[row]), pair=pair)

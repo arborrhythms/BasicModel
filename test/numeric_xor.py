@@ -38,13 +38,17 @@ def certificate(config='data/MM_xor.xml'):
     owner = model._concept_owner()
     basic = owner.basic_percepts
     conjunction, = basic.conjunctions
-    assert len(basic.conjunctions[conjunction]) == 2
+    members = basic.conjunctions[conjunction]
+    assert len(members) == 2
+    # The conjunction is over two places' rows.
+    assert all(member in basic.place_rows for member in members)
+    places = [owner.concept_of_basic_percept(member) for member in members]
     row = owner.concept_of_basic_percept(conjunction)
-    rows = [*model.numeric_percepts.rows,row]
+    rows = [*places,row]
     weights = model.outputSpace.field_readout.weight[0,torch.tensor(rows)*2]
-    # Rule 53: the conjunction is a strict whole of its two level percepts,
-    # so each axis reads against where the other is present, and the
-    # readout takes the conjunction with the sign opposite the two axes'
+    # Rule 53: the conjunction is a strict whole of its two places' rows,
+    # so each place reads against where the other is present, and the
+    # readout takes the conjunction with the sign opposite the two places'
     # (which is positive depends on the configuration).
     assert torch.sign(weights[0]) == torch.sign(weights[1]) != 0
     assert torch.sign(weights[2]) == -torch.sign(weights[0])

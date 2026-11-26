@@ -15,6 +15,7 @@ from Memory import LTM0
 from Spaces import ConceptualSpace
 from ClauseRow import Clause
 from Meaning import ConceptualMeaning
+from architecture import WHERE_WIRES
 
 
 def test_end_row_has_shared_references_and_field_coordinates():
@@ -78,8 +79,10 @@ def part_clause(left=1, right=2, *, polarity=True):
 def idea_clause(point=None, *, children=(), refs=(1, 3, -1)):
     return Clause(ConceptualMeaning(torch.eye(4)[:3], torch.ones(3, dtype=torch.bool)),
         point=torch.tensor([.2, .3, .4, .5]) if point is None else point,
-        children=children, refs=refs, where=torch.tensor([0., 1., 2., 3.]),
-        when=torch.tensor([4., 5., 6., 7.]))
+        children=children, refs=refs,
+        # A place's band (WHERE_WIRES) and the time's four, numbered on.
+        where=torch.arange(WHERE_WIRES, dtype=torch.float32),
+        when=torch.arange(WHERE_WIRES, WHERE_WIRES + 4, dtype=torch.float32))
 
 
 def test_compound_idea_stores_only_fused_point_without_factored_target():

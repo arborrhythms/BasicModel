@@ -33,6 +33,118 @@ def is_place(owner, row):
     return cid is not None and 'place' in _concept_alloc_of(owner).symbol_types.get(cid, ())
 
 
+#: The two ranges of the registry whose concepts a unit across modality
+#: joins: the one that holds a word's readings and the image's.
+MODALITIES = ('scene', 'text')
+
+
+def percept_range(owner, percept):
+    """The range of the registry that the places of the basic percept
+    ``percept`` lie in: of a place's row, the range holding its place (its
+    cone decoded); of a conjunction, its members' where they share one; of a
+    value's row or a thing's, the range ``scene`` (each is read at an image's
+    places);
+    of any other row of the first Pi, the range ``text``, which holds the word
+    brackets of the sentence it is read at. ``None`` where none holds it."""
+    basic = owner.basic_percepts
+    if percept in basic.conjunctions:
+        found = {percept_range(owner, member) for member in basic.conjunctions[percept]}
+        return next(iter(found)) if len(found) == 1 else None
+    if percept in basic.place_rows:
+        registry = owner._model.where_registry
+        address = int(registry.decode(basic.place_rows[percept][0].to(registry.grid)))
+        return next((name for name, (lo, hi) in registry.slices.items() if lo <= address < hi), None)
+    if basic.is_value(percept) or percept in basic.things:
+        return 'scene'
+    return 'text'
+
+
+def ranges(owner, concept, members):
+    """The ranges of the registry that ``concept`` lies in: of a concept of
+    order zero, those of its basic percepts (:func:`percept_range`); above
+    order zero, those of the concepts its Sigma reads through symbols
+    (``members``, by concept)."""
+    row = owner._concept_row_of(concept)
+    if row is None:
+        return set()
+    if owner._row_order(row) == 0:
+        return {percept_range(owner, percept) for percept in owner.concept_percepts(row)}
+    return set().union(*(ranges(owner, member, members) for member in members.get(concept, ())), set())
+
+
+def held_members(owner):
+    """Each concept above order zero with the concepts it reads, ``{concept:
+    (member, ...)}``: the constituents of each symbol on which its row has an
+    entry of weight above zero (an entry at zero, offered by part learning,
+    is not a member until it is learned)."""
+    alloc = owner._concept_allocator
+    store, table = alloc.layer(0), alloc.symbol_table()
+    bias = store.bias_column()
+    found = {}
+    for (row, column), position in store._index.items():
+        if column == bias or float(store.values[position]) <= 0 or owner._row_order(row) == 0:
+            continue
+        cid = owner.concept_id_at_row(row)
+        if cid is not None:
+            held = found.setdefault(int(cid), [])
+            held.extend(member for member in table.members(column) if member not in held)
+    return {cid: tuple(held) for cid, held in found.items()}
+
+
+def units(owner):
+    """Each unit across modality: a concept of order one or above that the
+    ordinary promotion made, among whose members one lies in the range
+    ``scene`` alone and one in the range ``text`` alone (:func:`ranges`).
+    Each is ``(concept, order, members)``, the members those of one range.
+    None where the registry has no range ``scene``."""
+    if 'scene' not in owner._model.where_registry.slices:
+        return []
+    alloc = owner._concept_allocator
+    members = held_members(owner)
+    found = []
+    for cid in sorted(set(members) - alloc.retired):
+        lying = {member: ranges(owner, member, members) for member in members[cid]}
+        single = tuple(member for member, held in lying.items() if len(held) == 1)
+        if {next(iter(lying[member])) for member in single} == set(MODALITIES):
+            found.append((cid, alloc.order_of(cid), single))
+    return found
+
+
+@torch.no_grad()
+def raised(owner, field, concepts, *, batch=0):
+    """What each of ``concepts`` reads, ``{concept: (for, against)}``, by the
+    way down (``ConceptualSpace.cs_reverse_presence``: from a concept of a
+    higher order through its Sigma to the symbols it reads, and from each
+    symbol to the concepts it holds) over the rows of ``field`` (a
+    ``ConceptualField``) in ``batch`` and the rows of ``concepts`` not among
+    them, which the field itself reads nothing at. Nothing narrows which of
+    a concept's entries its value goes down (``observed`` everywhere one, as
+    case selection asks it), so a unit's value reaches each of its members;
+    narrowed by what was observed, or to its strongest entry, it would not
+    reach a member whose percepts are absent. So a member of a unit that
+    reads in the field is raised there though its own percepts are absent."""
+    from SentenceField import inventory
+    rows = inventory(owner, field)
+    rows = (rows[:, batch] if rows.ndim == 2 else rows).tolist()
+    evidence = field.evidence[:, batch:batch + 1].detach()
+    wanted = {int(cid): owner._concept_row_of(int(cid)) for cid in concepts}
+    extra = [row for row in dict.fromkeys(wanted.values()) if row is not None and row not in rows]
+    lanes = torch.cat((evidence, evidence.new_zeros(len(extra), *evidence.shape[1:])))
+    rows = rows + extra
+    down = owner.cs_reverse_presence(lanes, observed=torch.ones_like(lanes),
+                                     inventory_rows=torch.tensor(rows, device=lanes.device))
+    return {cid: (tuple(float(x) for x in down[rows.index(row), 0].amax(0)) if row is not None else (0., 0.))
+            for cid, row in wanted.items()}
+
+
+def across(owner, concept):
+    """The other members of each unit across modality that holds ``concept``
+    (reads a symbol whose members include it)."""
+    concept = int(concept)
+    return tuple(dict.fromkeys(member for _, _, members in units(owner) if concept in members
+                               for member in members if member != concept))
+
+
 def support_order(owner, support, candidate_order=None):
     """The highest member order, whose next order the candidate can become."""
     if candidate_order == 0:
@@ -382,7 +494,9 @@ def open_sentence(model, sid, present, *, device_rows=False):
     # The sentence's one lookup, held for its looks.
     model.__dict__.setdefault('_sentence_banks', {})[int(sid)] = bank
     model._sentence_bank = bank
-    field = owner.cs_read_bank(bank)
+    # A row's image, where the batch has one, is read with the sentence.
+    from ImagePercepts import read as read_opening
+    field = read_opening(model, sid, bank)
     from SentenceField import open_field
     owner._cs_last_a0 = field.detach()
     acts = owner.cs_forward_content(field)

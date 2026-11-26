@@ -46,6 +46,23 @@ symbol is a row of a Pi over the conceptual space beneath it, and a concept
 is a Sigma over symbols. Pi, Not and Sigma at every order are the common
 basis of the order alternation.
 
+**Where a noun begins**. A row of the first Pi is read at an occurrence,
+which has a place and a time, and a concept of order zero, a Sigma over
+those rows, is read at the same occurrences and keeps its `.where` and its
+`.when` ([Architecture](Architecture.md)): "a pi on events would still seem
+to be an event, as would a sigma on top of that". A noun holds neither a
+place nor a time. The first thing that holds neither is a symbol, a row of
+the Pi of order one, which has no dimensions: "To remove the .when and
+.where elements, which is necessary for nouns, I think we need the
+first-order pi." So a word as a thing and an object as a thing are symbols
+of order one, and what joins a word to its object is at order one or above.
+A concept of order zero all of whose members lie in the range of text is
+promoted to its symbol of order one, a row of that one member, when MTM
+promotes the concept (`FamiliarTier.promoted_alone`): "in text, there is no
+need to generalize over correctly written text (other than typos)", so the
+Pi has nothing to gather there. A concept with a member of another modality
+is not promoted so.
+
 **What makes what**. "A basic percept or symbol is
 created implicitly by PI or when nominated by MTM when recognizing that their
 constituents always occur together. a concept is created implicitly by Sigma

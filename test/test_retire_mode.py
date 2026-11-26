@@ -266,7 +266,7 @@ def test_chooser_opened_read_reuses_unchanged_chain_and_stamp(monkeypatch, budge
     from meaning_fixtures import replay_thought_plan
     from test_normal_thought_controller import _catalog_world
     model, registry, memory, part, whole = _catalog_world()
-    store = LTM0(8, capacity=8)
+    store = LTM0(16, capacity=8)
     attach_clause_index(model, store, model.conceptualSpace)
     model.symbolSpace.ltm_store = store
     row = store.append_relation(part[1], whole[1], truth_plus=1.)

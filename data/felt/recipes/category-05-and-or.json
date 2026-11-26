@@ -1,0 +1,149 @@
+{
+ "category": 5,
+ "construction": "And, or",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "and-or",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "union",
+  "intersection"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a"
+   ],
+   "id": "q01",
+   "predicate": "present",
+   "script": {
+    "no": {
+     "absent": [
+      "a"
+     ]
+    },
+    "yes": {}
+   },
+   "text": "is {a} here ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "both_present",
+   "text": "{a} and {b} are here."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "one_present",
+   "script": {
+    "one_of": [
+     [
+      "a",
+      "b"
+     ]
+    ]
+   },
+   "text": "{a} or {b} is here."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "this_one_of",
+   "script": {
+    "one_of": [
+     [
+      "a",
+      "b"
+     ]
+    ],
+    "only": true
+   },
+   "text": "this is {a} or {b}."
+  },
+  {
+   "args": [
+    "a",
+    "k",
+    "b",
+    "l"
+   ],
+   "id": "s04",
+   "predicate": "kinds_both",
+   "script": {
+    "kinds": {
+     "a": {
+      "kind": "k"
+     },
+     "b": {
+      "kind": "l"
+     }
+    }
+   },
+   "text": "{a} is {k} and {b} is {l}."
+  }
+ ]
+}

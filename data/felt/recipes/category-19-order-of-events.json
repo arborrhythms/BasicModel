@@ -1,0 +1,183 @@
+{
+ "category": 19,
+ "construction": "Order of events",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "inference": {
+  "premises": [
+   "s01",
+   "s02",
+   "s03",
+   "s04"
+  ],
+  "questions": [
+   "q01"
+  ],
+  "rule": "order",
+  "types": [
+   "time"
+  ]
+ },
+ "name": "order-of-events",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "compound",
+  "union"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "roles": [
+     "a",
+     "b"
+    ],
+    "type": "value"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "first_of",
+   "script": {
+    "events": [
+     {
+      "who": "@answer"
+     },
+     {
+      "who": "@other"
+     }
+    ]
+   },
+   "text": "which moved first, {a} or {b} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "inference": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "precedes",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "who": "b"
+     }
+    ]
+   },
+   "text": "{a} moved, then {b} moved."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "precedes",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "who": "b"
+     }
+    ]
+   },
+   "text": "{a} moved before {b} moved."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "precedes",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "who": "b"
+     }
+    ]
+   },
+   "text": "{b} moved after {a} moved."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s04",
+   "predicate": "precedes",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "who": "b"
+     }
+    ]
+   },
+   "text": "before {b} moved, {a} stopped."
+  }
+ ]
+}

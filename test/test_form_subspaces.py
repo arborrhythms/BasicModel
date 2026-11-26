@@ -55,13 +55,15 @@ def extended_fixture():
 
 
 def test_construction_resolves_the_split_and_preserves_numeric_layout():
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    band = WHERE_WIRES + WHEN_WIRES  # 8 -> 16
     config = {'architecture': {'data': {'dataType': 'embedding'}},
-              'PartSpace': {'nDim': 9}, 'ConceptualSpace': {'nDim': 137}}
+              'PartSpace': {'nDim': 1 + band}, 'ConceptualSpace': {'nDim': 129 + band}}
     resolve_identity_layout(config)
     assert config['PartSpace']['propertyDim'] == 64
     for name in ('InputSpace', 'PartSpace', 'WholeSpace'):
-        assert config[name]['nDim'] == 64 + 64 + 8
-    assert config['ConceptualSpace']['nDim'] == 64 + 64 + 8 + 128
+        assert config[name]['nDim'] == 64 + 64 + band
+    assert config['ConceptualSpace']['nDim'] == 64 + 64 + band + 128
     first = copy.deepcopy(config)
     resolve_identity_layout(config)
     assert config == first

@@ -328,12 +328,12 @@ def test_fixating_a_repeated_letter_keeps_its_own_content_and_extent(tmp_path, m
 def test_reduced_head_copies_only_reachable_payload_and_original_stamp():
     from Memory import LTM0, STM0, OCCURRENCE, RELATION, SYMBOL
     from ReadingMemory import commit
-    source = STM0(12, capacity=4, relation_capacity=32)
-    source.append_idea(torch.ones(12))
-    row = source.append_idea(torch.arange(12.), referent=('sym', 7), trust=.75)
+    source = STM0(16, capacity=4, relation_capacity=32)
+    source.append_idea(torch.ones(16))
+    row = source.append_idea(torch.arange(16.), referent=('sym', 7), trust=.75)
     name = source.row_name(row)
     root = OCCURRENCE, name
-    destination = LTM0(12, capacity=1, relation_capacity=8)
+    destination = LTM0(16, capacity=1, relation_capacity=8)
     kept, = commit([source], [root], destination)
     assert kept == (OCCURRENCE, destination.row_name(0))
     assert len(destination) == 1 and not len(destination.parts)
@@ -343,7 +343,7 @@ def test_reduced_head_copies_only_reachable_payload_and_original_stamp():
     # The same occurrence used twice must still have just one physical copy.
     pair = source.parts.add(root, root, truth_plus=.5, truth_minus=.25)
     application = source.parts.add((SYMBOL, 9), (RELATION, pair), truth_plus=1.)
-    destination = LTM0(12, capacity=1, relation_capacity=8)
+    destination = LTM0(16, capacity=1, relation_capacity=8)
     kept, = commit([source], [(RELATION, application)], destination)
     assert kept[0] == RELATION and len(destination) == 1 and len(destination.parts) == 2
     operator, operands = destination.parts.references(kept[1])
@@ -352,33 +352,33 @@ def test_reduced_head_copies_only_reachable_payload_and_original_stamp():
     assert destination.parts.references(operands[1]) == (copied, copied)
     assert destination.parts.truth_minus[operands[1]] == .25
     source.expire()
-    assert torch.equal(destination.slots[0], torch.arange(12.))
+    assert torch.equal(destination.slots[0], torch.arange(16.))
 
 
 def test_retained_occurrence_references_survive_stm_expiry_and_restore():
     import weakref
     from Memory import LTM0, STM0, OCCURRENCE
     from ReadingMemory import commit
-    destination = LTM0(12, capacity=4, relation_capacity=16)
-    previous = destination.append_idea(torch.ones(12), referent=('sym', 12))
+    destination = LTM0(16, capacity=4, relation_capacity=16)
+    previous = destination.append_idea(torch.ones(16), referent=('sym', 12))
     from SentenceStrata import IdeaStack
-    source = IdeaStack(12, capacity=8, relation_capacity=16)
+    source = IdeaStack(16, capacity=8, relation_capacity=16)
     source.address_domain = destination.address_domain
     source._external_memory = weakref.ref(destination)
     source.names_issued.fill_(10)
     durable_name = destination.row_name(previous)
-    first = source.append_idea(torch.arange(12.), referent=('ltm', source.address_domain, durable_name))
-    second = source.append_idea(-torch.arange(12.), referent=source.occurrence_of(first))
+    first = source.append_idea(torch.arange(16.), referent=('ltm', source.address_domain, durable_name))
+    second = source.append_idea(-torch.arange(16.), referent=source.occurrence_of(first))
     leaf = OCCURRENCE, source.row_name(second)
     root, = commit([source], [leaf], destination)
     assert len(destination) == 3
     assert destination.referent_of(1) == ('ltm', destination.address_domain, durable_name)
     assert destination.referent_of(2) == destination.occurrence_of(1)
     source.expire()
-    restored = LTM0(12, capacity=4, relation_capacity=16)
+    restored = LTM0(16, capacity=4, relation_capacity=16)
     restored.load_state_dict(destination.state_dict())
     row = restored.index_of_row(root[1])
-    assert torch.equal(restored.slots[row], -torch.arange(12.))
+    assert torch.equal(restored.slots[row], -torch.arange(16.))
     assert restored.referent_of(row) == restored.occurrence_of(1)
 
 
@@ -386,9 +386,9 @@ def test_bad_head_in_later_stream_cannot_partly_commit_batch():
     import pytest
     from Memory import LTM0, STM0, OCCURRENCE
     from ReadingMemory import commit
-    source = STM0(12, capacity=2, relation_capacity=8)
-    row = source.append_idea(torch.ones(12))
-    target = LTM0(12, capacity=2, relation_capacity=8)
+    source = STM0(16, capacity=2, relation_capacity=8)
+    row = source.append_idea(torch.ones(16))
+    target = LTM0(16, capacity=2, relation_capacity=8)
     with pytest.raises(ValueError, match="unavailable"):
         commit([source, source], [(OCCURRENCE, source.row_name(row)), (OCCURRENCE, 999)], target)
     assert len(target) == 0 and int(target.names_issued) == 0
@@ -397,9 +397,9 @@ def test_bad_head_in_later_stream_cannot_partly_commit_batch():
 def test_retaining_shared_relation_reuses_last_seat_across_streams():
     from Memory import LTM0, STM0, RELATION, SYMBOL
     from ReadingMemory import commit
-    first = STM0(12, capacity=1, relation_capacity=8)
-    second = STM0(12, capacity=1, relation_capacity=8)
-    target = LTM0(12, capacity=1, relation_capacity=3)
+    first = STM0(16, capacity=1, relation_capacity=8)
+    second = STM0(16, capacity=1, relation_capacity=8)
+    target = LTM0(16, capacity=1, relation_capacity=3)
     roots = []
     for source, handle in ((first, 2), (second, 4)):
         child = source.parts.add((SYMBOL, 20), (SYMBOL, 30), symbol=handle, surprise=.75)
@@ -416,10 +416,10 @@ def test_reserved_relation_handle_overflow_leaves_earlier_stream_untouched():
     import pytest
     from Memory import LTM0, STM0, OCCURRENCE, RELATION, SYMBOL
     from ReadingMemory import commit
-    source = STM0(12, capacity=1, relation_capacity=8)
-    idea = source.append_idea(torch.ones(12))
+    source = STM0(16, capacity=1, relation_capacity=8)
+    idea = source.append_idea(torch.ones(16))
     link = source.parts.add((SYMBOL, 7), (SYMBOL, 8))
-    target = LTM0(12, capacity=2, relation_capacity=3)
+    target = LTM0(16, capacity=2, relation_capacity=3)
     target.parts.add((SYMBOL, 2), (SYMBOL, 4), symbol=1)
     with pytest.raises(OverflowError, match='relation capacity'):
         commit((source, source), ((OCCURRENCE, source.row_name(idea)), (RELATION, link)), target)
@@ -429,8 +429,8 @@ def test_reserved_relation_handle_overflow_leaves_earlier_stream_untouched():
 def test_retained_pairs_follow_a_store_supplied_handle_allocator():
     from Memory import LTM0, STM0, SYMBOL, RELATION
     from ReadingMemory import commit
-    source = STM0(12, capacity=2, relation_capacity=16)
-    target = LTM0(12, capacity=2, relation_capacity=16)
+    source = STM0(16, capacity=2, relation_capacity=16)
+    target = LTM0(16, capacity=2, relation_capacity=16)
     child = source.parts.add((SYMBOL, 20), (SYMBOL, 21))
     root = source.parts.add((RELATION, child), (SYMBOL, 42))
     target.parts.allocate = iter((12, 5)).__next__
@@ -442,10 +442,10 @@ def test_retained_pairs_follow_a_store_supplied_handle_allocator():
 
 def test_completed_idea_uses_the_winning_value_and_the_closing_clock():
     from Memory import STM0, LTM0
-    working = STM0(12, capacity=1)
-    value = torch.arange(12.) / 12
+    working = STM0(16, capacity=1)
+    value = torch.arange(16.) / 12
     source = working.append_idea(value)
-    expected, actual = (LTM0(12, capacity=2) for _ in range(2))
+    expected, actual = (LTM0(16, capacity=2) for _ in range(2))
     for store in (expected, actual):
         store._model_present = lambda: 37
     pair = (.75, .25)
@@ -464,10 +464,10 @@ def test_per_stream_roots_survive_restore_and_forget_reused_handles():
     import weakref
     from Memory import LTM0, ModelState, SYMBOL
     from Occurrence import operand_name
-    memory = LTM0(12, capacity=4, percept_width=8, relation_capacity=8)
+    memory = LTM0(16, capacity=4, percept_width=16, relation_capacity=8)
     state = ModelState()
     memory._temporal_owner = weakref.ref(state)
-    idea = memory.append_idea(torch.zeros(12))
+    idea = memory.append_idea(torch.zeros(16))
     name = operand_name(memory.row_name(idea))
     relation = memory.parts.add((SYMBOL, 4), (SYMBOL, 5))
     state.publish_heads(16, [name, relation])

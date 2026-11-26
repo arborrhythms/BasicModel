@@ -37,12 +37,13 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
     from ReferenceContext import prepare_operands
     from ClauseJournal import finish_clause
     f = SentenceFixture(monkeypatch)
+    w = f.cs.nDim  # the fixture's concept width (_D)
     keys = []
     for i in (0,1):
         from dataclasses import replace
         from test_reference_close import known_concept
-        concept = known_concept(f.cs, torch.eye(8)[i], order=order)
-        meaning = replace(ConceptualMeaning.from_description(torch.eye(8)[i]),
+        concept = known_concept(f.cs, torch.eye(w)[i], order=order)
+        meaning = replace(ConceptualMeaning.from_description(torch.eye(w)[i]),
             bindings={'_identity': ('sym', concept)})
         row = f.store.append_meaning(meaning)
         key = f.store.occurrence_of(row)
@@ -51,11 +52,11 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
         keys.append(key)
     state = prepend(f,(),1)
     # §50: both eligible identities are parts of the mention's meaning.
-    mention = (torch.eye(8)[0]+torch.eye(8)[1]).reshape(1,1,8)
+    mention = (torch.eye(w)[0]+torch.eye(w)[1]).reshape(1,1,w)
     state,_ = chunks.deposit(state,mention[:,0],torch.tensor([True]),stack=True,order=order)
     age = state[chunks.READ].clone()
     bind = next(rule for rule in f.binary if rule.method_name == 'bind')
-    menu = prepare_operands(mention.expand(1,2,8),torch.full((1,2),-1),torch.zeros(1,2,dtype=torch.long),
+    menu = prepare_operands(mention.expand(1,2,w),torch.full((1,2),-1),torch.zeros(1,2,dtype=torch.long),
         torch.tensor([[0,0]]),orders=torch.full((1,2),order),rules=(bind,),unary_rules=(),
         active=torch.tensor([[True,False]]),chunk_state=state,bank=None,live=None)
     valid = menu['binary_valid']
@@ -68,7 +69,7 @@ def test_bind_menu_at_each_order_and_kept_mention_commit(monkeypatch,order):
     chosen = ('ltm',f.store.address_domain,int(entry.identity_origins[selected,1]))
     clause = finish_clause(f.language,entry,registry=f.registry)
     resolver = f.cs.components.reference_close
-    plan = resolver.preview(clause,chunks.empty(1,8,8))
+    plan = resolver.preview(clause,chunks.empty(1,8,w))
     prepared = resolver.prepare(clause,plan)
     written = {}
     row = f.store.write_clause(prepared,written_rows=written,)
@@ -141,7 +142,7 @@ def test_expired_and_promoted_transient_ids_cannot_alias_resident_chunks():
 def test_unpublished_timeline_cannot_survive_as_a_recent_identity(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]))
+    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(16)[0]))
     key = f.store.occurrence_of(row)
     f.cs.mtm.open(key,kind=None,when=1,value=f.store.slots[row],pending=False)
     f.cs.mtm.record_link(key,key,0,kind='reference',order=1)
@@ -233,27 +234,28 @@ def test_retired_modules_and_transient_checkpoint_version():
 def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
     from test_clause_acceptance import SentenceFixture
     f = SentenceFixture(monkeypatch)
-    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[0]))
+    w = f.cs.nDim  # the fixture's concept width (_D)
+    row = f.store.append_meaning(ConceptualMeaning.from_description(torch.eye(w)[0]))
     key = f.store.occurrence_of(row)
     f.cs.mtm.open(key,kind=None,when=1,value=f.store.slots[row],pending=False)
     f.cs.mtm.record_link(key,key,0,kind='reference',order=1)
-    entries = SymbolEntries(1,1,8,8)
+    entries = SymbolEntries(1,1,8,w)
     model = SimpleNamespace(_concept_owner=lambda:f.cs,inputSpace=SimpleNamespace(symbol_entries=entries),
         symbolSpace=SimpleNamespace(ltm_store=f.store),_open_sentence_slot=0)
     from clock_fixtures import install
     install(model)
-    state = stage(model,chunks.empty(1,8,8),torch.tensor([True]))
+    state = stage(model,chunks.empty(1,8,w),torch.tensor([True]))
     index = int((state[chunks.IDENTITY][0] >= 0).nonzero()[0])
     for i in range(1,8):
-        state,_ = chunks.deposit(state,torch.full((1,8),i/10),torch.tensor([True]))
+        state,_ = chunks.deposit(state,torch.full((1,w),i/10),torch.tensor([True]))
     previous = state[chunks.READ].clone()
     state = stage(model,state,torch.tensor([True]))
     assert state[chunks.READ][0,index] > previous.max()
     torch.testing.assert_close(state[chunks.READ][0,1:],previous[0,1:],rtol=0,atol=0)
     age = state[chunks.READ].clone()
-    chunks.bind_menu(state,torch.ones(1,1,8))
+    chunks.bind_menu(state,torch.ones(1,1,w))
     torch.testing.assert_close(state[chunks.READ],age,rtol=0,atol=0)
-    state,arrived = chunks.deposit(state,torch.ones(1,8),torch.tensor([True]),stack=True)
+    state,arrived = chunks.deposit(state,torch.ones(1,w),torch.tensor([True]),stack=True)
     assert arrived.tolist() == [1]
 
 
@@ -261,7 +263,8 @@ def test_restaging_reads_live_values_once_without_reading_the_menu(monkeypatch):
 def test_prepend_breaks_equal_time_ties_by_admission_and_keeps_event_recency(monkeypatch, admission_order):
     from test_clause_acceptance import SentenceFixture
     fixture = SentenceFixture(monkeypatch)
-    rows = [fixture.store.append_meaning(ConceptualMeaning.from_description(torch.eye(8)[i])) for i in range(4)]
+    w = fixture.cs.nDim  # the fixture's concept width (_D)
+    rows = [fixture.store.append_meaning(ConceptualMeaning.from_description(torch.eye(w)[i])) for i in range(4)]
     pool = fixture.cs.mtm
     admitted = []
     for index in admission_order:
@@ -270,20 +273,20 @@ def test_prepend_breaks_equal_time_ties_by_admission_and_keeps_event_recency(mon
         pool.open(key, kind=None, when=7, value=fixture.store.slots[row], pending=False)
         pool.record_link(key,key,0,kind='reference',order=1)
         admitted.append(key)
-    entries = SymbolEntries(1, 1, 8, 8)
+    entries = SymbolEntries(1, 1, 8, w)
     pointers = {name: value.data_ptr() for name, value in entries.named_buffers()}
     model = SimpleNamespace(_concept_owner=lambda: fixture.cs,
         inputSpace=SimpleNamespace(symbol_entries=entries),
         symbolSpace=SimpleNamespace(ltm_store=fixture.store), _open_sentence_slot=0)
     from clock_fixtures import install
     install(model)
-    state = stage(model, chunks.empty(1, 8, 8), torch.tensor([True]))
+    state = stage(model, chunks.empty(1, 8, w), torch.tensor([True]))
     expected = [pool.entries[key].transient for key in admitted]
     assert entries.concept_ids[0, :4].tolist() == expected
-    assert chunks.bind_menu(state, torch.ones(1, 1, 8))[1][0, 0, 1:5].tolist() == expected
+    assert chunks.bind_menu(state, torch.ones(1, 1, w))[1][0, 0, 1:5].tolist() == expected
 
     # A later event still outranks the tie; its older peers keep admission order.
     pool.event(admitted[-1], admitted[-1], verb=1, role=0, when=8)
-    stage(model, chunks.empty(1, 8, 8), torch.tensor([True]))
+    stage(model, chunks.empty(1, 8, w), torch.tensor([True]))
     assert entries.concept_ids[0, :4].tolist() == [expected[-1], *expected[:-1]]
     assert pointers == {name: value.data_ptr() for name, value in entries.named_buffers()}

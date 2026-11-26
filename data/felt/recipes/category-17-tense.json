@@ -1,0 +1,162 @@
+{
+ "category": 17,
+ "construction": "Tense",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "tense",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "compound",
+  "marker"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "was_above",
+   "script": {
+    "events": [
+     {
+      "start": [
+       "row_before",
+       "a",
+       "b"
+      ],
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what was above {b} ?"
+  },
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "row_before",
+   "text": "is {a} above {b} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "was_above",
+   "script": {
+    "events": [
+     {
+      "start": [
+       "row_before",
+       "a",
+       "b"
+      ],
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} was above {b}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "row_before",
+   "text": "{a} is above {b}."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s03",
+   "predicate": "moved",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved."
+  },
+  {
+   "args": [
+    "a"
+   ],
+   "id": "s04",
+   "predicate": "will_move",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} will move."
+  }
+ ]
+}

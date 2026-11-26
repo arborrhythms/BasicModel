@@ -10,24 +10,33 @@ def band(value):
 
 
 def point(value, percept_width):
-    if percept_width < 8 or value.shape[-1] < percept_width:
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    if percept_width < WHERE_WIRES + WHEN_WIRES or value.shape[-1] < percept_width:
         return value
-    start = percept_width - 8
-    bands = value[..., start:percept_width].reshape(*value.shape[:-1], 2, 4)
-    return torch.cat((value[..., :start], band(bands).flatten(-2), value[..., percept_width:]), -1)
+    start = percept_width - WHERE_WIRES - WHEN_WIRES
+    return torch.cat((value[..., :start], percept(value[..., start:percept_width]),
+                      value[..., percept_width:]), -1)
+
+
+def percept(value):
+    """A percept's two bands, the ``.where`` then the ``.when``, each imported."""
+    from architecture import WHERE_WIRES
+    return torch.cat((band(value[..., :WHERE_WIRES]), band(value[..., WHERE_WIRES:])), -1)
 
 
 def observations(value, percept_width, name=''):
     """Convert typed saved observations, never a learned weight or its moments."""
     if torch.is_tensor(value):
+        from architecture import WHERE_WIRES, WHEN_WIRES
         if not value.is_floating_point() or not value.ndim:
             return value
         if name in ('where', 'when', 'symbol_where', 'symbol_when', 'percept_where',
                     'percept_when', '_live_where', '_live_when', 'chunk_where', 'chunk_when',
-                    '_live_chunk_where', '_live_chunk_when') and value.shape[-1] == 4:
+                    '_live_chunk_where', '_live_chunk_when') and value.shape[-1] == (
+                        WHERE_WIRES if name.endswith('where') else WHEN_WIRES):
             return band(value)
-        if name == 'percept' and value.shape[-1] == 8:
-            return band(value.reshape(*value.shape[:-1], 2, 4)).flatten(-2)
+        if name == 'percept' and value.shape[-1] == WHERE_WIRES + WHEN_WIRES:
+            return percept(value)
         if name in ('point', 'value', 'values', 'before', 'after', 'slots', 'codes',
                     'buffer', '_live_buffer', 'roles', 'end_state', 'focus',
                     'case_value', 'verb_meaning', 'modifiers', 'basis', '_inter_context'):

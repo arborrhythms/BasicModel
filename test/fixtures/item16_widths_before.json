@@ -1,0 +1,10361 @@
+{
+ "built": {
+  "BasicModel.xml": {
+   "capacity": 40978,
+   "ranges": {
+    "conceptual": [
+     40970,
+     40978
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     40961
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     40961,
+     40970
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 512,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 32768,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[3]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 1032,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 1032,
+     "inputShape": [
+      0,
+      1032
+     ],
+     "outputShape": [
+      0,
+      1032
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 1024
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 1032,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "BasicModel_answers_tied_benchmark.xml": {
+   "capacity": 40978,
+   "ranges": {
+    "conceptual": [
+     40970,
+     40978
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     40961
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     40961,
+     40970
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 512,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 32768,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[3]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 1032,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 1032,
+     "inputShape": [
+      0,
+      1032
+     ],
+     "outputShape": [
+      0,
+      1032
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 1024
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 1032,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      16,
+      1
+     ],
+     "places": 16,
+     "space": "OutputSpace",
+     "vectors": 16,
+     "what": 1
+    }
+   ]
+  },
+  "BasicModel_corpus.xml": {
+   "capacity": 270354,
+   "ranges": {
+    "conceptual": [
+     270346,
+     270354
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     270337
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     270337,
+     270346
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 512,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 262144,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1032,
+      "nInputDim": 1032,
+      "nOutputDim": 1032
+     },
+     "event": 1032,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      1032
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[3]",
+     "vectors": 8,
+     "what": 1032
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 1032,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 1032,
+     "inputShape": [
+      0,
+      1032
+     ],
+     "outputShape": [
+      0,
+      1032
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 1024
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 1032,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      1032
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_20M_xor.xml": {
+   "capacity": 139273,
+   "ranges": {
+    "conceptual": [
+     139265,
+     139273
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     73729
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     73729,
+     139265
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 65536,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 65536,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_add.xml": {
+   "capacity": 12297,
+   "ranges": {
+    "conceptual": [
+     12289,
+     12297
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     8193
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     8193,
+     12289
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      32,
+      1
+     ],
+     "places": 32,
+     "space": "OutputSpace",
+     "vectors": 32,
+     "what": 1
+    }
+   ]
+  },
+  "MM_add_verb.xml": {
+   "capacity": 12297,
+   "ranges": {
+    "conceptual": [
+     12289,
+     12297
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     8193
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     8193,
+     12289
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      512,
+      128
+     ],
+     "outputShape": [
+      512,
+      136
+     ],
+     "places": 512,
+     "space": "InputSpace",
+     "vectors": 512,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      512,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 264,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 264,
+     "inputShape": [
+      0,
+      264
+     ],
+     "outputShape": [
+      0,
+      264
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 256
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 264,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      16,
+      1
+     ],
+     "places": 16,
+     "space": "OutputSpace",
+     "vectors": 16,
+     "what": 1
+    }
+   ]
+  },
+  "MM_corpus_explore_fixture.xml": {
+   "capacity": 8210,
+   "ranges": {
+    "conceptual": [
+     8202,
+     8210
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     8193
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     8193,
+     8202
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      256,
+      128
+     ],
+     "outputShape": [
+      256,
+      136
+     ],
+     "places": 256,
+     "space": "InputSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      256,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 168,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 168,
+     "inputShape": [
+      0,
+      168
+     ],
+     "outputShape": [
+      0,
+      168
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 160
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 168,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_corpus_lessons.xml": {
+   "capacity": 8210,
+   "ranges": {
+    "conceptual": [
+     8202,
+     8210
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     8193
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     8193,
+     8202
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      256,
+      128
+     ],
+     "outputShape": [
+      256,
+      136
+     ],
+     "places": 256,
+     "space": "InputSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      256,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 168,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 168,
+     "inputShape": [
+      0,
+      168
+     ],
+     "outputShape": [
+      0,
+      168
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 160
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 168,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_corpus_orders.xml": {
+   "capacity": 8210,
+   "ranges": {
+    "conceptual": [
+     8202,
+     8210
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     8193
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     8193,
+     8202
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      256,
+      128
+     ],
+     "outputShape": [
+      256,
+      136
+     ],
+     "places": 256,
+     "space": "InputSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      256,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 168,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 168,
+     "inputShape": [
+      0,
+      168
+     ],
+     "outputShape": [
+      0,
+      168
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 160
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 168,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_global.xml": {
+   "capacity": 139273,
+   "ranges": {
+    "conceptual": [
+     139265,
+     139273
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     73729
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     73729,
+     139265
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 65536,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 8
+     },
+     "event": 8,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1024,
+      8
+     ],
+     "places": 1024,
+     "space": "WholeSpace",
+     "vectors": 65536,
+     "what": 0
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_grammar.xml": {
+   "capacity": 4370,
+   "ranges": {
+    "conceptual": [
+     4362,
+     4370
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4362
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 6
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 264,
+     "inputShape": [
+      0,
+      264
+     ],
+     "outputShape": [
+      0,
+      264
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 256
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_grammar_wording.xml": {
+   "capacity": 4370,
+   "ranges": {
+    "conceptual": [
+     4362,
+     4370
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4362
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      128
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "InputSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 264,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 264,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 264,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 264,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[3]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 264,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 264,
+     "inputShape": [
+      0,
+      264
+     ],
+     "outputShape": [
+      0,
+      264
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 256
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 264,
+      "nOutputDim": 64
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_image.xml": {
+   "capacity": 4961,
+   "ranges": {
+    "conceptual": [
+     4953,
+     4961
+    ],
+    "numeric": [
+     4096,
+     4880
+    ],
+    "parts": [
+     4881,
+     4889
+    ],
+    "scalar": [
+     4880,
+     4881
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4889,
+     4953
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 36,
+      "nInputDim": 0,
+      "nOutputDim": 36
+     },
+     "event": 36,
+     "inputShape": [
+      28,
+      28
+     ],
+     "outputShape": [
+      28,
+      36
+     ],
+     "places": 28,
+     "space": "InputSpace",
+     "vectors": 28,
+     "what": 28
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 36,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      28,
+      36
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 8,
+     "what": 6
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 14
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 14
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 14
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 6
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 14,
+     "inputShape": [
+      0,
+      14
+     ],
+     "outputShape": [
+      0,
+      14
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 6
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 14,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      10,
+      1
+     ],
+     "places": 10,
+     "space": "OutputSpace",
+     "vectors": 10,
+     "what": 1
+    }
+   ]
+  },
+  "MM_ladder.xml": {
+   "capacity": 16393,
+   "ranges": {
+    "conceptual": [
+     16385,
+     16393
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     12289
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     12289,
+     16385
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[3]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      16,
+      1
+     ],
+     "places": 16,
+     "space": "OutputSpace",
+     "vectors": 16,
+     "what": 1
+    }
+   ]
+  },
+  "MM_ladder_idiom.xml": {
+   "capacity": 16393,
+   "ranges": {
+    "conceptual": [
+     16385,
+     16393
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     12289
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     12289,
+     16385
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[3]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      2,
+      1
+     ],
+     "places": 2,
+     "space": "OutputSpace",
+     "vectors": 2,
+     "what": 1
+    }
+   ]
+  },
+  "MM_ltm_consolidation_fixture.xml": {
+   "capacity": 4425,
+   "ranges": {
+    "conceptual": [
+     4417,
+     4425
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4417
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_ltm_consolidation_serial_fixture.xml": {
+   "capacity": 4425,
+   "ranges": {
+    "conceptual": [
+     4417,
+     4425
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4417
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_math.xml": {
+   "capacity": 4433,
+   "ranges": {
+    "conceptual": [
+     4425,
+     4433
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4297
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4297,
+     4425
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      32,
+      128
+     ],
+     "outputShape": [
+      32,
+      136
+     ],
+     "places": 32,
+     "space": "InputSpace",
+     "vectors": 32,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      32,
+      136
+     ],
+     "outputShape": [
+      32,
+      136
+     ],
+     "places": 32,
+     "space": "PartSpace",
+     "vectors": 200,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      32,
+      136
+     ],
+     "outputShape": [
+      32,
+      136
+     ],
+     "places": 32,
+     "space": "ConceptualSpace[0]",
+     "vectors": 32,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      32,
+      136
+     ],
+     "outputShape": [
+      32,
+      136
+     ],
+     "places": 32,
+     "space": "ConceptualSpace[1]",
+     "vectors": 32,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      32,
+      136
+     ],
+     "outputShape": [
+      32,
+      136
+     ],
+     "places": 32,
+     "space": "ConceptualSpace[2]",
+     "vectors": 32,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      32,
+      136
+     ],
+     "outputShape": [
+      32,
+      136
+     ],
+     "places": 32,
+     "space": "WholeSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      32,
+      136
+     ],
+     "outputShape": [
+      16,
+      1
+     ],
+     "places": 16,
+     "space": "OutputSpace",
+     "vectors": 16,
+     "what": 1
+    }
+   ]
+  },
+  "MM_math_chain.xml": {
+   "capacity": 12297,
+   "ranges": {
+    "conceptual": [
+     12289,
+     12297
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     8193
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     8193,
+     12289
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      128
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "InputSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 168,
+      "nInputDim": 168,
+      "nOutputDim": 168
+     },
+     "event": 168,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      168
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 168
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 168,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 168,
+     "inputShape": [
+      0,
+      168
+     ],
+     "outputShape": [
+      0,
+      168
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 160
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 168,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      168
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_qa.xml": {
+   "capacity": 139273,
+   "ranges": {
+    "conceptual": [
+     139265,
+     139273
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     73729
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     73729,
+     139265
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 65536,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 8
+     },
+     "event": 8,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      8
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 65536,
+     "what": 0
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_query_reasoning.xml": {
+   "capacity": 9225,
+   "ranges": {
+    "conceptual": [
+     9217,
+     9225
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     8705
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     8705,
+     9217
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 512,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 264
+     },
+     "event": 264,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      264
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 264
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 264,
+      "nOutputDim": 8
+     },
+     "event": 8,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      8,
+      8
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 512,
+     "what": 0
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 264,
+     "inputShape": [
+      0,
+      264
+     ],
+     "outputShape": [
+      0,
+      264
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 256
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 264,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      264
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_reading.xml": {
+   "capacity": 139273,
+   "ranges": {
+    "conceptual": [
+     139265,
+     139273
+    ],
+    "numeric": [
+     8192,
+     8192
+    ],
+    "parts": [
+     8193,
+     73729
+    ],
+    "scalar": [
+     8192,
+     8193
+    ],
+    "text": [
+     0,
+     8192
+    ],
+    "wholes": [
+     73729,
+     139265
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      128
+     ],
+     "outputShape": [
+      8192,
+      136
+     ],
+     "places": 8192,
+     "space": "InputSpace",
+     "vectors": 8192,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8192,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 65536,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 8
+     },
+     "event": 8,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1024,
+      8
+     ],
+     "places": 1024,
+     "space": "WholeSpace",
+     "vectors": 65536,
+     "what": 0
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 1
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_sequence_predict.xml": {
+   "capacity": 21513,
+   "ranges": {
+    "conceptual": [
+     21505,
+     21513
+    ],
+    "numeric": [
+     16384,
+     16384
+    ],
+    "parts": [
+     16385,
+     20481
+    ],
+    "scalar": [
+     16384,
+     16385
+    ],
+    "text": [
+     0,
+     16384
+    ],
+    "wholes": [
+     20481,
+     21505
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      1024,
+      128
+     ],
+     "outputShape": [
+      1024,
+      136
+     ],
+     "places": 1024,
+     "space": "InputSpace",
+     "vectors": 1024,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      1024,
+      136
+     ],
+     "outputShape": [
+      1024,
+      136
+     ],
+     "places": 1024,
+     "space": "PartSpace",
+     "vectors": 4096,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      1024,
+      136
+     ],
+     "outputShape": [
+      1024,
+      136
+     ],
+     "places": 1024,
+     "space": "ConceptualSpace[0]",
+     "vectors": 1024,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      1024,
+      136
+     ],
+     "outputShape": [
+      1024,
+      136
+     ],
+     "places": 1024,
+     "space": "ConceptualSpace[1]",
+     "vectors": 1024,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      1024,
+      136
+     ],
+     "outputShape": [
+      1024,
+      136
+     ],
+     "places": 1024,
+     "space": "ConceptualSpace[2]",
+     "vectors": 1024,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      1024,
+      136
+     ],
+     "outputShape": [
+      1024,
+      136
+     ],
+     "places": 1024,
+     "space": "WholeSpace",
+     "vectors": 1024,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 4,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 4,
+     "inputShape": [
+      1024,
+      136
+     ],
+     "outputShape": [
+      1,
+      4
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 4
+    }
+   ]
+  },
+  "MM_shamatha.xml": {
+   "capacity": 4370,
+   "ranges": {
+    "conceptual": [
+     4362,
+     4370
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4362
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      128
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "InputSpace",
+     "vectors": 16,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "ConceptualSpace[0]",
+     "vectors": 16,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_text.xml": {
+   "capacity": 4369,
+   "ranges": {
+    "conceptual": [
+     4361,
+     4369
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4297
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4297,
+     4361
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 200,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_text_fixture.xml": {
+   "capacity": 4425,
+   "ranges": {
+    "conceptual": [
+     4417,
+     4425
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4417
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_xor.xml": {
+   "capacity": 4179,
+   "ranges": {
+    "conceptual": [
+     4171,
+     4179
+    ],
+    "numeric": [
+     4096,
+     4098
+    ],
+    "parts": [
+     4099,
+     4107
+    ],
+    "scalar": [
+     4098,
+     4099
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4107,
+     4171
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 9
+     },
+     "event": 9,
+     "inputShape": [
+      2,
+      1
+     ],
+     "outputShape": [
+      2,
+      9
+     ],
+     "places": 2,
+     "space": "InputSpace",
+     "vectors": 2,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 9,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      2,
+      9
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 8,
+     "what": 6
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 14
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 14
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 14
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 14,
+      "nInputDim": 14,
+      "nOutputDim": 14
+     },
+     "event": 14,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      8,
+      14
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 6
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 14,
+     "inputShape": [
+      0,
+      14
+     ],
+     "outputShape": [
+      0,
+      14
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 6
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 14,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      14
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_xor_fixture.xml": {
+   "capacity": 4179,
+   "ranges": {
+    "conceptual": [
+     4171,
+     4179
+    ],
+    "numeric": [
+     4096,
+     4098
+    ],
+    "parts": [
+     4099,
+     4107
+    ],
+    "scalar": [
+     4098,
+     4099
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4107,
+     4171
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 9
+     },
+     "event": 9,
+     "inputShape": [
+      2,
+      1
+     ],
+     "outputShape": [
+      2,
+      9
+     ],
+     "places": 2,
+     "space": "InputSpace",
+     "vectors": 2,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 9,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      2,
+      9
+     ],
+     "outputShape": [
+      8,
+      16
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 8,
+     "what": 8
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      8,
+      16
+     ],
+     "outputShape": [
+      8,
+      16
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 16
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      8,
+      16
+     ],
+     "outputShape": [
+      8,
+      16
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 16
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      8,
+      16
+     ],
+     "outputShape": [
+      8,
+      16
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[2]",
+     "vectors": 8,
+     "what": 16
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      8,
+      16
+     ],
+     "outputShape": [
+      8,
+      16
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 8
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 16,
+     "inputShape": [
+      0,
+      16
+     ],
+     "outputShape": [
+      0,
+      16
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 8
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      16
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MM_xor_loopback.xml": {
+   "capacity": 4425,
+   "ranges": {
+    "conceptual": [
+     4417,
+     4425
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4417
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 136,
+      "nOutputDim": 136
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 64,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 136,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "MentalModel.xml": {
+   "capacity": 4489,
+   "ranges": {
+    "conceptual": [
+     4481,
+     4489
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4481
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      128
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "InputSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      264
+     ],
+     "places": 128,
+     "space": "ConceptualSpace[0]",
+     "vectors": 128,
+     "what": 264
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      128,
+      264
+     ],
+     "outputShape": [
+      128,
+      264
+     ],
+     "places": 128,
+     "space": "WholeSpace",
+     "vectors": 128,
+     "what": 256
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 264,
+     "inputShape": [
+      0,
+      264
+     ],
+     "outputShape": [
+      0,
+      264
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 256
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 100,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 100,
+     "inputShape": [
+      128,
+      264
+     ],
+     "outputShape": [
+      1,
+      100
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 100
+    }
+   ]
+  },
+  "POS_smoke.xml": {
+   "capacity": 4489,
+   "ranges": {
+    "conceptual": [
+     4481,
+     4489
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4481
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      128
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "InputSpace",
+     "vectors": 8,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      8,
+      136
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "RamsifiedModel.xml": {
+   "capacity": 4489,
+   "ranges": {
+    "conceptual": [
+     4481,
+     4489
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4481
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      128
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "InputSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "ConceptualSpace[0]",
+     "vectors": 128,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "ConceptualSpace[1]",
+     "vectors": 128,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "WholeSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 100,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 100,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      1,
+      100
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 100
+    }
+   ]
+  },
+  "XOR_exact.xml": {
+   "capacity": 4139,
+   "ranges": {
+    "conceptual": [
+     4131,
+     4139
+    ],
+    "numeric": [
+     4096,
+     4098
+    ],
+    "parts": [
+     4099,
+     4115
+    ],
+    "scalar": [
+     4098,
+     4099
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4115,
+     4131
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 9
+     },
+     "event": 9,
+     "inputShape": [
+      2,
+      1
+     ],
+     "outputShape": [
+      2,
+      9
+     ],
+     "places": 2,
+     "space": "InputSpace",
+     "vectors": 2,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 9,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      2,
+      9
+     ],
+     "outputShape": [
+      16,
+      16
+     ],
+     "places": 16,
+     "space": "PartSpace",
+     "vectors": 16,
+     "what": 8
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      16,
+      16
+     ],
+     "outputShape": [
+      16,
+      16
+     ],
+     "places": 16,
+     "space": "ConceptualSpace[0]",
+     "vectors": 16,
+     "what": 16
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      16,
+      16
+     ],
+     "outputShape": [
+      16,
+      16
+     ],
+     "places": 16,
+     "space": "ConceptualSpace[1]",
+     "vectors": 16,
+     "what": 16
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 16,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 16,
+     "inputShape": [
+      16,
+      16
+     ],
+     "outputShape": [
+      16,
+      16
+     ],
+     "places": 16,
+     "space": "WholeSpace",
+     "vectors": 16,
+     "what": 8
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 16,
+     "inputShape": [
+      0,
+      16
+     ],
+     "outputShape": [
+      0,
+      16
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 8
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      16,
+      16
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "XOR_grammar.xml": {
+   "capacity": 4370,
+   "ranges": {
+    "conceptual": [
+     4362,
+     4370
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4362
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      6,
+      128
+     ],
+     "outputShape": [
+      6,
+      136
+     ],
+     "places": 6,
+     "space": "InputSpace",
+     "vectors": 6,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      6,
+      136
+     ],
+     "places": 6,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      6,
+      264
+     ],
+     "places": 6,
+     "space": "ConceptualSpace[0]",
+     "vectors": 6,
+     "what": 264
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 264,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      6,
+      264
+     ],
+     "places": 6,
+     "space": "ConceptualSpace[1]",
+     "vectors": 6,
+     "what": 264
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 264,
+     "inputShape": [
+      6,
+      264
+     ],
+     "outputShape": [
+      6,
+      264
+     ],
+     "places": 6,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 256
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 264,
+     "inputShape": [
+      0,
+      264
+     ],
+     "outputShape": [
+      0,
+      264
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 256
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      6,
+      264
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "XOR_pos.xml": {
+   "capacity": 4370,
+   "ranges": {
+    "conceptual": [
+     4362,
+     4370
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4362
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      6,
+      128
+     ],
+     "outputShape": [
+      6,
+      136
+     ],
+     "places": 6,
+     "space": "InputSpace",
+     "vectors": 6,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      6,
+      136
+     ],
+     "places": 6,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      6,
+      136
+     ],
+     "places": 6,
+     "space": "ConceptualSpace[0]",
+     "vectors": 6,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      6,
+      136
+     ],
+     "places": 6,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      6,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "XOR_symbols.xml": {
+   "capacity": 4377,
+   "ranges": {
+    "conceptual": [
+     4369,
+     4377
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4369
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      128
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "InputSpace",
+     "vectors": 16,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "ConceptualSpace[0]",
+     "vectors": 16,
+     "what": 136
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "ConceptualSpace[1]",
+     "vectors": 16,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      16,
+      136
+     ],
+     "places": 16,
+     "space": "WholeSpace",
+     "vectors": 16,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      16,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "ergodic-only.xml": {
+   "capacity": 5693,
+   "ranges": {
+    "conceptual": [
+     5685,
+     5693
+    ],
+    "numeric": [
+     4096,
+     4880
+    ],
+    "parts": [
+     4881,
+     5665
+    ],
+    "scalar": [
+     4880,
+     4881
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     5665,
+     5685
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      784,
+      1
+     ],
+     "outputShape": [
+      784,
+      9
+     ],
+     "places": 784,
+     "space": "InputSpace",
+     "vectors": 784,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      784,
+      9
+     ],
+     "outputShape": [
+      784,
+      9
+     ],
+     "places": 784,
+     "space": "PartSpace",
+     "vectors": 784,
+     "what": 1
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      784,
+      9
+     ],
+     "outputShape": [
+      20,
+      9
+     ],
+     "places": 20,
+     "space": "ConceptualSpace[0]",
+     "vectors": 20,
+     "what": 9
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 0,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      20,
+      9
+     ],
+     "outputShape": [
+      20,
+      9
+     ],
+     "places": 20,
+     "space": "WholeSpace",
+     "vectors": 20,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 9,
+     "inputShape": [
+      0,
+      9
+     ],
+     "outputShape": [
+      0,
+      9
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 1
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      20,
+      9
+     ],
+     "outputShape": [
+      10,
+      1
+     ],
+     "places": 10,
+     "space": "OutputSpace",
+     "vectors": 10,
+     "what": 1
+    }
+   ]
+  },
+  "ergodic.xml": {
+   "capacity": 5693,
+   "ranges": {
+    "conceptual": [
+     5685,
+     5693
+    ],
+    "numeric": [
+     4096,
+     4880
+    ],
+    "parts": [
+     4881,
+     5665
+    ],
+    "scalar": [
+     4880,
+     4881
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     5665,
+     5685
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      784,
+      1
+     ],
+     "outputShape": [
+      784,
+      9
+     ],
+     "places": 784,
+     "space": "InputSpace",
+     "vectors": 784,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      784,
+      9
+     ],
+     "outputShape": [
+      784,
+      9
+     ],
+     "places": 784,
+     "space": "PartSpace",
+     "vectors": 784,
+     "what": 1
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      784,
+      9
+     ],
+     "outputShape": [
+      20,
+      9
+     ],
+     "places": 20,
+     "space": "ConceptualSpace[0]",
+     "vectors": 20,
+     "what": 9
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 0,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      20,
+      9
+     ],
+     "outputShape": [
+      20,
+      9
+     ],
+     "places": 20,
+     "space": "WholeSpace",
+     "vectors": 20,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 9,
+     "inputShape": [
+      0,
+      9
+     ],
+     "outputShape": [
+      0,
+      9
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 1
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      20,
+      9
+     ],
+     "outputShape": [
+      10,
+      1
+     ],
+     "places": 10,
+     "space": "OutputSpace",
+     "vectors": 10,
+     "what": 1
+    }
+   ]
+  },
+  "idempotent.xml": {
+   "capacity": 4560,
+   "ranges": {
+    "conceptual": [
+     4553,
+     4560
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4553
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      10,
+      128
+     ],
+     "outputShape": [
+      10,
+      136
+     ],
+     "places": 10,
+     "space": "InputSpace",
+     "vectors": 10,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      10,
+      136
+     ],
+     "outputShape": [
+      10,
+      136
+     ],
+     "places": 10,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      10,
+      136
+     ],
+     "outputShape": [
+      10,
+      136
+     ],
+     "places": 10,
+     "space": "ConceptualSpace[0]",
+     "vectors": 10,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      10,
+      136
+     ],
+     "outputShape": [
+      10,
+      136
+     ],
+     "places": 10,
+     "space": "WholeSpace",
+     "vectors": 200,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      10,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "mnist.xml": {
+   "capacity": 4123,
+   "ranges": {
+    "conceptual": [
+     4115,
+     4123
+    ],
+    "numeric": [
+     4096,
+     4097
+    ],
+    "parts": [
+     4098,
+     4106
+    ],
+    "scalar": [
+     4097,
+     4098
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4106,
+     4115
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      1,
+      1
+     ],
+     "outputShape": [
+      1,
+      9
+     ],
+     "places": 1,
+     "space": "InputSpace",
+     "vectors": 1,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      1,
+      9
+     ],
+     "outputShape": [
+      8,
+      9
+     ],
+     "places": 8,
+     "space": "PartSpace",
+     "vectors": 8,
+     "what": 1
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      8,
+      9
+     ],
+     "outputShape": [
+      8,
+      9
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[0]",
+     "vectors": 8,
+     "what": 9
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 9,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      8,
+      9
+     ],
+     "outputShape": [
+      8,
+      9
+     ],
+     "places": 8,
+     "space": "ConceptualSpace[1]",
+     "vectors": 8,
+     "what": 9
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 0,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 9,
+     "inputShape": [
+      8,
+      9
+     ],
+     "outputShape": [
+      8,
+      9
+     ],
+     "places": 8,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 1
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 9,
+     "inputShape": [
+      0,
+      9
+     ],
+     "outputShape": [
+      0,
+      9
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 1
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      8,
+      9
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  },
+  "stream_smoke.xml": {
+   "capacity": 4489,
+   "ranges": {
+    "conceptual": [
+     4481,
+     4489
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4481
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      128
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "InputSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "ConceptualSpace[0]",
+     "vectors": 128,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      128,
+      136
+     ],
+     "places": 128,
+     "space": "WholeSpace",
+     "vectors": 128,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 104,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 104,
+     "inputShape": [
+      128,
+      136
+     ],
+     "outputShape": [
+      1,
+      104
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 104
+    }
+   ]
+  },
+  "xor.xml": {
+   "capacity": 4370,
+   "ranges": {
+    "conceptual": [
+     4362,
+     4370
+    ],
+    "numeric": [
+     4096,
+     4096
+    ],
+    "parts": [
+     4097,
+     4353
+    ],
+    "scalar": [
+     4096,
+     4097
+    ],
+    "text": [
+     0,
+     4096
+    ],
+    "wholes": [
+     4353,
+     4362
+    ]
+   },
+   "spaces": [
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      4,
+      128
+     ],
+     "outputShape": [
+      4,
+      136
+     ],
+     "places": 4,
+     "space": "InputSpace",
+     "vectors": 4,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      4,
+      136
+     ],
+     "outputShape": [
+      4,
+      136
+     ],
+     "places": 4,
+     "space": "PartSpace",
+     "vectors": 256,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      4,
+      136
+     ],
+     "outputShape": [
+      4,
+      136
+     ],
+     "places": 4,
+     "space": "ConceptualSpace[0]",
+     "vectors": 4,
+     "what": 136
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": 136,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 136,
+     "inputShape": [
+      4,
+      136
+     ],
+     "outputShape": [
+      4,
+      136
+     ],
+     "places": 4,
+     "space": "WholeSpace",
+     "vectors": 9,
+     "what": 128
+    },
+    {
+     "band": [
+      4,
+      4
+     ],
+     "declared": {
+      "nDim": null,
+      "nInputDim": null,
+      "nOutputDim": null
+     },
+     "event": 136,
+     "inputShape": [
+      0,
+      136
+     ],
+     "outputShape": [
+      0,
+      136
+     ],
+     "places": 0,
+     "space": "SymbolSpace",
+     "vectors": 0,
+     "what": 128
+    },
+    {
+     "band": [
+      0,
+      0
+     ],
+     "declared": {
+      "nDim": 1,
+      "nInputDim": 0,
+      "nOutputDim": 0
+     },
+     "event": 1,
+     "inputShape": [
+      4,
+      136
+     ],
+     "outputShape": [
+      1,
+      1
+     ],
+     "places": 1,
+     "space": "OutputSpace",
+     "vectors": 1,
+     "what": 1
+    }
+   ]
+  }
+ },
+ "declared": {
+  "BasicModel.xml": {
+   "ConceptualSpace": {
+    "nDim": 1000,
+    "nInput": 8,
+    "nInputDim": 1000,
+    "nOutput": 8,
+    "nOutputDim": 1000,
+    "nVectors": 65536
+   },
+   "InputSpace": {
+    "nDim": 512,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1000,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 8192,
+    "nInputDim": 512,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 32768
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 8,
+    "nInputDim": 1000,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 9
+   }
+  },
+  "BasicModel_answers_tied_benchmark.xml": {
+   "ConceptualSpace": {
+    "nDim": 1032,
+    "nInput": 8,
+    "nInputDim": 1032,
+    "nOutput": 8,
+    "nOutputDim": 1032,
+    "nVectors": 65536
+   },
+   "InputSpace": {
+    "nDim": 512,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1032,
+    "nOutput": 16,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 136,
+    "nInput": 8192,
+    "nInputDim": 512,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 32768
+   },
+   "WholeSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 1032,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 9
+   }
+  },
+  "BasicModel_corpus.xml": {
+   "ConceptualSpace": {
+    "nDim": 1000,
+    "nInput": 8,
+    "nInputDim": 1000,
+    "nOutput": 8,
+    "nOutputDim": 1000,
+    "nVectors": 1048576
+   },
+   "InputSpace": {
+    "nDim": 512,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1000,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 8192,
+    "nInputDim": 512,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 262144
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 8,
+    "nInputDim": 1000,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 9
+   }
+  },
+  "MM_20M_xor.xml": {
+   "ConceptualSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 1024,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 1024,
+    "nInput": 8192,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 65536
+   },
+   "WholeSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 65536
+   }
+  },
+  "MM_add.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 512
+   },
+   "InputSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 32,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 4096
+   }
+  },
+  "MM_add_verb.xml": {
+   "ConceptualSpace": {
+    "nDim": 192,
+    "nInput": 8,
+    "nInputDim": 0,
+    "nOutput": 8,
+    "nOutputDim": 192,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 64,
+    "nOutput": 512,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 192,
+    "nOutput": 16,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 64,
+    "nInput": 512,
+    "nInputDim": 64,
+    "nOutput": 8,
+    "nOutputDim": 64,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 64,
+    "nInput": 8,
+    "nInputDim": 192,
+    "nOutput": 64,
+    "nOutputDim": 64,
+    "nVectors": 4096
+   }
+  },
+  "MM_corpus_explore_fixture.xml": {
+   "ConceptualSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 256,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 256,
+    "nInputDim": 104,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 9
+   }
+  },
+  "MM_corpus_lessons.xml": {
+   "ConceptualSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 256,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 256,
+    "nInputDim": 104,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 9
+   }
+  },
+  "MM_corpus_orders.xml": {
+   "ConceptualSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 256,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 256,
+    "nInputDim": 104,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 9
+   }
+  },
+  "MM_global.xml": {
+   "ConceptualSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 1024,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 1024,
+    "nInput": 8192,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 65536
+   },
+   "WholeSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1024,
+    "nOutputDim": 8,
+    "nVectors": 65536
+   }
+  },
+  "MM_grammar.xml": {
+   "ConceptualSpace": {
+    "nDim": 232,
+    "nOutput": 8,
+    "nVectors": 20
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nOutput": 8,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 9
+   }
+  },
+  "MM_grammar_wording.xml": {
+   "ConceptualSpace": {
+    "nDim": 192,
+    "nInput": 8,
+    "nInputDim": 192,
+    "nOutput": 8,
+    "nOutputDim": 192,
+    "nVectors": 2048
+   },
+   "InputSpace": {
+    "nDim": 64,
+    "nOutput": 128,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 192,
+    "nOutput": 1,
+    "nOutputDim": 64,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 64,
+    "nInput": 128,
+    "nInputDim": 64,
+    "nOutput": 8,
+    "nOutputDim": 64,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 64,
+    "nInput": 8,
+    "nInputDim": 192,
+    "nOutput": 8,
+    "nOutputDim": 64,
+    "nVectors": 9
+   }
+  },
+  "MM_image.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 2048
+   },
+   "InputSpace": {
+    "nDim": 36,
+    "nOutput": 28,
+    "nOutputDim": 36,
+    "nVectors": 28
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 10,
+    "nVectors": 10
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 36,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 1024
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 64
+   }
+  },
+  "MM_ladder.xml": {
+   "ConceptualSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "InputSpace": {
+    "nDim": 136,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 16,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 136,
+    "nInput": 8192,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   }
+  },
+  "MM_ladder_idiom.xml": {
+   "ConceptualSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "InputSpace": {
+    "nDim": 136,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 2,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 136,
+    "nInput": 8192,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   }
+  },
+  "MM_ltm_consolidation_fixture.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 64
+   }
+  },
+  "MM_ltm_consolidation_serial_fixture.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nVectors": 64
+   },
+   "InputSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nVectors": 64
+   }
+  },
+  "MM_math.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nInput": 32,
+    "nInputDim": 14,
+    "nOutput": 32,
+    "nOutputDim": 14,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 14,
+    "nOutput": 32,
+    "nOutputDim": 14,
+    "nVectors": 32
+   },
+   "OutputSpace": {
+    "nInput": 32,
+    "nInputDim": 14,
+    "nOutput": 16,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nInput": 32,
+    "nInputDim": 14,
+    "nOutput": 32,
+    "nOutputDim": 14,
+    "nVectors": 200
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nInput": 32,
+    "nInputDim": 14,
+    "nOutput": 32,
+    "nOutputDim": 14,
+    "nVectors": 128
+   }
+  },
+  "MM_math_chain.xml": {
+   "ConceptualSpace": {
+    "nDim": 136,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 136,
+    "nVectors": 4096
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 128,
+    "nInputDim": 104,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 8,
+    "nInputDim": 136,
+    "nOutput": 8,
+    "nOutputDim": 104,
+    "nVectors": 4096
+   }
+  },
+  "MM_qa.xml": {
+   "ConceptualSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 1024,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 1024,
+    "nInput": 8192,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 65536
+   },
+   "WholeSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1024,
+    "nOutputDim": 8,
+    "nVectors": 65536
+   }
+  },
+  "MM_query_reasoning.xml": {
+   "ConceptualSpace": {
+    "nDim": 1152,
+    "nInput": 8,
+    "nInputDim": 0,
+    "nOutput": 8,
+    "nOutputDim": 1152,
+    "nVectors": 64
+   },
+   "InputSpace": {
+    "nDim": 1024,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1152,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 1024,
+    "nInput": 8192,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 512
+   },
+   "WholeSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1152,
+    "nOutput": 1024,
+    "nOutputDim": 8,
+    "nVectors": 512
+   }
+  },
+  "MM_reading.xml": {
+   "ConceptualSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 1024,
+    "nOutput": 8192,
+    "nVectors": 256
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1,
+    "nOutputDim": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 1024,
+    "nInput": 8192,
+    "nInputDim": 1024,
+    "nOutput": 8,
+    "nOutputDim": 1024,
+    "nVectors": 65536
+   },
+   "WholeSpace": {
+    "nDim": 1024,
+    "nInput": 8,
+    "nInputDim": 1024,
+    "nOutput": 1024,
+    "nOutputDim": 8,
+    "nVectors": 65536
+   }
+  },
+  "MM_sequence_predict.xml": {
+   "ConceptualSpace": {
+    "nDim": 10,
+    "nOutput": 1024,
+    "nVectors": 1024
+   },
+   "InputSpace": {
+    "nDim": 10,
+    "nInput": 1024,
+    "nOutput": 1024,
+    "nVectors": 1024
+   },
+   "OutputSpace": {
+    "nDim": 4,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 10,
+    "nInput": 1024,
+    "nOutput": 1024,
+    "nVectors": 4096
+   },
+   "WholeSpace": {
+    "nDim": 10,
+    "nInput": 1024,
+    "nInputDim": 10,
+    "nOutput": 1024,
+    "nVectors": 1024
+   }
+  },
+  "MM_shamatha.xml": {
+   "ConceptualSpace": {
+    "nDim": 16,
+    "nOutput": 16,
+    "nVectors": 16
+   },
+   "InputSpace": {
+    "nDim": 16,
+    "nOutput": 16,
+    "nVectors": 16
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 16,
+    "nOutput": 16,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 16,
+    "nOutput": 8,
+    "nVectors": 9
+   }
+  },
+  "MM_text.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 200
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 64
+   }
+  },
+  "MM_text_fixture.xml": {
+   "ConceptualSpace": {
+    "nDim": 16,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 16,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 16,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 16,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 64
+   }
+  },
+  "MM_xor.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 9,
+    "nOutput": 2,
+    "nOutputDim": 9,
+    "nVectors": 2
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 9,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 200
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nInput": 8,
+    "nInputDim": 14,
+    "nOutput": 8,
+    "nOutputDim": 14,
+    "nVectors": 64
+   }
+  },
+  "MM_xor_fixture.xml": {
+   "ConceptualSpace": {
+    "nDim": 16,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 8
+   },
+   "InputSpace": {
+    "nDim": 9,
+    "nOutput": 2,
+    "nOutputDim": 9,
+    "nVectors": 2
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 16,
+    "nInput": 8,
+    "nInputDim": 9,
+    "nOutput": 8,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 16,
+    "nInput": 8,
+    "nOutput": 8,
+    "nVectors": 64
+   }
+  },
+  "MM_xor_loopback.xml": {
+   "ConceptualSpace": {
+    "nDim": 12,
+    "nInput": 8,
+    "nInputDim": 12,
+    "nOutput": 8,
+    "nOutputDim": 12,
+    "nVectors": 20
+   },
+   "InputSpace": {
+    "nDim": 12,
+    "nOutput": 8,
+    "nOutputDim": 12,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nInput": 8,
+    "nInputDim": 12,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 12,
+    "nInput": 8,
+    "nInputDim": 12,
+    "nOutput": 8,
+    "nOutputDim": 12,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 12,
+    "nInput": 8,
+    "nInputDim": 12,
+    "nOutput": 8,
+    "nOutputDim": 12,
+    "nVectors": 64
+   }
+  },
+  "MentalModel.xml": {
+   "ConceptualSpace": {
+    "nDim": 232,
+    "nOutput": 128,
+    "nVectors": 128
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   },
+   "OutputSpace": {
+    "nDim": 100,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   }
+  },
+  "POS_smoke.xml": {
+   "ConceptualSpace": {
+    "nDim": 20,
+    "nOutput": 8,
+    "nVectors": 128
+   },
+   "InputSpace": {
+    "nDim": 20,
+    "nOutput": 8,
+    "nVectors": 128
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 20,
+    "nOutput": 8,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 20,
+    "nOutput": 8,
+    "nVectors": 128
+   }
+  },
+  "RamsifiedModel.xml": {
+   "ConceptualSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   },
+   "OutputSpace": {
+    "nDim": 100,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   }
+  },
+  "XOR_exact.xml": {
+   "ConceptualSpace": {
+    "nDim": 16,
+    "nInput": 16,
+    "nOutput": 16,
+    "nVectors": 32
+   },
+   "InputSpace": {
+    "nDim": 9,
+    "nOutput": 2,
+    "nOutputDim": 9,
+    "nVectors": 2
+   },
+   "OutputSpace": {
+    "nInput": 16,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 16,
+    "nInput": 16,
+    "nInputDim": 9,
+    "nOutput": 16,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 16,
+    "nInput": 16,
+    "nOutput": 16,
+    "nVectors": 16
+   }
+  },
+  "XOR_grammar.xml": {
+   "ConceptualSpace": {
+    "nDim": 232,
+    "nOutput": 6,
+    "nVectors": 18
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 6,
+    "nVectors": 8
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nOutput": 6,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nOutput": 6,
+    "nVectors": 9
+   }
+  },
+  "XOR_pos.xml": {
+   "ConceptualSpace": {
+    "nDim": 14,
+    "nOutput": 6,
+    "nVectors": 6
+   },
+   "InputSpace": {
+    "nDim": 14,
+    "nOutput": 6,
+    "nVectors": 6
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 14,
+    "nOutput": 6,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 14,
+    "nOutput": 6,
+    "nVectors": 9
+   }
+  },
+  "XOR_symbols.xml": {
+   "ConceptualSpace": {
+    "nDim": 16,
+    "nInput": 16,
+    "nOutput": 16,
+    "nVectors": 32
+   },
+   "InputSpace": {
+    "nDim": 16,
+    "nOutput": 16,
+    "nVectors": 16
+   },
+   "OutputSpace": {
+    "nInput": 16,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 16,
+    "nInput": 16,
+    "nOutput": 16,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 16,
+    "nInput": 16,
+    "nOutput": 16,
+    "nVectors": 16
+   }
+  },
+  "ergodic-only.xml": {
+   "ConceptualSpace": {
+    "nOutput": 20,
+    "nVectors": 20
+   },
+   "InputSpace": {
+    "nOutput": 784,
+    "nVectors": 784
+   },
+   "OutputSpace": {
+    "nOutput": 10,
+    "nVectors": 10
+   },
+   "PartSpace": {
+    "nOutput": 784,
+    "nVectors": 784
+   },
+   "WholeSpace": {
+    "nDim": 0,
+    "nOutput": 20,
+    "nVectors": 20
+   }
+  },
+  "ergodic.xml": {
+   "ConceptualSpace": {
+    "nOutput": 20,
+    "nVectors": 20
+   },
+   "InputSpace": {
+    "nOutput": 784,
+    "nVectors": 784
+   },
+   "OutputSpace": {
+    "nOutput": 10,
+    "nVectors": 10
+   },
+   "PartSpace": {
+    "nOutput": 784,
+    "nVectors": 784
+   },
+   "WholeSpace": {
+    "nDim": 0,
+    "nOutput": 20,
+    "nVectors": 20
+   }
+  },
+  "idempotent.xml": {
+   "ConceptualSpace": {
+    "nDim": 104,
+    "nInput": 10,
+    "nOutput": 10,
+    "nVectors": 10
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 10,
+    "nVectors": 40
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nInput": 10,
+    "nOutput": 10,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nInput": 10,
+    "nOutput": 10,
+    "nVectors": 200
+   }
+  },
+  "mnist.xml": {
+   "ConceptualSpace": {
+    "nOutput": 8,
+    "nVectors": 16
+   },
+   "InputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nOutput": 8,
+    "nVectors": 16
+   },
+   "WholeSpace": {
+    "nOutput": 8,
+    "nVectors": 9
+   }
+  },
+  "model.xml": {
+   "ConceptualSpace": {
+    "nDim": 9,
+    "nInput": 0,
+    "nInputDim": 0,
+    "nOutput": 0,
+    "nOutputDim": 0,
+    "nVectors": 0
+   },
+   "InputSpace": {
+    "nDim": 9,
+    "nInput": 0,
+    "nInputDim": 0,
+    "nOutput": 0,
+    "nOutputDim": 0,
+    "nVectors": 0
+   },
+   "ModalSpace": {
+    "nDim": 9,
+    "nInput": 0,
+    "nInputDim": 0,
+    "nOutput": 0,
+    "nOutputDim": 0,
+    "nVectors": 0
+   },
+   "OutputSpace": {
+    "nDim": 1,
+    "nInput": 0,
+    "nInputDim": 0,
+    "nOutput": 0,
+    "nOutputDim": 0,
+    "nVectors": 0
+   },
+   "PartSpace": {
+    "nDim": 9,
+    "nInput": 0,
+    "nInputDim": 0,
+    "nOutput": 0,
+    "nOutputDim": 0,
+    "nVectors": 0
+   },
+   "WholeSpace": {
+    "nDim": 0,
+    "nInput": 0,
+    "nInputDim": 0,
+    "nOutput": 0,
+    "nOutputDim": 0,
+    "nVectors": 0
+   }
+  },
+  "stream_smoke.xml": {
+   "ConceptualSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   },
+   "InputSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   },
+   "OutputSpace": {
+    "nDim": 104,
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nDim": 104,
+    "nOutput": 128,
+    "nVectors": 128
+   }
+  },
+  "xor.xml": {
+   "ConceptualSpace": {
+    "nOutput": 4,
+    "nVectors": 16
+   },
+   "InputSpace": {
+    "nOutput": 4,
+    "nVectors": 2
+   },
+   "OutputSpace": {
+    "nOutput": 1,
+    "nVectors": 1
+   },
+   "PartSpace": {
+    "nOutput": 4,
+    "nVectors": 256
+   },
+   "WholeSpace": {
+    "nOutput": 4,
+    "nVectors": 9
+   }
+  }
+ },
+ "source": "frozen copy of ad8fafea92 (bin, data); built by tmp/item1-6/grid_widths.py"
+}

@@ -50,17 +50,17 @@
   <InputSpace>
     <nOutput>512</nOutput>
     <nVectors>256</nVectors>
-    <nDim>64</nDim>
+    <nDim>72</nDim>
   </InputSpace>
 
   <PartSpace>
     <nInput>512</nInput>
-    <nInputDim>64</nInputDim>
+    <nInputDim>72</nInputDim>
     <nVectors>4096</nVectors>
     <basicPerceptCapacity>4096</basicPerceptCapacity>
-    <nDim>64</nDim>
+    <nDim>72</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>64</nOutputDim>
+    <nOutputDim>72</nOutputDim>
 
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -72,9 +72,9 @@
     <nInputDim>0</nInputDim>
     <nVectors>8</nVectors>
     <stmCapacity>8</stmCapacity>
-    <nDim>192</nDim>
+    <nDim>200</nDim>
     <nOutput>8</nOutput>
-    <nOutputDim>192</nOutputDim>
+    <nOutputDim>200</nOutputDim>
 
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -88,11 +88,11 @@
          serial loop is byte-grained (8 per-percept ideas, not 2 word-objects). -->
     <analysis>meronomy</analysis>
     <nInput>8</nInput>
-    <nInputDim>192</nInputDim>
+    <nInputDim>200</nInputDim>
     <nVectors>4096</nVectors>
-    <nDim>64</nDim>
+    <nDim>72</nDim>
     <nOutput>64</nOutput>
-    <nOutputDim>64</nOutputDim>
+    <nOutputDim>72</nOutputDim>
 
     <invertible>true</invertible>
     <codebook>quantize</codebook>
@@ -100,7 +100,7 @@
 
   <OutputSpace>
     <nInput>8</nInput>
-    <nInputDim>192</nInputDim>
+    <nInputDim>200</nInputDim>
     <nVectors>1</nVectors>
     <nDim>1</nDim>
     <nOutput>16</nOutput>

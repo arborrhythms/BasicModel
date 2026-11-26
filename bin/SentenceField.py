@@ -219,19 +219,20 @@ def said_words(model, program, stream, met):
         return None
     from Memory import OCCURRENCE
     from FieldReverse import drawn
+    from architecture import WHERE_WIRES
     met['rows_followed'] += 1
     met['roots_alone' if head[0] == OCCURRENCE else 'roots_composed'] += 1
     owner = model._concept_owner()
     registry = model.where_registry
     lo, hi = registry.slices['text']
-    wires = registry.code[lo:hi]
+    wires = registry.grid[lo:hi]
     start = store.when_start
     words = []
     for row, concept, address in owner.mtm.read_occurrences(store, head):
         if address is None:
             met['words_unnamed'] += 1
             continue
-        band = store.slots[row, start - 4:start].detach().to(wires)
+        band = store.slots[row, start - WHERE_WIRES:start].detach().to(wires)
         # A row with no .where claim has no place: it is said in turn.
         place = (int(drawn(-(wires - band).square().sum(-1))) if bool(band.ne(0).any())
                  else None)

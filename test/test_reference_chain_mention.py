@@ -18,7 +18,7 @@ def unresolved_description(f, *, lexical_kind=False):
     left = Composition(f.registry._payload(('sym', known)),
                        reference=f.words['known'][0] if lexical_kind else known,
                        order=1, leaves=(0,))
-    right = Composition(torch.eye(8)[3], word_id=word, order=1, leaves=(1,))
+    right = Composition(torch.eye(16)[3], word_id=word, order=1, leaves=(1,))
     value = torch.maximum(left.point, right.point)
     term = Composition(value, (left, right), operation='union', formal_name='union',
                        order=1, leaves=(0, 1))

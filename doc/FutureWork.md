@@ -632,7 +632,7 @@ If transport noise proves to matter, the ladder generalizes to $k$ rungs with
 a fixed ratio of 32 between neighbours and byte resolution at the finest;
 decoding resolves branches from the coarsest rung down, so every cell keeps
 the same angular margin over the transport noise. The band grows to $2k$
-dimensions: three rungs cover 262,144 addresses and four cover 8,388,608, and
+dimensions an axis: three rungs cover 262,144 addresses and four cover 8,388,608, and
 the same construction applies to `.when`. If more rungs degrade transported
 accuracy, the remedy is rotary transport: each operator applies position as
 an exact rotation of content, learned maps act only on content, relative
@@ -2095,11 +2095,11 @@ need for multimodal at this point, that work is left to someone else)."
 
 The path is built. XOR's two numbers are two places on one axis, and an
 image's 784 are 28 by 28 places on two axes. Alec, 2026-11-13: "the .where
-for imagery has to be 2D"; each modality keeps its own perceptual space and
-its own range of `.where`, and modalities meet at order-zero concepts
-([Spaces](Spaces.md#percept-modalities)). A place on two axes is one
-row-major address in the modality's range, decoded by the declared shape
-(`WhereEncoding.decode_index`). `NumericPercepts` is the one reader for any
+for imagery has to be 2D"; each modality keeps its own range of `.where`,
+a box of the one space of places, and modalities meet at order-zero concepts
+([Spaces](Spaces.md#percept-modalities)). A place on two axes has its column
+on the first axis and its row on the second, and keeps a row-by-row address
+in the modality's range (`WhereRegistry.place`, `WhereRegistry.address`). `NumericPercepts` is the one reader for any
 number of dimensions: each number is a level percept at its place, and one
 order-zero concept per place collects the level percepts met there
 ([Spaces](Spaces.md#percept-level-sets); `BasicPercepts.read_collection`).
@@ -2358,6 +2358,18 @@ Animus, and Augustine", and a fourth, Basho, differs only in its speech.
   using its higher-order logic (and possibly continues learning)". It differs
   from Animus in having once had symbols: what it learned with them is still
   in its weights and its memory when the higher orders are turned off.
+  The Not is removed in it at every order (Alec, 2026-11-24: "Add also the
+  removal of NOT at all orders to Augustine"): no concept's lanes are
+  exchanged anywhere, so every concept it has is a positive one, with a
+  positive meaning and no negation, and it speaks only of what is
+  ([Logic](Logic.md): "the removal of the NOT is exactly what is necessary
+  to speak only of the good in Augustine's sense"). It need not be all or
+  nothing: "by modulating the amount of negation, we can control to what
+  degree the model operates in terms of counterfactuals. This can apply to
+  speech analysis as well as synthesis" (Alec, 2026-11-24). With the Not
+  one weight that exchanges a concept's lanes, a single scale on those
+  weights, from nothing to all, sets how far the model thinks in what is
+  not the case, in what it understands of speech as in what it says.
 - **Basho** is "the basic model that only speaks using basic level
   grammar": it "writes without using any relations, only ideas". "I think
   that is still permitting higher-order and thus negation, but the grammar
@@ -2372,7 +2384,10 @@ to select will help demonstration of the architecture."
 
 To specify: the grammatical change that defines Animus, as a setting of the
 model and not a second code path; the switch that turns the higher orders off
-in a trained model, and whether Augustine goes on learning after it; how
+in a trained model, the removal of the Not at every order in Augustine once
+the Not is one weight that exchanges a concept's lanes (the item 1.4 plan,
+§10), the scale on negation and where it is applied in understanding and in
+speaking, and whether Augustine goes on learning after it; how
 a user selects a personality; and the measurements on which the four are
 compared.
 
@@ -2671,12 +2686,19 @@ the part map, or both); how a centre of salience is read from it and
 how it moves a look; and how this lies with the draw among equals
 (sigma-pi plan, §19.121).
 
-## The grid in three dimensions (decided, not built)
+## The wires of an axis of the grid: four or three
 
-The grid ([Glossary](Glossary.md)) is to be a space of three dimensions for
-every modality: text on its first axis, with zeros on the other two; an image
-on two; a volume on three. Today it has one axis (`WhereRegistry.axes`), and
-the source calls it `WhereRegistry.code`.
+The grid ([Glossary](Glossary.md)) has three axes, each with the four wires
+of the two-rung ladder. Whether an axis needs four wires or three is not
+chosen ("I am not convinced that we need 4 elements per dim as opposed to
+3"). Measured at 4,179 addresses, the least distance between the codes of two
+neighbouring places is 1.2e-2 with four wires on two rungs; with three wires
+as three phases of the long rung it is 4.7e-4; with three phases of the short
+rung it is 1.5e-2, but two places far apart can then share a code. An axis
+keeps four until he chooses.
+
+A felt modality has no range of places yet: a sentence's image would be a box
+of its own, set off from the line of the sentence's text.
 
 ## Time and reconstruction at each look (Alec, 2026-11-23)
 
@@ -2769,6 +2791,12 @@ the tower of wholes is the OR of those ranges upward to the whole that
 applies to all percepts ([Mereology](Mereology.md#percept-code)). The
 codebook is to be learned by vector quantization, its divisions decided
 by parthood, as the automatic analysis of wholes already divides them
-([Mereology](Mereology.md#lbg-division)). Today a value's code is the
-fixed bins at or below the felt value; a learned codebook of ranges is
-not built.
+([Mereology](Mereology.md#lbg-division)). Today the leaves are the levels
+of the alphabet of intensity, learned by vector quantization, and the
+classes over them given before any is learned are the runs of the
+alphabet in its order, one coordinate a run
+(`BasicPercepts.level_coordinate`); a range is the OR of the levels inside
+it. Not built: classes over levels learned and divided by parthood, a
+range as a row of the property table beside the classes of characters,
+and the linear self-organizing map that draws a level's neighbours with
+it when it learns.

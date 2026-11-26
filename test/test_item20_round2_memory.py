@@ -92,20 +92,23 @@ def test_migration_merges_split_rows_without_overwriting_learned_members():
 @pytest.mark.parametrize("centered", [False, True])
 def test_migration_moves_persisted_bands_and_keeps_identity_keys(centered):
     from Spaces import WhereEncoding, unsigned_phase, signed_phase
+    from architecture import WHERE_WIRES as W, WHERE_AXES
     saved, live, _, _ = migration_fixture()
     slices = dict(input=(0, 8), parts=(8, 12), wholes=(12, 15), symbols=(15, 21), conceptual=(21, 29))
-    old = WhereEncoding(nWhere=4, nWhen=4).set_capacity(35)
-    new = WhereEncoding(nWhere=4, nWhen=4).set_capacity(29)
+    old = WhereEncoding(nWhere=W, nWhen=4, axes=WHERE_AXES).set_capacity(35)
+    new = WhereEncoding(nWhere=W, nWhen=4, axes=WHERE_AXES).set_capacity(29)
     ids = torch.tensor([0, 9, 12, 15, 20, 21, 26, 27, 34])
     expected = torch.tensor([0, 9, 12, 12, 14, 15, 20, 21, 28])
     saved["coordinate_encoding"] = 0 if centered else 1
     def decode(band):
-        return new.decode_index(unsigned_phase(band) if centered else band)
-    band = old.encode(ids)
+        # The moved ranges are lines: a place (address, 0, 0).
+        place = new.decode_place(unsigned_phase(band) if centered else band)
+        return torch.where((place[..., 1:] == 0).all(-1), place[..., 0], -1)
+    band = old.encode_place(old.point(ids))
     if centered:
         band = signed_phase(band)
     slots = torch.cat((torch.full((len(ids), 4), .125), band, torch.full((len(ids), 4), .75)), -1)
-    saved['state_dict']['store.percept_layout'] = torch.tensor(12)
+    saved['state_dict']['store.percept_layout'] = torch.tensor(4 + W + 4)
     saved['state_dict']['store.slots'] = slots
     saved['state_dict']['store.addressing.recurrence_codes'] = slots.clone()
     saved['state_dict']['relations.percept'] = slots[:, 4:]
@@ -121,31 +124,31 @@ def test_migration_moves_persisted_bands_and_keeps_identity_keys(centered):
         'stm': {'owner': {'fields': {'_live_where': band.clone(), '_live_buffer': slots.clone()}}},
         'expectation': {'fields': {'_inter_context': deque([slots.clone()], maxlen=2)}},
         'mtm': [copy.deepcopy(saved['structural_extras']['conceptual_spaces'][0]['epoch_mtm'])]}}
-    result = migrate_wholespace_checkpoint(saved, live, where_slices=slices, percept_width=12)
+    result = migrate_wholespace_checkpoint(saved, live, where_slices=slices, percept_width=4 + W + 4)
     moved = result.checkpoint['state_dict']['store.slots']
-    assert torch.equal(decode(moved[:, 4:8]), expected)
+    assert torch.equal(decode(moved[:, 4:4 + W]), expected)
     torch.testing.assert_close(moved[:, :4], slots[:, :4], rtol=0, atol=0)
-    torch.testing.assert_close(moved[:, 8:], slots[:, 8:], rtol=0, atol=0)
+    torch.testing.assert_close(moved[:, 4 + W:], slots[:, 4 + W:], rtol=0, atol=0)
     extra = result.checkpoint['structural_extras']['conceptual_spaces'][0]
     assert extra['epoch_mtm']['entries'][0]['key'] == ('ltm', 'unchanged', 27)
     value = extra['epoch_mtm']['entries'][0]['timelines'][0][1]
-    assert int(decode(value[4:8])) == int(expected[6])
+    assert int(decode(value[4:4 + W])) == int(expected[6])
     assert torch.equal(decode(extra['perception']['percept_where']), expected)
     assert torch.equal(extra['knowing']['where'][:, 0], expected)
     event = extra['epoch_mtm']['entries'][0]['timelines'][0][0][0]
     assert event[0] == ('occurrence', 27) and event[1:4] == (3, 1, (2, 3))
     for field in (event[4], event[5], event[7], event[8][0], event[10]):
-        assert int(decode(field[4:8])) == int(expected[6])
+        assert int(decode(field[4:4 + W])) == int(expected[6])
     for value in (result.checkpoint['state_dict']['store.addressing.recurrence_codes'],
                   result.checkpoint['structural_extras']['epoch_rows']['store']['slots']):
-        assert torch.equal(decode(value[:, 4:8]), expected)
+        assert torch.equal(decode(value[:, 4:4 + W]), expected)
     runtime = result.checkpoint['training_state']['corpus_runtime']
     fields = runtime['stm']['owner']['fields']
     assert torch.equal(decode(fields['_live_where']), expected)
-    assert torch.equal(decode(fields['_live_buffer'][:, 4:8]), expected)
+    assert torch.equal(decode(fields['_live_buffer'][:, 4:4 + W]), expected)
     context = runtime['expectation']['fields']['_inter_context']
-    assert context.maxlen == 2 and torch.equal(decode(context[0][:, 4:8]), expected)
-    assert int(decode(runtime['mtm'][0]['entries'][0]['timelines'][0][1][4:8])) == int(expected[6])
+    assert context.maxlen == 2 and torch.equal(decode(context[0][:, 4:4 + W]), expected)
+    assert int(decode(runtime['mtm'][0]['entries'][0]['timelines'][0][1][4:4 + W])) == int(expected[6])
     assert result.diagnostics.migrated_addresses > 0
     torch.testing.assert_close(saved['state_dict']['store.slots'], slots, rtol=0, atol=0)
 

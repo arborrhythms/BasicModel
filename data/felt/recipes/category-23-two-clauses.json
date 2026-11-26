@@ -1,0 +1,140 @@
+{
+ "category": 23,
+ "construction": "Two clauses joined",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "two-clauses",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "union",
+  "not"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "type": "yes_no"
+   },
+   "args": [
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "moved",
+   "script": {
+    "no": {},
+    "yes": {
+     "events": [
+      {
+       "who": "b"
+      }
+     ]
+    }
+   },
+   "text": "did {b} move ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "moved_and_stopped",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "who": "b"
+     }
+    ]
+   },
+   "text": "{a} moved and {b} stopped."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "moved_but_not",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{a} moved but {b} did not."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s03",
+   "predicate": "moved_both",
+   "script": {
+    "events": [
+     {
+      "who": "a"
+     },
+     {
+      "who": "b"
+     }
+    ]
+   },
+   "text": "{a} moved and {b} moved."
+  }
+ ]
+}

@@ -10,9 +10,10 @@ import torch
 from Memory import LTM0
 from Meaning import ConceptualMeaning
 from index_fixtures import append_content
+from test_cs_symbol_table import _D  # the fixture's concept width
 
 
-def _meaning(a=0, b=1, *, width=8, scope=()):
+def _meaning(a=0, b=1, *, width=_D, scope=()):
     roles = torch.zeros(3, width)
     roles[0, a] = 1
     roles[0, b] = 1
@@ -40,7 +41,7 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
     model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
     from ClauseRow import attach_clause_index
     from dataclasses import replace
-    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
     attach_clause_index(SimpleNamespace(), store, cs)
     meaning = replace(_meaning(),role_refs=(('sym',member),None,None))
     address = store.append_meaning(meaning)
@@ -62,7 +63,7 @@ def test_thought_effect_uses_cached_row_identity(monkeypatch):
 
 def test_cue_fan_is_charged_and_scope_filters_before_ranking():
     from QueryWork import QueryWorkBudget
-    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
     for i in range(12):
         store.append_meaning(_meaning(scope={"region": "selected" if i in (2, 3) else "elsewhere"}))
     work = QueryWorkBudget(5)
@@ -100,7 +101,7 @@ def test_part_thought_writes_detached_vector_residual_without_memory_read(monkey
     from test_query_vp_boundaries import _context, _signature
     from Queries import ThoughtTaxonomyCapability
     monkeypatch.setattr(ThoughtTaxonomyCapability, 'evidence', lambda *a, **k: pytest.fail('taxonomy read'))
-    left, right = torch.rand(8, requires_grad=True), torch.rand(8, requires_grad=True)
+    left, right = torch.rand(_D, requires_grad=True), torch.rand(_D, requires_grad=True)
     context = _context(_cs())
     result = _signature('part', 'argin1', 'argin2').invoke(context, left, right)
     torch.testing.assert_close(result['value'], Ops.part(left, right))
@@ -113,7 +114,7 @@ def test_query_retrieves_an_addressed_old_frame_without_an_implicit_write():
     from dataclasses import replace
     from test_cs_symbol_table import _cs
     from test_query_vp_boundaries import _context, _signature
-    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
     fact = _meaning()
     oldest = store.append_meaning(fact, trust=.2)
     for _ in range(20):
@@ -156,14 +157,14 @@ def test_thought_retrieval_keeps_history_and_restores_episode_knowing(monkeypatc
     from test_normal_thought_controller import _catalog_world
     from Queries import ThoughtResult
     model, registry, memory, part, whole = _catalog_world()
-    store = model.symbolSpace.ltm_store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
-    fact = replace(ConceptualMeaning.from_description(torch.eye(8)[0]),
+    store = model.symbolSpace.ltm_store = STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
+    fact = replace(ConceptualMeaning.from_description(torch.eye(16)[0]),
                    role_refs=(part, None, None))
     from MemoryIndex import configure_model_index
     configure_model_index(model, store)
     oldest = append_content(store, fact, trust=.7)
     for _ in range(20):
-        append_content(store, ConceptualMeaning.from_description(torch.eye(8)[1]), trust=.1)
+        append_content(store, ConceptualMeaning.from_description(torch.eye(16)[1]), trust=.1)
     cue = replace(fact, role_refs=(store.occurrence_of(oldest), None, None))
     cue_row = store.append_meaning(cue)
     with model._query_boundary_scope((0,)):
@@ -221,13 +222,13 @@ def test_higher_order_retrieval_seeds_discontinuous_members_only():
     higher = class_over(cs, [('sym', members[0]), ('sym', members[2])])
     cs._csw_concept_row(1, higher)
     meaning = _meaning()
-    held = ConceptualMeaning.from_description(torch.ones(8))
+    held = ConceptualMeaning.from_description(torch.ones(16))
     from dataclasses import replace
     held = replace(held, role_refs=(('sym', higher), None, None))
     from clock_fixtures import install
     model = install(SimpleNamespace(conceptualSpace=cs, _concept_owner=lambda: cs))
     from ClauseRow import attach_clause_index
-    store = STM0(8, percept_width=0, capacity=32, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=32, relation_capacity=8192)
     attach_clause_index(SimpleNamespace(), store, cs)
     address = store.append_meaning(held)
     assert not store.push_recalled(store.row(address),stream=0,work=QueryWorkBudget(32))
@@ -291,7 +292,7 @@ def test_nested_writes_are_shared_across_batch_positions():
     from dataclasses import replace
     child = _meaning()
     parent = child
-    store = STM0(8, percept_width=0, capacity=4, relation_capacity=8192)
+    store = STM0(16, percept_width=0, capacity=4, relation_capacity=8192)
     index = store.append_meaning(parent, )
     assert not hasattr(store, 'index_stream')
     first = store.cued_rows(child, references=(store.occurrence_of(index),), stream=0)['value']
@@ -308,16 +309,16 @@ def test_executor_cannot_emit_outside_its_declared_write_scope():
     signature = replace(signature, descriptor=replace(signature.descriptor,
         executor=lambda *args: {'write_target': S.PERCEPT.value}))
     with pytest.raises(ValueError, match='write scope'):
-        signature.invoke(_context(_cs()), torch.ones(8), torch.ones(8))
+        signature.invoke(_context(_cs()), torch.ones(16), torch.ones(16))
 
 
 def test_unnamed_vectors_cannot_offer_open_taxonomy_candidates():
     from test_normal_thought_controller import _catalog_world
     model, registry, _, _, _ = _catalog_world()
-    query = registry.form('part', torch.ones(8), torch.ones(8))
+    query = registry.form('part', torch.ones(16), torch.ones(16))
     candidates = registry.controller_candidates(query, query, query)
     assert any(candidate.semantic_id == 'part' for candidate in candidates)
     assert not any(candidate.semantic_id == 'part' and candidate.open_roles
                    for candidate in candidates)
     with pytest.raises((TypeError, ValueError), match='reference'):
-        registry.form('isPart', torch.ones(8), open_roles=('argin2',))
+        registry.form('isPart', torch.ones(16), open_roles=('argin2',))

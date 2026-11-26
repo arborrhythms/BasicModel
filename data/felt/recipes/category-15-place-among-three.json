@@ -1,0 +1,89 @@
+{
+ "category": 15,
+ "construction": "Place among three",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "place-among-three",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "preposition",
+  "union"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b",
+    "c"
+   ],
+   "id": "q01",
+   "predicate": "between",
+   "text": "what is between {b} and {c} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b",
+    "c"
+   ],
+   "id": "s01",
+   "predicate": "between",
+   "text": "{a} is between {b} and {c}."
+  }
+ ]
+}

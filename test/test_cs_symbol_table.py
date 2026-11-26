@@ -27,7 +27,8 @@ from Layers import WORD, UNIVERSE, ATOM, NOTHING, EVERYTHING
 from test_basicmodel import _populate_test_config
 from nomination_fixtures import recurrent_interpretation
 
-_D = 8
+# The fixture's concept is one percept band wide (.where and .when).
+_D = 16
 
 
 def _cs(nS=64, *, order_limit=None, order_reservations=()):

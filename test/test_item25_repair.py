@@ -9,8 +9,8 @@ from QueryWork import QueryWorkBudget
 from test_one_backward import receipt
 
 
-def meaning(values, *, scope=(), bindings=()):
-    roles = torch.zeros(3, 8)
+def meaning(values, *, width=8, scope=(), bindings=()):
+    roles = torch.zeros(3, width)
     roles[0, :len(values)] = torch.tensor(values)
     return ConceptualMeaning(roles, torch.tensor([True, False, False]), scope=scope, bindings=bindings)
 
@@ -165,18 +165,20 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
     from ThoughtReferences import bindings, with_slots
     from Memory import STMChunks as chunks
     from QueryWork import QueryWorkBudget
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    band = WHERE_WIRES + WHEN_WIRES  # every width of this world is one band (8 -> 16)
     def recall(batch):
-        stm = ShortTermMemory(batch=batch, concept_dim=8)
+        stm = ShortTermMemory(batch=batch, concept_dim=band)
         from clock_fixtures import for_stm
         model = for_stm(stm)
         from test_cs_sparse_weights import _cs
         from ClauseRow import attach_clause_index
-        owner = _cs(nS=64, order=1, dim=8)
+        owner = _cs(nS=64, order=1, dim=band)
         objects = [owner.new_concept(order=0) for _ in range(2)]
         owner.stm = stm
-        store = LTM0(8, capacity=8, percept_width=8)
+        store = LTM0(band, capacity=8, percept_width=band)
         attach_clause_index(model, store, owner)
-        value = with_slots(replace(meaning((1., 0.)), role_refs=(('sym', objects[0]), None, None)), (), pair=(.8, .1))
+        value = with_slots(replace(meaning((1., 0.), width=band), role_refs=(('sym', objects[0]), None, None)), (), pair=(.8, .1))
         retrieved = replace(value, role_refs=(('sym', objects[1]), None, None))
         source = store.append_meaning(retrieved, trust=.8)
         original_time = tuple(store.entry_time(source).tolist())
@@ -212,7 +214,9 @@ def test_recalled_chunk_addresses_depend_only_on_their_own_stream(tmp_path):
 def test_determined_mention_keeps_an_occurrence_after_its_relation_was_written(room, tmp_path, monkeypatch):
     from ClauseRow import Clause, ClauseCapacityError, Composition
     from test_clause_acceptance import SentenceFixture
-    f = SentenceFixture(monkeypatch, percept_width=8)
+    # The store has the fixture concept's band (8 -> 16), so a time band.
+    from architecture import WHERE_WIRES, WHEN_WIRES
+    f = SentenceFixture(monkeypatch, percept_width=WHERE_WIRES + WHEN_WIRES)
     left, right = (f.noun(name) for name in ('first', 'second'))
     terms = tuple(Composition(f.registry._payload(('sym', ref)), reference=ref)
                   for ref in (left, right))

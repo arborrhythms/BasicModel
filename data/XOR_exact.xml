@@ -10,6 +10,8 @@
       <dataType>numeric</dataType>
       <dataset>xor</dataset>
     </data>
+    <!-- The aperture is one place: every part of intensities is one place. -->
+    <intensityPartSigma>1</intensityPartSigma>
     <training>
       <autoload>false</autoload>
       <numEpochs>64</numEpochs>
@@ -22,16 +24,16 @@
   </architecture>
   <InputSpace>
     <nVectors>2</nVectors>
-    <nDim>9</nDim>
+    <nDim>17</nDim>
     <nOutput>2</nOutput>
-    <nOutputDim>9</nOutputDim>
+    <nOutputDim>17</nOutputDim>
   </InputSpace>
   <PartSpace>
-    <nInputDim>9</nInputDim>
+    <nInputDim>17</nInputDim>
     <nInput>16</nInput>
     <nVectors>256</nVectors>
     <basicPerceptCapacity>256</basicPerceptCapacity>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>16</nOutput>
     <invertible>true</invertible>
     <synthesis>meronomy</synthesis>
@@ -41,7 +43,7 @@
   <ConceptualSpace>
     <nInput>16</nInput>
     <nVectors>32</nVectors>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>16</nOutput>
     <invertible>true</invertible>
   </ConceptualSpace>
@@ -49,7 +51,7 @@
     <lexer>word</lexer>
     <nInput>16</nInput>
     <nVectors>16</nVectors>
-    <nDim>16</nDim>
+    <nDim>24</nDim>
     <nOutput>16</nOutput>
     <analysis>meronomy</analysis>
     <digitWholes>false</digitWholes>

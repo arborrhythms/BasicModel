@@ -87,7 +87,7 @@ def test_second_forward_does_not_mutate_the_first_understanding(model):
         snapshot = first.symbolic_state.clone()
         concept = (first.conceptual_state.clone()
                    if first.conceptual_state is not None else None)
-        model.understand(inputs + 0.5)
+        model.understand(inputs * 0.5)
     assert torch.equal(first.symbolic_state, snapshot)
     if concept is not None:
         assert torch.equal(first.conceptual_state, concept)

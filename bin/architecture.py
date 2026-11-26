@@ -24,15 +24,30 @@ retired from the muxed band; the standalone endpoint-sum analyzer is retired too
 The TWO principled exceptions stay ``(0, 0)``: there is no positional
 encoding BEFORE the input or AFTER the output. OutputSpace (the terminal
 prediction / answer) is one — a scalar/answer has no .where/.when to mux,
-and the loss would otherwise slice empty where/when segments and NaN."""
+and the loss would otherwise slice empty where/when segments and NaN.
+
+The `.where` is a space of three dimensions (sigma-pi §19.132): a place is
+(x, y, z), each axis the four wires of the ladder, so the band's `.where` is
+``WHERE_WIRES = AXIS_WIRES * WHERE_AXES`` wide. That product is computed here
+and nowhere else; ``architecture.whereAxes`` is read from ``data/model.xml``."""
+from util import TheXMLConfig
+
+#: The wires of one axis of a place: the two rungs of the ladder.
+AXIS_WIRES = 4
+#: The axes of the `.where` (``architecture.whereAxes``).
+WHERE_AXES = int(TheXMLConfig.get('architecture.whereAxes'))
+#: The width of a place's code: the wires of an axis on every axis.
+WHERE_WIRES = AXIS_WIRES * WHERE_AXES
+#: The width of the `.when` band.
+WHEN_WIRES = 4
 
 _CANONICAL_SHAPE = {
-    "InputSpace":      (4, 4),
-    "PartSpace": (4, 4),
+    "InputSpace":      (WHERE_WIRES, WHEN_WIRES),
+    "PartSpace": (WHERE_WIRES, WHEN_WIRES),
     # ModalSpace is the demuxed perceptual-space_role composite (Spaces.ModalSpace):
     # it routes what/where/when through sub-PartSpaces and shares the
     # perceptual shape. No live config currently enables demuxed mode.
-    "ModalSpace":      (4, 4),
+    "ModalSpace":      (WHERE_WIRES, WHEN_WIRES),
     # Concepts are generally characterised: a concept is one opaque code
     # (a codebook lookup that has generalised over where and when as well),
     # with no separate localising dimensions.  Percepts, and symbols as a
@@ -40,11 +55,11 @@ _CANONICAL_SHAPE = {
     # .when as coordinates (Alec, 2026-09-14; doc/Architecture.md,
     # "Concepts are opaque; percepts and symbols are located").
     "ConceptualSpace": (0, 0),
-    "WholeSpace":   (4, 4),
+    "WholeSpace":   (WHERE_WIRES, WHEN_WIRES),
     # Exception: the terminal output carries no positional encoding -- the
     # answer has no .where/.when (see module docstring).
     "OutputSpace":     (0, 0),
-    "SymbolSpace":       (4, 4),
+    "SymbolSpace":       (WHERE_WIRES, WHEN_WIRES),
 }
 # 2026-06-04: no space_role's codebook is mandatory. A config opts into a codebook
 # explicitly via <codebook>quantize</codebook>; any space_role may resolve to

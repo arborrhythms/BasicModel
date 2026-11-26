@@ -310,7 +310,7 @@ def test_shared_opening_keeps_selected_values_and_gradients(monkeypatch, capacit
     assert torch.equal(actual_salience, expected_salience)
     args = (bank.table, activity, basic.where_entries, basic.when_entries)
     if located:
-        args += (registry.code,)
+        args += (registry.grid,)
     left = torch.autograd.grad(expected.values.square().sum() + expected_salience.square().sum(),
                                args, retain_graph=True)
     right = torch.autograd.grad(actual.values.square().sum() + actual_salience.square().sum(), args)
@@ -532,9 +532,9 @@ def test_meaning_shares_only_validated_metadata_and_keeps_its_roles():
 def test_occupied_row_names_follow_compaction_checkpoint_and_external_writes():
     from copy import deepcopy
     from Memory import LTM0
-    store = LTM0(12, capacity=4)
+    store = LTM0(16, capacity=4)
     for _ in range(3):
-        store.append_idea(torch.ones(12))
+        store.append_idea(torch.ones(16))
     names = [store.row_name(i) for i in range(3)]
     saved = deepcopy(store.state_dict())
     store.compact_rows([2, 0])

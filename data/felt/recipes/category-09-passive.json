@@ -1,0 +1,127 @@
+{
+ "category": 9,
+ "construction": "The same said the other way",
+ "forms": {
+  "K": [
+   "k",
+   "noun"
+  ],
+  "Ks": [
+   "k",
+   "plural"
+  ],
+  "a": [
+   "a",
+   "word"
+  ],
+  "aK": [
+   "k",
+   "with_article"
+  ],
+  "b": [
+   "b",
+   "word"
+  ],
+  "c": [
+   "c",
+   "word"
+  ],
+  "k": [
+   "k",
+   "adjective"
+  ],
+  "l": [
+   "l",
+   "adjective"
+  ]
+ },
+ "held_out": "pairs",
+ "name": "passive",
+ "note": "The operators are an evaluation label, never a learner constraint. Frames are those of the item 1.6 plan, section 14.4, as written there.",
+ "operators": [
+  "swap",
+  "surface"
+ ],
+ "questions": [
+  {
+   "answer": {
+    "slot": "a",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q01",
+   "predicate": "adjacent",
+   "text": "what is {b} touched by ?"
+  },
+  {
+   "answer": {
+    "slot": "b",
+    "type": "wh"
+   },
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "q02",
+   "predicate": "reached",
+   "script": {
+    "events": [
+     {
+      "rel": "reach",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "what was reached by {a} ?"
+  }
+ ],
+ "schema": 1,
+ "slots": {
+  "a": "digit",
+  "b": "digit",
+  "c": "digit",
+  "k": "kind",
+  "l": "kind"
+ },
+ "splits": {
+  "generalization": 20,
+  "haystack": 20,
+  "test": 20,
+  "train": 100,
+  "validation": 20,
+  "witness": 20
+ },
+ "statements": [
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s01",
+   "predicate": "adjacent",
+   "text": "{b} is touched by {a}."
+  },
+  {
+   "args": [
+    "a",
+    "b"
+   ],
+   "id": "s02",
+   "predicate": "reached",
+   "script": {
+    "events": [
+     {
+      "rel": "reach",
+      "to": "b",
+      "who": "a"
+     }
+    ]
+   },
+   "text": "{b} was reached by {a}."
+  }
+ ]
+}
