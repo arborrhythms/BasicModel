@@ -267,3 +267,27 @@ def test_60_2_a_pair_is_offered_from_what_the_sentence_held():
     assert pool.counts[6] == 0 and pool.used == 1
     model._omission_targets = None
     assert withheld_words(model, torch.tensor([[True, True]])) == [{}]
+
+
+def test_omitted_field_restores_only_pi_and_keeps_observation_order():
+    from types import SimpleNamespace
+    from CandidateGrowth import omitted_field_readings
+    ids = torch.tensor([[3, 5, 8], [4, 3, 8], [3, 5, 7]])
+    evidence = torch.zeros(3, 3, 1, 2)
+    evidence[:, :, 0, 0] = torch.tensor([[.8, .4, .9], [.3, .9, .9], [.2, .7, .8]])
+    field = SimpleNamespace(concept_ids=ids, evidence=evidence)
+    hidden = torch.tensor([[3, 6, 6], [4, -1, -1], [7, 8, -1]])
+    active = torch.tensor([True, True, False])
+    assert omitted_field_readings(field, hidden, active, 3) is None
+    first, second = omitted_field_readings(field, hidden, active, 4)
+    assert (first[0], second[0]) == (0, 1)
+    names, values, ranks, count = first[1]
+    assert names.tolist() == [3, 4, 5, 6]
+    assert values.tolist() == pytest.approx([.2, .3, 0, 0])
+    assert ranks.tolist() == [0, 1, 3, 3]
+    assert count == 0
+    assert first[2][1].tolist() == pytest.approx([1, .3, 0, 1])
+    assert first[2][3] == 2
+    assert second[1][1].tolist() == pytest.approx([.9, 0, .7, 0])
+    assert second[2][1].tolist() == pytest.approx([.9, 1, .7, 0])
+    assert second[1][3] == 2 and second[2][3] == 3

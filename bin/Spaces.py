@@ -10807,12 +10807,7 @@ class PartSpace(Space):
             optimizer=optimizer, owner_space=self)
 
     def admit_counted_forms(self):
-        """The post-sentence reset's host act: a form counted to the threshold becomes a word of the store.
-
-        Spells each such form by its links and admits it to the identity; its
-        part row and word row are then written by form row. One host read
-        finds them; none when nothing reached the threshold.
-        """
+        """Publish word and part seats at reset for forms that reached the threshold."""
         table = self.form_links
         identity = getattr(self.percept_store, 'identity', None)
         if table is None or identity is None or getattr(self, "_online_learning_frozen", False):
@@ -10822,18 +10817,26 @@ class PartSpace(Space):
         if not found.numel():
             return
         from WordIdentity import text_of
-        longest = max(table.longest, int(table.length[found].amax()))
-        spelled, lengths = table.spell(found, longest=longest)
-        rows, words, parts = [], [], []
-        for row, spelling, n in zip(found.tolist(), spelled.tolist(), lengths.tolist()):
-            raw = bytes(spelling[:n])
-            identity.admit(raw)
-            rows.append(row)
-            words.append(identity.word_rows[raw])
-            parts.append(identity.atoms[('part', text_of(raw))])
-        index = found.new_tensor(rows)
-        self.form_word_rows.index_copy_(0, index, found.new_tensor(words))
-        self.form_part_rows.index_copy_(0, index, found.new_tensor(parts))
+        roots, word_seats, part_seats, _ = identity.registered_form_seats()
+        at = torch.searchsorted(roots, found)
+        matched = F.pad(roots, (0, 1), value=-1)[at] == found
+        words = F.pad(word_seats, (0, 1), value=-1)[at]
+        parts = F.pad(part_seats, (0, 1), value=-1)[at]
+        missing = (~matched | (parts < 0)).nonzero()[:, 0]
+        if len(missing):
+            incoming = found[missing]
+            longest = max(table.longest, int(table.length[incoming].amax()))
+            spelled, lengths = table.spell(incoming, longest=longest)
+            new_words, new_parts = [], []
+            for spelling, n in zip(spelled.tolist(), lengths.tolist(), strict=True):
+                raw = bytes(spelling[:n])
+                identity.admit(raw)
+                new_words.append(identity.word_rows[raw])
+                new_parts.append(identity.atoms[('part', text_of(raw))])
+            words.index_copy_(0, missing, words.new_tensor(new_words))
+            parts.index_copy_(0, missing, parts.new_tensor(new_parts))
+        self.form_word_rows.index_copy_(0, found, words)
+        self.form_part_rows.index_copy_(0, found, parts)
 
     def seat_bytes(self, surfaces):
         """Give each byte of the delivered surfaces its store rows, at the host boundary before the sentence.

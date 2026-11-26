@@ -425,3 +425,43 @@ def test_mixing_columns_require_one_active_ending_within_the_word(device):
     seats = units.new_tensor([[0, 0, -1, 1, 2]])
     assert mixing_columns(units, seats, spans, active, False).tolist() == [[-1, 3, -1, -1]]
     assert mixing_columns(units, seats, None, active, False).tolist() == [[1, 3, 4, -1]]
+
+
+def test_counted_forms_reuse_seats_only_at_reset(monkeypatch):
+    from types import SimpleNamespace
+    from FormLinks import FormLinks
+    from Layers import RadixLayer
+    from Spaces import PartSpace
+    from WordIdentity import WordIdentity, text_of
+    table = FormLinks(512, longest=3, rounds=0)
+    store = RadixLayer(64, initial_cap=512)
+    identity = store.identity = WordIdentity(store)
+    identity.bind_forms(table)
+    forms = [b'cab', b'ab', b'ca']
+    data = torch.tensor([list(raw.ljust(3, b'\0')) for raw in forms])
+    rows = table.insert(data, torch.tensor(list(map(len, forms))))
+    for raw in (forms[0], forms[2]):
+        identity.admit(raw)
+    space = SimpleNamespace(form_links=table, percept_store=store,
+                            form_word_rows=torch.full((table.capacity,), -1),
+                            form_part_rows=torch.full((table.capacity,), -1))
+    table.count.zero_()
+    table.count[rows[:2]] = table.threshold
+    table.count[rows[2]] = table.threshold - 1
+    previous = identity.admit
+    admitted = []
+    def admit(raw, **kwargs):
+        admitted.append(raw)
+        return previous(raw, **kwargs)
+    monkeypatch.setattr(identity, 'admit', admit)
+    space._online_learning_frozen = True
+    PartSpace.admit_counted_forms(space)
+    assert (space.form_word_rows == -1).all() and not admitted
+    space._online_learning_frozen = False
+    PartSpace.admit_counted_forms(space)
+    assert admitted == [b'ab']
+    assert space.form_word_rows[rows].tolist() == [identity.word_rows[raw] for raw in forms[:2]] + [-1]
+    assert space.form_part_rows[rows].tolist() == [identity.atoms['part', text_of(raw)] for raw in forms[:2]] + [-1]
+    table.count[rows[2]] += 1
+    PartSpace.admit_counted_forms(space)
+    assert admitted == [b'ab'] and space.form_word_rows[rows[2]] == identity.word_rows[b'ca']

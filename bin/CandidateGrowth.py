@@ -317,6 +317,11 @@ def field_levels(concepts, evidence, ids, active):
         concepts = concepts[:, None].expand(-1, evidence.shape[1])
     lanes = evidence.detach().amax(2)
     levels = (lanes[..., 0] - lanes[..., 1]).clamp_min(0).T
+    return named_levels(concepts, levels, ids, active)
+
+
+def named_levels(concepts, levels, ids, active):
+    """Gather positive levels by name, retaining the first and last witness."""
     B, R = levels.shape
     keys = concepts.T.contiguous()
     index = torch.searchsorted(ids, keys)
@@ -628,6 +633,59 @@ def publish_look(owner, pending):
                 publish_relations(owner, pairs, trial)
 
 
+def withheld_names(owner, targets, extent):
+    """MTM names for omitted occurrences inside this look, with -1 for the rest."""
+    if targets is None or extent is None or 'word_bytes' not in targets:
+        return None
+    forms = targets.get('withheld_form_rows')
+    pool = getattr(getattr(owner, 'mtm', None), 'word_pool', None)
+    if forms is None or pool is None:
+        return None
+    hidden = targets['draw'].forms.any(-1)
+    width = min(extent.shape[1], hidden.shape[1], forms.shape[1])
+    forms = forms[:, :width]
+    return torch.where(extent[:, :width] & hidden[:, :width] & (forms >= 0),
+                       pool.words[forms.clamp_min(0)], -1)
+
+
+def omitted_field_readings(field, withheld, active, limit):
+    """Read visible evidence for Sigma and restore withheld names at one for Pi."""
+    evidence = field.evidence
+    batch = evidence.shape[1]
+    if active is None:
+        active = torch.ones(batch, dtype=torch.bool, device=evidence.device)
+    concepts = field.concept_ids
+    if concepts.ndim == 1:
+        concepts = concepts[:, None].expand(-1, batch)
+    lanes = evidence.detach().amax(2)
+    levels = (lanes[..., 0] - lanes[..., 1]).clamp_min(0).T
+    positive = (levels.T > 0) & active[None, :] & (concepts >= 0)
+    missing = (withheld >= 0) & active[:, None]
+    names = torch.cat((concepts[positive], withheld[missing])).unique(sorted=True)
+    if len(names) > limit:
+        return None
+    if not len(names):
+        return [(page, (names, levels[page, :0], names, 0), (names, levels[page, :0], names, 0))
+                for page, live in enumerate(active.tolist()) if live]
+    values, ranks, sentence = omitted_levels(concepts, levels, names, active, withheld)
+    counts = torch.stack((active.long(), (values >= PRESENT).sum(1),
+                          (sentence >= PRESENT).sum(1)), 1).tolist()
+    return [(page, (names, values[page], ranks[page], visible_count),
+             (names, sentence[page], ranks[page], whole_count))
+            for page, (live, visible_count, whole_count) in enumerate(counts) if live]
+
+
+def omitted_levels(concepts, levels, names, active, withheld):
+    """Restore withheld names at one on the page that contained them."""
+    values, ranks = named_levels(concepts, levels, names, active)
+    missing = (withheld >= 0) & active[:, None]
+    seats = seat_of(names, withheld)
+    restored = values.new_zeros((len(values), len(names) + 1))
+    restored.scatter_reduce_(1, seats, missing.to(values), 'amax')
+    sentence = torch.where(restored[:, :-1] > 0, 1., values)
+    return values, ranks, sentence
+
+
 @torch.no_grad()
 def withheld_words(model, extent):
     """The concepts of the words the omission withheld inside a look's
@@ -638,22 +696,17 @@ def withheld_words(model, extent):
     if extent is None or targets is None or 'word_bytes' not in targets:
         return [{} for _ in range(len(extent) if extent is not None else 0)]
     owner = model._concept_owner()
-    hidden = targets['draw'].forms.any(-1)
-    form_rows = targets.get('withheld_form_rows')
-    pool = getattr(getattr(owner, 'mtm', None), 'word_pool', None)
-    if form_rows is not None and pool is not None:
-        width = min(extent.shape[1], hidden.shape[1], form_rows.shape[1])
-        forms = form_rows[:, :width]
-        words = torch.where(extent[:, :width] & hidden[:, :width] & (forms >= 0),
-                            pool.words[forms.clamp_min(0)], -1)
+    words = withheld_names(owner, targets, extent)
+    if words is not None:
         # Growth journals still carry sparse host dictionaries. Only named
         # hidden occurrences enter them, in their original encounter order.
-        pages = torch.arange(len(extent), device=forms.device)[:, None].expand_as(words)
+        pages = torch.arange(len(extent), device=words.device)[:, None].expand_as(words)
         named = torch.stack((pages, words), -1)[words >= 0]
         held = [{} for _ in range(len(extent))]
         for page, word in named.tolist():
             held[page][word] = 1.
         return held
+    hidden = targets['draw'].forms.any(-1)
     words = targets['word_bytes']
     held = [{} for _ in range(len(extent))]
     width = min(extent.shape[1], hidden.shape[1])
@@ -693,7 +746,6 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
     if getattr(owner, 'mtm', None) is None:
         return
     omission = getattr(model, '_omission_targets', None)
-    held = withheld_words(model, extent) if extent is not None and omission is not None and 'word_bytes' in omission else None
     trial = _current_trial.get()
     if forecast is None:
         # The first look shares the opening already retained by its trial.
@@ -707,18 +759,30 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
     events = {}
     if trial is not None:
         trial.looks.append(events)
-    readings = (field_readings(owner, field, active if trial is not None else None, binding)
-                if hasattr(owner.mtm, '_candidate_pairs') and not any(held or ()) else None)
-    if readings is None:
-        readings = presences(field)
-        live = active.tolist() if trial is not None and active is not None else None
-    else:
+    held = None
+    observed = None
+    activity = active if trial is not None else None
+    pool = getattr(owner.mtm, '_candidate_pairs', None)
+    withheld = withheld_names(owner, omission, extent)
+    if withheld is not None:
+        if bool((withheld >= 0).any()):
+            if pool is not None:
+                observed = omitted_field_readings(field, withheld, activity, pool.binding_width)
+            if observed is None:
+                held = withheld_words(model, extent)
+    elif extent is not None and omission is not None and 'word_bytes' in omission:
+        held = withheld_words(model, extent)
+    if observed is None:
+        readings = (field_readings(owner, field, activity, binding)
+                    if pool is not None and not any(held or ()) else None)
         live = None
+        if readings is None:
+            readings = presences(field)
+            live = activity.tolist() if activity is not None else None
+        observed = [(b, present, {**present, **held[b]} if held and held[b] else present)
+                    for b, present in enumerate(readings) if live is None or live[b]]
     pending = [] if trial is not None else None
-    for batch, present in enumerate(readings):
-        if live is not None and not live[batch]:
-            continue
-        sentence = present if not held or not held[batch] else {**present, **held[batch]}
+    for batch, present, sentence in observed:
         forecast = None if values is None else values[batch]
         if kind_rows is not None:
             forecast = (kind_rows, forecast)

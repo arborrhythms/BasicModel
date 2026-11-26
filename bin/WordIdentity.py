@@ -214,19 +214,27 @@ class WordIdentity(nn.Module):
                         else:
                             self._unseated.add(word)
 
-    def registered_roots(self):
-        """Sorted device form addresses and the longest seated spelling."""
+    def registered_form_seats(self):
+        """Sorted form addresses and the word and own-part store rows they occupy."""
         self._registration_index()
         table = self.forms_table
+        stamp = len(self.words), len(self.atoms), len(self._unseated), table.left.device
         cached = self.__dict__.get('_registered_roots')
-        if (cached is None or cached[0] is not self.words or cached[1] != len(self.words)
-                or cached[2] != len(self._unseated) or cached[3].device != table.left.device):
-            seated = [raw for raw in self.words if raw not in self._unseated]
-            roots = table.left.new_tensor(sorted(raw[0] if len(raw) == 1 else self._table_rows[raw]
-                                                 for raw in seated), dtype=torch.long)
-            cached = self.words, len(self.words), len(self._unseated), roots, max(map(len, seated), default=0)
+        if cached is None or cached[0] is not self.words or cached[1] != stamp:
+            seated = sorted((raw[0] if len(raw) == 1 else self._table_rows[raw], raw)
+                            for raw in self.words if raw not in self._unseated)
+            columns = [(row, self.word_rows[raw], self.atoms.get(('part', text_of(raw)), -1))
+                       for row, raw in seated]
+            roots, words, parts = table.left.new_tensor(columns, dtype=torch.long).reshape(-1, 3).T.contiguous()
+            longest = max((len(raw) for _, raw in seated), default=0)
+            cached = self.words, stamp, (roots, words, parts, longest)
             self.__dict__['_registered_roots'] = cached
-        return cached[3], cached[4]
+        return cached[2]
+
+    def registered_roots(self):
+        """Sorted device form addresses and the longest seated spelling."""
+        roots, _, _, longest = self.registered_form_seats()
+        return roots, longest
 
     def _registered_parts(self, raw, part_rows):
         """Resolve device containment against the inventory at this nomination."""
