@@ -2392,6 +2392,9 @@ class Codebook(Tensor):
             return self.lookup_rows(slice(None))
         if hasattr(self, '_property_identity_width'):
             return self.W
+        if hasattr(self, 'fixed_form_rows'):
+            rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
+            return torch.where((self.fixed_form_rows >= 0)[:, None], self._form_codes(self.fixed_form_rows), rows)
         if hasattr(self, 'fixed_row_mask'):
             rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
             return torch.where(self.fixed_row_mask[:, None], self.fixed_row_codes, rows)
@@ -2436,6 +2439,11 @@ class Codebook(Tensor):
             rows = self.W[idx]
         if hasattr(self, '_property_identity_width'):
             return rows
+        if hasattr(self, 'fixed_form_rows'):
+            if getattr(self, 'is_percept_store', False):
+                rows = _unorm_ste(rows)
+            form = self.fixed_form_rows[idx]
+            return torch.where((form >= 0)[..., None], self._form_codes(form).to(rows), rows)
         if hasattr(self, 'fixed_row_mask'):
             if getattr(self, 'is_percept_store', False):
                 rows = _unorm_ste(rows)
@@ -2446,6 +2454,11 @@ class Codebook(Tensor):
         return rows
 
 
+
+    def _form_codes(self, form):
+        half = min(self.fixed_parts_width, self.form_links.code.shape[-1] // 2)
+        code = self.form_links.code[form.clamp_min(0), :half]
+        return F.pad(code, (0, self.W.shape[-1] - half))
 
     def enable_property_codes(self, *, identity_width, property_width):
         """Give the property dictionary fixed storage derived from byte members."""
@@ -10615,6 +10628,9 @@ class PartSpace(Space):
             self.form_links = FormLinks(int(TheXMLConfig.space(section, 'formCapacity')),
                                         int(TheXMLConfig.space(section, 'formLongest')),
                                         self.chunk_promotion_threshold)
+            identity = getattr(self.percept_store, 'identity', None)
+            if identity is not None:
+                identity.bind_forms(self.form_links)
             # Store rows by form row: the part a form is read as, and its
             # word once admitted; and each byte's own store row. -1: none.
             self.register_buffer('form_part_rows', torch.full((self.form_links.capacity,), -1, dtype=torch.long))

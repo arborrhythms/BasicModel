@@ -1,14 +1,10 @@
-"""Rung-zero identity: a form's code is the set of its parts.
+"""Store rows and ordered parts of lexical forms.
 
-A part is a run of adjacent characters. A form's parts are its characters,
-the space among them, and every longer part that has been added and lies
-inside it. A longer part is added where a form of several characters is
-stored, or where it is taught (``admit_part``); once added it is carried by
-every form that holds that run. So one form lies inside another exactly
-when its set of parts lies inside the other's. A stored form is known by
-its row, one for each spelling; its code is read from its parts and may be
-another form's. Atom and word rows belong to the existing RadixLayer; their
-codes are fixed functions of the parts' bytes, not parameters.
+A stored form is known by its row. In a configured text model its parts
+coordinates are read live from FormLinks, including subsequent pull steps;
+the code is not its identity. Atom and word rows belong to the existing
+RadixLayer. Standalone stores without a form table retain the legacy atom
+codes for their independent callers.
 """
 import hashlib
 from functools import lru_cache
@@ -148,12 +144,45 @@ class WordIdentity(nn.Module):
             basis.register_buffer('fixed_row_codes', torch.zeros_like(basis.W, requires_grad=False))
 
     def atom_code(self, atom):
-        """A part's fixed bits, drawn over every coordinate of the parts half."""
+        """A part's live table point; isolated stores without a table keep their legacy codes."""
+        if getattr(self, 'forms_table', None) is not None:
+            return self._table_code(bytes_of(atom[1]))
         if atom not in self._codes:
             result = torch.zeros(self.width, device='cpu')
             result[list(bit_stream(bytes_of(atom[1]), self.pair_dim)[:self.ones])] = 1
             self._codes[atom] = result
         return self._codes[atom]
+
+    def bind_forms(self, table):
+        """Read form coordinates live from the table owned by PartSpace."""
+        object.__setattr__(self, 'forms_table', table)
+        self._table_rows = {}
+        basis = self.store._basis
+        object.__setattr__(basis, 'form_links', table)
+        basis.fixed_parts_width = self.width
+        if not hasattr(basis, 'fixed_form_rows'):
+            basis.register_buffer('fixed_form_rows', torch.full((self.store._capacity,), -1,
+                                  dtype=torch.long, device=basis.W.device))
+        for row, raw in self._fixed_bytes.items():
+            basis.fixed_form_rows[row] = self._table_row(raw)
+
+    def _table_row(self, raw):
+        raw = bytes(raw)
+        if raw not in self._table_rows:
+            table = self.forms_table
+            data = table.left.new_tensor([list(raw)])
+            lengths = table.left.new_tensor([len(raw)])
+            row = int(table.read(data, lengths, admit=False)[0])
+            if row < 0:
+                row = int(table.insert(data, lengths)[0])
+            self._table_rows[raw] = row
+        return self._table_rows[raw]
+
+    def _table_code(self, raw):
+        table = self.forms_table
+        half = min(self.width, table.code.shape[-1] // 2)
+        code = table.code[self._table_row(raw), :half]
+        return torch.nn.functional.pad(code, (0, self.width - half))
 
     def _wholes_table(self):
         """The table of wholes the catalog reads, or ``None`` where none is bound."""
@@ -389,6 +418,8 @@ class WordIdentity(nn.Module):
         value = value.to(basis.W)
         if raw is not None:
             self._fixed_bytes[int(row)] = bytes(raw)
+            if hasattr(basis, 'fixed_form_rows'):
+                basis.fixed_form_rows[row] = self._table_row(raw)
         if self.property_width:
             value = torch.nn.functional.pad(value[:self.width], (0, self.property_width))
         basis.fixed_row_mask[row] = True
@@ -440,10 +471,15 @@ class WordIdentity(nn.Module):
             basis.fixed_row_codes.index_copy_(0, addresses, codes)
             basis.W.index_copy_(0, addresses, codes)
             self._fixed_bytes.update((row, bytes_of(atom[1])) for row, atom in zip(rows, members))
+            if hasattr(basis, 'fixed_form_rows'):
+                forms = [self._table_row(bytes_of(atom[1])) for atom in members]
+                basis.fixed_form_rows.index_copy_(0, addresses, addresses.new_tensor(forms))
 
     def form(self, raw):
-        """The fold of a form's parts' codes in the fixed width."""
+        """A form's live table point, or the legacy fold in an isolated store."""
         raw = bytes(raw)
+        if getattr(self, 'forms_table', None) is not None:
+            return self._table_code(raw)
         atoms = self.words.get(raw) or self.atoms_of(raw)
         return torch.stack([self.atom_code(a) for a in atoms]).amax(0)
 
@@ -464,6 +500,9 @@ class WordIdentity(nn.Module):
         basis.fixed_row_mask[rows] = True
         basis.fixed_row_codes[rows] = value
         basis.W[rows] = value
+        if hasattr(basis, 'fixed_form_rows'):
+            forms = [self._table_row(word) for word in words]
+            basis.fixed_form_rows.index_copy_(0, rows, rows.new_tensor(forms))
 
     def _add_part(self, run):
         self.added[run] = None
