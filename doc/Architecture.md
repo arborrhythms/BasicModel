@@ -707,7 +707,7 @@ is released with the attended field; only scalar refinement history persists.
 | **InputSpace** | Lifts raw data into working dimensionality; surface tokenization | LiftingLayer; lexer wiring (text mode) | Reaches PS's lexicon via back-ref; no own lexicon |
 | **PartSpace** | Bottom-up ordered part synthesis | Radix parts, native codes and `<synthesis>` policy | A form's code is the set of its parts, the greatest of their codes in a parts half of 64 coordinates on two lanes. Recurrence forms parts; one lookup a sentence reads the percept bank. |
 | **ConceptualSpace** | STM container + main grammatical CPU + the layers of every order | STM (`ShortTermMemory`, depth ~8); the first Pi of basic percepts (`PerceptPi`), the Not of order zero (`order_zero_not`) and its sparse Sigma (`order_zero`); above them the Pi of symbols, the Not and the Sigma of concepts, as compressed rows; the relation store (`ConceptAllocator` + ordered records) | `forward(subspace, word_subspace=None)`: STM bookkeeping only. The layers read each reading once; grammar ops are dispatched via the signal router. |
-| **WholeSpace** | Top-down division by properties | The table of wholes (`PrimitiveProperties`) and `<analysis>` policy | A whole's code is the OR of the catalog parts that belong to it, or the AND of other wholes; a percept's wholes half is the least of its wholes' codes, from all ones. A whole is read where a run lies. |
+| **WholeSpace** | Top-down division by properties | The table of wholes (`PrimitiveProperties`) and `<analysis>` policy | A whole's code is the OR of the codes of the characters that belong to it, or the AND of other wholes; a percept's wholes half is the least of its wholes' codes, from all ones. A whole is read where a run lies. |
 | **OutputSpace** | Final prediction | LinearLayer | nActive, nDim, nVectors |
 
 The native perception and conceptual carrier contract is:
@@ -1832,8 +1832,8 @@ mereology; no concept writes into it, and it stays full rank.
 **The percept's code** is 64 coordinates for parts and 64 for wholes, each on
 the two lanes. Parts build bottom up from all zeros, wholes top down from all
 ones; each half bounds the percept on both sides; a form's code is the set of
-its parts, and a whole's code is the OR of the catalog parts that belong to it
-or the AND of other wholes. The code and its measurements are in
+its parts, and a whole's code is the OR of the codes of the characters that belong
+to it or the AND of other wholes. The code and its measurements are in
 [Mereology](Mereology.md#percept-code).
 
 **The place of a reading.** A reading's `.where` is its own ("It's own, flowing from the fixed .where parameter we
@@ -2170,10 +2170,9 @@ characters; the parts of a form are its characters, the space among them,
 and the longer parts that exist and lie inside it. No end marks and no
 lengths are coded, so `is` has one code alone and inside `this`, and one form
 is a part of another exactly when its set of parts lies inside the other's.
-A longer part is added only where two forms would otherwise have the same
-parts, as the shortest run that one holds and the other does not, and once
-added it is carried by every form that holds that run. Of 19,821 dictionary
-words, 4 share a code at 64 and 64 before that step and none after it. Each
+A stored form of several characters is a part of its own, carried by every
+stored form that holds it as a run. A stored form is known by its row in the
+table of forms, one row a spelling, not by its code. Each
 part has three fixed coordinates drawn from its bytes, so the codes are
 fixed functions of the parts, not parameters (`WordIdentity.atom_code`,
 `form`). Evidence selects a part; it does not scale it: form codes are at
@@ -2268,28 +2267,11 @@ The loss paths are in [GradientFlow](GradientFlow.md).
 relations over it: *contains X* from the segmentation (a word's parts; a
 sentence's words) and *is X* from the predicates (a thing's own row, its
 classes, the has-a concepts one order up, later "occurs in S"). The bank
-grows only when two things would otherwise coincide: a new row for a new
-identity, a distinguishing feature (an unshared pair, a count, the length)
-when a new thing collides with an old one, and otherwise nothing.
+grows by a new row for a new identity.
 Containment is exact in the index (references and leaf postings); the code
 is the evidence-weighted centroid between the join of what the thing
 contains and the meet of what contains it, each whole weighing in
 proportion to how much it narrows.
-
-**Parts: pairs and length.** The parts of a word are its boundary-marked
-adjacent letter pairs (`#c ci ir rc cu us s#`) plus its letter count; the
-fold is unchanged (the join of the parts). Anagrams separate without
-position, repetition separates by length, "ends in s" is a part, and the
-derivation is one parallel join over the slab rather than a serial walk;
-the same rule serves the sentence rung with adjacent word pairs. This is the
-open-bigram account of visual word recognition (Grainger and Whitney 2004) and
-the subword bag of fastText (Bojanowski et al. 2017). Pair sets alone cannot
-separate repetitions (`bana` and `banana` share their pairs); length can, and
-as cumulative atoms ($\mathrm{len} \ge 1, \dots, \mathrm{len} \ge n$) it
-keeps the containment order of parts exact. The rare words that share both
-pair set and length are the collisions that a distinguishing atom is minted
-for. The
-content block must hold the inventory as a sparse superposition.
 
 **Attention dims; it does not cut.** A look selects by what it asks for and
 by where that is found, and lowers by degree what lies away from it
@@ -2997,7 +2979,7 @@ With one explore path a sentence makes at most four generate calls: reconstructi
 
 Before the keep, thought reads the scored reference plan through a temporary composition view. This preview changes neither the marks the close keeps with the sentence's trace nor the plan's commit records. A thought departure restores only its stream's fork, preserving other streams' readings and the latest shared clock. Each complete path retains its own compose departure mask and attention state for credit. A path without a departure reuses the computation with an independent registry container. Only the kept sentence attaches those reference decisions to its stored structure.
 
-**Omission.** Training hides content and never corrupts it: a dropped word, or a dropped percept slot of a retained word, has zero content at a kept place and time, so the omission is signalled out of band, because a good model reproduces corruption when it sees corruption. All paths of a sentence share the omitted input. Only detached loss-side targets retain the original: System 2 reconstruction restores it, while System 1 reconstruction scores observed places. The two rates, for words and for percept slots, adapt to the kept path's reconstruction accuracy toward `omissionTarget`, and omission never runs in evaluation ([Training](Training.md)).
+**Omission.** Training hides content and never corrupts it: a dropped word, or a dropped percept slot of a retained word, has zero content at a kept place and time, so the omission is signalled out of band, because a good model reproduces corruption when it sees corruption. All paths of a sentence share the omitted input. Only detached loss-side targets retain the original: System 2 reconstruction restores it, while System 1 reconstruction scores observed places. A hidden word's target is what the same word reads when it is visible. The two rates, for words and for percept slots, adapt to the kept path's reconstruction accuracy toward `omissionTarget`, and omission never runs in evaluation ([Training](Training.md)).
 
 **Concept episodes.** A row's slots keep concepts instead of percepts: up to `episodicConcepts` concepts of its moment, of any order, each signed by its lane. The slots and their recall are described under "When" in [One where, one when, many whats](#one-where-one-when-many-whats-the-field-attention-and-the-two-modes), and its place in the two systems in [Episodic and semantic memory in the two systems](#episodic-and-semantic-memory-in-the-two-systems).
 

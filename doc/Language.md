@@ -399,12 +399,12 @@ formula and ends in silence. The fast word evaluator
 (`eval_nanochat_grammar.word_candidate_scores`) reads with no sentence, so it
 lists every item as silent and ranks none until it reads sentences.
 
-**A fragment read at one time**. "we don't need "the
+**A multi-word read**. "we don't need "the
 cat" to be a form; we need both words to be processed by the basic level at
 one time, but not necessarily as one symbol, and produce an idea that would
 closely correspond to those words processed separately and grammatically."
-It is an option of the grammar, off unless a configuration sets it, and no
-form, row or symbol is made for the fragment.
+It is an option of the grammar (`FragmentRead`, `fragmentBias`), off by
+default, and no form, row or symbol is made for the words read together.
 
 - A look whose extent holds two or more words returns their percepts
   together, and the basic level reads them at one time: the first Pi's rows
@@ -862,7 +862,11 @@ pair and every unary operator at every live position. One model softmax
 covers all of those candidates and, once the sequence fits its LTM row, STOP.
 Exactly one candidate fires per active round. Binary operations remove one
 operand; unary operations preserve length. Above the row's slot limit there
-is no COPY, wait, or other no-operation candidate. STOP is eligible at depth
+is no COPY, wait, or other no-operation candidate. What the layer knows of
+each rule (its index, whether it rewrites a pair, whether it is bind, a
+unary rule's order change) is held in buffers of the layer, in the symbolic
+space, made where `LanguageLayer._attach_ops` installs the rules; each call
+builds only the menu's layout. STOP is eligible at depth
 one for an absolute row and at depth three or below for a relative row.
 Every menu has a fixed layout: the number of variants per operation and the
 candidate each slot denotes depend only on the row's own state and on global

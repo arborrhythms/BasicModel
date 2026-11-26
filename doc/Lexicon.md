@@ -104,7 +104,7 @@ is read by its parts. A form whose vocabulary records nested wholes
 cover. The word remains the unit of attention. A marker, free or nested inside a word, is one kind of leaf: which
 selection it calls, and with what object, is learned by exposure and never
 declared, and no language is named or special-cased in code, configuration,
-fixtures or tests (Alec, 2026-10-19).
+fixtures or tests.
 
 A candidate's declared noun references are resolved before its numerical
 operation runs. Particular and pronoun choices are limited to earlier live

@@ -591,8 +591,8 @@ form may hold a space (`ice cream`), and then it is a percept like any word.
 And the basic level may read two or more words at one time, from one look
 over them, into one idea that System 2 teaches by the idea it composed from
 the same words one by one; the grammar may take that idea as one
-constituent ([Language](Language.md#the-looks), "A fragment read at one
-time"). No form, row or symbol is made for such a fragment. Otherwise a
+constituent ([Language](Language.md#the-looks), "A multi-word read"). No
+form, row or symbol is made for such a read. Otherwise a
 conjunction of two words first exists on the conceptual side, in what the
 grammar composes, in a candidate of MTM and in a row of memory.
 

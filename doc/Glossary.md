@@ -210,6 +210,18 @@ inside it. In a code the parts are a lower bound: they start at all zeros and
 are joined by the greatest. The parts that are stored are the *catalog*. See
 [Mereology](Mereology.md#percept-code).
 
+**Table of forms.** The perceptual space's table of text forms
+(`FormLinks`): the bytes are rows 0..255, and every other row is a form with
+two ordered links to its parts one byte shorter. A stored form's identity is
+its row, one row a spelling. A form is read as one once it has been read as
+a whole unit `chunkPromotionThreshold` times. See
+[Spaces](Spaces.md).
+
+**Multi-word read.** Two or more words read by the basic level at one time
+from one look, into one idea the grammar may take as one constituent; an
+option, off by default (`FragmentRead`, `fragmentBias`). See
+[Language](Language.md#the-looks).
+
 **Properties.** The members of the property tower, also called wholes. A
 property is defined by what belongs to it, a set of characters or a number
 for a feeling, or by other properties. In a code the properties are an upper

@@ -493,18 +493,16 @@ run of adjacent characters. A form's parts are its characters and the longer
 parts that exist and lie inside it. The space is a character like a letter,
 "so that the saliency map can select against it from within parts", and a
 form may hold one (`ice cream`). No end marks are kept, so a form has one
-code wherever it stands: `is` alone and `is` inside `this`. A longer part is
-added only where two forms would otherwise have the same parts ("we should
-also do pairs only when needed"): the part added is the shortest run that
-one of them holds and the other does not (`ry` for `archer` and `archery`).
-A part once added is carried by every form that holds that run, those
-admitted before it and after it. So parthood between forms is exact: a form
+code wherever it stands: `is` alone and `is` inside `this`. A stored form
+of several characters is a part of its own, carried by itself and by every
+stored form that holds it as a run, those admitted before it and after it
+(`WordIdentity.admit`). So parthood between forms is exact: a form
 found inside another lies wholly inside its code. The exact code is the list
 of the form's parts (`WordIdentity.atoms_of`); the row of fixed width is its
 fold, each part's fixed bits drawn over the 64 coordinates
-(`WordIdentity.atom_code`). Of the first 19,821 distinct words of a
-dictionary, 4 share a code at 64 and 64 with the wholes half below, and none
-once the next part is added for them.
+(`WordIdentity.atom_code`). A stored form is known by its row, one row a
+spelling (`WordIdentity.definition_key`), not by its code, and two forms
+may share a code.
 
 **What tells against a form** is its strict wholes in the part tower and
 nothing else ("only strict wholes ( in the part tower, not
@@ -519,12 +517,16 @@ Where a coordinate would be both, for stands.
 **A whole is a row of the table of wholes** ("we should
 be storing it as a codebook. Starting from the set of all values, we
 discriminate at some boundary"). A whole is defined by what belongs to it: a
-set of characters for a class of characters, a number for a feeling. Its
-code is the OR of the codes of the catalog parts that belong to it, the
-catalog being drawn a second time in the wholes half's own coordinates
-(`WordIdentity.catalog_code`, `PrimitiveProperties.codes`). The whole catalog
-OR'ed is the class of all characters, all ones, which every percept lies in
-("A percept cannot have no wholes"). So a class inside another lies
+set of characters for a class of characters, a number for a feeling. The
+characters are grouped by the exact set of rows of the table of wholes that
+hold them, each group one coordinate of the wholes half, the groups in the
+order of their sets of rows (`PrimitiveProperties.regroup`); a character's
+code is one at its group's coordinate. A whole's code is the OR of its
+groups' (`PrimitiveProperties.codes`), and a form's the OR of its
+characters' (`WordIdentity.catalog_code`). No hash enters this half. The
+class of all characters is all ones, which every percept lies in
+("A percept cannot have no wholes"). Two characters of one group are the
+same in the wholes half; the parts half tells them apart. So a class inside another lies
 at or below it with no rule for it, and a class of characters is the OR of
 the characters taught to it ("that would give a principled way to build
 character classes"). A whole may also be given by other wholes ("just like
@@ -532,13 +534,9 @@ parts build from parts, properties may express in terms of other
 properties"): its code is the AND of theirs and lies inside each
 (`PrimitiveProperties.define_by_rows`: "capital letter" by "letter" and
 "capital"). Each known form is its own tightest whole, the OR of its parts'
-catalog codes (`WordIdentity.tightest`). Measured at 64 coordinates, seven
-classes of characters coded by OR (all characters 64 ones, letter 57,
-capital and lower case 44 each, digit and vowel 24 each, whitespace 11)
-are each at or below every class they lie in, and no other pair is so by
-accident. A class of whole words fills the 64 coordinates quickly (one word
-31 ones, five words 57), so a class of more than a few words bounds almost
-nothing.
+catalog codes (`WordIdentity.tightest`). A class holds a character exactly
+when it has that character's coordinate, so a class lies at or below every
+class it lies in and no other pair is so by accident.
 
 **The wholes half is an upper bound.** Under the class of all characters
 alone nothing is cut away and the half says nothing. A reader that asks

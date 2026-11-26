@@ -342,7 +342,7 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
 | `nOutput` | int | sentinel | Number of active perceptual feature vectors. Should be $\geq$ `InputSpace.nOutput`. For XOR: 4. |
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
-| `propertyDim` | positive int | `64` | Width of the wholes half of a percept's code, after the parts half, at text-model construction. The part catalog is drawn a second time in these coordinates; a whole's code is the OR of the codes of the catalog parts that belong to it, so the class of all characters is all ones. Numeric layouts are unchanged. |
+| `propertyDim` | positive int | `64` | Width of the wholes half of a percept's code, after the parts half, at text-model construction. The characters are grouped by the exact set of rows of the table of wholes that hold them, one coordinate a group (`PrimitiveProperties.regroup`); a whole's code is the OR of its groups', so the class of all characters is all ones. Numeric layouts are unchanged. |
 | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
 | `hasAttention` | bool | `false` | Inert: the boolean constructs no attention pass and is kept as an alias. Use `<attention>` (`off`, `primer`, `second-order`, `low-rank`). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
@@ -409,7 +409,7 @@ Grammatical lift/lower own their chart maps.
 | `readerBlockNormalization` | bool | `true` | Scale the form block and the meaning block of a value read from the sentence's primed symbol bank, each by that block's largest norm over the frozen bank, so the read stays affine. |
 | `intuitHidden` | int | `64` | Width of the one hidden layer of `intuit`'s own map, a Pi, Not and Sigma stack from the concepts of order zero to themselves that stands outside the architecture (`ConceptualSpace.intuit_map`). It is sized once, at construction. Each row of its first Pi starts on two concepts: a row started on every concept does not learn on exact concepts. |
 | `intuitLayers` | int | `1` | Pi and Sigma pairs of `intuit`'s map. |
-| `fragmentBias` | float in $[0, 1]$ | `0` | Probability that, at a look whose word begins a run of two or three unread known words that the kept reading made one constituent, the grammar takes that run as one leaf read at one time through the idea stack (`FragmentRead`), with no composition over its words. At `0` nothing of the read runs: no read, no teaching and no take. Above `0` the read is also taught, by the composed value of the constituent (`expectation.fragment`) and by the class it filled (`expectation.fragment_class`). No form, row or symbol is made for a run. |
+| `fragmentBias` | float in $[0, 1]$ | `0` | The multi-word read, an option off by default. Probability that, at a look whose word begins a run of two or three unread known words that the kept reading made one constituent, the grammar takes that run as one leaf read at one time through the idea stack (`FragmentRead`), with no composition over its words. At `0` nothing of the read runs: no read, no teaching and no take. Above `0` the read is also taught, by the composed value of the constituent (`expectation.fragment`) and by the class it filled (`expectation.fragment_class`). No form, row or symbol is made for a run. |
 | `wordTieCapacity` | positive int | `256` | Room for the ties of words to objects kept in MTM (`WordTies`). A tie holds its own certainty; the weakest tie is forgotten when room is needed. Read by the source and not yet declared in the schema. |
 | `candidateCapacity` | positive int | `64` | Room of each medium-term matrix of candidate entries beside a Pi or a Sigma (`CandidateGrowth`). Read by the source and not yet declared in the schema. |
 | `candidatePenalty` | float $\ge 0$ | `0.2` | The penalty a candidate entry must earn its weight against (`MediumTermMemory.penalty`, shared by MTM's candidate rows); measured as the middle of the strengths (.1 to .3) at which the trials make exactly the right entries. Read by the source and not yet declared in the schema. |
@@ -469,7 +469,7 @@ Each whole is one row of the table of wholes, defined by what belongs to
 it: its learned memberships over the 256 byte primitives
 (`PrimitiveProperties.members`), or other rows of the table, whose AND it is
 (`PrimitiveProperties.define_by_rows`). A row's code is the OR of the codes
-of the catalog parts that belong to it, in the wholes half of the percept's
+of the characters that belong to it, in the wholes half of the percept's
 code; the class of all characters is all ones, and a class inside another
 lies at or below it. A-priori byte examples teach the initial properties;
 runtime analysis reads those parameters. Constant-signature runs keep their
@@ -638,7 +638,9 @@ presentation.
 |------|-----------|---------|---------|
 | `attention` (PartSpace / ConceptualSpace / WholeSpace) | `Spaces.py` (each space init) | `off` | Symbolic-retrieval attention mode enum: `off` \| `primer` \| `second-order` \| `low-rank`. Replaces the inert `hasAttention` booleans. |
 | `attentionPromotion` (ConceptualSpace) | `Spaces.py` (CS init) | `false` | Enable the row pool; its context/use parameters also accept per-space overrides. |
-| `chunkPromotionThreshold` (PartSpace) | `Spaces.py` (PS init) | `4` | Radix chunk promotion: recurrence count bar on the PerceptStore gate. |
+| `chunkPromotionThreshold` (PartSpace) | `Spaces.py` (PS init) | `3` | Readings as a whole unit a form needs before it is read as one: the bar of the table of forms (`FormLinks.recognise`) and of the PerceptStore gate. |
+| `formCapacity` (PartSpace) | `Spaces.py` (PS init) | `262144` | Rows of the table of forms (`FormLinks`), allocated once; text models only. |
+| `formLongest` (PartSpace) | `Spaces.py` (PS init) | `32` | The most parts a unit is read as by the table of forms (`FormLinks.cover`). |
 | `chunkPromotionMinLength` (PartSpace) | `Spaces.py` (PS init) | `2` | Radix chunk promotion: minimum chunk length. |
 | `demuxed` (InputSpace) | `Models.py` (`_make_perceptual_space`) | `false` | Routes what/where/when through the demuxed `ModalSpace` composite instead of the muxed PartSpace. Not in the schema. |
 | `lrScale` (OutputSpace) | `Models.py` (`getOptimizer`) | `1.0` | Puts OutputSpace params in their own Adam group at `learningRate * lrScale`. |

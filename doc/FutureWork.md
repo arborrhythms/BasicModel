@@ -2746,3 +2746,16 @@ test whether attention discovers it across the original cut before it has a
 frequency count. In both cases check exact reconstruction, training sentences
 per second, and wall time to the same held-out reading accuracy.
 [Item 1.5 reanalysis experiment](plans/2026-11-24-item1-5-device-sentence.md#proposed-experiment-in-frequency-and-non-overlapping-parts)
+
+## How the first Pi reads the table's graded parts codes
+
+The table of forms (`FormLinks`) writes a graded parts-half vector a row
+(`code[:, :64]`), laid out by its pull; nothing in the model reads it yet,
+and the parts half the model reads is still the 0/1 code of
+`WordIdentity.atom_code`. The first Pi's read, `min_i max(p_i, 1 - r_i)`,
+gives no contrast on graded codes whose coordinates lie close together:
+switching the read to the table's codes was tried, for the parts half and
+for the whole space's properties, and each time lost all contrast. The open
+point is the reader, not the layout: a read by nearness, or by a form's
+place relative to its own level. Until it is decided, the older 0/1 codes
+stay.

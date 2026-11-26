@@ -868,6 +868,26 @@ wholes keep the leaf-weighted centroid of `compose_blocks` and its exact
 inverse `split_centroid`, since a join has no inverse; a description's form
 coordinates are likewise folded by centroid so they stay in the cube.
 
+**The table of forms** (`FormLinks`, `PartSpace.form_links`) is owned by
+the perceptual space and allocated once at `formCapacity` rows. Rows
+0..255 are the bytes; every later row is a form with two ordered links,
+to its left and right parts one byte shorter, both below it. A form's
+identity is its row: one spelling, one row. `insert` adds the forms of a
+unit on the device where it is first read; `count` holds each row's
+readings as a whole unit, and `recognise` returns a form only once its
+count reaches `chunkPromotionThreshold` (bytes always), else its parts.
+`cover` reads a unit from the left as the longest such form, at most
+`formLongest` parts a unit; `spell` gives a row's bytes back.
+
+The table also writes a parts-half vector a row (`code[:, :64]`), laid
+out by a pull between two anchored ends: a byte sits fixed one step
+inside zero; a form held by no other form is kept one step inside one;
+any other form is pulled toward the middle of its two links' mean and
+its direct holders' mean. Pull steps are taken at insertion, for the
+rows read (`recentre_rows`), and over the whole table at a model save
+(`sweep`). These vectors are written but not read: the model's parts
+half still reads the 0/1 codes of `WordIdentity.atom_code`.
+
 ### Live Paths and Migration Status {#percept-live-path}
 
 The tracked baseline enables the global meronomy chart, but the actual carrier
@@ -1043,7 +1063,7 @@ How distinctness is kept:
 
 | Source | Mechanism |
 |---|---|
-| PartSpace percept store | native ids from the canonical radix tiling; a form's code is the set of its parts, and two forms that would share one are told apart by the shortest run one holds and the other does not (`WordIdentity`); a basic percept is a row of the first Pi over its parts and wholes (`BasicPercepts.reserve`) |
+| PartSpace percept store | native ids from the canonical radix tiling; a stored form is known by its row, one row a spelling, and two forms may share a code (`WordIdentity`, `FormLinks`); a basic percept is a row of the first Pi over its parts and wholes (`BasicPercepts.reserve`) |
 | PartSpace Lexicon | cosine-margin pode/antipode SBOW training, for trained Lexicons |
 | InputSpace vocabulary | shares PartSpace's Lexicon (text); manual (raw) |
 
@@ -1290,13 +1310,15 @@ dims what lies away from where it asks by degree, with no floor
 
 The stem is the first step of reading. `PartSpace` cuts a row's bytes
 into percepts and lays them in a table of slots. There are two stems,
-and the configuration decides which one runs (`PartSpace._embed_radix`).
+and the configuration decides which one runs (`PartSpace._embed_ladder`).
 
-- **The word-major stem** (`_embed_radix_word_major`; the files that
-  compose or examine words). A slot is a word. Each word carries its
-  parts and the byte at which each part starts
-  (`InputSpace._ar_word_part_offsets`, `[B, W, P]`); the first of them
-  is the word's own start.
+- **The word-major stem** (`_embed_ladder_word_major`; the files that
+  compose or examine words). A slot is a word, a unit of the staged
+  unit spans. The stem reads each unit by the table of forms on the
+  device (`FormLinks.cover`), at most `formLongest` parts a unit, and
+  reads each part's store row from `form_part_rows`; it then inserts
+  and counts the visible units in the table. It reads nothing on the
+  host, admits nothing to the store and spells no word.
 - **The whole-slab stem** (the rest of `_embed_radix`; a file with field
   operators only). A slot is one emitted percept. A word held as one
   percept takes one slot; any other word is spelled out, a slot for
@@ -1312,11 +1334,13 @@ inside every word bracket at once (`FamiliarTier.open_sentence`), with a
 grammar or without one. Attention's later looks are activities over the
 sentence's percept bank and are not made of word brackets
 ([Architecture](Architecture.md#one-attention)). `ModelAttention.stage_input` makes the brackets
-(`model._attention_spans`, `[B, W, 2]`) from the intervals the stem
-kept. Every stem keeps each word's interval, as `Meronomy.percept_spans`
-cut it, in `word_intervals` beside `word_texts` on
-`PartSpace._forward_input`, and `stage_input` reads them the same way
-on both stems, trimming a word's leading and trailing whitespace. The
+(`model._attention_spans`, `[B, W, 2]`) from each word's interval. The
+whole-slab stem keeps the intervals, as `Meronomy.percept_spans` cut
+them, in `word_intervals` beside `word_texts` on
+`PartSpace._forward_input`; on the word-major stem the model spells
+them once from the staged unit spans (`WordSurfaces.unit_texts`, in
+`Models._lex_embed_stem`) before `stage_input`, which reads them the
+same way on both stems, trimming a word's leading and trailing whitespace. The
 row is not searched again for a word's text. A row with no word texts
 has no brackets.
 
@@ -1532,9 +1556,9 @@ enabled.
 
 **Whole-percept presence.** Each whole records graded presence in `[0, 1]`
 on two lanes, and may hold by degree, such as a distance on a ratio scale. A whole is a row of the table of wholes defined by what
-belongs to it: the catalog parts it holds, or other wholes it is given by
-(`PrimitiveProperties.define_by_rows`). Its code is the OR of its parts'
-catalog codes or the AND of those wholes' codes, and the class of all
+belongs to it: the characters it holds, or other wholes it is given by
+(`PrimitiveProperties.define_by_rows`). Its code is the OR of its characters'
+codes or the AND of those wholes' codes, and the class of all
 characters is all ones (`PrimitiveProperties.top`); a class of characters
 is the OR of the characters taught to it. A basic percept's row reads each
 of its wholes where its run of parts lies, and not over the whole reading,
