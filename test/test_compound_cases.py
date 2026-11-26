@@ -221,3 +221,30 @@ def test_answer_case_bank_detaches_reader_keys_without_detaching_parent():
     (left+right).sum().backward()
     assert parent.grad is not None
     assert bank.codes.grad is None and bank.observed.grad is None
+
+
+def test_case_bank_seat_order_and_signed_descendants_match_bound_sigma():
+    from CaseSelection import stage_case_bank
+    from Layers import seat_lanes, sigma_transpose
+    from test_cs_sparse_weights import _cs, _mint_row
+    cs = _cs(nS=32, order=2)
+    leaf, other, omitted = [_mint_row(cs, 0, i) for i in (303, 302, 301)]
+    mid, top = _mint_row(cs, 1, 305), _mint_row(cs, 2, 304)
+    cs.add_concept_edge(mid, leaf, .6, negated=True)
+    cs.add_concept_edge(mid, other, .9)
+    cs.add_concept_edge(mid, omitted, 0.)
+    cs.add_concept_edge(top, mid, .4, negated=True)
+    required = torch.tensor([[305, 304, 305], [-1, 500, 304]])
+    for limit in (1, 3, 7):
+        rows = [top, mid, leaf, other][:limit]
+        bank = stage_case_bank(cs, required, limit=limit)
+        assert bank.ids.tolist() == [cs.concept_id_at_row(row) for row in rows]
+        matrix = cs._concept_allocator.layer(0).bind(rows)
+        eye = torch.eye(len(rows))
+        request = torch.stack((eye, torch.zeros_like(eye)), -1)
+        direct = sigma_transpose(matrix, request, observed=torch.ones(matrix.nInput, len(rows), 2))
+        assert torch.equal(bank.cases, seat_lanes(matrix, direct, len(rows)).transpose(0, 1))
+        prior = request.unsqueeze(2)
+        expected = cs._reverse_presence(prior, torch.ones_like(prior), required.new_tensor(rows),
+                                        bound_store=matrix)
+        assert torch.equal(bank.observed, expected[:, :, 0].transpose(0, 1))

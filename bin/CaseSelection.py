@@ -147,6 +147,74 @@ def fold_cases(selected):
     return folded / mass
 
 
+def case_addresses(roots, parents, children, written, *, size, limit, rounds):
+    """Root order follows requested identities. New rows enter by breadth, then seat."""
+    width = min(limit, size)
+    valid = roots >= 0
+    place = valid.long().cumsum(0) - 1
+    ranks = roots.new_full((size + 1,), width)
+    ranks.scatter_reduce_(0, torch.where(valid, roots, size), place.clamp(0, width), 'amin')
+    ranks = ranks[:size]
+    for _ in range(rounds):
+        live = (ranks[parents] < width) & written
+        reached = ranks.new_zeros(size, dtype=torch.int32)
+        reached.scatter_reduce_(0, children, live.int(), 'amax')
+        new = (reached > 0) & (ranks == width)
+        places = (ranks < width).sum() + new.long().cumsum(0) - 1
+        ranks = torch.where(new, places.clamp_max(width), ranks)
+    addresses = roots.new_full((width + 1,), -1)
+    addresses.scatter_reduce_(0, ranks, torch.arange(size, device=roots.device), 'amax')
+    return addresses[:width]
+
+
+def case_edges(store, device):
+    """Structural edges from each definition to the seats held by its symbols."""
+    indices, _ = store._indices(device)
+    stamp = (id(store.symbol_table), store.symbol_table.revision, id(store._tensor_rows), len(store._tensor_rows))
+    cached = store.__dict__.get('_case_edges')
+    if cached is None or cached[0] is not indices or cached[1] != stamp:
+        edges, complete = [], []
+        for edge, (parent, column) in enumerate(zip(store._rows, store._cols, strict=True)):
+            _, children, whole = store._thing_spec(column)
+            complete.append(whole)
+            edges.extend((edge, parent, child) for child in children)
+        table = indices.new_tensor(edges).reshape(-1, 3).T.contiguous()
+        cached = indices, stamp, table, indices.new_tensor(complete, dtype=torch.bool), len(set(store._rows))
+        store.__dict__['_case_edges'] = cached
+    return cached[2:]
+
+
+def case_membership(addresses, topology, weights, *, size, order_zero):
+    """Direct signed cases and all cases reached by reversing higher definitions."""
+    (edges, parents, children), complete, depth = topology
+    count = len(addresses)
+    seat = addresses.new_full((size,), count)
+    seat.scatter_(0, addresses, torch.arange(count, device=addresses.device))
+    parent, child = seat[parents], seat[children]
+    # A symbol with even one absent member cannot be read at this binding.
+    missing = (~complete).int().scatter_reduce(0, edges, (child == count).int(), 'amax')
+    value = weights.detach()[edges]
+    live = (parent < count) & (child < count) & (missing[edges] == 0) & (value != 0)
+    active = torch.arange(len(edges), device=addresses.device)[live]
+    parent, child = parent.index_select(0, active), child.index_select(0, active)
+    negative = value.index_select(0, active) < 0
+    destinations = (parent * count + child) * 2 + negative
+    flat = weights.new_zeros(2 * count * count)
+    cases = flat.index_fill(0, destinations, 1.).reshape(count, count, 2)
+    identity = torch.eye(count, dtype=weights.dtype, device=addresses.device)
+    observed = torch.stack((identity, torch.zeros_like(identity)), -1)
+    # A negated entry exchanges the two lanes. Each reached child takes
+    # their maximum across incoming entries. The standing bias has no child.
+    target = child[:, None, None].expand(-1, count, 2)
+    negative = negative[:, None, None]
+    higher = (addresses >= order_zero)[None, :, None]
+    for _ in range(min(count, 2 * depth + 1) if len(edges) else 0):
+        request = (observed * higher).index_select(1, parent).transpose(0, 1)
+        incoming = torch.where(negative, request.flip(-1), request)
+        observed = observed.transpose(0, 1).scatter_reduce(0, target, incoming, 'amax').transpose(0, 1)
+    return cases, observed
+
+
 def stage_case_bank(space, required_ids, *, limit):
     """Snapshot a bounded reachable sigma view, with no concept admission.
 
@@ -162,48 +230,35 @@ def stage_case_bank(space, required_ids, *, limit):
     store = allocator.layer(0)
     basis = space.similarity_codebook.W
     batch = required_ids.shape[0] if required_ids.ndim >= 2 else None
-    roots = sorted(set(int(v) for v in required_ids.detach().reshape(-1).cpu().tolist() if int(v) > 0))
-    rows = []
-    for identity in roots:
-        row = space._concept_row_of(identity)
-        if row is not None and row not in rows:
-            rows.append(row)
-    rows = rows[:int(limit)]
-    written = [] if store.values is None else (store.values.detach() != 0).cpu().tolist()
-    # Each written entry reads the concepts its symbol holds.
-    edges = [(target, source)
-             for (target, column), present in zip(zip(store._rows, store._cols), written)
-             if present for source in store.column_rows(column)]
-    for _ in range(int(limit)):
-        additions = sorted({source for target, source in edges if target in rows and source not in rows})
-        if not additions or len(rows) == int(limit):
-            break
-        rows.extend(additions[:int(limit) - len(rows)])
-    if not rows:
+    required_names = required_ids.to(basis.device).flatten().unique(sorted=True)
+    roots = store.concept_rows(torch.where(required_names > 0, required_names, -1))
+    topology = case_edges(store, basis.device)
+    (edges, parents, children), _, depth = topology
+    written = torch.zeros_like(edges, dtype=torch.bool) if store.values is None else store.values.detach()[edges] != 0
+    packed = case_addresses(roots, parents, children, written, size=store.nOutput,
+                            limit=int(limit), rounds=min(int(limit) - 1, depth))
+    addresses = packed[packed >= 0]
+    if not len(addresses):
         return CaseBank(torch.full((1,), -1, device=basis.device, dtype=torch.long),
                         basis.new_zeros((1,basis.shape[-1]) if batch is None else (batch,1,basis.shape[-1])),
                         basis.new_zeros(1, 1, 2), basis.new_zeros(1, 1, 2))
-    addresses = torch.tensor(rows, dtype=torch.long, device=basis.device)
-    identities = torch.tensor([space.concept_id_at_row(row) or -1 for row in rows],
-                              dtype=torch.long, device=basis.device)
+    from FieldProjection import seated_names
+    names, _ = seated_names(allocator, store.nOutput, addresses)
+    identities = names[addresses]
+    identities = torch.where(identities != 0, identities, -1)
     codes = space.similarity_codebook.lookup_rows(addresses if batch is None else
         addresses[None].expand(batch,-1), streams=batch is not None).clone()
-    count = len(rows)
-    identity = torch.eye(count, device=basis.device, dtype=basis.dtype)
-    matrix = store.bind(rows)
-    # Supplying an observed field makes the transpose retain every written
-    # case. No unconditioned strongest-case choice runs during staging.
-    from Layers import sigma_transpose, seat_lanes
-    lanes = torch.stack((identity, torch.zeros_like(identity)), -1)
-    source = sigma_transpose(matrix, lanes, observed=torch.ones(matrix.nInput, count, 2,
-                                                                device=basis.device, dtype=basis.dtype))
-    cases = seat_lanes(matrix, source, count).transpose(0, 1)
-    request = torch.stack((identity, torch.zeros_like(identity)), -1).unsqueeze(2)
-    observed = space._reverse_presence(request, torch.ones_like(request), addresses, bound_store=matrix)
+    from CandidateGrowth import visible_store
+    projected = visible_store(store)
+    if projected is not store:
+        topology = case_edges(projected, basis.device)
+    weights = basis.new_empty(0) if projected.values is None else projected.values.to(basis)
+    cases, observed = case_membership(addresses, topology, weights, size=store.nOutput,
+                                      order_zero=space._order_caps()[0])
     required = required_ids.reshape(1, -1) if required_ids.ndim < 2 else required_ids.reshape(required_ids.shape[0], -1)
     eligible = ((identities[None, :, None] == required[:, None].to(identities.device))
                 & (identities[None, :, None] > 0)).any(-1)
-    return CaseBank(identities, codes, cases, observed[:, :, 0].permute(1, 0, 2), eligible)
+    return CaseBank(identities, codes, cases, observed, eligible)
 
 
 def stage_event_cases(bank, resolver, frames, *, limit):

@@ -9,6 +9,7 @@ codes for their independent callers.
 import hashlib
 from functools import lru_cache
 from itertools import groupby
+from typing import NamedTuple
 
 import numpy as np
 import torch
@@ -97,6 +98,12 @@ def distinguishing_run(left, right, *, one_sided=False):
         if found:
             return min(found)
     return None
+
+
+class StoredParts(NamedTuple):
+    """Proper stored word rows and character-aligned runs in addition order."""
+    words: tuple
+    runs: tuple
 
 
 class WordIdentity(nn.Module):
@@ -218,7 +225,7 @@ class WordIdentity(nn.Module):
         """Sorted form addresses and the word and own-part store rows they occupy."""
         self._registration_index()
         table = self.forms_table
-        stamp = len(self.words), len(self.atoms), len(self._unseated), table.left.device
+        stamp = len(self.words), len(self.atoms), len(self.added), len(self._unseated), table.left.device
         cached = self.__dict__.get('_registered_roots')
         if cached is None or cached[0] is not self.words or cached[1] != stamp:
             seated = sorted((raw[0] if len(raw) == 1 else self._table_rows[raw], raw)
@@ -227,7 +234,15 @@ class WordIdentity(nn.Module):
                        for row, raw in seated]
             roots, words, parts = table.left.new_tensor(columns, dtype=torch.long).reshape(-1, 3).T.contiguous()
             longest = max((len(raw) for _, raw in seated), default=0)
-            cached = self.words, stamp, (roots, words, parts, longest)
+            # An explicitly taught run can be a part before it is a word.
+            ordered_runs = []
+            for rank, run in enumerate(self.added):
+                raw = bytes_of(run)
+                row = raw[0] if len(raw) == 1 else self._table_rows.get(raw)
+                if row is not None:
+                    ordered_runs.append((row, rank))
+            runs = table.left.new_tensor(sorted(ordered_runs), dtype=torch.long).reshape(-1, 2).T.contiguous()
+            cached = self.words, stamp, (roots, words, parts, longest), runs
             self.__dict__['_registered_roots'] = cached
         return cached[2]
 
@@ -236,22 +251,33 @@ class WordIdentity(nn.Module):
         roots, _, _, longest = self.registered_form_seats()
         return roots, longest
 
+    def nomination_inventory(self):
+        roots, _, _, longest = self.registered_form_seats()
+        return roots, longest, self.__dict__['_registered_roots'][3]
+
     def _registered_parts(self, raw, part_rows):
         """Resolve device containment against the inventory at this nomination."""
         self._registration_index()
-        inside, runs = set(), set()
-        for address in set(part_rows):
-            if address < 0:
-                continue
-            spelling = self._row_spellings.get(address // 2)
-            if spelling is None:
-                continue
-            if spelling != raw and spelling in self.inside:
-                inside.add(spelling)
-            if address % 2:
-                run = text_of(spelling)
-                if run in self.added:
-                    runs.add(run)
+        if isinstance(part_rows, StoredParts):
+            inside = {self._row_spellings[row] for row in part_rows.words}
+            ordered = tuple(('part', text_of(self._row_spellings[row])) for row in part_rows.runs)
+            if not self._unseated:
+                return inside, ordered
+            runs = {run for _, run in ordered}
+        else:
+            inside, runs = set(), set()
+            for address in set(part_rows):
+                if address < 0:
+                    continue
+                spelling = self._row_spellings.get(address // 2)
+                if spelling is None:
+                    continue
+                if spelling != raw and spelling in self.inside:
+                    inside.add(spelling)
+                if address % 2:
+                    run = text_of(spelling)
+                    if run in self.added:
+                        runs.add(run)
         if self._unseated:
             text = text_of(raw)
             for spelling in self._unseated:

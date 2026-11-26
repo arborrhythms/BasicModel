@@ -376,13 +376,15 @@ def test_nominations_keep_encounter_order_when_a_stored_holder_needs_no_registra
     roots = table.insert(data, lengths)
     records = torch.zeros(4, 5, dtype=torch.long)
     records[:, 0] = torch.cat((roots, roots.new_tensor([-1])))
-    headers, registrations = nomination_records(table, roots[1:2], 3, records, 3)
+    runs = torch.stack((roots[1:2], torch.zeros_like(roots[1:2])))
+    headers, registrations, contained, added = nomination_records(table, roots[1:2], 3, records, 3, runs)
+    assert not len(contained) and added.tolist() == [roots[0]]
     assert torch.equal(headers[:, 0], roots)
     assert headers[:, -1].tolist() == [0, 1, 0]
     assert registrations[:, 0].tolist() == [2, 1]
     # The seated "cab" holds both new roots. The new "ab" also holds "b".
     assert registrations[:, -3:].tolist() == [[roots[1], -1, -1], [roots[1], roots[0], -1]]
-    _, empty = nomination_records(table, roots.sort().values, 3, records, 3)
+    _, empty, _, _ = nomination_records(table, roots.sort().values, 3, records, 3, runs)
     assert len(empty) == 0
 
 
@@ -465,3 +467,32 @@ def test_counted_forms_reuse_seats_only_at_reset(monkeypatch):
     table.count[rows[2]] += 1
     PartSpace.admit_counted_forms(space)
     assert admitted == [b'ab'] and space.form_word_rows[rows[2]] == identity.word_rows[b'ca']
+
+
+def test_registration_parts_sees_only_earlier_words_and_orders_taught_runs(device):
+    from FormLinks import FormLinks
+    from WordConceptPool import registration_parts, registration_witnesses
+    from WordIdentity import text_of
+    known = [b'b', b'cab']
+    taught = [b'ca', b'cab', b'\xa9a']
+    new = [b'ab', b'abcab', 'é'.encode(), 'éabcab'.encode(), b'\xa9abcab']
+    forms = list(dict.fromkeys(known + taught + new))
+    width = max(map(len, forms))
+    lengths = torch.tensor(list(map(len, forms)), device=device)
+    data = lengths.new_tensor([list(raw.ljust(width, b'\0')) for raw in forms])
+    table = FormLinks(1024, longest=width, rounds=0).to(device)
+    ids = table.insert(data, lengths)
+    by_form = dict(zip(forms, ids.tolist(), strict=True))
+    index = ids.new_tensor([forms.index(raw) for raw in new])
+    roots = ids[index]
+    characters, parts = registration_witnesses(table, roots, data[index], lengths[index])
+    existing = ids.new_tensor(sorted(by_form[raw] for raw in known))
+    run_ranks = ids.new_tensor(sorted((by_form[raw], i) for i, raw in enumerate(taught))).T.contiguous()
+    counts, words, runs = registration_parts(parts, roots, lengths[index], characters, existing, run_ranks)
+    for raw, inside, held in zip(new, words.split(counts[:, 0].tolist()), runs.split(counts[:, 1].tolist()), strict=True):
+        text = text_of(raw)
+        if len(text) > 1 and raw not in taught:
+            taught.append(raw)
+        assert set(inside.tolist()) == {by_form[w] for w in known if w in raw}
+        assert held.tolist() == [by_form[w] for w in taught if text_of(w) in text]
+        known.append(raw)

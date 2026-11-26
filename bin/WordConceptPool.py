@@ -330,8 +330,37 @@ def registration_holders(table, known, longest, nominations, width, *, batch_bou
     return torch.cat(held, 1)
 
 
-def nomination_records(table, known, longest, records, width):
-    """Name seated forms directly and spell only new perceptual registrations."""
+def registration_parts(parts, roots, lengths, characters, known, runs):
+    """The stored words and character-aligned runs held at each actual nomination."""
+    encoded = parts.sort(dim=1).values
+    forms = encoded // 2
+    # The last occurrence of a form preserves a character-aligned witness
+    # whenever it had one, even if it also occurred inside a UTF-8 character.
+    following = torch.nn.functional.pad(forms, (0, 1), value=-1)[:, 1:]
+    last = (encoded >= 0) & (forms != following)
+    sorted_roots, order = roots.sort()
+    earlier = basic_word_rows(forms, sorted_roots, order)
+    page = torch.arange(len(roots), device=roots.device)[:, None]
+    old = basic_word_rows(forms, known, known)
+    inside = last & (forms != roots[:, None]) & ((old >= 0) | ((earlier >= 0) & (earlier < page)))
+
+    names, ranks = runs.unbind()
+    rank = basic_word_rows(forms, names, ranks)
+    # A multi-character root becomes a run on its own admission. Taught
+    # runs retain their original rank when they later acquire a word.
+    first_size = torch.nn.functional.pad(characters[..., 1], (0, 1))[:, 0]
+    several = torch.nn.functional.pad(lengths > first_size, (0, 1))
+    added = (earlier >= 0) & (earlier <= page) & several[torch.where(earlier >= 0, earlier, len(roots))]
+    next_rank = torch.nn.functional.pad(ranks, (0, 1), value=-1).amax() + 1
+    rank = torch.where((rank < 0) & added, next_rank + earlier, rank)
+    held = last & (encoded % 2 == 1) & (rank >= 0)
+    by_rank = torch.where(held, rank, torch.iinfo(rank.dtype).max).argsort(dim=1)
+    counts = torch.stack((inside.sum(1), held.sum(1)), 1)
+    return counts, forms[inside], forms.gather(1, by_rank)[held.gather(1, by_rank)]
+
+
+def nomination_records(table, known, longest, records, width, runs):
+    """Read each new word's directly usable catalog witnesses in encounter order."""
     new = records[records[:, 0] >= 0]
     forms = new[:, 0].contiguous()
     seated = basic_word_rows(forms, known, known) >= 0
@@ -339,8 +368,10 @@ def nomination_records(table, known, longest, records, width):
     headers = torch.cat((new, seated[:, None]), 1)
     data, lengths = table.spell(roots, longest=width)
     elements, parts = registration_witnesses(table, roots, data, lengths)
+    counts, contained, added = registration_parts(parts, roots, lengths, elements, known, runs)
     holders = registration_holders(table, known, longest, roots, width, batch_bound=len(records))
-    return headers, torch.cat((lengths[:, None], data, elements.flatten(1), parts, holders), 1)
+    registered = torch.cat((lengths[:, None], counts, data, elements.flatten(1), holders), 1)
+    return headers, registered, contained, added
 
 
 def basic_word_rows(words, names, rows):
@@ -447,6 +478,8 @@ def stage(model, fi):
         end = 3 * width + part_width
         identity = ps.percept_store.identity
         from math import isqrt
+        from itertools import islice
+        from WordIdentity import StoredParts
         # At most one new catalog word per occurrence, including groups
         # installed earlier in this call. The simultaneously nominated
         # holders also have a [group, group, width] link frontier.
@@ -457,22 +490,30 @@ def stage(model, fi):
         for group in records.split(group_size):
             if not torch.compiler.is_compiling() and not bool((group[:, 0] >= 0).any()):
                 continue
-            known, longest_stored = identity.registered_roots()
-            headers, registrations = nomination_records(table, known, longest_stored, group, width)
-            witnesses = iter(registrations.tolist())
-            for form, word, seat, ordinal, bits, seated in headers.tolist():
+            known, longest_stored, runs = identity.nomination_inventory()
+            headers, registrations, inside, added = nomination_records(
+                table, known, longest_stored, group, width, runs)
+            # The remaining host catalog reads one transfer. The two compact
+            # membership columns have one entry per actual stored relation.
+            packet = torch.cat((headers.flatten(), registrations.flatten(), inside, added)).tolist()
+            values = iter(packet)
+            head_rows = [tuple(islice(values, headers.shape[1])) for _ in range(len(headers))]
+            witnesses = iter([tuple(islice(values, registrations.shape[1])) for _ in range(len(registrations))])
+            contained = iter(tuple(islice(values, len(inside))))
+            for form, word, seat, ordinal, bits, seated in head_rows:
                 if labels is pool.labels:
                     labels = labels.copy()
                 parts = holders = None
                 if seated:
                     raw = identity._row_spellings[form]
                 else:
-                    length, *payload = next(witnesses)
+                    length, n_words, n_runs, *payload = next(witnesses)
                     raw = bytes(payload[:length])
                     addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
                     characters = [(raw[pos:pos + size], row)
                                   for pos, (row, size) in enumerate(addresses) if size]
-                    parts, holders = (characters, payload[3 * width:end]), payload[end:]
+                    stored = StoredParts(tuple(islice(contained, n_words)), tuple(islice(values, n_runs)))
+                    parts, holders = (characters, stored), payload[3 * width:]
                 wholes = tuple(i for i in range(property_count) if bits & (1 << i))
                 installed = owner.interpret.install_nomination(
                     word, seat, form, raw, wholes, pool.initial_places[ordinal],

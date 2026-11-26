@@ -322,7 +322,10 @@ class InterpretLayer(GrammarLayer):
         # choose among them by their current ties, even without a new DEF.
         # Only the compact list of defined objects needs such a decision.
         pairs = []
+        words = cs._word_definition_ids()
         for obj in defined.bound_objects():
+            if obj in words:
+                continue
             row = cs._concept_row_of(obj)
             if row is not None:
                 word = cs.word_concept_of_object(obj)

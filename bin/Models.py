@@ -6890,49 +6890,60 @@ class BasicModel(BaseModel):
         # An object's composed code and the word naming it have different
         # owners. Reconstruct the exact form through its native definition
         # reference, while retaining the object's code for conceptual reads.
-        word_ids = owner._word_definition_ids()
-        selected_rows = selected.tolist()
-        form_rows = [batch.copy() for batch in selected_rows]
-        for b, batch in enumerate(selected_rows):
-            for j, row in enumerate(batch):
-                if row < 0:
-                    continue
-                symbol = owner.concept_id_at_row(row)
-                if symbol is None:
-                    continue
-                word = symbol if symbol in word_ids else owner.word_concept_of_object(symbol)
-                word_row = None if word is None else owner._concept_row_of(word)
-                if word_row is not None:
-                    form_rows[b][j] = word_row
         book = owner.similarity_codebook
-        if form_rows == selected_rows:
-            codes = forms = book.lookup_rows(selected.clamp_min(0), streams=True)
-        elif getattr(book, 'mereology', None) is not None:
-            # derive() deduplicates addresses across both reads. Keep the
-            # page axis for page-specific codes and the original slot order.
-            addresses = torch.cat((selected, selected.new_tensor(form_rows)), 1)
+        pool = getattr(getattr(owner, 'mtm', None), 'word_pool', None)
+        percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
+        if pool is not None and pool.stored_spellings and 'pool_word_ids' in percepts:
+            from WordConceptPool import candidate_bytes
+            from WordSurfaces import primitive_support
+            spelling = owner.interpret.spelling_seats(selected)
+            longest = max(pool.longest_spelling, percepts['unit_longest'])
+            data, byte_valid = candidate_bytes(pool, self.perceptualSpace.form_links,
+                spelling, valid, self.word_surface_capacity, longest)
+            present = byte_valid.any(-1)
+            support = primitive_support(data, byte_valid)
+            form_rows = torch.where(spelling >= 0, spelling, selected)
+        else:
+            from WordSurfaces import stage as stage_surfaces
+            word_ids = owner._word_definition_ids()
+            selected_rows = selected.tolist()
+            sources = [batch.copy() for batch in selected_rows]
+            for b, batch in enumerate(selected_rows):
+                for j, row in enumerate(batch):
+                    if row < 0:
+                        continue
+                    symbol = owner.concept_id_at_row(row)
+                    if symbol is None or symbol in word_ids:
+                        continue
+                    word = owner.word_concept_of_object(symbol)
+                    word_row = None if word is None else owner._concept_row_of(word)
+                    if word_row is not None:
+                        sources[b][j] = word_row
+            form_rows = selected.new_tensor(sources).reshape_as(selected)
+            surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
+                         for row in batch] for batch in selected_rows]
+            data, byte_valid, present, support = stage_surfaces(surfaces,
+                self.word_surface_capacity, device=rows.device, eos=True)
+        if getattr(book, 'mereology', None) is not None:
+            addresses = torch.cat((selected, form_rows), 1)
             codes, forms = book.lookup_rows(addresses.clamp_min(0), streams=True).chunk(2, dim=1)
         else:
+            # A word's detached form cannot activate a sparse optimizer row.
             codes = book.lookup_rows(selected.clamp_min(0), streams=True)
-            forms = book.lookup_rows(selected.new_tensor(form_rows).clamp_min(0), streams=True)
+            with torch.no_grad():
+                forms = book.lookup_rows(form_rows.clamp_min(0), streams=True)
         sparse_forms = torch.where(valid[..., None], forms, torch.zeros_like(forms)).detach().clone()
         codes = torch.where(valid[..., None], codes, torch.zeros_like(codes))
         weights = heat.gather(1, selected.clamp_min(0)).detach().clone()
         weights = torch.where(valid, weights, torch.zeros_like(weights))
-        surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
-                     for row in batch] for batch in selected_rows]
         identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
-        # Retain raw bytes for the named-part lesson. Native whole and word
-        # readers use the compact support/presence captured by the same read.
-        from WordSurfaces import stage as stage_surfaces
-        data, byte_valid, present, support = stage_surfaces(surfaces,
-            self.word_surface_capacity, device=rows.device, eos=True)
         case_bank = None
         if any(getattr(rule, 'case_head_role', 0) for rule in self.languageSpace._compose_binary_rules):
             from CaseSelection import stage_case_bank
-            native = selected.new_tensor([[owner.concept_id_at_row(int(row)) or -1
-                                            if row >= 0 else -1 for row in batch]
-                                           for batch in selected_rows])
+            from FieldProjection import seated_names
+            names, _ = seated_names(owner._concept_allocator, owner.nVectors, selected)
+            native = names[torch.where(valid, selected, owner.nVectors)]
+            native = torch.where(native != 0, native, -1)
             case_bank = stage_case_bank(owner, native, limit=self.reconstruction_basis_limit)
         from Generative import primed_type_families
         types = primed_type_families(owner, heat, limit=limit)
