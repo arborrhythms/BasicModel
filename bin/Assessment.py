@@ -344,8 +344,15 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
             source = text if scalar is None else dict(text=text, scalar=scalar)
             understood = model.understand(model.inputSpace.prepInput([source]))
             forms = getattr(model, '_attention_forms', None)
-            forms = (forms[0][0] if forms is not None else
-                     (model.perceptualSpace._forward_input.get('word_texts') or [[]])[0])
+            if forms is not None:
+                forms = forms[0][0]
+            else:
+                native = model.perceptualSpace._forward_input
+                texts = native.get('word_texts')
+                if texts is None and torch.is_tensor(native.get('sentence_bytes')):
+                    from WordSurfaces import unit_texts
+                    texts = unit_texts(native['sentence_bytes'], native['unit_spans'])[0]
+                forms = (texts or [[]])[0]
             reading = getattr(model, '_attention_words', None)
             words = []
             store = owner._closed_clause_store()

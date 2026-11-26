@@ -288,7 +288,17 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
     events = torch.stack((seats, ids), -1)
     if grammar_starts is not None:
         columns = witnessed_columns(units, grammar_starts, model.inputSpace._word_active_mask, surface.shape[1])
-        units = torch.cat((units, columns[..., None]), dim=-1)
+        # A column holds the witness only when its unit spans it with the same bytes.
+        stem = model.perceptualSpace._forward_input
+        spans_at = stem['unit_spans'].gather(1, columns.clamp_min(0)[..., None].expand(-1, -1, 2))
+        read = stem['sentence_bytes'].long()
+        width = max(read.shape[1], surface.shape[1])
+        differ = F.pad(read, (0, width - read.shape[1])) != F.pad(surface, (0, width - surface.shape[1]))
+        prefix = F.pad(differ.long().cumsum(1), (1, 0))
+        lo, hi = units[..., 0].clamp(0, width), units[..., 1].clamp(0, width)
+        same = (spans_at[..., 0] == units[..., 0]) & (spans_at[..., 1] == units[..., 1])
+        same = same & (prefix.gather(1, hi) == prefix.gather(1, lo))
+        units = torch.cat((units, torch.where(same, columns, -1)[..., None]), dim=-1)
     fields = (units.flatten(1), events.flatten(1), surface)
     records = torch.cat(fields, 1).tolist()
     stride = units.shape[-1]
@@ -315,6 +325,18 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
                 observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], column, wholes))
         extents.append(located)
     return extents, observations
+
+
+def unit_texts(surface, units):
+    """Host spellings and extents of the present units, in one read; for readers keyed by spelling."""
+    width = surface.shape[1]
+    texts, intervals = [], []
+    for row in torch.cat((surface, units.flatten(1)), 1).tolist():
+        raw, ends = bytes(row[:width]), row[width:]
+        spans = [(s, e) for s, e in zip(ends[0::2], ends[1::2]) if e > s]
+        intervals.append(spans)
+        texts.append([raw[s:e].decode("latin1") for s, e in spans])
+    return texts, intervals
 
 
 def grammar_leaves(surface, spans, active):

@@ -11154,8 +11154,7 @@ class BasicModel(BaseModel):
         disjoint = (torch.is_tensor(offsets) and offsets.ndim == 3
                     and torch.is_tensor(fi.get('word_active_mask'))
                     and fi.get('word_active_mask') is getattr(self.inputSpace, '_word_active_mask', None)
-                    and fi.get('unit_spans') is not None and fi.get('sentence_bytes') is not None
-                    and fi.get('word_texts') is not None)
+                    and fi.get('unit_spans') is not None and fi.get('sentence_bytes') is not None)
         if torch.is_tensor(fi.get('unit_spans')) and torch.is_tensor(fi.get('sentence_bytes')):
             from WordSurfaces import mixing_word_witnesses
             extents, observations = mixing_word_witnesses(self, raw, ids, spans, attention,
@@ -11294,28 +11293,16 @@ class BasicModel(BaseModel):
         (basic_ids, word_ids, word_rows, word_orders, rows, object_ids,
          referent_ids, object_orders) = metadata.unbind()
         lexical_forms = {}
-        offsets = getattr(isp, '_ar_word_part_offsets', None)
-        texts = percepts.get('word_texts')
-        word_major = torch.is_tensor(offsets) and offsets.ndim == 3 and texts is not None
-        active_host = starts = None
-        if word_major and not witnessed:
-            active_host, starts = torch.stack((active.long(), offsets[:, :, 0])).tolist()
-        elif not witnessed:
-            active_host = active.tolist()
+        active_host = None if witnessed else active.tolist()
         loop_spans = percepts.get('part_spans')
-        if (not witnessed and torch.is_tensor(loop_spans)
-                and (not word_major or any(row is None for row in texts))):
+        if not witnessed and torch.is_tensor(loop_spans):
             loop_spans = loop_spans[:, :W].tolist()
         else:
             loop_spans = None
         for b, lo, hi, form, native_last, word_id, object_id, row, object_order in words:
             if witnessed:
-                columns = ([native_last] if 0 <= native_last < len(texts[b])
-                           and texts[b][native_last] == form else [])
-            elif word_major and texts[b] is not None:
-                columns = [p for p in range(W) if active_host[b][p]
-                           and starts[b][p] == lo and p < len(texts[b])
-                           and texts[b][p] == form]
+                # The witness's column is checked on the device (``mixing_word_witnesses``).
+                columns = [native_last] if native_last >= 0 else []
             elif loop_spans is not None:
                 columns = [p for p, (a, z) in enumerate(loop_spans[b][:W])
                            if active_host[b][p] and lo <= a < z == hi]
@@ -13715,6 +13702,12 @@ class BasicModel(BaseModel):
         # property analysis. This remains wholly eager; the compiled word cell
         # sees fixed tensors and performs no dictionary walk or host sync.
         from ModelAttention import stage_input, stage_expectation
+        fi = getattr(self.perceptualSpace, '_forward_input', None)
+        if isinstance(fi, dict) and 'word_texts' not in fi and torch.is_tensor(fi.get('sentence_bytes')):
+            # Attention's nomination and the aligned word rows look words up by
+            # spelling: the word-major stem's units are spelled here, after it.
+            from WordSurfaces import unit_texts
+            fi['word_texts'], fi['word_intervals'] = unit_texts(fi['sentence_bytes'], fi['unit_spans'])
         stage_input(self)
         attention = self._attention_words
         self._attention_words = None
@@ -17600,7 +17593,8 @@ class BasicModel(BaseModel):
         native = getattr(self.perceptualSpace, '_forward_input', None)
         if (self.numeric_percepts is None and not self.grammar_phases.vector
                 and self.request_read is not None and pass_idx == len(self.body_stages) - 1
-                and native is not None and native.get('word_intervals') is not None):
+                and native is not None and (torch.is_tensor(native.get('unit_spans'))
+                                            or native.get('word_intervals') is not None)):
             from ReadingMemory import named_extents
             names_where, identities = named_extents(self, percepts)
             if names_where.shape[1]:

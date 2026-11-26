@@ -9791,8 +9791,8 @@ class InputSpace(Space):
 
         B, W, _ = embedded.shape
         active = active.to(device=embedded.device, dtype=torch.bool)
-        # The ladder emits one active slot per delivered interval in order.
-        self._valid_len_host = min(W, max(map(len, ps._forward_input['word_intervals']), default=0))
+        # The ladder emits the active slots as a prefix; a traced loop runs all W.
+        self._valid_len_host = W if torch.compiler.is_compiling() else int(active.sum(1).amax()) if B else 0
 
         self._ar_embedded = embedded
         self._ar_embedded_N = embedded
@@ -11033,9 +11033,7 @@ class PartSpace(Space):
         if ((getattr(self, "_serial_object_meta", False)
                  or getattr(self, "_serial_reading", False))
                 and int(getattr(self, "_serial_word_capacity", 0) or 0) > 0):
-            result = self._embed_ladder_word_major(upstream_vspace)
-            self._publish_word_texts()
-            return result
+            return self._embed_ladder_word_major(upstream_vspace)
         return self._embed_radix(upstream_vspace)
 
     def _embed_ladder_word_major(self, upstream_vspace):
@@ -11157,19 +11155,6 @@ class PartSpace(Space):
             "native_part_spans": torch.where(seen[..., None], torch.stack((places, places + 1), -1), 0),
         }
         return self.subspace
-
-    def _publish_word_texts(self):
-        """Host spellings and extents of the active units, for the readers that still take them."""
-        fi = self._forward_input
-        surface, slots = fi['sentence_bytes'], fi['unit_spans']
-        width = surface.shape[1]
-        texts, intervals = [], []
-        for row in torch.cat((surface, slots.flatten(1)), 1).tolist():
-            raw, ends = bytes(row[:width]), row[width:]
-            spans = [(s, e) for s, e in zip(ends[0::2], ends[1::2]) if e > s]
-            intervals.append(spans)
-            texts.append([raw[s:e].decode("latin1") for s, e in spans])
-        fi['word_texts'], fi['word_intervals'] = texts, intervals
 
     def _embed_radix(self, upstream_vspace):
         """Stage 7: radix-mode embedding via ``self.percept_store``.
@@ -13749,11 +13734,15 @@ class ConceptualSpace(Space):
             if percept_when is None:
                 percept_when = (
                     _ps_when.getW() if _ps_when is not None else None)
+            word_texts = ps_fwd.get('word_texts')
+            if word_texts is None and torch.is_tensor(ps_fwd.get('sentence_bytes')):
+                from WordSurfaces import unit_texts
+                word_texts = unit_texts(ps_fwd['sentence_bytes'], ps_fwd['unit_spans'])[0]
             self._maybe_autobind_words(
                 pid_2d, seed_event,
                 word_groups=ps_fwd.get('word_groups'),
                 tokens=ps_fwd.get('tokens'),
-                word_texts=ps_fwd.get('word_texts'),
+                word_texts=word_texts,
                 percept_where=percept_where,
                 percept_when=percept_when,
                 tile_spans=ps_fwd.get('tile_spans'),

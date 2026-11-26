@@ -8,11 +8,19 @@ def named_extents(model, percepts):
     from WordSurfaces import is_lexical_form
     ps, owner = model.perceptualSpace, model._concept_owner()
     ids, spans = percepts[:2]
-    intervals = ps._forward_input.get('word_intervals') or ()
+    units = ps._forward_input.get('unit_spans')
     words = []
     # The existing nomination interface consumes native row names. Bring
-    # the whole bank to this boundary once, preserving witness order.
-    events = torch.cat((ids[..., None], spans.to(ids)), -1).tolist() if intervals else ()
+    # the whole bank (and the word-major stem's unit extents) to this boundary in one read.
+    events = torch.cat((ids[..., None], spans.to(ids)), -1)
+    if torch.is_tensor(units):
+        rows = torch.cat((events.flatten(1), units.to(ids).flatten(1)), 1).tolist()
+        n = events.shape[1] * 3
+        events = [[row[i:i + 3] for i in range(0, n, 3)] for row in rows]
+        intervals = [[(s, e) for s, e in zip(row[n::2], row[n + 1::2]) if e > s] for row in rows]
+    else:
+        intervals = ps._forward_input.get('word_intervals') or ()
+        events = events.tolist() if intervals else ()
     for b, limits in enumerate(intervals):
         parts = [(pid, lo, hi) for pid, lo, hi in events[b] if pid >= 0 and lo < hi]
         row = []
