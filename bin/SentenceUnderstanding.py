@@ -220,6 +220,22 @@ class SentenceUnderstanding:
         if bool(wins.all()) or not bool(wins.any()):
             selected = explore if bool(wins.all()) else greedy
             return selected if live else selected.detached()
+        # A live selection with retained graphs needs only the live gather.
+        # The detached selection is used solely for a detached result or to
+        # check an explicit replay.
+        if live and replay is None:
+            values = {}
+            for field in fields(cls):
+                left, right = getattr(greedy, field.name), getattr(explore, field.name)
+                if field.name == 'extension':
+                    values[field.name] = tuple(right[b] if bool(win) else left[b] for b,win in enumerate(wins)) if left else ()
+                elif field.name == 'understanding_field' and left is not None:
+                    from SentenceField import selected_field
+                    values[field.name] = selected_field(left,right,wins)
+                else:
+                    values[field.name] = (torch.where(wins.reshape((-1,) + (1,) * (left.ndim-1)), right, left)
+                        if torch.is_tensor(left) and left.ndim else left)
+            return cls(**values)
         with torch.no_grad():
             values = {}
             for field in fields(cls):
@@ -237,21 +253,6 @@ class SentenceUnderstanding:
             expected = cls(**values)
         if not live:
             return expected
-        if replay is None:
-            # Whole paths retain all their graphs until the one sentence
-            # update. Selecting their rows needs no new compose execution.
-            values = {}
-            for field in fields(cls):
-                left, right = getattr(greedy, field.name), getattr(explore, field.name)
-                if field.name == 'extension':
-                    values[field.name] = tuple(right[b] if bool(win) else left[b] for b,win in enumerate(wins)) if left else ()
-                elif field.name == 'understanding_field' and left is not None:
-                    from SentenceField import selected_field
-                    values[field.name] = selected_field(left,right,wins)
-                else:
-                    values[field.name] = (torch.where(wins.reshape((-1,) + (1,) * (left.ndim-1)), right, left)
-                        if torch.is_tensor(left) and left.ndim else left)
-            return cls(**values)
         selected = replay()
         if selected.primed is not expected.primed:
             raise RuntimeError('kept sentence replay changed its priming snapshot')

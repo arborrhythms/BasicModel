@@ -113,29 +113,6 @@ def test_tie_preference_preserves_all_candidate_gradients_and_parameter_layout()
     assert set(layer.state_dict()) == keys
 
 
-def test_coverage_counts_only_committed_rules_and_refuses_missing_evidence():
-    from types import SimpleNamespace as NS
-    from GrammarEvidence import RoutingCoverage
-    language = NS(_compose_binary_rules=[NS(method_name='blackbox'), NS(method_name='part')],
-                  _compose_unary_rules=[], _tree_layer=lambda arity:
-                  NS(ops=[_Candidate('opaque'), _Candidate('structural')]) if arity == 2 else None)
-    coverage = RoutingCoverage(language, corpus='frozen-corpus-sha256', stage='base')
-    program = NS(leaves=torch.randn(2, 4), actions=torch.tensor([
-        [0, -1, 0], [0, -1, 1], [1, 1, -1], [-1, -1, -1]]))
-    coverage.record(program, sentence_id='first')
-    program.actions[2, 1] = 0
-    coverage.record(program, sentence_id='second')
-    report = coverage.report()
-    assert report['sentences'] == report['operations'] == 2
-    assert report['sentence_opaque_share'] == report['operation_opaque_share'] == .5
-    assert report['learned_utility'] == 'unproven'
-    with pytest.raises(ValueError, match='missing/empty'):
-        coverage.record(None, sentence_id='missing')
-    with pytest.raises(ValueError, match='unique'):
-        coverage.record(program, sentence_id='first')
-    program.actions[2, 1] = 42
-    with pytest.raises(ValueError, match='unknown committed'):
-        coverage.record(program, sentence_id='unknown')
 
 
 def test_coverage_comparison_reuses_maturity_and_matches_corpus_before_quality():

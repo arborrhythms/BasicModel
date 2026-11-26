@@ -299,7 +299,6 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
     if program.interpret_forced and len(program.concept_ids):
         ids, leaf_values = _interpreted_values(owner, ids, leaf_values, row)
     stack = []
-    tree = program.tree if evaluation is None else None
     dispatch = language._tree_layer(2)
     for at, (kind, local, word) in enumerate(recorded_steps(program)):
         if kind < 0:
@@ -313,8 +312,6 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
             stack.append(node)
             if evaluation is not None:
                 evaluation.completed(at, node)
-            if install and tree is not None:
-                tree.install_extension(node,word=word)
             continue
         if kind == 3:
             # A transposition rewires the STM pair; it is not an application
@@ -338,18 +335,12 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
             selected = evaluation.operation(at, kind, local, word, rule, operator)
             if selected not in (-1, 0):
                 reference = owner._closed_clause_store().semantic_reference(selected)
-        elif program.tree is not None:
-            selected = program.tree.composition(action=at).reference
-            if selected not in (-1,0):
-                reference = owner._closed_clause_store().semantic_reference(selected)
         context = held_context(owner,rule,reference,open=rule.method_name == 'ask',stream=row)
         value = operator.compose_extend(*(child.field for child in children),context=context)
         node=Node(value,children,operator,context,reference)
         stack.append(node)
         if evaluation is not None:
             evaluation.completed(at, node)
-        if install and tree is not None:
-            tree.install_extension(node,action=at)
         if offset:
             stack.insert(len(stack)-1-offset,stack.pop())
     roots = tuple(stack)

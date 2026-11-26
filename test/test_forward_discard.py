@@ -3,8 +3,6 @@ from types import SimpleNamespace
 
 import torch
 
-from SentenceCredit import forward_discard
-
 
 def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tmp_path, monkeypatch):
     from pathlib import Path
@@ -47,8 +45,6 @@ def test_retained_four_clauses_recover_non_witnesses_without_a_discard_charge(tm
                     if kind in (1, 2):
                         frame = program.operation_values[step]
                         frame[2, :form_width] = frame[:2 if kind == 1 else 1, :form_width].mean(0)
-            charge = forward_discard(language, programs, form_width, trial['other_cost'])
-            torch.testing.assert_close(charge, torch.zeros(4))
             torch.testing.assert_close(trial['other_cost'], torch.full((4,), 1.85))
         # Every non retains its occurrence operand, without claiming a free inverse.
         witnesses = 0
@@ -118,6 +114,3 @@ def test_search_inverse_is_exempt_while_field_coordinates_stay_undefined():
     language = SimpleNamespace(_tree_layer=lambda arity: SimpleNamespace(ops=[op]))
     children = inverse_step(language, 1, 0, parent, frame)
     assert all(not domain.any() for _, domain in children)
-    program = SimpleNamespace(actions=torch.tensor([[1, 0, -1]]), operation_values=frame[None])
-    torch.testing.assert_close(forward_discard(language, [program], 2, parent.new_zeros(1)),
-                               parent.new_zeros(1), rtol=0, atol=0)

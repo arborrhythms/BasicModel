@@ -418,16 +418,6 @@ def form_witnesses(index, bank, batch, positions, leaves, leaf_orders, timeline,
                 form_whole_presence=carrier[0], form_whole_counts_raw=number[0])
 
 
-def capture(program, bank, batch, positions, language):
-    """Attach span witnesses to an already-constructed reading."""
-    from dataclasses import replace
-    from ReadingIndex import ReadingIndex
-    index = program.action_index or ReadingIndex(program.actions, len(program.leaves), language)
-    positions = positions.tolist() if torch.is_tensor(positions) else positions
-    return replace(program, **form_witnesses(index, bank, batch, positions, program.leaves,
-                                             program.leaf_orders, program.timeline_actions, language))
-
-
 def inverse_context(program, index):
     counts = getattr(program, 'operand_counts', None)
     whole = getattr(program, 'form_wholes', None)

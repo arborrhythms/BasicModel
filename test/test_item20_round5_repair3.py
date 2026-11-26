@@ -7,7 +7,8 @@ import torch
 
 
 def test_two_stream_capture_keeps_each_streams_own_word_codes():
-    from FormCentroids import BasicSpanWholes, SpanWholes, capture
+    from FormCentroids import BasicSpanWholes, SpanWholes, form_witnesses
+    from ReadingIndex import ReadingIndex
     from Understanding import Reading
     codes=torch.tensor([[[1.,0.],[0.,1.]],[[.3,0.],[0.,.5]]])
     weights=torch.eye(2).expand(2,-1,-1)
@@ -18,7 +19,9 @@ def test_two_stream_capture_keeps_each_streams_own_word_codes():
         targets=None,end_state=None,leaf_orders=torch.zeros(2,dtype=torch.long))
     language=SimpleNamespace(_compose_binary_rules=(SimpleNamespace(method_name='part',head_role=0),))
     for stream in range(2):
-        result=capture(program,bank,stream,(0,1),language)
+        index=ReadingIndex(program.actions,len(program.leaves),language)
+        result=replace(program,**form_witnesses(index,bank,stream,(0,1),program.leaves,
+            program.leaf_orders,program.timeline_actions,language))
         torch.testing.assert_close(result.form_wholes[-1],codes[stream].mean(0))
         torch.testing.assert_close(result.form_whole_presence[-1],codes[stream].mean(0))
     # Even a divisible number of spans cannot legalize a mixed stream view.

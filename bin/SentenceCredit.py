@@ -1,53 +1,6 @@
 """Loss-side credit for one departure across the sentence's two walks."""
 
-from ReadingIndex import steps as recorded_steps
 import torch
-
-
-def forward_discard(language, programs, meaning_start, like, *, case_bank=None):
-    """Pay for meaning lost where a local inverse does not exist.
-
-    The denominator is the step's whole detached input meaning mass, never
-    the masked subset. Binary overlap counts once. Domain masks are evaluated
-    at each step's actual output, without inherited undefinedness. Defined
-    coordinates retain the inverse's existing error and receive no surcharge.
-    Search-kind inverses are recoverable by bank search and are exempt even
-    though the field derivation reader leaves their coordinates undefined.
-    """
-    from DerivationReconstruction import inverse_step
-    costs = []
-    for b,program in enumerate(programs):
-        if program is None or program.operation_values is None:
-            costs.append(like.new_zeros(()))
-            continue
-        steps = []
-        for index, (kind, operation, _word) in enumerate(recorded_steps(program)):
-            if kind not in (1, 2):
-                continue
-            tree = language._tree_layer(1 if kind == 2 else 2)
-            wrapped = (tree.unary_ops if kind == 2 else tree.ops)[operation]
-            op = getattr(wrapped, 'gl', wrapped)
-            if getattr(op, 'inverse_kind', None) == 'search':
-                continue
-            frame = program.operation_values[index]
-            with torch.no_grad():
-                from FormCentroids import inverse_context
-                from ChunkJournal import action_context
-                children = inverse_step(language, kind, operation, frame[2:3].detach(),
-                    frame.detach(), case_bank=None if case_bank is None else case_bank.for_stream(b),
-                    action_context=action_context(program, index, op),
-                    **inverse_context(program, index))
-                undefined = torch.cat([~domain[:, meaning_start:] for _, domain in children])
-                inputs = frame[:len(children), meaning_start:].detach().abs()
-                whole_mass = inputs.amax(0).sum()
-                uncovered = torch.where(undefined, inputs, 0.).amax(0)
-            returned = torch.where(undefined.any(0), frame[2, meaning_start:].abs(), 0.)
-            removed = (uncovered - returned).relu().sum()
-            steps.append(removed / torch.where(whole_mass > 0, whole_mass, 1.))
-        costs.append(torch.stack(steps).sum() if steps else like.new_zeros(()))
-    return torch.stack(costs)
-
-
 
 
 WALKS = ('attention', 'compose', 'bind', 'thought', 'output')

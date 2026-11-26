@@ -295,9 +295,6 @@ class Tree:
             marks['extension'] = prior
         return view
 
-    def install_extension(self, node, *, action=None, word=None):
-        self.composition(action, word).marks['extension'] = (node,)
-
 
 class CompositionView:
     def __init__(self, tree, address):
