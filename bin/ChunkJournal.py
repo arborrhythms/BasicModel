@@ -213,8 +213,7 @@ class ChunkJournal(nn.Module):
         field = match & ((state[chunks.REFS][:,:,0,0] == chunks.SYMBOL)
                          | (state[chunks.REFS][:,:,0,0] == chunks.IDENTITY_REF))
         match = torch.where(field.any(-1)[:,None],field,match)
-        found = match.any(-1)
-        index = match.long().argmax(-1)
+        found, index = match.max(-1)
         # A new identity inherits the mentioning head's percept stamp. A
         # refresh keeps the field entry's stamp; it does not enter STM again.
         head = chunks.at(state).clamp_min(0)

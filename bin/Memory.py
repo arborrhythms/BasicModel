@@ -79,6 +79,13 @@ class STMChunks:
 
     @staticmethod
     def gather(value, indices):
+        if not value.requires_grad:
+            B, C = indices.shape[0], value.shape[1]
+            idx = indices.reshape(B, -1)
+            idx = torch.where(idx < 0, idx + C, idx)
+            flat = value.expand(B, *value.shape[1:]).reshape(B, C, -1)
+            out = flat.gather(1, idx.unsqueeze(-1).expand(B, idx.shape[1], flat.shape[2]))
+            return out.reshape(B, *indices.shape[1:], *value.shape[2:])
         # By index, not gather: the backward keeps the indices and not a
         # copy of ``value``.
         streams = torch.arange(value.shape[0], device=indices.device)
@@ -92,14 +99,16 @@ class STMChunks:
         if torch.is_tensor(position) and position.ndim:
             position = position[:, None]
         match = state[STMChunks.STACK] == position
-        return torch.where(match.any(-1), match.long().argmax(-1), -1)
+        found, idx = match.max(-1)
+        return torch.where(found, idx, -1)
 
 
     @staticmethod
     def stack_indices(state):
         positions = torch.arange(state[STMChunks.STACK].shape[1], device=state[STMChunks.STACK].device)
         match = state[STMChunks.STACK][:, None, :] == positions[None, :, None]
-        return torch.where(match.any(-1), match.long().argmax(-1), -1)
+        found, idx = match.max(-1)
+        return torch.where(found, idx, -1)
 
 
     @staticmethod
@@ -142,7 +151,8 @@ class STMChunks:
         off = state[STMChunks.STACK] < 0
         free = off & (state[STMChunks.READ] == 0)
         oldest = state[STMChunks.READ].masked_fill(~off, torch.iinfo(torch.long).max).argmin(-1)
-        index = torch.where(free.any(-1), free.long().argmax(-1), oldest)
+        has_free, free_idx = free.max(-1)
+        index = torch.where(has_free, free_idx, oldest)
         valid = gate.reshape(-1).bool() & off.any(-1)
         index = torch.where(valid, index, -1)
         mask = torch.arange(off.shape[1], device=off.device)[None] == index[:, None]
