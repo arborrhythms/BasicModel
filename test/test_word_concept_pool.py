@@ -367,6 +367,25 @@ def test_contained_rows_preserve_admission_order_and_taught_runs():
                                getattr(reference.store._basis, column)[seats]), column
 
 
+def test_nominations_keep_encounter_order_when_a_stored_holder_needs_no_registration():
+    from FormLinks import FormLinks
+    from WordConceptPool import nomination_records
+    table = FormLinks(512, longest=3, rounds=0)
+    data = torch.tensor([[97, 98, 0], [99, 97, 98], [98, 0, 0]])
+    lengths = torch.tensor([2, 3, 1])
+    roots = table.insert(data, lengths)
+    records = torch.zeros(4, 5, dtype=torch.long)
+    records[:, 0] = torch.cat((roots, roots.new_tensor([-1])))
+    headers, registrations = nomination_records(table, roots[1:2], 3, records, 3)
+    assert torch.equal(headers[:, 0], roots)
+    assert headers[:, -1].tolist() == [0, 1, 0]
+    assert registrations[:, 0].tolist() == [2, 1]
+    # The seated "cab" holds both new roots. The new "ab" also holds "b".
+    assert registrations[:, -3:].tolist() == [[roots[1], -1, -1], [roots[1], roots[0], -1]]
+    _, empty = nomination_records(table, roots.sort().values, 3, records, 3)
+    assert len(empty) == 0
+
+
 def test_wide_containment_uses_one_address_per_form():
     from FormLinks import FormLinks
     from WordConceptPool import registration_witnesses

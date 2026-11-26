@@ -215,15 +215,15 @@ class WordIdentity(nn.Module):
                             self._unseated.add(word)
 
     def registered_roots(self):
-        """Device form addresses and the longest spelling in the seated vocabulary."""
+        """Sorted device form addresses and the longest seated spelling."""
         self._registration_index()
         table = self.forms_table
         cached = self.__dict__.get('_registered_roots')
         if (cached is None or cached[0] is not self.words or cached[1] != len(self.words)
                 or cached[2] != len(self._unseated) or cached[3].device != table.left.device):
             seated = [raw for raw in self.words if raw not in self._unseated]
-            roots = table.left.new_tensor([raw[0] if len(raw) == 1 else self._table_rows[raw]
-                                           for raw in seated], dtype=torch.long)
+            roots = table.left.new_tensor(sorted(raw[0] if len(raw) == 1 else self._table_rows[raw]
+                                                 for raw in seated), dtype=torch.long)
             cached = self.words, len(self.words), len(self._unseated), roots, max(map(len, seated), default=0)
             self.__dict__['_registered_roots'] = cached
         return cached[3], cached[4]

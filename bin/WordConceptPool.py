@@ -331,13 +331,16 @@ def registration_holders(table, known, longest, nominations, width, *, batch_bou
 
 
 def nomination_records(table, known, longest, records, width):
-    """Pack each actual nomination's linked spelling, characters, parts and holders."""
+    """Name seated forms directly and spell only new perceptual registrations."""
     new = records[records[:, 0] >= 0]
-    roots = new[:, 0]
+    forms = new[:, 0].contiguous()
+    seated = basic_word_rows(forms, known, known) >= 0
+    roots = forms[~seated]
+    headers = torch.cat((new, seated[:, None]), 1)
     data, lengths = table.spell(roots, longest=width)
     elements, parts = registration_witnesses(table, roots, data, lengths)
     holders = registration_holders(table, known, longest, roots, width, batch_bound=len(records))
-    return torch.cat((new, lengths[:, None], data, elements.flatten(1), parts, holders), 1)
+    return headers, torch.cat((lengths[:, None], data, elements.flatten(1), parts, holders), 1)
 
 
 def basic_word_rows(words, names, rows):
@@ -455,18 +458,25 @@ def stage(model, fi):
             if not torch.compiler.is_compiling() and not bool((group[:, 0] >= 0).any()):
                 continue
             known, longest_stored = identity.registered_roots()
-            publication = nomination_records(table, known, longest_stored, group, width)
-            for form, word, seat, ordinal, bits, length, *payload in publication.tolist():
+            headers, registrations = nomination_records(table, known, longest_stored, group, width)
+            witnesses = iter(registrations.tolist())
+            for form, word, seat, ordinal, bits, seated in headers.tolist():
                 if labels is pool.labels:
                     labels = labels.copy()
-                raw = bytes(payload[:length])
-                addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
-                characters = [(raw[pos:pos + size], row)
-                              for pos, (row, size) in enumerate(addresses) if size]
+                parts = holders = None
+                if seated:
+                    raw = identity._row_spellings[form]
+                else:
+                    length, *payload = next(witnesses)
+                    raw = bytes(payload[:length])
+                    addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
+                    characters = [(raw[pos:pos + size], row)
+                                  for pos, (row, size) in enumerate(addresses) if size]
+                    parts, holders = (characters, payload[3 * width:end]), payload[end:]
                 wholes = tuple(i for i in range(property_count) if bits & (1 << i))
                 installed = owner.interpret.install_nomination(
                     word, seat, form, raw, wholes, pool.initial_places[ordinal],
-                    witnesses=(characters, payload[3 * width:end]), holder_rows=payload[end:])
+                    witnesses=parts, holder_rows=holders)
                 if installed is None:
                     raise RuntimeError('MTM nominated a word without a free concept row')
                 pool.form_labels[form] = raw.decode('latin1')
