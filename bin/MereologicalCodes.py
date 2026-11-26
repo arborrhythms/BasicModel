@@ -137,9 +137,23 @@ class MereologicalCodes(nn.Module):
         import hashlib
         eligible = ((excess == 0) & placed & self.same_order(row)).nonzero().flatten()
         eligible = eligible[eligible != row]
-        generator = torch.Generator(device='cpu')
-        generator.manual_seed(int.from_bytes(hashlib.sha256(key).digest()[:8], 'little'))
-        order = torch.randperm(len(eligible), generator=generator, device='cpu')[:self.negative_count].to(eligible.device)
+        n = len(eligible)
+        count = int(self.negative_count)
+        if not n or not count:
+            return eligible[:0]
+        seed = int.from_bytes(hashlib.sha256(key).digest()[:8], 'little')
+        device = eligible.device
+        dev_key = (device.type, 0 if device.type == 'mps' and device.index is None else device.index)
+        cache = self.__dict__.setdefault('_negatives_order_cache', {})
+        cache_key = (n, seed, count, dev_key)
+        order = cache.get(cache_key)
+        if order is None:
+            generator = torch.Generator(device='cpu')
+            generator.manual_seed(seed)
+            order = torch.randperm(n, generator=generator, device='cpu')[:count].to(device)
+            if len(cache) >= 2048:
+                cache.pop(next(iter(cache)))
+            cache[cache_key] = order
         return eligible[order]
 
     @torch.no_grad()

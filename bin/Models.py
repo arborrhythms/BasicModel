@@ -13035,6 +13035,7 @@ class BasicModel(BaseModel):
         else:
             metadata = header.tolist()
         lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
+        transient_bounds = None
         entries = []
         for b, (n, L, name_floor, may_have_identities, *source_positions) in enumerate(metadata):
             if not n:
@@ -13074,7 +13075,15 @@ class BasicModel(BaseModel):
                     # A handle introduced by this walk need not have an MTM
                     # entry/name yet. It remains in the identity/operand
                     # journal, never as a supposedly allocated concept ID.
-                    transient = (selected_ids >= reserved[0].to(selected_ids.device)) & (selected_ids <= reserved[-1].to(selected_ids.device))
+                    if (transient_bounds is None or transient_bounds[0] is not reserved
+                            or (not reserved.is_inference() and transient_bounds[1] != reserved._version)):
+                        transient_bounds = (
+                            reserved,
+                            None if reserved.is_inference() else reserved._version,
+                            int(reserved[0]),
+                            int(reserved[-1]),
+                        )
+                    transient = (selected_ids >= transient_bounds[2]) & (selected_ids <= transient_bounds[3])
                     # Stable handles need not be dense physical row numbers:
                     # an admitted concept can lie inside this numeric range.
                     transient &= concept_owner._concept_allocator.layer(0).concept_rows(selected_ids) < 0
@@ -20666,11 +20675,12 @@ class BasicModel(BaseModel):
         state = (install_held_concepts(state[0],comprehensions),*state[1:])
         self._publish_sentence_scratch(state)
         placements = []
-        for b, program in enumerate(entries):
-            if program is not None:
-                kept_field = self.languageSpace.parts_of_speech.observe_kept(program,
-                    self.languageSpace._compose_binary_rules, self.languageSpace._compose_unary_rules,
-                    field=kept_field, stream=b, placements=placements)
+        with self.languageSpace.parts_of_speech.batch_word_ids(entries):
+            for b, program in enumerate(entries):
+                if program is not None:
+                    kept_field = self.languageSpace.parts_of_speech.observe_kept(program,
+                        self.languageSpace._compose_binary_rules, self.languageSpace._compose_unary_rules,
+                        field=kept_field, stream=b, placements=placements)
         stage(self, sid, active, kept_field)
         from SentenceField import publish
         publish(self, kept_field)

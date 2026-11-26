@@ -1,6 +1,7 @@
 """Formal argument concepts learned from kept word members in conceptual space."""
 
 from collections import Counter
+from contextlib import contextmanager
 import math
 
 import torch
@@ -264,12 +265,46 @@ class PartsOfSpeech(nn.Module):
         self.uses[name] += 1
         self._revision += 1
 
+    @contextmanager
+    def batch_word_ids(self, programs):
+        """Transfer kept programs' word_ids once across a batch when not frozen."""
+        if self.frozen:
+            yield
+            return
+        sources = [p.word_ids for p in programs
+                   if p is not None and p.word_ids is not None]
+        if len(sources) < 2 or all(t.device.type == 'cpu' for t in sources):
+            yield
+            return
+        lengths = [int(t.numel()) for t in sources]
+        flat = torch.cat([t.detach().reshape(-1) for t in sources]).cpu().tolist()
+        cached = {}
+        offset = 0
+        for tensor, length in zip(sources, lengths, strict=True):
+            version = None if tensor.is_inference() else tensor._version
+            cached[id(tensor)] = (tensor, version, flat[offset:offset + length])
+            offset += length
+        previous = getattr(self, '_cached_word_ids', None)
+        self._cached_word_ids = cached
+        try:
+            yield
+        finally:
+            self._cached_word_ids = previous
+
     def observe_kept(self, program, binary_rules, unary_rules, *, field=None, stream=0, placements=None):
         if self.frozen or program is None:
             return field
         occupied = {}
-        words = ([None] * len(program.leaves) if program.word_ids is None
-                 else program.word_ids.detach().cpu().tolist())
+        if program.word_ids is None:
+            words = [None] * len(program.leaves)
+        else:
+            cached = getattr(self, '_cached_word_ids', None)
+            entry = None if cached is None else cached.get(id(program.word_ids))
+            if (entry is not None and entry[0] is program.word_ids
+                    and (program.word_ids.is_inference() or entry[1] == program.word_ids._version)):
+                words = entry[2]
+            else:
+                words = program.word_ids.detach().cpu().tolist()
         stack = []
         operators = []
         from ParseForest import native, visits

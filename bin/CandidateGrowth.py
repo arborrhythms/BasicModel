@@ -621,16 +621,28 @@ def publish_look(owner, pending):
     """Expose this look's promotions to their own next fixation."""
     if not pending:
         return
-    records = torch.stack([torch.cat((pool.count.expand(1, 2), pairs))
-                           for pool, pairs, _, _ in pending]).tolist()
-    for (count, *records), (pool, promoted, paired, trial) in zip(records, pending, strict=True):
-        pool._remember_count(count[0])
-        pairs = [(left, right) for left, right in records if left >= 0]
+    device = pending[0][1].device
+    summary = torch.stack([
+        torch.stack((pool.count if pool.count.device == device else pool.count.to(device),
+                     (promoted[:, 0] >= 0).sum().to(device)))
+        for pool, promoted, _, _ in pending
+    ]).tolist()
+    sigma_items = [
+        promoted if promoted.device == device else promoted.to(device)
+        for (_, n_promo), (_, promoted, paired, _) in zip(summary, pending, strict=True)
+        if not paired and n_promo > 0
+    ]
+    sigma_pairs = iter(torch.stack(sigma_items).tolist()) if sigma_items else ()
+    for (count, n_promo), (pool, promoted, paired, trial) in zip(summary, pending, strict=True):
+        pool._remember_count(count)
         if paired:
-            pool.append_pairs(promoted, len(pairs))
-        elif pairs:
-            with trial.active():
-                publish_relations(owner, pairs, trial)
+            if n_promo:
+                pool.append_pairs(promoted, n_promo)
+        elif n_promo:
+            pairs = [(left, right) for left, right in next(sigma_pairs) if left >= 0]
+            if pairs:
+                with trial.active():
+                    publish_relations(owner, pairs, trial)
 
 
 def withheld_names(owner, targets, extent):

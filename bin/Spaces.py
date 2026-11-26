@@ -18850,14 +18850,45 @@ def _analysis_property_signature(space, device="cpu"):
     primitives = getattr(cb, 'primitive_properties', None)
     if primitives is None:
         raise RuntimeError('property analysis requires learned primitive definitions')
-    membership = primitives.coefficients().detach().to(device=device).t()
+    names = getattr(space, 'well_known_atoms', {}) or {}
+    ws_row = int(names['whitespace']) if 'whitespace' in names else None
+    pad_row = int(names['pad']) if 'pad' in names else None
+    given_by = getattr(primitives, 'given_by', None)
+    given_key = tuple(sorted(given_by.items())) if isinstance(given_by, dict) and given_by else ()
+    try:
+        rev = primitives.revision
+    except (AttributeError, RuntimeError):
+        rev = None
+    target_device = torch.device(device)
+    dev_key = (target_device.type, 0 if target_device.type == 'mps' and target_device.index is None else target_device.index)
+    if rev is not None:
+        source_key = (id(primitives), rev, given_key, ws_row, pad_row)
+        cache = getattr(space, '_analysis_signature_cache', None)
+        if cache is not None and cache[0] == source_key:
+            by_dev = cache[1]
+            hit = by_dev.get(dev_key)
+            if hit is not None:
+                return hit
+            base_sig, discard = next(iter(by_dev.values()))
+            sig = base_sig.to(device=target_device)
+            by_dev[dev_key] = (sig, discard)
+            return sig, discard
+    membership = primitives.coefficients().detach().t()
     count = min(int(membership.shape[-1]), 63)
     bits = 1 << torch.arange(count, dtype=torch.long, device=membership.device)
     signature = ((membership[:, :count] > .5).long() * bits).sum(-1)
-    names = getattr(space, 'well_known_atoms', {})
-    discard = sum(1 << int(names[name]) for name in ('whitespace', 'pad')
-                  if name in names and 0 <= int(names[name]) < count)
-    return signature, discard
+    discard = sum(1 << row for row in (ws_row, pad_row)
+                  if row is not None and 0 <= row < count)
+    if rev is not None:
+        src_dev = signature.device
+        src_key = (src_dev.type, 0 if src_dev.type == 'mps' and src_dev.index is None else src_dev.index)
+        by_dev = {src_key: (signature, discard)}
+        if dev_key != src_key:
+            signature = signature.to(device=target_device)
+            by_dev[dev_key] = (signature, discard)
+        object.__setattr__(space, '_analysis_signature_cache', (source_key, by_dev))
+        return signature, discard
+    return signature.to(device=target_device), discard
 
 
 def _derive_type_lut(property_kind):
