@@ -336,6 +336,9 @@ def _publish_sequential_pairs(parts, allocator, refs, tags, next_id, names, fres
             allocator.new_concept()
         parts.refs[first:stop].copy_(refs[first:stop])
         parts.ref_kinds[first:stop].copy_(tags[first:stop])
+        handles = parts.__dict__.get('_sentence_handles')
+        if handles is not None:
+            handles.update(range(first, stop))
         seats = torch.arange(first, stop, device=names.device)
         parts.relation_order[start:start + len(seats)].copy_(seats)
         parts.activity[first:stop].copy_(evidence[fresh, 2])

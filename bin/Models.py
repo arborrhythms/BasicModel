@@ -8598,10 +8598,20 @@ class BasicModel(BaseModel):
         """Run caller-supplied sentence execution under the same phase mask."""
         return (executor or self.forward)(input_data)
 
+    def _present_input_sentence(self, input_data, executor):
+        self._stage_host_surface()
+        own_forward = (executor is None or executor == self.forward
+                       or executor is getattr(self, '_active_compiled_step', None))
+        if own_forward and getattr(self, 'word_brackets', False) and isinstance(self.inputSpace, InputSpace):
+            owner = self._concept_owner()
+            if owner is not None:
+                with owner._concept_allocator.parts.sentence_handles():
+                    return self._execute_input_sentence(input_data, executor)
+        return self._execute_input_sentence(input_data, executor)
+
     def understand(self, input_data, *, executor=None):
         """One bottom-up analysis pass returning its ``Understanding``."""
-        self._stage_host_surface()
-        execution = self._execute_input_sentence(input_data, executor)
+        execution = self._present_input_sentence(input_data, executor)
         understanding = self._capture_understanding(execution)
         self._last_understanding = understanding
         return understanding
@@ -10397,8 +10407,7 @@ class BasicModel(BaseModel):
                 if input_data is None:
                     raise ValueError(
                         "Model.ask needs input_data or an existing execution")
-                self._stage_host_surface()
-                execution = self._execute_input_sentence(input_data, executor)
+                execution = self._present_input_sentence(input_data, executor)
         finally:
             for h, ctx, detail in saved:
                 h._what_context = ctx

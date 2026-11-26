@@ -12204,6 +12204,19 @@ class RadixLayer(Layer):
                 master.data[new_id, :].copy_(
                     init_vector.detach().to(
                         master.device, master.dtype))
+        self._register_chunk(chunk_b, new_id)
+        # Canonical fold provenance (todo "make abstraction order
+        # canonical"): a multi-byte percept row is PRODUCED by the sigma
+        # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at
+        # pass slot 0 on the owning percept codebook. A single-byte atom
+        # is an order-0 prototype: no fold, no stamp.
+        if len(chunk_b) > 1:
+            _rf = getattr(self._basis, "record_fold", None)
+            if _rf is not None:
+                _rf(new_id, 0, getattr(self._basis, "FOLD_SIGMA", 1))
+        return new_id
+
+    def _register_chunk(self, chunk_b, new_id):
         # Update the auxiliary structures.
         self.radix_trie.insert(chunk_b, new_id)
         self.hash_map[chunk_b] = new_id
@@ -12216,16 +12229,50 @@ class RadixLayer(Layer):
             self.part_groups[new_id] = group
             self._canonical_group_cache = None
             self._formed_this_turn.add(new_id)
-        # Canonical fold provenance (todo "make abstraction order
-        # canonical"): a multi-byte percept row is PRODUCED by the sigma
-        # radix synthesis (bytes -> chunk combine) -- stamp FOLD_SIGMA at
-        # pass slot 0 on the owning percept codebook. A single-byte atom
-        # is an order-0 prototype: no fold, no stamp.
-        if len(chunk_b) > 1:
-            _rf = getattr(self._basis, "record_fold", None)
-            if _rf is not None:
-                _rf(new_id, 0, getattr(self._basis, "FOLD_SIGMA", 1))
-        return new_id
+
+    @torch.no_grad()
+    def write_fixed_forms(self, keys, forms, codes):
+        """Seat or refresh known chart coordinates in their encounter order.
+
+        An integer is an existing radix seat. A byte key names a row to
+        find or allocate. Resolve every address before changing the store.
+        """
+        basis = self._basis
+        if codes.shape != (len(keys), self.dim) or forms.shape != (len(keys),):
+            raise ValueError('fixed form rows require aligned addresses and codes')
+        new, rows, last = {}, [], {}
+        for i, key in enumerate(keys):
+            if isinstance(key, int):
+                row = key
+                if not 0 <= row < self._size:
+                    raise IndexError('unavailable fixed radix row')
+            else:
+                if not isinstance(key, bytes) or not key:
+                    raise ValueError('a new fixed radix row requires a nonempty byte key')
+                row = self.hash_map.get(key)
+                if row is None:
+                    row = new.setdefault(key, self._size + len(new))
+            rows.append(row)
+            last[row] = i
+        end = self._size + len(new)
+        if end > self._capacity:
+            raise self._capacity_exhausted(end)
+        addresses = forms.new_tensor(list(last))
+        if len(last) < len(rows):
+            source = forms.new_tensor(list(last.values()))
+            forms, codes = forms[source], codes[source]
+        basis.W.index_copy_(0, addresses, codes)
+        basis.fixed_row_codes.index_copy_(0, addresses, codes)
+        basis.fixed_form_rows.index_copy_(0, addresses, forms)
+        basis.fixed_row_mask.index_fill_(0, addresses, True)
+        for key, row in new.items():
+            self._register_chunk(key, row)
+        fold = getattr(basis, 'record_fold', None)
+        if fold is not None and new:
+            folded = [row for key, row in new.items() if len(key) > 1]
+            if folded:
+                fold(torch.tensor(folded, dtype=torch.long, device='cpu'), 0, getattr(basis, 'FOLD_SIGMA', 1))
+        return rows
 
     # ------------------------------------------------------------------
     # Lookup path

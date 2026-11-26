@@ -807,6 +807,28 @@ class InterpretLayer(GrammarLayer):
     def sentence_referents(self, words):
         """Resolve all positive names on each page using its own expected objects."""
         from Meaning import require_sentence_tensor
+        alloc = self.owner._concept_allocator
+        # With one remembered object, a live definition and an expired
+        # definition resolve to the same identity. No strength or forecast
+        # can change that choice. A raised kind can suppress a remembered
+        # object, so defer those schemas to the full denotation read.
+        named = alloc.named_identities
+        if not named:
+            return words
+        if (all(len(objects) <= 1 for objects in named.values())
+                and not any(key[0] == 'part-kind' for key in alloc.relate_idx)):
+            pairs = tuple(sorted((word, obj) for word, objects in named.items() for obj in objects))
+            if all(word > 0 and obj > 0 and obj not in alloc.retired for word, obj in pairs):
+                if not pairs:
+                    return words
+                cached = getattr(self, '_sole_referents', None)
+                if cached is None or cached[0] != pairs or cached[1].device != words.device:
+                    cached = pairs, words.new_tensor(pairs).T.contiguous()
+                    self._sole_referents = cached
+                from WordConceptPool import basic_word_rows
+                names, values = cached[1].unbind()
+                objects = basic_word_rows(words, names, values)
+                return torch.where(objects >= 0, objects, words)
         defined = self.owner.definitions
         keys, objects, seats, alternatives = defined.object_table(words.device)
         if alternatives:
@@ -855,17 +877,22 @@ class InterpretLayer(GrammarLayer):
         if self.mandatory:
             if not getattr(cs, '_online_learning_frozen', False):
                 possible = sorted(name for name in alloc.word_descriptions
-                                  if not alloc.named_identities.get(name) and not cs.definitions.objects(name))
+                                  if not alloc.named_identities.get(name))
                 if possible:
                     names = words.new_tensor(possible)
                     places = torch.arange(words.numel(), device=words.device)
                     at = basic_word_rows(words.flatten(), names, torch.arange(len(names), device=words.device))
                     first = words.new_full((len(names) + 1,), words.numel())
                     first.scatter_reduce_(0, torch.where(at >= 0, at, len(names)), places, 'amin')
-                    newly_read = sorted((place, name) for place, name in zip(first[:-1].tolist(), possible)
-                                        if place < words.numel())
-                    for place, name in newly_read:
-                        self.reading(name, batch=place // words.shape[1])
+                    # Only first encounters can mint. Return those names in
+                    # page order, even when the lexicon is much larger than
+                    # the presentation. Repeated sites share the first blank.
+                    encountered = (at >= 0) & (places == first[torch.where(at >= 0, at, len(names))])
+                    new_names = words.flatten()[encountered]
+                    for name in new_names.tolist():
+                        if self.owner._concept_row_of(name) is None:
+                            raise RuntimeError('an identified word has no conceptual row')
+                        self.blank(name)
             objects = self.sentence_referents(words)
         else:
             objects = words
@@ -877,13 +904,19 @@ class InterpretLayer(GrammarLayer):
         # Seated concepts take the order of their physical block. A seated
         # relation instead takes the order of its denotation, and an old
         # occurrence name can refer back into the store.
-        if alloc.order_from_row == cs._seated_concept_order:
+        source_order = alloc.order_from_row
+        if (getattr(source_order, '__self__', None) is cs and
+                getattr(source_order, '__func__', None) is not None and
+                source_order.__func__ is getattr(type(cs), '_seated_concept_order', None)):
             ends = seats.new_tensor(cs._order_caps()).cumsum(0)[:-1]
             orders = torch.where(seats >= 0, torch.bucketize(seats, ends, right=True), -1)
-            alloc.parts._index()
+            handles = alloc.parts.__dict__.get('_sentence_handles')
+            if handles is None:
+                alloc.parts._index()
+                handles = alloc.parts._endpoints
             unusual = sorted(key[1] for key in matrix._tensor_rows if isinstance(key, tuple)
                              and key[0] == 'concept' and
-                             (key[1] in alloc.parts._endpoints or key[1] not in alloc.concepts))
+                             (key[1] in handles or key[1] not in alloc.concepts))
             if not unusual:
                 return objects, seats, orders
             # Query only exceptional names this sentence actually addresses.

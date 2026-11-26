@@ -25,6 +25,20 @@ def test_taxonomy_and_nested_relations_share_symbol_rows():
     assert not hasattr(alloc.parts, 'rel_type')
 
 
+def test_sentence_handles_include_new_relations_until_the_next_presentation():
+    store = LTM1(16)
+    old = store.add(2, 3)
+    with store.sentence_handles():
+        new = store.add(3, 4)
+        with store.sentence_handles():
+            assert store._sentence_handles == {old, new}
+            store.retain([new])
+        assert old in store._sentence_handles
+        assert store.find(2, 3) is None
+    with store.sentence_handles():
+        assert store._sentence_handles == {new}
+
+
 def test_pair_rewitnesses_both_lanes_without_a_relation_kind():
     store = LTM1(16)
     first = store.add(2, 3, truth_plus=.7, truth_minus=.1)

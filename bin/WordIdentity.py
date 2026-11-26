@@ -552,6 +552,22 @@ class WordIdentity(nn.Module):
             if forms is not None:
                 basis.fixed_form_rows.index_copy_(0, addresses, forms)
 
+    def _seat_stored_form(self, raw, carriers):
+        """Write the nominated word, its parts and its holders from their chart rows."""
+        members = tuple(dict.fromkeys(self.words[raw]))
+        spellings = [bytes_of(atom[1]) for atom in members]
+        keys = [self.atoms[atom] if atom in self.atoms else self.PREFIX + atom[0].encode() + b'/' + spelling
+                for atom, spelling in zip(members, spellings, strict=True)]
+        spellings.extend((raw, *carriers))
+        keys.append(self.WORD_PREFIX + raw)
+        keys.extend(self.word_rows[holder] for holder in carriers)
+        forms = self.forms_table.left.new_tensor([self._table_row(word) for word in spellings], dtype=torch.long)
+        codes = self._storage_code(self._table_codes(forms)).to(self.store._basis.W)
+        rows = self.store.write_fixed_forms(keys, forms, codes)
+        self.atoms.update(zip(members, rows[:len(members)], strict=True))
+        self._fixed_bytes.update(zip(rows, spellings, strict=True))
+        return rows[len(members)]
+
     def form(self, raw):
         """A form's live table point, or the legacy fold in an isolated store."""
         raw = bytes(raw)
@@ -644,9 +660,12 @@ class WordIdentity(nn.Module):
                         if own not in self.words[holder]] if len(text) > 1 else []
             for holder in carriers:
                 self.words[holder] = self.words[holder] + (own,)
-            self._admit_atoms(self.words[raw])
+            if witnesses is None:
+                self._admit_atoms(self.words[raw])
+                row = self.store.insert(self.WORD_PREFIX + raw, init_vector=self._storage_code(self.form(raw)))
+            else:
+                row = self._seat_stored_form(raw, carriers)
             self.order[raw] = len(self.order)
-            row = self.store.insert(self.WORD_PREFIX + raw, init_vector=self._storage_code(self.form(raw)))
             self.word_rows[raw] = row
             self.store.inverse_table[row] = raw
             self._fixed_bytes[row] = raw
@@ -656,7 +675,8 @@ class WordIdentity(nn.Module):
                 self.store.radix_trie.insert(raw, row)
             # The forms that hold the new one carry its part: their rows are
             # written again, and the basic percepts follow.
-            self._write_forms(carriers + [raw])
+            if witnesses is None:
+                self._write_forms(carriers + [raw])
             if carriers:
                 self.revision += 1
             self.basic.follow_forms(set(carriers) | {raw}, raw)

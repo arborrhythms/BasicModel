@@ -360,6 +360,10 @@ def test_contained_rows_preserve_admission_order_and_taught_runs():
                          holder_rows=held[0].tolist())
             assert native.holders == reference.holders and native.inside == reference.inside
         assert native.vocab_extras() == reference.vocab_extras()
+        seats = sorted(set(native.atoms.values()) | set(native.word_rows.values()))
+        for column in ('W', 'fixed_row_codes', 'fixed_form_rows', 'fixed_row_mask'):
+            assert torch.equal(getattr(native.store._basis, column)[seats],
+                               getattr(reference.store._basis, column)[seats]), column
 
 
 def test_wide_containment_uses_one_address_per_form():

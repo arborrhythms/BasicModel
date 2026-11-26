@@ -14,6 +14,7 @@ import hashlib
 import json
 import math
 import weakref
+from contextlib import contextmanager
 from dataclasses import dataclass, field, replace
 from typing import NamedTuple
 
@@ -3001,6 +3002,24 @@ class LTM1(_CountedRows, nn.Module):
             raise ValueError('invalid tagged relation reference')
         return kind, value
 
+    @contextmanager
+    def sentence_handles(self):
+        """Track which names can denote a relation during this presentation.
+
+        The opening index includes mutations since the last presentation.
+        A newly published handle joins it immediately. Retention can leave
+        an extra candidate, whose actual denotation the reader still checks.
+        """
+        if self.__dict__.get('_sentence_handles') is not None:
+            yield
+            return
+        self._index()
+        self._sentence_handles = set(self._endpoints)
+        try:
+            yield
+        finally:
+            self._sentence_handles = None
+
     def _index(self):
         if self._index_version == self._topology_revision:
             return
@@ -3015,6 +3034,9 @@ class LTM1(_CountedRows, nn.Module):
         import bisect
         self._pairs[left, right] = row
         self._endpoints[row] = left, right
+        handles = self.__dict__.get('_sentence_handles')
+        if handles is not None:
+            handles.add(row)
         bisect.insort(self._parts.setdefault(right, []), left, key=lambda ref: self._pairs[ref, right])
         bisect.insort(self._wholes.setdefault(left, []), right, key=lambda ref: self._pairs[left, ref])
         for reference in {left, right}:
