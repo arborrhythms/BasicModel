@@ -812,7 +812,7 @@ def test_cert_4_the_next_sigma_reads_one_combined_input_for_each_symbol():
 
 
 def test_batched_sigma_preserves_the_bound_field_and_its_gradients():
-    from FieldProjection import rung_entries, seated_rung
+    from FieldProjection import reached_entries, rung_entries, seated_rung
     from Layers import signed_lanes, sigma_read, thing_options
 
     cs, store, ids, rows = _small_space()
@@ -828,7 +828,11 @@ def test_batched_sigma_preserves_the_bound_field_and_its_gradients():
         size, batch = addresses.shape
         field = torch.linspace(.1, .9, size * batch * 4).reshape(size, batch, 2, 2).requires_grad_()
         topology = store.inventory_indices(store.nOutput, field.device)
-        plan = rung_entries(store, pages, addresses)
+        reached = torch.zeros(store.nOutput, batch, dtype=torch.bool)
+        for b, page in enumerate(pages):
+            reached[[row for row in page if row >= 0], b] = True
+        plan = reached_entries(reached, topology)
+        assert all(torch.equal(a, b) for a, b in zip(plan, rung_entries(store, pages, addresses), strict=True))
         read = compiled(field, addresses, store.values, topology, store.nOutput, 0, size, plan)
         reference = []
         for b, row in enumerate(pages):

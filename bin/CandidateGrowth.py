@@ -354,7 +354,10 @@ def field_readings(owner, field, active, binding):
         return None
     if len(binding) > owner.mtm._candidate_pairs.binding_width:
         return None
-    names = binding_names(owner._cs_field_concept_ids, max(1, len(binding)))
+    if torch.is_tensor(binding) and len(binding):
+        names = binding
+    else:
+        names = binding_names(owner._cs_field_concept_ids, max(1, len(binding)))
     if active is None:
         active = torch.ones(field.evidence.shape[1], dtype=torch.bool, device=names.device)
     values, ranks = field_levels(field.concept_ids, field.evidence, names, active)

@@ -14859,8 +14859,8 @@ class ConceptualSpace(Space):
 
         ``required[k]`` is the reading of the order-zero member whose concept
         is ``rows_t[k]`` (:class:`ConceptMembers`). A kind is reached through
-        the concepts its symbols hold. Only the reached rows come back to the
-        host, to be grouped by order.
+        the concepts its symbols hold. Their physical blocks determine the
+        field width and seat ordering on each page.
         """
         from CandidateGrowth import read_streams, visible_store
         store = _concept_alloc_of(self).layer()
@@ -14897,34 +14897,22 @@ class ConceptualSpace(Space):
 
         reached = read_streams(self, closure, axis=1)
         orders = max(2, int(self._symbolic_order)) + 1
-        retired = _concept_alloc_of(self).retired
-        by_batch = [[[] for _ in range(orders)] for _ in range(B)]
-        for row, batch in reached.nonzero().tolist():
-            if self.concept_id_at_row(row) in retired:
-                continue
-            order = self._row_order(row)
-            if order < orders:
-                by_batch[batch][order].append(row)
-        caps = [max([min(self._order_caps()[0], int(self.outputShape[0])) if k == 0 else 0]
-                    + [len(groups[k]) for groups in by_batch]) for k in range(orders)]
-        addresses = [[row for k, group in enumerate(groups)
-                      for row in (group + [-1] * (caps[k] - len(group)))]
-                     for groups in by_batch]
-        rows = torch.tensor(addresses, dtype=torch.long, device=device).t()
-        ids = [[self.concept_id_at_row(row) if row >= 0 else None for row in batch]
-               for batch in addresses]
-        nomination_ids = tuple(sorted({cid for batch in ids for cid in batch if cid is not None}))
-        ids = torch.tensor([[cid if cid is not None else -1 for cid in batch] for batch in ids],
-                           dtype=torch.long, device=device).t()
-        if addresses and all(batch == addresses[0] for batch in addresses[1:]):
-            rows, ids = rows[:, 0], ids[:, 0]
+        from FieldProjection import field_seats, reached_entries, seated_names
+        names, live = seated_names(_concept_alloc_of(self), S, rows_t)
+        blocks = self._order_caps()[:orders]
+        blocks = tuple(blocks) + (0,) * (orders - len(blocks))
+        reached = reached & live[:, None]
+        # Orders above the configured reading depth have no field seat.
+        reached[sum(blocks):] = False
+        rows, caps = field_seats(reached, blocks, min(blocks[0], int(self.outputShape[0])))
+        ids = names[torch.where(rows >= 0, rows, S)]
+        nomination_ids = names[:-1][reached.any(1) & (names[:-1] >= 0)].unique()
         # Retain only the physical addresses used by the field's Sigma.
         # A trial that grows a different store gets its own binding on read.
         parent = visible_store(store)
         if getattr(parent, '_thing_columns', False) and parent.nnz and not torch.is_inference(rows):
-            from FieldProjection import rung_entries
             topology = parent.inventory_indices(parent.nOutput, device)
-            plan = rung_entries(parent, addresses, rows)
+            plan = reached_entries(reached, topology)
             self.__dict__['_cs_rung_entries'] = rows, rows._version, topology, B, plan
         else:
             self.__dict__.pop('_cs_rung_entries', None)

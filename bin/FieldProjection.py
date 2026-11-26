@@ -16,6 +16,68 @@ def reachable_rows(active, rows, standing, sources, targets, rounds, size):
     return reached
 
 
+def seated_names(allocator, size, like):
+    """Concept name and retirement status at every physical field seat."""
+    stamp = (size, like.device, tuple((id(layer._tensor_row_keys), len(layer._tensor_row_keys))
+                                     for layer in allocator._layers.values()), frozenset(allocator.retired))
+    cached = getattr(allocator, '_field_seated_names', None)
+    if cached is None or cached[0] != stamp:
+        # Later layers have precedence, as in concept_id_at_row.
+        seats = {}
+        for layer in allocator._layers.values():
+            seats.update((row, key[1] if isinstance(key, tuple) else key)
+                         for row, key in layer._tensor_row_keys.items() if 0 <= row < size)
+        names = like.new_full((size + 1,), -1, dtype=torch.long)
+        live = torch.ones(size, dtype=torch.bool, device=like.device)
+        if seats:
+            rows, ids = like.new_tensor(list(seats.items()), dtype=torch.long).T
+            names.index_copy_(0, rows, ids)
+            retired = [row for row, name in seats.items() if name in allocator.retired]
+            if retired:
+                live.index_fill_(0, rows.new_tensor(retired), False)
+        cached = allocator._field_seated_names = stamp, names, live
+    return cached[1:]
+
+
+def field_seats(reached, blocks, minimum):
+    """Pack each page's reachable seats in physical order within each block."""
+    batch = reached.shape[1]
+    offset = 0
+    groups = []
+    for width in blocks:
+        groups.append(reached[offset:offset + width])
+        offset += width
+    counts = [group.long().sum(0).amax() for group in groups] if batch else [
+        reached.new_zeros((), dtype=torch.long) for _ in groups]
+    counts[0] = counts[0].clamp_min(minimum)
+    shared = (reached[:offset] == reached[:offset, :1]).all() if batch else reached.new_tensor(False)
+    *caps, identical = torch.stack([*counts, shared.long()]).tolist()
+    if not batch:
+        return reached.new_empty(0, dtype=torch.long), tuple(caps)
+    rows, offset = [], 0
+    for group, cap in zip(groups, caps, strict=True):
+        if cap:
+            positions = torch.where(group, group.long().cumsum(0) - 1, cap)
+            source = torch.arange(offset, offset + len(group), device=group.device)[:, None].expand_as(positions)
+            packed = positions.new_full((cap + 1, batch), -1)
+            packed.scatter_reduce_(0, positions, source, 'amax')
+            rows.append(packed[:cap])
+        offset += len(group)
+    table = torch.cat(rows) if rows else reached.new_empty((0, batch), dtype=torch.long)
+    return (table[:, 0] if identical else table), tuple(caps)
+
+
+def reached_entries(reached, topology):
+    """The stored edges and symbol columns reached by each page, in edge order."""
+    _, targets, columns, members, _ = topology
+    selected = reached.index_select(0, targets).T.reshape(-1)
+    flat = torch.arange(len(selected), device=reached.device)[selected]
+    width = max(1, len(targets))
+    pages, edges = flat // width, flat % width
+    symbolic = torch.arange(len(edges), device=reached.device)[columns.index_select(0, edges) < len(members)]
+    return pages, edges, symbolic
+
+
 def rung_entries(store, addresses, like):
     """Index sparse entries while the field writer assigns its page seats."""
     pages, entries, symbolic = [], [], []
