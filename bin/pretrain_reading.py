@@ -58,7 +58,18 @@ def presentation(model, texts, batch_size):
         correct = []
         for b, text in enumerate(texts):
             slots = [i for i, form in enumerate(forms[b]) if form]
-            if [forms[b][i] for i in slots] != words(text):
+            expected = words(text)
+            if [forms[b][i] for i in slots] != expected:
+                # A frozen fresh reader can see all the spans before MTM has
+                # named their words. That reading fails and can be taught.
+                field = getattr(model.perceptualSpace, '_forward_input', None) or {}
+                if 'pool_spans' in field:
+                    raw = bytes(field['sentence_bytes'][b].tolist())
+                    units = [raw[lo:hi].decode('utf8', 'surrogateescape')
+                             for lo, hi in field['pool_spans'][b].tolist() if hi > lo]
+                    if units == expected:
+                        correct.append(False)
+                        continue
                 raise ValueError(f'input does not fit the model or lesson tokenizer: {text!r}')
             taken = [index for index in actions[b] if index >= 0]
             correct.append(taken == slots and all(accepted[b][i] for i in slots))

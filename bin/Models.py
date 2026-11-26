@@ -11526,25 +11526,32 @@ class BasicModel(BaseModel):
         # can mint a blank, preserve the original read/definition order.
         from WordSurfaces import is_lexical_form
         resolved_objects = None
-        if pool_readings is not None and owner.interpret.mandatory:
-            readable = [[row[1] if row[0] and row[1] in basic.words
-                         and p < len(word_texts[b]) and is_lexical_form(word_texts[b][p]) else -1
-                         for p, row in enumerate(stream)] for b, stream in enumerate(metadata)]
-            can_mint = (not getattr(owner, '_online_learning_frozen', False)
-                        and any(word >= 0 and not definitions.objects(word)
-                                and not alloc.named_identities.get(word)
-                                for word in {word for stream in readable for word in stream}))
-            if not can_mint:
-                names = part_ids.new_tensor(readable, dtype=torch.long).reshape(B, W)
-                resolved_objects = owner.interpret.sentence_referents(names).tolist()
-        basic_rows = [[-1]*W for _ in range(B)]
+        native_basic = None
+        if pool_readings is not None:
+            from WordConceptPool import basic_word_rows
+            labels = word_texts.labels
+            names, percepts = basic.word_row_index(labels, part_ids.device)
+            native_basic = basic_word_rows(witnesses[..., 0], names, percepts)
+            native_basic = torch.where(admitted, native_basic, -1)
+            if owner.interpret.mandatory:
+                can_mint = (not getattr(owner, '_online_learning_frozen', False)
+                            and any(name in basic.words and is_lexical_form(labels.get(name, ''))
+                                    and not definitions.objects(name) and not alloc.named_identities.get(name)
+                                    for name in {row[1] for stream in metadata for row in stream if row[0]}))
+                if not can_mint:
+                    readable = torch.where(native_basic >= 0, witnesses[..., 0], -1)
+                    resolved_objects = owner.interpret.sentence_referents(readable).tolist()
+        basic_rows = None if native_basic is not None else [[-1]*W for _ in range(B)]
         boundary_percepts = set()
         for b in range(B):
-            texts_b = word_texts[b] if b < len(word_texts) else ()
+            texts_b = word_texts[b] if pool_readings is None and b < len(word_texts) else ()
             for p in range(W):
                 if not metadata[b][p][0]:
                     continue
-                value = texts_b[p] if p < len(texts_b) else None
+                if pool_readings is not None:
+                    value = labels.get(metadata[b][p][1], '')
+                else:
+                    value = texts_b[p] if p < len(texts_b) else None
                 if value is None:
                     pending.append((b, p, None))
                     continue
@@ -11581,8 +11588,10 @@ class BasicModel(BaseModel):
                     alloc = getattr(owner, "_concept_allocator", None)
                 A = int(word_id)
                 # The word's basic percept is a row only once MTM nominated it.
-                basic_rows[b][p] = basic.words.get(A, -1)
-                if basic_rows[b][p] < 0:
+                basic_row = basic.words.get(A, -1)
+                if basic_rows is not None:
+                    basic_rows[b][p] = basic_row
+                if basic_row < 0:
                     pending.append((b, p, key))
                     continue
                 if resolved_objects is None:
@@ -11621,13 +11630,14 @@ class BasicModel(BaseModel):
                     owner.propose_utility_observation(
                         A, sorted(current_parts) + [10_000_000 + w for w in sorted(current_wholes)])
                 owner.record_concept_fold_support(A, fold_support)
-                boundary_percepts.add(basic_rows[b][p])
+                boundary_percepts.add(basic_row)
                 if pool_readings is None:
                     addresses[b][p] = (row, A, owner._row_order(row), object_row, object_id, object_order)
                 else:
                     addresses[b][p] = (object_id, object_order)
 
-        isp._ar_basic_percept_ids = part_ids.new_tensor(basic_rows, dtype=torch.long)
+        isp._ar_basic_percept_ids = (native_basic if native_basic is not None
+                                     else part_ids.new_tensor(basic_rows, dtype=torch.long))
         address_table = part_ids.new_tensor(addresses, dtype=torch.long).reshape(B, W, address_width)
         if pool_readings is None:
             rows, ids, orders, object_rows, object_ids, object_orders = address_table.unbind(-1)

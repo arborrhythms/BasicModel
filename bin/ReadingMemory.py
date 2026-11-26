@@ -85,67 +85,100 @@ def _name_lookup(names, values, missing):
     return torch.where((positions < size) & (keys[positions] == values), rows[positions], missing)
 
 
-def retained_masks(head, handles, kinds, endpoints, names, referents):
-    """Reachable physical rows for a typed head. Handles are in dependency order."""
-    relation_live = (head[0] == RELATION) & (handles == head[1])
-    # Each local child precedes its parent. The loop bound is shape metadata;
-    # the root, both child addresses and every branch mask stay on device.
-    for i in reversed(range(handles.shape[0])):
-        child = (kinds[i, :, None] == RELATION) & (handles == endpoints[i, :, None])
-        relation_live = relation_live | (relation_live[i] & child.any(0))
-    # Map an occurrence address to its potentially non-contiguous physical seat.
-    # The final seat absorbs symbols and already-durable references.
-    n = names.shape[0]
-    targets = _name_lookup(names, torch.cat((head[1:].reshape(1), endpoints.flatten())), n)
-    selected = torch.cat(((head[:1] == OCCURRENCE),
-                          ((kinds == OCCURRENCE) & relation_live[:, None]).flatten()))
-    live = names.new_zeros(n + 1).scatter_add(0, targets, selected.long()).bool()
-    # Each idea has at most one occurrence referent. Pointer doubling covers
-    # the entire chain in logarithmic rounds and also handles shared referents.
-    following = torch.where(referents[:, 0] == OCCURRENCE, _name_lookup(names, referents[:, 1], n), n)
-    following = torch.cat((following, names.new_full((1,), n)))
-    for _ in range(n.bit_length()):
-        live = live | torch.zeros_like(following).scatter_add(0, following, live.long()).bool()
-        following = following[following]
-    return live[:n], relation_live
+def _stream_addresses(names, live, values):
+    """Look up names in each stream, using the padded width as its missing seat."""
+    width = names.shape[1]
+    keys, order = torch.where(live, names, torch.iinfo(names.dtype).max).sort(dim=1, stable=True)
+    at = torch.searchsorted(keys, values.contiguous())
+    order = torch.nn.functional.pad(order, (0, 1), value=width)
+    seats = order.gather(1, at)
+    padded = torch.nn.functional.pad(names, (0, 1))
+    active = torch.nn.functional.pad(live, (0, 1))
+    return torch.where(active.gather(1, seats) & (padded.gather(1, seats) == values), seats, width)
 
 
-def _retention_plan(store, head, durable, first_name):
-    parts = store.parts
-    parts._sort()
-    handles = parts.relation_order[:len(parts)]
-    names = store.row_names[:len(store)]
-    root = names.new_tensor(parts.reference(head))
-    keep, links = retained_masks(root, handles, parts.ref_kinds[handles], parts.refs[handles],
-                                 names, store.referent[:len(store)])
-    rows = keep.nonzero().flatten()
-    handles = handles[links]
-    source_names = names[rows]
-    new_names = first_name + torch.arange(rows.numel(), device=names.device)
-    # The same translation covers roots, operands and occurrence-to-occurrence
-    # references. A durable name is legal only in its own address domain.
-    references = torch.cat((root[None], store.referent[rows],
-                            torch.stack((parts.ref_kinds[handles], parts.refs[handles]), -1).reshape(-1, 2)))
-    kinds, values = references.unbind(-1)
-    local = _name_lookup(source_names, values, len(rows))
-    occurrence = kinds == OCCURRENCE
-    translated = torch.cat((new_names, new_names.new_zeros(1)))[local]
-    external = store.__dict__.get('_external_memory')
-    shared = external is not None and external() is durable
-    valid = ~occurrence | (local < len(rows))
-    local_link = _name_lookup(handles, values, -1) >= 0
-    valid &= (kinds != RELATION) | local_link
-    if shared:
-        valid |= occurrence & (_name_lookup(durable.row_names[:len(durable)], values, -1) >= 0)
-        address = values.clamp(0, durable.parts.capacity - 1)
-        valid |= ((kinds == RELATION) & (address == values) & (durable.parts.ref_kinds[address, 0] != 0))
-    if not bool(valid.all()):
+def retained_rows(heads, handles, pair_mask, endpoints, names, idea_mask, referents,
+                  issued, shared, durable_names, durable_tags):
+    """Trace all winning heads and translate occurrence names in stream order."""
+    batch, pairs = handles.shape
+    ideas = names.shape[1]
+    relation = pair_mask & (heads[:, :1] == RELATION) & (handles == heads[:, 1:])
+    kinds, values = endpoints.unbind(-1)
+    children = _stream_addresses(handles, pair_mask, values.reshape(batch, -1)).reshape(batch, pairs, 2)
+    relation = torch.nn.functional.pad(relation.long(), (0, 1))
+    for i in reversed(range(pairs)):
+        chosen = (kinds[:, i] == RELATION) & relation[:, i:i + 1].bool()
+        relation = relation.scatter_reduce(1, children[:, i], chosen.long(), reduce='amax')
+    relation = relation[:, :pairs].bool()
+
+    all_refs = torch.cat((heads[:, None], referents, endpoints.reshape(batch, -1, 2)), 1)
+    tags, values = all_refs.unbind(-1)
+    local = _stream_addresses(names, idea_mask, values)
+    selected = torch.cat((torch.ones_like(heads[:, :1], dtype=torch.bool),
+                          torch.zeros_like(idea_mask), relation.repeat_interleave(2, dim=1)), 1)
+    kept = names.new_zeros(batch, ideas + 1).scatter_add(1, local, ((tags == OCCURRENCE) & selected).long()).bool()
+    following = torch.where(idea_mask & (referents[..., 0] == OCCURRENCE), local[:, 1:ideas + 1], ideas)
+    following = torch.nn.functional.pad(following, (0, 1), value=ideas)
+    for _ in range(ideas.bit_length()):
+        kept = kept | torch.zeros_like(following).scatter_add(1, following, kept.long()).bool()
+        following = following.gather(1, following)
+    kept = kept[:, :ideas]
+    new_names = issued + kept.flatten().long().cumsum(0).reshape_as(names)
+    selected = torch.cat((selected[:, :1], kept, selected[:, ideas + 1:]), 1)
+    local_link = _stream_addresses(handles, relation, values)
+    durable_at = values.clamp(0, len(durable_tags) - 1)
+    durable_link = (durable_at == values) & (durable_tags[durable_at] != 0)
+    durable_idea = _name_lookup(durable_names, values.flatten(), -1).reshape_as(values) >= 0
+    available = ((tags != RELATION) | (local_link < pairs) | (shared[:, None] & durable_link))
+    available &= ((tags != OCCURRENCE) | (local < ideas) | (shared[:, None] & durable_idea))
+    moved = torch.nn.functional.pad(new_names, (0, 1)).gather(1, local)
+    values = torch.where((tags == OCCURRENCE) & (local < ideas), moved, values)
+    translated = torch.stack((tags, values), -1)
+    return (kept, relation, new_names, translated[:, 1:ideas + 1],
+            translated[:, ideas + 1:].reshape_as(endpoints), translated[:, 0], (~selected | available).all())
+
+
+def _retention_plans(stores, heads, durable):
+    from torch.nn.utils.rnn import pad_sequence
+    entries, roots, shared, handles, endpoints, names, referents = [], [], [], [], [], [], []
+    plans = [None] * len(stores)
+    for i, (store, head) in enumerate(zip(stores, heads, strict=True)):
+        if store.nDim != durable.nDim or store.episodic_capacity != durable.episodic_capacity:
+            raise ValueError('incompatible STM and LTM reading rows')
+        if head is None:
+            continue
+        entries.append(i)
+        parts = store.parts
+        parts._sort()
+        rows = parts.relation_order[:len(parts)]
+        roots.append(parts.reference(head))
+        external = store.__dict__.get('_external_memory')
+        shared.append(external is not None and external() is durable)
+        handles.append(rows)
+        endpoints.append(torch.stack((parts.ref_kinds[rows], parts.refs[rows]), -1))
+        names.append(store.row_names[:len(store)])
+        referents.append(store.referent[:len(store)])
+    if not entries:
+        return plans, 0, 0
+    # -1 is not an occurrence name or a relation handle.
+    def pad(columns):
+        return pad_sequence(columns, batch_first=True, padding_value=-1)
+    handles, endpoints, names, referents = map(pad, (handles, endpoints, names, referents))
+    kept, links, new_names, ideas, pairs, roots, valid = retained_rows(
+        names.new_tensor(roots), handles, handles != -1, endpoints, names, names != -1, referents,
+        durable.names_issued, names.new_tensor(shared, dtype=torch.bool),
+        durable.row_names[:len(durable)], durable.parts.ref_kinds[:, 0])
+    if not bool(valid):
         raise ValueError('reading names an unavailable occurrence or relation')
-    values = torch.where(occurrence & (local < len(rows)), translated, values)
-    refs = torch.stack((kinds, values), -1)
-    idea_refs = refs[1:1 + len(rows)]
-    endpoints = refs[1 + len(rows):].reshape(-1, 2, 2)
-    return rows, new_names, idea_refs, handles, endpoints, refs[0]
+    sizes = torch.stack((kept.sum(1), links.sum(1))).tolist()
+    idea_counts, pair_counts = sizes
+    seats = torch.arange(names.shape[1], device=names.device).expand_as(names)
+    columns = (seats[kept].split(idea_counts), new_names[kept].split(idea_counts),
+               ideas[kept].split(idea_counts), handles[links].split(pair_counts),
+               pairs[links].split(pair_counts), roots.unbind())
+    for i, plan in zip(entries, zip(*columns, strict=True), strict=True):
+        plans[i] = plan
+    return plans, sum(idea_counts), sum(pair_counts)
 
 
 def _reserve_symbols(blocked, values):
@@ -232,14 +265,11 @@ def translate_batch(handles, endpoints, heads, active, refs, tags, blocked, next
     batch, width = handles.shape
     if not width:
         return handles.clone(), endpoints.clone(), active.clone(), heads.clone(), next_id, blocked.new_ones(())
-    keys, order = torch.where(active, handles, torch.iinfo(handles.dtype).max).sort(dim=1, stable=True)
     references = torch.cat((endpoints.reshape(batch, -1, 2), heads[:, None]), 1)
     kinds, values = references.unbind(-1)
-    places = torch.searchsorted(keys, values.contiguous())
-    found = (places < width) & (keys.gather(1, places.clamp_max(width-1)) == values)
-    local = order.gather(1, places.clamp_max(width-1))
-    local = local + torch.arange(batch, device=handles.device)[:, None] * width
-    own = (kinds == RELATION) & found
+    local = _stream_addresses(handles, active, values)
+    own = (kinds == RELATION) & (local < width)
+    local = local.clamp_max(width - 1) + torch.arange(batch, device=handles.device)[:, None] * width
     translated = torch.stack((kinds, torch.where(own, -local-1, values)), -1)
     temporary = -torch.arange(batch*width, device=handles.device)-1
     names, pairs, fresh, _, next_id, ok = translate_pairs(temporary,
@@ -321,18 +351,7 @@ def _publish_sequential_pairs(parts, allocator, refs, tags, next_id, names, fres
 
 def commit(stores, heads, durable):
     """Retain just the reachable idea payload and translate its ordered pairs."""
-    plans = []
-    n_ideas = n_pairs = 0
-    for store, head in zip(stores, heads, strict=True):
-        if store.nDim != durable.nDim or store.episodic_capacity != durable.episodic_capacity:
-            raise ValueError('incompatible STM and LTM reading rows')
-        if head is None:
-            plans.append(None)
-            continue
-        plan = _retention_plan(store, head, durable, durable.names_issued + (n_ideas + 1))
-        n_ideas += len(plan[0])
-        n_pairs += len(plan[3])
-        plans.append(plan)
+    plans, n_ideas, n_pairs = _retention_plans(stores, heads, durable)
     if len(durable) + n_ideas > durable.capacity:
         raise OverflowError('reading exceeds remaining long-term idea capacity')
     parts = durable.parts

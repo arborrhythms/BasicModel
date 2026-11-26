@@ -157,6 +157,7 @@ class WordIdentity(nn.Module):
         """Read form coordinates live from the table owned by PartSpace."""
         object.__setattr__(self, 'forms_table', table)
         self._table_rows = {}
+        self._row_spellings = None
         basis = self.store._basis
         object.__setattr__(basis, 'form_links', table)
         basis.fixed_parts_width = self.width
@@ -177,8 +178,63 @@ class WordIdentity(nn.Module):
             row = int(table.read(data, lengths, admit=False)[0])
             if row < 0:
                 row = int(table.insert(data, lengths)[0])
-            self._table_rows[raw] = row
+            self._remember_form(raw, row)
         return self._table_rows[raw]
+
+    def _remember_form(self, raw, row):
+        if self._table_rows.setdefault(raw, row) != row:
+            raise ValueError('nomination disagrees with its stored form row')
+        if self._row_spellings is not None:
+            self._row_spellings[row] = raw
+            self._unseated.discard(raw)
+
+    def _registered_parts(self, raw, part_rows):
+        """Resolve device containment against the inventory at this nomination."""
+        if self._row_spellings is None:
+            self._row_spellings = {byte: bytes([byte]) for byte in range(256)}
+            self._row_spellings.update((row, spelling) for spelling, row in self._table_rows.items())
+            # Old vocabularies can have forms which predate the form table.
+            # Read their row when present and retain the old membership for
+            # any missing form. This lookup never inserts or counts a reading.
+            known = set(self.words) | {bytes_of(run) for run in self.added}
+            missing = [word for word in known if len(word) > 1 and word not in self._table_rows]
+            self._unseated = set()
+            if missing:
+                table = self.forms_table
+                width = max(map(len, missing))
+                batch_size = max(1, (1 << 20) // width)
+                for start in range(0, len(missing), batch_size):
+                    group = missing[start:start + batch_size]
+                    data = table.left.new_tensor([list(word.ljust(width, b'\0')) for word in group])
+                    rows = table.read(data, table.left.new_tensor(list(map(len, group))), admit=False)
+                    for word, row in zip(group, rows.tolist(), strict=True):
+                        if row >= 0:
+                            self._remember_form(word, row)
+                        else:
+                            self._unseated.add(word)
+        inside, runs = set(), set()
+        for address in set(part_rows):
+            if address < 0:
+                continue
+            spelling = self._row_spellings.get(address // 2)
+            if spelling is None:
+                continue
+            if spelling != raw and spelling in self.inside:
+                inside.add(spelling)
+            if address % 2:
+                run = text_of(spelling)
+                if run in self.added:
+                    runs.add(run)
+        if self._unseated:
+            text = text_of(raw)
+            for spelling in self._unseated:
+                if spelling != raw and spelling in self.inside and spelling in raw:
+                    inside.add(spelling)
+                run = text_of(spelling)
+                if run in self.added and run in text:
+                    runs.add(run)
+        rank = self._added_rank()
+        return inside, tuple(('part', run) for run in sorted(runs, key=rank.__getitem__))
 
     def _table_code(self, raw):
         return self._table_codes(self._table_row(raw))
@@ -341,14 +397,15 @@ class WordIdentity(nn.Module):
         groups[row] = children
         self.store._canonical_group_cache = None
 
-    def _link(self, raw):
+    def _link(self, raw, *, inside=None):
         """Link a new stored form to the stored forms it holds as a run (its
         parts among the forms) and to those that hold it (its holders), on
         both sides of each link."""
         text = bytes(raw)
-        inside = {text[start:start + size] for size in range(1, len(text))
-                  for start in range(len(text) - size + 1)
-                  if text[start:start + size] in self.inside}
+        if inside is None:
+            inside = {text[start:start + size] for size in range(1, len(text))
+                      for start in range(len(text) - size + 1)
+                      if text[start:start + size] in self.inside}
         by_byte = self._forms_by_byte(text)
         lists = [self.holders[run] for run in inside]
         lists.extend(by_byte[byte] for byte in set(text))
@@ -517,8 +574,15 @@ class WordIdentity(nn.Module):
         if forms is not None:
             basis.fixed_form_rows.index_copy_(0, rows, forms)
 
-    def _add_part(self, run):
+    def _record_added(self, run):
+        count = len(self.added)
         self.added[run] = None
+        if self.__dict__.get('_rank_stamp') == (id(self.added), count):
+            self._rank[run] = count
+            self._rank_stamp = id(self.added), len(self.added)
+
+    def _add_part(self, run):
+        self._record_added(run)
         atom = ('part', run)
         self._atom(atom)
         for word in self.words:
@@ -530,7 +594,7 @@ class WordIdentity(nn.Module):
         atoms = set(atoms)
         return [word for word, parts in self.words.items() if atoms.intersection(parts)]
 
-    def admit(self, raw, *, form_row=None):
+    def admit(self, raw, *, form_row=None, witnesses=None):
         raw = bytes(raw)
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
@@ -538,8 +602,7 @@ class WordIdentity(nn.Module):
             table = self.forms_table
             if not 0 <= form_row < table.capacity:
                 raise IndexError('word nomination is outside the table of forms')
-            if self._table_rows.setdefault(raw, form_row) != form_row:
-                raise ValueError('word nomination disagrees with its stored form row')
+            self._remember_form(raw, form_row)
         if raw not in self.words:
             # A stored form of several characters is a part of its own,
             # carried by itself and by every stored form that holds it as a
@@ -547,9 +610,18 @@ class WordIdentity(nn.Module):
             text = text_of(raw)
             own = ('part', text)
             if len(text) > 1 and text not in self.added:
-                self.added[text] = None
-            self.words[raw] = self.atoms_of(raw)
-            self._link(raw)
+                self._record_added(text)
+            inside = None
+            if witnesses is None:
+                self.words[raw] = self.atoms_of(raw)
+            else:
+                characters, part_rows = witnesses
+                base = tuple(('part', text_of(octets)) for octets, _ in characters)
+                for octets, row in characters:
+                    self._remember_form(octets, row)
+                inside, added = self._registered_parts(raw, part_rows)
+                self.words[raw] = base + added
+            self._link(raw, inside=inside)
             carriers = [holder for holder in sorted(self.holders[raw], key=self.order.__getitem__)
                         if own not in self.words[holder]] if len(text) > 1 else []
             for holder in carriers:
@@ -644,6 +716,9 @@ class WordIdentity(nn.Module):
         for name in ('atoms', 'words', 'word_rows', 'added', 'revision'):
             setattr(self, name, value[name])
         self.__dict__.pop('_by_byte', None)
+        if getattr(self, 'forms_table', None) is not None:
+            self._row_spellings = None
+            self._table_rows = {}
         self._codes = {}
         self.nested = value.get('nested', {})
         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}

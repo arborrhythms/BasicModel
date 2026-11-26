@@ -506,11 +506,11 @@ class InterpretLayer(GrammarLayer):
             return None
         return self._install_word(parts, wholes, form, identity_key, word_reading=word_reading)
 
-    def install_nomination(self, word, seat, form_row, raw, wholes, initial):
+    def install_nomination(self, word, seat, form_row, raw, wholes, initial, *, witnesses):
         """Publish the native records for a symbol already selected by MTM."""
         cs = self.owner
         identity = cs._model.perceptualSpace.percept_store.identity
-        parts = identity.admit(raw, form_row=form_row)
+        parts = identity.admit(raw, form_row=form_row, witnesses=witnesses)
         self._sync_identity(identity)
         return self._install_word(parts, tuple(wholes), form_key(raw), identity.definition_key(raw),
                                   word_reading=True, pool_word=word, seat=seat, initial=initial)

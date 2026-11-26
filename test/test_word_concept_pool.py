@@ -296,3 +296,80 @@ def test_word_property_meet_keeps_tied_gradients_and_empty_rows(device):
     assert torch.equal(got, expected)
     empty = BasicPercepts.property_presence(basic, primitive, -torch.ones_like(rows))
     assert not empty.requires_grad and not empty.any()
+
+
+def test_nominated_characters_follow_form_rows_in_first_occurrence_order(device):
+    from FormLinks import FormLinks
+    from WordConceptPool import registration_witnesses
+    from WordIdentity import base_atoms, bytes_of
+    words = ['é🍋é!'.encode(), b'\x80\xe2\x82\x80\x80', b'\xf0\x9f', b'']
+    lengths = torch.tensor(list(map(len, words)), device=device)
+    data = lengths.new_tensor([list(word.ljust(max(map(len, words)), b'\0')) for word in words])
+    table = FormLinks(512, longest=data.shape[1], rounds=0).to(device)
+    forms = table.insert(data, lengths)
+    read = torch.compile(registration_witnesses, backend='eager', fullgraph=True)
+    characters, contained = read(table, forms, data, lengths)
+    for word, rows, addresses in zip(words, characters.tolist(), contained.tolist(), strict=True):
+        expected = [bytes_of(char) for _, char in base_atoms(word)]
+        result = [(word[pos:pos + size], row) for pos, (row, size) in enumerate(rows) if size]
+        assert [text for text, _ in result] == expected
+        for text, row in result:
+            assert table.read(data.new_tensor([list(text)]), lengths.new_tensor([len(text)]),
+                              admit=False).item() == row
+        plain = word.decode('utf8', 'surrogateescape')
+        all_bytes = {word[i:j] for i in range(len(word)) for j in range(i + 1, len(word) + 1)}
+        aligned = {bytes_of(plain[i:j]) for i in range(len(plain)) for j in range(i + 1, len(plain) + 1)}
+        for octets in all_bytes:
+            row = table.read(data.new_tensor([list(octets)]), lengths.new_tensor([len(octets)]),
+                             admit=False).item()
+            assert any(address // 2 == row for address in addresses)
+            assert (2 * row + 1 in addresses) == (octets in aligned)
+    assert read(table, forms, data[:, :0], lengths * 0)[0].shape == (len(words), 0, 2)
+
+
+def test_contained_rows_preserve_admission_order_and_taught_runs():
+    from FormLinks import FormLinks
+    from Layers import RadixLayer
+    from WordConceptPool import registration_witnesses
+    from WordIdentity import WordIdentity
+    words = [b'cab', b'ab', b'abcab', b'bc', 'éab'.encode(), b'\xa9a', b'\xa9ab']
+    table = FormLinks(1024, longest=5, rounds=0)
+    lengths = torch.tensor(list(map(len, words)))
+    data = lengths.new_tensor([list(word.ljust(5, b'\0')) for word in words])
+    forms = table.insert(data, lengths)
+    characters, parts = registration_witnesses(table, forms, data, lengths)
+    catalogs = []
+    for _ in range(2):
+        store = RadixLayer(64, initial_cap=512)
+        identity = store.identity = WordIdentity(store)
+        identity.bind_forms(table)
+        catalogs.append(identity)
+    reference, native = catalogs
+    for i, raw in enumerate(words):
+        if i == 2:
+            for identity in catalogs:
+                identity.admit_part('ca')
+        reference.admit(raw)
+        if i == 0:
+            native.admit(raw)
+        else:
+            elements = [(raw[pos:pos + n], row) for pos, (row, n) in
+                        enumerate(characters[i].tolist()) if n]
+            native.admit(raw, form_row=forms[i].item(), witnesses=(elements, parts[i].tolist()))
+        assert native.vocab_extras() == reference.vocab_extras()
+
+
+def test_wide_containment_uses_one_address_per_form():
+    from FormLinks import FormLinks
+    from WordConceptPool import registration_witnesses
+    table = FormLinks(512, longest=48, rounds=0)
+    raw = ('é' * 19).encode() + b'\xa9'
+    data = torch.tensor([list(raw)])
+    length = torch.tensor([len(raw)])
+    roots = table.insert(data, length)
+    chars, addresses = registration_witnesses(table, roots, data, length)
+    assert addresses.shape == (1, table.capacity)
+    # A lone continuation byte is both an interior byte and the final
+    # escaped character. The character-aligned occurrence takes precedence.
+    assert addresses[0, 0xa9].item() == 2 * 0xa9 + 1
+    assert chars[0, -1].tolist() == [0xa9, 1]

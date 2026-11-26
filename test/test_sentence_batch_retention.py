@@ -341,3 +341,43 @@ def test_kept_output_uses_each_streams_path_and_retains_prior_packed_output(devi
     assert model._kept_path_output.texts == ('1', '5', '0')
     assert model._kept_path_output.surface.tolist() == [[10, 11, 12, 13], [53, 54, 55, 0], [4, 5, 0, 0]]
     assert model._kept_path_output_actions.tolist() == [[10, 11, 12, 13], [53, 54, 55, -1], [4, 5, -1, -1]]
+
+
+def test_retained_rows_keep_stream_names_local_and_translate_referent_chains(device):
+    from Memory import OCCURRENCE, RELATION, SYMBOL
+    from ReadingMemory import retained_rows
+    operations = []
+
+    def backend(graph, _inputs):
+        operations.append(sum(node.op == 'call_function' for node in graph.graph.nodes))
+        return graph.forward
+
+    for batch in (4, 16):
+        # The same local names designate different payload on every stream.
+        names = torch.tensor([500, 3, 46], device=device).repeat(batch, 1)
+        handles = names.new_tensor([9, 12]).repeat(batch, 1)
+        endpoints = names.new_tensor([[(OCCURRENCE, 46), (SYMBOL, 53)],
+                                      [(RELATION, 9), (OCCURRENCE, 46)]]).repeat(batch, 1, 1, 1)
+        referents = names.new_tensor([(SYMBOL, 4), (SYMBOL, 5), (OCCURRENCE, 3)]).repeat(batch, 1, 1)
+        heads = names.new_tensor([(RELATION, 12), (OCCURRENCE, 46),
+                                  (OCCURRENCE, 500), (OCCURRENCE, 76)]).repeat(batch // 4, 1)
+        shared = torch.arange(batch, device=device) % 4 == 3
+        read = torch.compile(retained_rows, backend=backend, fullgraph=True, dynamic=False)
+        args = (heads, handles, handles >= 0, endpoints, names, names >= 0, referents,
+                names.new_tensor(1000), shared, names.new_tensor([76]), names.new_zeros(80))
+        kept, relations, moved, refs, pairs, roots, valid = read(*args)
+        assert valid
+        first = 1001
+        for b in range(batch):
+            ideas = [[1, 2], [1, 2], [0], []][b % 4]
+            assert kept[b].nonzero().flatten().tolist() == ideas
+            assert relations[b].tolist() == [b % 4 == 0] * 2
+            assert moved[b, ideas].tolist() == list(range(first, first + len(ideas)))
+            if b % 4 < 2:
+                assert refs[b, 2].tolist() == [OCCURRENCE, first]
+            if b % 4 == 0:
+                assert pairs[b, 1, 1].tolist() == [OCCURRENCE, first + 1]
+            expected = [(RELATION, 12), (OCCURRENCE, first + 1), (OCCURRENCE, first), (OCCURRENCE, 76)]
+            assert roots[b].tolist() == list(expected[b % 4])
+            first += len(ideas)
+    assert operations[0] == operations[1]

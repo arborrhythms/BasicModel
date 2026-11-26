@@ -255,6 +255,62 @@ def read_units(pool, table, surface, units, longest, chart, discard, *, learn):
     return words, seats, forms, trimmed, visible, properties, records, initial
 
 
+def registration_witnesses(table, roots, data, lengths):
+    """Character rows in encounter order, and all contained form addresses.
+
+    The low bit of a contained address marks a complete character span.
+    For long units collect one address per table row to bound live storage.
+    """
+    from BasicPercepts import utf8_boundaries
+    width = data.shape[1]
+    remaining = lengths[:, None] - torch.arange(width, device=data.device)
+    cuts, stride = utf8_boundaries(data, remaining, with_stride=True)
+    if not width:
+        return roots.new_empty((len(data), 0, 2)), roots.new_empty((len(data), 0))
+    dense = width * (width + 1) // 2 > table.capacity
+    if dense:
+        found = lengths.new_full((len(data), table.capacity + 1), -1)
+    else:
+        levels = []
+    elements = roots.new_full(data.shape, -1)
+    current = roots.new_full((len(roots), 1), -1)
+    for size in reversed(range(1, width + 1)):
+        span = width - size + 1
+        # Install each root at its actual length. Its left and right links
+        # cover every substring one byte shorter, including overlapping runs.
+        first = torch.where(lengths == size, roots, current[:, 0])
+        current = torch.cat((first[:, None], current[:, 1:]), 1)
+        aligned = cuts[:, :span] & cuts[:, size:]
+        encoded = torch.where(current >= 0, 2 * current + aligned, -1)
+        if size <= 4:
+            match = aligned & (stride[:, :span] == size) & (current >= 0)
+            elements[:, :span] = torch.where(match, current, elements[:, :span])
+        if dense:
+            found.scatter_reduce_(1, torch.where(current >= 0, current, table.capacity),
+                                  encoded, reduce='amax')
+        else:
+            levels.append(encoded)
+        if size > 1:
+            index = current.clamp_min(0)
+            left = torch.where(current >= 0, table.left[index], -1)
+            right = torch.where(current >= 0, table.right[index], -1)
+            current = torch.maximum(torch.nn.functional.pad(left, (0, 1), value=-1),
+                                    torch.nn.functional.pad(right, (1, 0), value=-1)).long()
+    ordered, order = elements.sort(dim=-1, stable=True)
+    first = torch.nn.functional.pad(ordered[:, 1:] != ordered[:, :-1], (1, 0), value=True)
+    keep = torch.empty_like(first).scatter(1, order, first & (ordered >= 0))
+    characters = torch.stack((torch.where(keep, elements, -1), torch.where(keep, stride, 0)), -1)
+    return characters, found[:, :-1] if dense else torch.cat(levels, dim=1)
+
+
+def basic_word_rows(words, names, rows):
+    """Each nominated word's live basic percept, with -1 for absent words."""
+    at = torch.searchsorted(names, words.contiguous())
+    keys = torch.nn.functional.pad(names, (0, 1), value=-1)
+    values = torch.nn.functional.pad(rows, (0, 1), value=-1)
+    return torch.where((words >= 0) & (keys[at] == words), values[at], -1)
+
+
 class WordLabels:
     """Display labels of the nominated words, materialized by a text reader."""
     def __init__(self, words, labels):
@@ -296,18 +352,30 @@ def stage(model, fi):
     if learn:
         # Sparse catalog updates retain the order of the actual nominations.
         # Ordinary named occurrences and padding have no record to install.
-        new = records[records[..., 0] >= 0].tolist()
-        if new:
+        new = records[records[..., 0] >= 0]
+        if len(new):
+            width = new.shape[1] - 6
             labels = pool.labels.copy()
             places = initial.flatten(0, 1)
             property_count = min(int(model.wholeSpace.nVectors), 63)
-            for form, word, seat, source, length, bits, *payload in new:
-                raw = bytes(payload[:length])
-                wholes = tuple(i for i in range(property_count) if bits & (1 << i))
-                if owner.interpret.install_nomination(word, seat, form, raw, wholes, places[source]) is None:
-                    raise RuntimeError('MTM nominated a word without a free concept row')
-                description = owner._concept_allocator.word_descriptions[word]
-                labels[word] = next(iter(description['forms']), '')
+            # Bound temporary storage for wide batches of long nominations.
+            columns = min(width * (width + 1) // 2, table.capacity) + 3 * width + 6
+            for group in new.split(max(1, (1 << 20) // columns)):
+                elements, parts = registration_witnesses(table, group[:, 0], group[:, 6:], group[:, 4])
+                publication = torch.cat((group, elements.flatten(1), parts), 1).tolist()
+                for form, word, seat, source, length, bits, *payload in publication:
+                    raw = bytes(payload[:length])
+                    addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
+                    characters = [(raw[pos:pos + size], row)
+                                  for pos, (row, size) in enumerate(addresses) if size]
+                    wholes = tuple(i for i in range(property_count) if bits & (1 << i))
+                    installed = owner.interpret.install_nomination(
+                        word, seat, form, raw, wholes, places[source],
+                        witnesses=(characters, payload[3 * width:]))
+                    if installed is None:
+                        raise RuntimeError('MTM nominated a word without a free concept row')
+                    description = owner._concept_allocator.word_descriptions[word]
+                    labels[word] = next(iter(description['forms']), '')
             pool.labels = labels
     fi['pool_word_texts'] = WordLabels(words, pool.labels)
     return True

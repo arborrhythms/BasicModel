@@ -296,7 +296,7 @@ def escaped_part_starts(raw, spans, spellings):
         lo, hi = intervals.clamp(0, width).unbind(-1)
         remaining = torch.where(pos >= lo[..., None], hi[..., None] - pos, 0)
         surface = raw[:, None].expand_as(remaining).reshape(-1, width)
-        cut = _utf8_boundaries(surface, remaining.flatten(0, 1)).reshape(batch, -1, width + 1)
+        cut = utf8_boundaries(surface, remaining.flatten(0, 1)).reshape(batch, -1, width + 1)
         starts = []
         for group in spellings:
             size = group.shape[1]
@@ -315,7 +315,7 @@ def escaped_part_starts(raw, spans, spellings):
     return torch.cat(found, 1)
 
 
-def _utf8_boundaries(raw, remaining, *, with_stride=False):
+def utf8_boundaries(raw, remaining, *, with_stride=False):
     """A cut through a multibyte character exposes each truncated byte as an element."""
     width = raw.shape[1]
     padded = F.pad(raw, (0, 3))
@@ -482,6 +482,7 @@ class BasicPercepts(nn.Module):
         self.occurrences = [None] * self.capacity
         self.index = {}
         self.words = {}
+        self._word_row_index = None
         self.selectors = {}
         self.register_buffer('places', torch.full((self.capacity,), -1, dtype=torch.long))
         # The table of values: each value percept's felt value, exact. Its
@@ -752,9 +753,21 @@ class BasicPercepts(nn.Module):
             if place is not None:
                 self.places[row] = int(place)
             self.revision += 1
-        if word is not None:
+        if word is not None and self.words.get(int(word)) != row:
             self.words[int(word)] = row
+            self._word_row_index = None
         return row
+
+    def word_row_index(self, labels, device):
+        """Sorted lexical names and their basic rows for this inventory."""
+        from WordSurfaces import is_lexical_form
+        cached = self._word_row_index
+        if cached is None or cached[0] is not labels or cached[1].device != device:
+            pairs = sorted((name, row) for name, row in self.words.items()
+                           if is_lexical_form(labels.get(name, '')))
+            index = torch.tensor(pairs, dtype=torch.long, device=device).reshape(-1, 2).T.contiguous()
+            self._word_row_index = labels, index
+        return self._word_row_index[1].unbind(0)
 
     @property
     def place_cones(self):
@@ -1835,6 +1848,7 @@ class BasicPercepts(nn.Module):
         with torch.no_grad():
             self.where_entries.copy_(learned)
         self.words = dict(state['words'])
+        self._word_row_index = None
         self.selectors = dict(state['selectors'])
         if state.get('scalar_state') is not None:
             import warnings
