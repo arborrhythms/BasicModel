@@ -22530,9 +22530,15 @@ class BasicModel(BaseModel):
                     row_gate, commit, intermediate_end, occupation_words, case_state)
             # A separate NULL close never shifts a word. A separate word
             # turn cannot join a closing fork or have an intermediate end.
+            plan_fork = fork is not None and fork.explore
+            word_visits = None
+            if plan_fork and at_close is not True:
+                slots = (3 * index + torch.arange(3, device=index.device)).expand(B, -1)
+                word_visits = fork.round_visits(index, slots, closing=False, width=width).tolist()
             for round_index in range(0 if at_close is True else 3):
-                if (not torch.compiler.is_compiling() and not bool(round_active.any())
-                        and (fork is None or not fork.pending(index, closing=False, width=width))):
+                pending, joining, policy_grad = (word_visits[round_index] if word_visits is not None
+                                                  else (False, False, fork is None))
+                if not torch.compiler.is_compiling() and not pending and not bool(round_active.any()):
                     break
                 slot = 3 * index + round_index
                 if fork is not None:
@@ -22544,7 +22550,7 @@ class BasicModel(BaseModel):
                      unary_op, post_valid, unary_valid,
                      next_symbol_activations,
                      row_gate, commit, intermediate_end, occupation_words, case_state
-                    ) = fork.resume(slot, fork_state(final_stm, round_active))
+                    ) = fork.resume(slot, fork_state(final_stm, round_active), joining=joining)
                 final_stm, _, refresh = STMChunks.refresh(final_stm, STMChunks.stack_indices(final_stm)[:, :2], round_active[:,None], witness=True)
                 if sentence_transactions:
                     operation_refs = ChunkJournal.record_refresh(operation_refs,
@@ -22564,8 +22570,7 @@ class BasicModel(BaseModel):
                     form_spans=wholes,
                     case_state=case_state if case_enabled and sentence_transactions else None,
                     previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
-                    policy_grad=(fork is None or (fork.explore and bool(
-                        (fork.selected & (fork.slot == slot)).any()))))
+                    policy_grad=policy_grad)
                 choice = proposal[0] if sentence_transactions else proposal
                 if fork is not None:
                     fork.record(choice, slot, fork_state(final_stm, round_active),
@@ -22627,9 +22632,14 @@ class BasicModel(BaseModel):
 
             end_stm = final_stm
             closing_active = intermediate_end
+            closing_visits = None
+            if plan_fork and at_close is not False:
+                slots = 3 * width + group[:, None] * closing_width + torch.arange(closing_budget, device=index.device)
+                closing_visits = fork.round_visits(index, slots, closing=True, width=width).tolist()
             for closing_index in range(0 if at_close is False else closing_budget):
-                if (not torch.compiler.is_compiling() and not bool(closing_active.any())
-                        and (fork is None or not fork.pending(index, closing=True, width=width))):
+                pending, joining, policy_grad = (closing_visits[closing_index] if closing_visits is not None
+                                                  else (False, False, fork is None))
+                if not torch.compiler.is_compiling() and not pending and not bool(closing_active.any()):
                     break
                 slot = 3 * width + group * closing_width + closing_index
                 if fork is not None:
@@ -22641,7 +22651,7 @@ class BasicModel(BaseModel):
                      unary_op, post_valid, unary_valid,
                      next_symbol_activations,
                      row_gate, commit, intermediate_end, occupation_words, case_state
-                    ) = fork.resume(slot, fork_state(end_stm, closing_active))
+                    ) = fork.resume(slot, fork_state(end_stm, closing_active), joining=joining)
                 end_stm, _, refresh = STMChunks.refresh(end_stm, STMChunks.stack_indices(end_stm)[:, :2], closing_active[:,None], witness=True)
                 if sentence_transactions:
                     operation_refs = ChunkJournal.record_refresh(operation_refs,
@@ -22658,8 +22668,7 @@ class BasicModel(BaseModel):
                     form_spans=wholes,
                     case_state=case_state if case_enabled and sentence_transactions else None,
                     previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
-                    policy_grad=(fork is None or (fork.explore and bool(
-                        (fork.selected & (fork.slot == slot)).any()))))
+                    policy_grad=policy_grad)
                 choice = proposal[0] if sentence_transactions else proposal
                 if fork is not None:
                     fork.record(choice, slot, fork_state(end_stm, closing_active),

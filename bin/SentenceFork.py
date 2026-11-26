@@ -111,12 +111,33 @@ class SentenceFork:
         return (latches if self.latches is None else
                 select_rows(tuple(latches), self.latches, take))
 
-    def resume(self, slot, state):
-        if not self.explore or self.state is None:
+    def round_visits(self, word, slots, *, closing, width):
+        """Read the retained departures for one phase in one transfer.
+
+        A stream joins at its first matching round. Subsequent rounds no
+        longer wait for it, even when two streams have different close slots.
+        A policy graph belongs to every round containing a selected slot.
+        """
+        selected = self.selected[:, None] & (self.slot[:, None] == slots)
+        waiting = self.selected & self.current_rows & ~self.joined
+        joins = selected & waiting[:, None]
+        if self.state is None:
+            joins = torch.zeros_like(joins)
+        visited = joins.long().cumsum(-1) > 0
+        before = torch.nn.functional.pad(visited, (1, 0))[:, :-1]
+        joins = joins & ~before
+        pending = waiting & (self.word == word) & ((self.slot >= 3 * width) == closing)
+        if self.phase is not None and closing != (self.phase == 'closing'):
+            pending = torch.zeros_like(pending)
+        waiting_here = (pending[:, None] & ~before).any(0)
+        return torch.stack((waiting_here, joins.any(0), selected.any(0)), -1)
+
+    def resume(self, slot, state, *, joining=None):
+        if not self.explore or self.state is None or joining is False:
             return state
         take = self.selected & self.current_rows & ~self.joined & (self.slot == slot)
         self.joined |= take
-        return select_rows(state, self.state, take) if bool(take.any()) else state
+        return select_rows(state, self.state, take) if joining is True or bool(take.any()) else state
 
     def mask(self, slot):
         if not self.explore:
