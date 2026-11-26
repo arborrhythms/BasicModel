@@ -112,22 +112,42 @@ def select(states, winners):
 
 @torch.no_grad()
 def apply(journal):
-    counts = {}
+    from Memory import LTM0
+    stores = {}
+    encounters = {}
     for reads in journal.values():
-        for key, effect in reads.items():
-            previous = counts.get(key,ReadEffect())
-            counts[key] = ReadEffect(previous.count+effect.count, previous.written or effect.written)
-    promote = {}
-    for (store, row), effect in counts.items():
-        # The writer has already installed a bounded activity. Only a read
-        # adds to it. A newly written row still goes through consolidation.
-        if effect.count or not effect.written:
-            value = float(store.activity[row])
-            if value == 1. and not effect.written:
-                continue
-            store.activity[row] = min(1., value + effect.count * store.activity_config.step)
-        promote.setdefault((store,effect.written), []).append(row)
-    for (store,written_now), rows in promote.items():
+        for (store, row), effect in reads.items():
+            counts = stores.setdefault(store, {})
+            previous = counts.get(row, ReadEffect())
+            counts[row] = ReadEffect(previous.count + effect.count, previous.written or effect.written)
+            encounters.setdefault((store, row), len(encounters))
+    # Consolidation can allocate shared concept names. Its groups therefore
+    # keep their original first encounter across stores.
+    promotions = []
+    for store, counts in stores.items():
+        rows = list(counts)
+        effects = list(counts.values())
+        at = torch.tensor(rows, device=store.activity.device, dtype=torch.long)
+        current = store.activity.index_select(0, at)
+        written = torch.tensor([effect.written for effect in effects], device=at.device)
+        increments = torch.tensor([effect.count * store.activity_config.step for effect in effects],
+                                  dtype=torch.float64, device='cpu')
+        if at.device.type == 'mps':
+            from MetalNumerics import activity_update
+            updated = activity_update(current.float(), increments.view(torch.long).to(at.device)).to(current.dtype)
+        else:
+            updated = torch.fmin(current.double() + increments.to(at.device),
+                                 current.new_ones((), dtype=torch.float64)).to(current.dtype)
+        add = torch.tensor([bool(effect.count) or not effect.written for effect in effects], device=at.device)
+        store.activity.index_copy_(0, at, torch.where(add, updated, current))
+        if isinstance(store, LTM0) and store.owner() is not None:
+            keep = ((current != 1.) | written).tolist()
+            for just_written in (False, True):
+                group = [row for row, effect, retained in zip(rows, effects, keep, strict=True)
+                         if retained and effect.written == just_written]
+                if group:
+                    promotions.append((encounters[store, group[0]], store, just_written, group))
+    for _, store, written_now, rows in sorted(promotions, key=lambda group: group[0]):
         _promote(store, rows, written_now=written_now)
 
 

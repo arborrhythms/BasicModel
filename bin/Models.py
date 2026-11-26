@@ -11306,7 +11306,7 @@ class BasicModel(BaseModel):
         from WordSurfaces import MixingWords, mixing_reference_rows
         owner = self._concept_owner()
         if isinstance(words, MixingWords):
-            columns, lexical_forms = mixing_reference_rows(owner, words, active.shape[1])
+            columns, lexical_forms = mixing_reference_rows(owner, words, active, witnessed)
         else:
             columns, lexical_forms = BasicModel._legacy_grammar_reference_rows(
                 self, words, percepts, witnessed, active, owner)

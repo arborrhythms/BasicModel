@@ -148,6 +148,23 @@ def host_units(units):
     return rows
 
 
+class TargetWords:
+    """Original unit spellings for callers inspecting the omission target."""
+
+    def __init__(self, units):
+        self.units = units
+        self.rows = None
+
+    def __len__(self):
+        return len(self.units[0])
+
+    def __getitem__(self, index):
+        if self.rows is None:
+            self.rows = tuple(tuple(raw[lo:hi] for lo, hi in spans)
+                              for raw, spans in host_units(self.units))
+        return self.rows[index]
+
+
 def native_values(ps, surface, width):
     """Loss-only byte codes of the presented surface, read by each byte's store row.
 
@@ -204,17 +221,22 @@ def stage(model):
     prepared.update(native=native, word_values=word_values, valid=valid.detach().clone(),
                     ids=isp._ar_word_part_ids.detach().clone(), spans=spans)
     if hiding or 'unit_spans' not in native:
-        prepared['surface'] = prepared['units'][0]
-        prepared['units'] = host_units(prepared['units'])
-        prepared['word_bytes'] = tuple(tuple(raw[lo:hi] for lo, hi in units)
-                                       for raw, units in prepared['units'])
+        surface, units = prepared['units']
+        prepared['word_bytes'] = TargetWords((surface, units))
+        if hiding and getattr(ps, 'form_links', None) is not None and 'unit_longest' in source:
+            from WordSurfaces import bytes_at, trimmed_spans
+            trimmed = trimmed_spans(surface, units)
+            lengths = trimmed[..., 1] - trimmed[..., 0]
+            width = min(surface.shape[1], source['unit_longest'])
+            data, _ = bytes_at(surface, trimmed, lengths > 0, width)
+            prepared['withheld_form_rows'] = ps.form_links.read(
+                data.flatten(0, 1), lengths.flatten(), admit=False).reshape_as(lengths)
     model._omission_targets = prepared
     if not hiding:
         prepared.pop('units')
-        prepared.pop('surface', None)
         return
-    width = max((len(raw) for raw, _ in prepared['units']), default=0)
-    values, native_valid = native_values(ps, prepared['surface'], width)
+    width = int((surface != 0).sum(1).amax()) if len(surface) else 0
+    values, native_valid = native_values(ps, surface, width)
     prepared.update(native_values=values, native_valid=native_valid)
     # Every unit at fixed shape; the hidden ones take their visible reading.
     visible = prepared.pop('visible').to(word_values)
@@ -231,7 +253,6 @@ def stage(model):
     from Occurrence import restage_presented
     restage_presented(model, model._staged_concepts_in)
     prepared.pop('units')
-    prepared.pop('surface')
 
 
 def target(model):

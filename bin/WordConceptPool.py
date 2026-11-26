@@ -246,16 +246,11 @@ def read_units(pool, table, surface, units, longest, chart, discard, *, learn):
     words, seats, arrivals = pool.read_seated(forms, learn=learn)
     live = arrivals[..., 0] >= 0
     ordinal = first + live.flatten().long().cumsum(0).reshape_as(forms) - 1
-    # The final row supplies the absent value even for an empty frozen pool.
-    reserved = torch.nn.functional.pad(pool.initial_places, (0, 0, 0, 1))
-    initial = reserved[torch.where(live, ordinal, len(pool.symbols))]
     properties = reading_property_signatures(surface, trimmed, chart, discard, latin1_text=False)
-    # Host consumers of new definitions need bytes only for arrivals. Keep
-    # the source seat so they pick the corresponding private initial place.
-    columns = torch.arange(words.numel(), device=words.device).reshape_as(words)
-    records = torch.cat((arrivals, seats[..., None], columns[..., None], lengths[..., None],
-                         properties[..., None], data.to(words.dtype)), -1)
-    return words, seats, forms, trimmed, visible, properties, records, initial
+    # The form row owns its spelling, and the reserved ordinal owns its
+    # initial geometry. Neither needs duplicating at every input occurrence.
+    records = torch.stack((arrivals[..., 0], words, seats, ordinal, properties), -1)
+    return words, seats, forms, trimmed, visible, properties, records
 
 
 def registration_witnesses(table, roots, data, lengths):
@@ -395,7 +390,7 @@ def stage(model, fi):
     from Spaces import _analysis_property_signature
     chart, discard = _analysis_property_signature(model.wholeSpace, device=surface.device)
     learn = not getattr(owner, '_online_learning_frozen', False)
-    words, seats, forms, trimmed, visible, properties, records, initial = read_units(
+    words, seats, forms, trimmed, visible, properties, records = read_units(
         pool, table, surface, units, longest, chart, discard, learn=learn)
     fi.update(pool_visible=visible, pool_concept_rows=seats, pool_word_ids=words,
               pool_form_rows=forms, pool_spans=trimmed, pool_properties=properties)
@@ -404,23 +399,23 @@ def stage(model, fi):
         # Ordinary named occurrences and padding have no record to install.
         new = records[records[..., 0] >= 0]
         if len(new):
-            width = new.shape[1] - 6
+            width = longest
             labels = pool.labels.copy()
-            places = initial.flatten(0, 1)
             property_count = min(int(model.wholeSpace.nVectors), 63)
             # Bound temporary storage for wide batches of long nominations.
             columns = min(width * (width + 1) // 2, table.capacity) + 3 * width + 6
             for group in new.split(max(1, (1 << 20) // columns)):
-                elements, parts = registration_witnesses(table, group[:, 0], group[:, 6:], group[:, 4])
-                publication = torch.cat((group, elements.flatten(1), parts), 1).tolist()
-                for form, word, seat, source, length, bits, *payload in publication:
+                data, lengths = table.spell(group[:, 0], longest=width)
+                elements, parts = registration_witnesses(table, group[:, 0], data, lengths)
+                publication = torch.cat((group, lengths[:, None], data, elements.flatten(1), parts), 1).tolist()
+                for form, word, seat, ordinal, bits, length, *payload in publication:
                     raw = bytes(payload[:length])
                     addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
                     characters = [(raw[pos:pos + size], row)
                                   for pos, (row, size) in enumerate(addresses) if size]
                     wholes = tuple(i for i in range(property_count) if bits & (1 << i))
                     installed = owner.interpret.install_nomination(
-                        word, seat, form, raw, wholes, places[source],
+                        word, seat, form, raw, wholes, pool.initial_places[ordinal],
                         witnesses=(characters, payload[3 * width:]))
                     if installed is None:
                         raise RuntimeError('MTM nominated a word without a free concept row')

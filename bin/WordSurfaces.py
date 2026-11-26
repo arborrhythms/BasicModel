@@ -339,10 +339,11 @@ class WitnessedForms(Mapping):
         return self._mapping()[key]
 
 
-def mixing_reference_rows(owner, words, width):
+def mixing_reference_rows(owner, words, active, witnessed):
     """Place word and referent identities in their witnessed grammar columns."""
     from Meaning import require_sentence_tensor
     from WordConceptPool import basic_word_rows
+    width = active.shape[1]
     names = words.names
     objects, object_seats, orders = owner.interpret.sentence_objects(names)
     matrix = owner._concept_allocator.layer(0)
@@ -361,6 +362,8 @@ def mixing_reference_rows(owner, words, width):
         values = F.pad(torch.where(present, column, -1), (0, 1), value=-1)
         return values.gather(1, torch.where(source >= 0, source, names.shape[1])).contiguous()
     word_live, object_live = word_seats >= 0, object_seats >= 0
+    if not witnessed:
+        object_live = object_live & F.pad(active, (0, 1)).gather(1, target)
     word_ids = placed(names, word_live | object_live)
     word_rows = placed(word_seats, word_live)
     referents = placed(objects, object_live)

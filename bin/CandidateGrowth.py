@@ -559,6 +559,21 @@ def withheld_words(model, extent):
         return [{} for _ in range(len(extent) if extent is not None else 0)]
     owner = model._concept_owner()
     hidden = targets['draw'].forms.any(-1)
+    form_rows = targets.get('withheld_form_rows')
+    pool = getattr(getattr(owner, 'mtm', None), 'word_pool', None)
+    if form_rows is not None and pool is not None:
+        width = min(extent.shape[1], hidden.shape[1], form_rows.shape[1])
+        forms = form_rows[:, :width]
+        words = torch.where(extent[:, :width] & hidden[:, :width] & (forms >= 0),
+                            pool.words[forms.clamp_min(0)], -1)
+        # Growth journals still carry sparse host dictionaries. Only named
+        # hidden occurrences enter them, in their original encounter order.
+        pages = torch.arange(len(extent), device=forms.device)[:, None].expand_as(words)
+        named = torch.stack((pages, words), -1)[words >= 0]
+        held = [{} for _ in range(len(extent))]
+        for page, word in named.tolist():
+            held[page][word] = 1.
+        return held
     words = targets['word_bytes']
     held = [{} for _ in range(len(extent))]
     width = min(extent.shape[1], hidden.shape[1])

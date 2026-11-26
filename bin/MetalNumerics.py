@@ -110,3 +110,17 @@ def pair_statistics(old: torch.Tensor, observation: torch.Tensor, value: torch.T
 @pair_statistics.register_fake
 def _(old, observation, value, gathered, steps, penalty):
     return old.new_empty((old.shape[0], 5))
+
+
+@torch.library.custom_op('basicmodel::metal_activity_update', mutates_args=(), device_types='mps')
+def activity_update(current: torch.Tensor, increments: torch.Tensor) -> torch.Tensor:
+    result = torch.empty_like(current, memory_format=torch.contiguous_format)
+    if result.numel():
+        shader('activity_update').activity_update(result, current.contiguous(), increments.contiguous(),
+                                                   threads=[result.numel()])
+    return result
+
+
+@activity_update.register_fake
+def _(current, increments):
+    return torch.empty_like(current, memory_format=torch.contiguous_format)

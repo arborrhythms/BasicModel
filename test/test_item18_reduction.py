@@ -503,3 +503,23 @@ def test_64_preposition_projects_and_recovers_its_object(meaning_blocks):
     restored_marker, restored_content = operator.generate(parent, marker=marker)
     torch.testing.assert_close(restored_marker, marker)
     torch.testing.assert_close(restored_content, content)
+
+
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_selected_activity_rounds_once_after_combining_stream_counts(device):
+    from Memory import LTM0
+    from MemoryActivity import Activity, ReadEffect, apply
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    store = LTM0(16, capacity=128).to(device)
+    start = torch.rand(128, generator=torch.Generator().manual_seed(1505))
+    start[:4] = torch.tensor([0., .5, 1., .125])
+    for step in (.1, 2.**-25, .009999999999999998, 1e-310):
+        store.activity_config = Activity(step=step)
+        store.activity.copy_(start)
+        first = {(store, row): ReadEffect(row % 13) for row in range(128)}
+        second = {(store, row): ReadEffect(row % 7, True) for row in range(0, 128, 2)}
+        expected = [min(1., value + (row % 13 + (row % 7 if row % 2 == 0 else 0)) * step)
+                    for row, value in enumerate(start.tolist())]
+        apply({0: first, 1: second})
+        assert torch.equal(store.activity.cpu(), torch.tensor(expected))

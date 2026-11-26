@@ -256,5 +256,14 @@ def test_60_2_a_pair_is_offered_from_what_the_sentence_held():
     model = SimpleNamespace(_omission_targets=targets, _concept_owner=lambda: owner)
     assert withheld_words(model, torch.tensor([[True, True]])) == [{9: 1.}]
     assert withheld_words(model, torch.tensor([[True, False]])) == [{}]
+    from WordConceptPool import WordConceptPool
+    pool = WordConceptPool(16, torch.tensor([23]), threshold=1)
+    pool.read(torch.tensor([[5]]))
+    owner.mtm = SimpleNamespace(word_pool=pool)
+    targets['withheld_form_rows'] = torch.tensor([[-1, 5]])
+    assert withheld_words(model, torch.tensor([[False, True]])) == [{23: 1.}]
+    targets['withheld_form_rows'] = torch.tensor([[5, 6]])
+    assert withheld_words(model, torch.tensor([[True, True]])) == [{}]
+    assert pool.counts[6] == 0 and pool.used == 1
     model._omission_targets = None
     assert withheld_words(model, torch.tensor([[True, True]])) == [{}]
