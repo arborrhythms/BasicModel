@@ -3495,10 +3495,12 @@ class MTM1(LTM1):
 
     def publish(self, promoted):
         """Return new edges and record the remaining extent in the same transfer."""
-        extent = self.count.expand(1, 2)
-        count, *pairs = torch.cat((extent, promoted)).tolist()
-        self._remember_count(count[0])
-        return [(kind, member) for kind, member in pairs if kind >= 0]
+        live = promoted[:, 0] >= 0
+        count, n_promo = torch.stack((self.count.reshape(()), live.sum())).tolist()
+        self._remember_count(count)
+        if not n_promo:
+            return []
+        return [tuple(pair) for pair in promoted[live].tolist()]
 
     def offer_pairs(self, offers):
         """Admit in nomination order. Tied weakest entries expire oldest first."""

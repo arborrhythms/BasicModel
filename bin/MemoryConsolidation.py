@@ -77,10 +77,10 @@ def consolidate(owner, store, *, context=None, key=None, batch=0, rows=None, wri
         selected = torch.as_tensor(rows if torch.is_tensor(rows) else list(rows),
                                    device=store.activity.device, dtype=torch.long)
     eligible = eligible_activity(store.activity[selected], store.activity_config.promotion, written_now)
+    if not bool(eligible.any()):
+        return ()
     selected = selected[eligible]
     sources = selected.tolist()
-    if not sources:
-        return ()
     points = _content(store, selected).to(owner.similarity_codebook.W)
     width = owner.similarity_codebook.W.shape[-1]
     points = torch.nn.functional.pad(points[:, :width], (0, max(0, width - points.shape[-1])))

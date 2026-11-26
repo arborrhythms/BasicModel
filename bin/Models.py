@@ -20164,10 +20164,13 @@ class BasicModel(BaseModel):
         # A word left uninterpreted that no rule took (rule of the literal):
         # the sentence is not well formed, and its closing publishes no tree.
         from Interpret import well_formed
-        for b, entry in enumerate(programs.get(sid, (None,) * B)):
-            if (entry is not None and not entry.interpret_forced and int(lang[11][b, sid]) > 0
-                    and not well_formed(self.languageSpace, entry, len(entry.leaves), forced=False)):
-                lang[11][b, sid] = -1
+        sid_programs = programs.get(sid, (None,) * B)
+        if any(entry is not None and not entry.interpret_forced for entry in sid_programs):
+            raw_depths = lang[11][:, sid].tolist()
+            for b, entry in enumerate(sid_programs):
+                if (entry is not None and not entry.interpret_forced and raw_depths[b] > 0
+                        and not well_formed(self.languageSpace, entry, len(entry.leaves), forced=False)):
+                    lang[11][b, sid] = -1
         depths = lang[11][:, sid]
         mask = active & (depths > 0)
         owners, word_owners, _ = self._compose_round_owners(lang[15])

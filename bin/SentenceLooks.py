@@ -288,6 +288,7 @@ class Looks:
         self.model, self.walk, self.sid, self.present = model, walk, sid, present
         self.prior, self.draw, self.kept = prior, draw, kept
         self.decisions, self.fields, self.stops = [], [], []
+        self._turn_slots = []
         self.look_credit = None
         self.open_forecast = None
         self.supplied = getattr(model, '_attention_supplied_reading', None)
@@ -296,6 +297,8 @@ class Looks:
         """Original word positions in each row's interpretation order."""
         if not self.decisions:
             return tuple([] for _ in range(len(self.present)))
+        if len(self._turn_slots) == len(self.decisions):
+            return tuple([word for word in row if word >= 0] for row in zip(*self._turn_slots))
         arrivals = torch.stack([torch.where(turn['interpreted'], turn['index'], -1)
                                 for turn in self.decisions], dim=1)
         return tuple([word for word in row if word >= 0] for row in arrivals.tolist())
@@ -492,6 +495,7 @@ class Looks:
                 # Each stream offers at most one source slot per look. Keep
                 # the batch width fixed at the serial grammar handoff.
                 slots = torch.where(interpreted, index, -1).tolist()
+                self._turn_slots.append(slots)
                 for word in sorted(set(slots) - {-1}):
                     arrive(word, interpreted & (index == word))
             finally:
