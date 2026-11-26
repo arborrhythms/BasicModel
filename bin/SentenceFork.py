@@ -50,7 +50,7 @@ class SentenceFork:
             self.taken |= at & choice.valid & (choice.action != self.action)
             return
         eligible = self.current_rows & choice.valid & (choice.alternative_count > 0)
-        if not bool(eligible.any()):
+        if not torch.compiler.is_compiling() and not bool(eligible.any()):
             return
         self.count += eligible.long()
         # Algorithm R retains K distinct rounds. A later whole-path draw can
@@ -59,14 +59,9 @@ class SentenceFork:
         rank = torch.where(self.count <= len(self.reservoir), self.count - 1, rank)
         places = torch.arange(len(self.reservoir), device=rank.device)
         take = eligible[:, None] & (rank[:, None] == places)
-        changed = take.any(0).tolist()
-        if not any(changed):
-            return
         state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
         prefix = None if self.inverse_candidates is None else self.inverse_candidates.snapshot()
         for i, prior in enumerate(self.reservoir):
-            if not changed[i]:
-                continue
             selected = take[:, i]
             saved = dict(state=state, latches=latches, inverse_prefix=prefix,
                 word=torch.zeros_like(self.word) + word,
@@ -149,7 +144,7 @@ class SentenceFork:
             return state
         take = self.selected & self.current_rows & ~self.joined & (self.slot == slot)
         self.joined |= take
-        return select_rows(state, self.state, take) if joining is True or bool(take.any()) else state
+        return select_rows(state, self.state, take)
 
     def mask(self, slot):
         if not self.explore:

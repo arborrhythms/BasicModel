@@ -21515,7 +21515,7 @@ class BasicModel(BaseModel):
                 if self._sentence_field is None and look_trials[-1] is not None:
                     self._sentence_read_order = look_trials[-1].source_orders()
                 paths.append(path[1][15].detach().clone())
-                if alternative and fork is not None:
+                if not torch.compiler.is_compiling() and alternative and fork is not None:
                     if not bool((fork.taken | ~fork.selected | ~present).all()):
                         raise RuntimeError('compose fork did not take its saved departure')
                 if field_trials[-1] is not None:
@@ -22543,13 +22543,8 @@ class BasicModel(BaseModel):
             # A separate NULL close never shifts a word. A separate word
             # turn cannot join a closing fork or have an intermediate end.
             plan_fork = fork is not None and fork.explore
-            word_visits = None
-            if plan_fork and at_close is not True:
-                slots = (3 * index + torch.arange(3, device=index.device)).expand(B, -1)
-                word_visits = fork.round_visits(index, slots, closing=False, width=width).tolist()
             for round_index in range(0 if at_close is True else 3):
-                pending, joining, policy_grad = (word_visits[round_index] if word_visits is not None
-                                                  else (False, False, fork is None))
+                pending, joining, policy_grad = (True, True, True) if plan_fork else (False, False, fork is None)
                 if not torch.compiler.is_compiling() and not pending and not bool(round_active.any()):
                     break
                 slot = 3 * index + round_index
@@ -22644,13 +22639,8 @@ class BasicModel(BaseModel):
 
             end_stm = final_stm
             closing_active = intermediate_end
-            closing_visits = None
-            if plan_fork and at_close is not False:
-                slots = 3 * width + group[:, None] * closing_width + torch.arange(closing_budget, device=index.device)
-                closing_visits = fork.round_visits(index, slots, closing=True, width=width).tolist()
             for closing_index in range(0 if at_close is False else closing_budget):
-                pending, joining, policy_grad = (closing_visits[closing_index] if closing_visits is not None
-                                                  else (False, False, fork is None))
+                pending, joining, policy_grad = (True, True, True) if plan_fork else (False, False, fork is None)
                 if not torch.compiler.is_compiling() and not pending and not bool(closing_active.any()):
                     break
                 slot = 3 * width + group * closing_width + closing_index
