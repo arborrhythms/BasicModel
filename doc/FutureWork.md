@@ -2759,3 +2759,16 @@ for the whole space's properties, and each time lost all contrast. The open
 point is the reader, not the layout: a read by nearness, or by a form's
 place relative to its own level. Until it is decided, the older 0/1 codes
 stay.
+
+
+## The codebook of value ranges
+
+For characters the wholes are built over a fixed set, the characters. For
+values the set of characters is replaced by a codebook of ranges, and
+the tower of wholes is the OR of those ranges upward to the whole that
+applies to all percepts ([Mereology](Mereology.md#percept-code)). The
+codebook is to be learned by vector quantization, its divisions decided
+by parthood, as the automatic analysis of wholes already divides them
+([Mereology](Mereology.md#lbg-division)). Today a value's code is the
+fixed bins at or below the felt value; a learned codebook of ranges is
+not built.

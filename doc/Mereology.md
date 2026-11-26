@@ -567,6 +567,25 @@ and its properties on the property tower, and onto its where
 (`archery` has parts `archer` lacks), by their wholes, or by a class of
 characters that holds every character but `y`.
 
+**Conjunction in the parts, union in the wholes.** The two halves of a
+code combine in opposite ways. In the part space a form is the
+conjunction of its parts in place: `ab` is `a` and then `b`, and a form
+holds only where all its parts are found together. In the whole space a
+whole is the union of what it holds: a class of characters is the OR of
+its characters, a class that holds two classes is the OR of both, and
+the top of the tower is the whole that applies to every percept. A
+property holds a form only when it holds the form's entire span, so a
+form's own code in the wholes half is the OR of its characters' codes,
+and a class holds the form exactly when that code lies inside the
+class's.
+
+The same holds for values, with ranges in place of sets of characters.
+A value's code is, in each half, the bins of the felt value at or below
+it (`ScalarPercepts.code`, `BasicPercepts.value_code`). A range such as
+0.3 to 0.4 is a whole over the values inside it; two ranges, 0.3 to 0.4
+and 0.6 to 0.7, are ORed into the whole that holds both; and the top is
+again the whole that applies to all percepts.
+
 **The way back of a form starts from the form alone** ("we
 are not always doing reconstruction: sometimes we do generation"). No place
 of a part is taken from a reading. "The whole stores its parts in order, and
