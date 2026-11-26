@@ -355,7 +355,8 @@ def test_contained_rows_preserve_admission_order_and_taught_runs():
         else:
             elements = [(raw[pos:pos + n], row) for pos, (row, n) in
                         enumerate(characters[i].tolist()) if n]
-            held = registration_holders(native, table, forms[i:], data.shape[1])
+            known, longest = native.registered_roots()
+            held = registration_holders(table, known, longest, forms[i:], data.shape[1], batch_bound=len(forms) - i)
             native.admit(raw, form_row=forms[i].item(), witnesses=(elements, parts[i].tolist()),
                          holder_rows=held[0].tolist())
             assert native.holders == reference.holders and native.inside == reference.inside

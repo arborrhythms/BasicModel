@@ -158,6 +158,7 @@ class WordIdentity(nn.Module):
         object.__setattr__(self, 'forms_table', table)
         self._table_rows = {}
         self._row_spellings = None
+        self.__dict__.pop('_registered_roots', None)
         basis = self.store._basis
         object.__setattr__(basis, 'form_links', table)
         basis.fixed_parts_width = self.width
@@ -213,11 +214,19 @@ class WordIdentity(nn.Module):
                         else:
                             self._unseated.add(word)
 
-    def registered_words(self):
-        """Stored word roots on the form chart, with their byte lengths."""
+    def registered_roots(self):
+        """Device form addresses and the longest spelling in the seated vocabulary."""
         self._registration_index()
-        return [(raw[0] if len(raw) == 1 else self._table_rows[raw], len(raw))
-                for raw in self.words if raw not in self._unseated]
+        table = self.forms_table
+        cached = self.__dict__.get('_registered_roots')
+        if (cached is None or cached[0] is not self.words or cached[1] != len(self.words)
+                or cached[2] != len(self._unseated) or cached[3].device != table.left.device):
+            seated = [raw for raw in self.words if raw not in self._unseated]
+            roots = table.left.new_tensor([raw[0] if len(raw) == 1 else self._table_rows[raw]
+                                           for raw in seated], dtype=torch.long)
+            cached = self.words, len(self.words), len(self._unseated), roots, max(map(len, seated), default=0)
+            self.__dict__['_registered_roots'] = cached
+        return cached[3], cached[4]
 
     def _registered_parts(self, raw, part_rows):
         """Resolve device containment against the inventory at this nomination."""
@@ -754,6 +763,7 @@ class WordIdentity(nn.Module):
         for name in ('atoms', 'words', 'word_rows', 'added', 'revision'):
             setattr(self, name, value[name])
         self.__dict__.pop('_by_byte', None)
+        self.__dict__.pop('_registered_roots', None)
         if getattr(self, 'forms_table', None) is not None:
             self._row_spellings = None
             self._table_rows = {}

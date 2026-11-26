@@ -186,6 +186,7 @@ def prepare(model):
     stamp = (frozen, owner.interpret._description_revision, ps.percept_store.identity.revision,
              tuple(sorted(known)))
     if getattr(pool, '_definitions_stamp', None) == stamp:
+        ps.percept_store.identity.registered_roots()
         return
     pool.labels = {word: next(iter(value['forms']), '')
                    for word, value in alloc.word_descriptions.items() if word in known}
@@ -231,6 +232,7 @@ def prepare(model):
     pool.words.copy_(mapping)
     pool.form_seats.copy_(matrix.concept_rows(mapping))
     pool._definitions_stamp = stamp
+    ps.percept_store.identity.registered_roots()
 
 
 def read_units(pool, table, surface, units, longest, chart, discard, *, learn):
@@ -315,18 +317,27 @@ def form_holders(table, roots, wanted, longest):
     return (matches > 0) & (wanted[:, None] >= 0) & (roots >= 0)
 
 
-def registration_holders(identity, table, nominations, width):
+def registration_holders(table, known, longest, nominations, width, *, batch_bound):
     """Existing and simultaneously nominated roots, resolved in bounded slabs."""
-    existing = identity.registered_words()
-    roots = torch.cat((nominations.new_tensor([row for row, _ in existing]), nominations))
-    longest = max(width, max((size for _, size in existing), default=0))
+    # A static bound also works when a captured nomination count is zero.
+    group = max(1, (1 << 20) // max(1, longest * batch_bound))
     held = []
-    # Bound both the number of lookups and the width of each link frontier.
-    group = max(1, (1 << 20) // max(1, longest * len(nominations)))
-    for slab in roots.split(group):
+    for slab in known.split(group) if len(known) else ():
         links = form_holders(table, slab, nominations, longest)
         held.append(torch.where(links, slab, -1))
+    links = form_holders(table, nominations, nominations, width)
+    held.append(torch.where(links, nominations, -1))
     return torch.cat(held, 1)
+
+
+def nomination_records(table, known, longest, records, width):
+    """Pack each actual nomination's linked spelling, characters, parts and holders."""
+    new = records[records[:, 0] >= 0]
+    roots = new[:, 0]
+    data, lengths = table.spell(roots, longest=width)
+    elements, parts = registration_witnesses(table, roots, data, lengths)
+    holders = registration_holders(table, known, longest, roots, width, batch_bound=len(records))
+    return torch.cat((new, lengths[:, None], data, elements.flatten(1), parts, holders), 1)
 
 
 def basic_word_rows(words, names, rows):
@@ -425,35 +436,42 @@ def stage(model, fi):
     if learn:
         # Sparse catalog updates retain the order of the actual nominations.
         # Ordinary named occurrences and padding have no record to install.
-        new = records[records[..., 0] >= 0]
-        if len(new):
-            width = longest
-            labels = pool.labels.copy()
-            property_count = min(int(model.wholeSpace.nVectors), 63)
-            # Bound temporary storage for wide batches of long nominations.
-            columns = min(width * (width + 1) // 2, table.capacity) + 3 * width + 6
-            identity = ps.percept_store.identity
-            columns += len(identity.words) + len(new)
-            for group in new.split(max(1, (1 << 20) // columns)):
-                data, lengths = table.spell(group[:, 0], longest=width)
-                elements, parts = registration_witnesses(table, group[:, 0], data, lengths)
-                holders = registration_holders(identity, table, group[:, 0], width)
-                publication = torch.cat((group, lengths[:, None], data, elements.flatten(1), parts, holders), 1)
-                end = 3 * width + parts.shape[1]
-                for form, word, seat, ordinal, bits, length, *payload in publication.tolist():
-                    raw = bytes(payload[:length])
-                    addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
-                    characters = [(raw[pos:pos + size], row)
-                                  for pos, (row, size) in enumerate(addresses) if size]
-                    wholes = tuple(i for i in range(property_count) if bits & (1 << i))
-                    installed = owner.interpret.install_nomination(
-                        word, seat, form, raw, wholes, pool.initial_places[ordinal],
-                        witnesses=(characters, payload[3 * width:end]), holder_rows=payload[end:])
-                    if installed is None:
-                        raise RuntimeError('MTM nominated a word without a free concept row')
-                    pool.form_labels[form] = raw.decode('latin1')
-                    description = owner._concept_allocator.word_descriptions[word]
-                    labels[word] = next(iter(description['forms']), '')
-            pool.labels = labels
+        records = records.flatten(0, 1)
+        width = longest
+        labels = pool.labels
+        property_count = min(int(model.wholeSpace.nVectors), 63)
+        part_width = min(width * (width + 1) // 2, table.capacity)
+        end = 3 * width + part_width
+        identity = ps.percept_store.identity
+        from math import isqrt
+        # At most one new catalog word per occurrence, including groups
+        # installed earlier in this call. The simultaneously nominated
+        # holders also have a [group, group, width] link frontier.
+        columns = end + 6 + len(identity.words) + len(records)
+        group_size = max(1, min((1 << 20) // columns, isqrt((1 << 20) // max(1, width))))
+        # The width of the input bounds the scratch. Only actual nominations
+        # cross to the catalog, with their physical addresses already resolved.
+        for group in records.split(group_size):
+            if not torch.compiler.is_compiling() and not bool((group[:, 0] >= 0).any()):
+                continue
+            known, longest_stored = identity.registered_roots()
+            publication = nomination_records(table, known, longest_stored, group, width)
+            for form, word, seat, ordinal, bits, length, *payload in publication.tolist():
+                if labels is pool.labels:
+                    labels = labels.copy()
+                raw = bytes(payload[:length])
+                addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
+                characters = [(raw[pos:pos + size], row)
+                              for pos, (row, size) in enumerate(addresses) if size]
+                wholes = tuple(i for i in range(property_count) if bits & (1 << i))
+                installed = owner.interpret.install_nomination(
+                    word, seat, form, raw, wholes, pool.initial_places[ordinal],
+                    witnesses=(characters, payload[3 * width:end]), holder_rows=payload[end:])
+                if installed is None:
+                    raise RuntimeError('MTM nominated a word without a free concept row')
+                pool.form_labels[form] = raw.decode('latin1')
+                description = owner._concept_allocator.word_descriptions[word]
+                labels[word] = next(iter(description['forms']), '')
+        pool.labels = labels
     fi['pool_word_texts'] = WordLabels(words, pool.labels)
     return True
