@@ -11480,13 +11480,23 @@ class BasicModel(BaseModel):
             stage_word_properties(
                 word_texts, active, word_offsets=word_offsets,
                 surface=ps_fwd.get("sentence_bytes"), unit_spans=ps_fwd.get("unit_spans"))
-        pid_host = torch.where(part_mask.bool(), part_ids, -1).tolist()
-        pool_readings = ps_fwd.get('pool_readings')
         attention = getattr(self, "_attention_words", None)
         admitted = active if attention is None else active & attention.accepted
-        active_host = admitted.detach().to("cpu").reshape(B, W).tolist()
-        # Transfer the host inventory's six address columns as one sentence.
-        addresses = [[(-1,) * 6 for _ in range(W)] for _ in range(B)]
+        parts = torch.where(part_mask.bool(), part_ids, -1)
+        pool_readings = ps_fwd.get('pool_word_ids')
+        if pool_readings is not None:
+            # Only this compatibility reader needs integer PS/WS witnesses
+            # on the host. Its input bank holds no spellings or padding bytes.
+            witnesses = torch.stack((pool_readings, ps_fwd['pool_concept_rows'],
+                                     ps_fwd['pool_properties']), -1)
+            witnesses = F.pad(witnesses[:, :W], (0, 0, 0, max(0, W - witnesses.shape[1])), value=-1)
+            metadata = torch.cat((admitted[..., None], witnesses, parts), -1).tolist()
+        else:
+            metadata = torch.cat((admitted[..., None], parts), -1).tolist()
+        # A native read already has its word names and seats. The remaining
+        # host definition supplies the chosen object and its witnessed order.
+        address_width = 6 if pool_readings is None else 2
+        addresses = [[(-1,) * address_width for _ in range(W)] for _ in range(B)]
         pending = []
         # Perceptual passes change attention, not conceptual order. Native
         # word definitions are order 0; only symbolization raises an object.
@@ -11517,23 +11527,22 @@ class BasicModel(BaseModel):
         from WordSurfaces import is_lexical_form
         resolved_objects = None
         if pool_readings is not None and owner.interpret.mandatory:
-            readable = [[word if active_host[b][p] and word in basic.words
-                         and is_lexical_form(word_texts[b][p]) else -1
-                         for p, (word, _, _) in enumerate(stream[:W])]
-                        for b, stream in enumerate(pool_readings)]
+            readable = [[row[1] if row[0] and row[1] in basic.words
+                         and p < len(word_texts[b]) and is_lexical_form(word_texts[b][p]) else -1
+                         for p, row in enumerate(stream)] for b, stream in enumerate(metadata)]
             can_mint = (not getattr(owner, '_online_learning_frozen', False)
                         and any(word >= 0 and not definitions.objects(word)
                                 and not alloc.named_identities.get(word)
                                 for word in {word for stream in readable for word in stream}))
             if not can_mint:
-                names = part_ids.new_tensor([row + [-1] * (W - len(row)) for row in readable],
-                                            dtype=torch.long).reshape(B, W)
+                names = part_ids.new_tensor(readable, dtype=torch.long).reshape(B, W)
                 resolved_objects = owner.interpret.sentence_referents(names).tolist()
         basic_rows = [[-1]*W for _ in range(B)]
+        boundary_percepts = set()
         for b in range(B):
             texts_b = word_texts[b] if b < len(word_texts) else ()
             for p in range(W):
-                if not bool(active_host[b][p]):
+                if not metadata[b][p][0]:
                     continue
                 value = texts_b[p] if p < len(texts_b) else None
                 if value is None:
@@ -11546,12 +11555,13 @@ class BasicModel(BaseModel):
                     word_id = definitions.word(form=key)
                     seat = None
                     current_wholes = set(ws.property_rows_for_bytes(key))
+                    part_values = metadata[b][p][1:]
                 else:
-                    word_id, seat, wholes = pool_readings[b][p]
+                    _, word_id, seat, bits, *part_values = metadata[b][p]
                     if word_id < 0:
                         continue
-                    current_wholes = set(wholes)
-                ordered_parts = [part for part in pid_host[b][p] if part >= 0]
+                    current_wholes = {i for i in range(min(int(ws.nVectors), 63)) if bits & (1 << i)}
+                ordered_parts = [part for part in part_values if part >= 0]
                 current_parts = set(self.perceptualSpace.fuse_parts(ordered_parts))
                 if word_id is None:
                     # First sight is admitted here, at the same eager boundary
@@ -11611,12 +11621,24 @@ class BasicModel(BaseModel):
                     owner.propose_utility_observation(
                         A, sorted(current_parts) + [10_000_000 + w for w in sorted(current_wholes)])
                 owner.record_concept_fold_support(A, fold_support)
-                addresses[b][p] = (row, A, owner._row_order(row), object_row,
-                                   object_id, object_order)
+                boundary_percepts.add(basic_rows[b][p])
+                if pool_readings is None:
+                    addresses[b][p] = (row, A, owner._row_order(row), object_row, object_id, object_order)
+                else:
+                    addresses[b][p] = (object_id, object_order)
 
         isp._ar_basic_percept_ids = part_ids.new_tensor(basic_rows, dtype=torch.long)
-        address_table = part_ids.new_tensor(addresses, dtype=torch.long).reshape(B, W, 6)
-        rows, ids, orders, object_rows, object_ids, object_orders = address_table.unbind(-1)
+        address_table = part_ids.new_tensor(addresses, dtype=torch.long).reshape(B, W, address_width)
+        if pool_readings is None:
+            rows, ids, orders, object_rows, object_ids, object_orders = address_table.unbind(-1)
+        else:
+            object_ids, object_orders = address_table.unbind(-1)
+            object_rows = alloc.layer(0).concept_rows(object_ids)
+            known = object_rows >= 0
+            ids = torch.where(known, witnesses[..., 0], -1)
+            rows = torch.where(known, witnesses[..., 1], -1)
+            ends = rows.new_tensor(owner._order_caps()).cumsum(0)[:-1]
+            orders = torch.where(known, torch.bucketize(rows, ends, right=True), -1)
         isp._ar_word_concept_rows = rows
         isp._ar_word_concept_ids = ids
         isp._ar_word_concept_orders = orders
@@ -11648,8 +11670,9 @@ class BasicModel(BaseModel):
         part_codes = torch.where(roles == 0, codes, torch.zeros_like(codes))
         whole_codes = torch.where(roles == 1, codes, torch.zeros_like(codes))
         ps = self.perceptualSpace
-        part_vectors = basic.boundary_rows(part_codes, valid=roles == 0, role=0)
-        whole_vectors = basic.boundary_rows(whole_codes, valid=roles == 1, role=1)
+        boundary_percepts = sorted(boundary_percepts)
+        part_vectors = basic.boundary_rows(part_codes, valid=roles == 0, role=0, candidates=boundary_percepts)
+        whole_vectors = basic.boundary_rows(whole_codes, valid=roles == 1, role=1, candidates=boundary_percepts)
         # These are exact selected prototype reads, never a vocabulary scan.
         # The compiler sees the small sentence bank; sparse encoder gradients
         # and indexed Sigma gradients are formed outside the while-loop HOP.
@@ -11664,7 +11687,10 @@ class BasicModel(BaseModel):
         if torch.is_tensor(primitive_counts):
             # Reference ids name basic percepts; the staged witness names
             # bytes. Read their live property definitions before gathering.
-            gathered = basic.property_presence(primitive_counts, whole_codes)
+            # Unused slots address row zero, including a row admitted in this read.
+            uses_wholes = (bool(B and W and basic.index and basic.occurrences[0][1])
+                           or any(basic.occurrences[row][1] for row in boundary_percepts))
+            gathered = basic.property_presence(primitive_counts, whole_codes, uses_wholes=uses_wholes)
             isp._ar_whole_reference_presence = torch.where(
                 primitive_counts.any(dim=-1, keepdim=True), gathered,
                 torch.full_like(gathered, -1))
@@ -11826,10 +11852,17 @@ class BasicModel(BaseModel):
             isp._ar_bank_bytes = None
             isp._ar_bank_valid = None
             return
-        B, L = (int(v) for v in bank.shape)
         owner = self._concept_owner()
-        # Only the brick's row IDs cross to the host. No vocabulary scan and
-        # no OBJECT-owned copy of a word's surface is needed.
+        pool = getattr(getattr(owner, 'mtm', None), 'word_pool', None)
+        native = getattr(getattr(self, 'perceptualSpace', None), '_forward_input', None) or {}
+        if pool is not None and 'pool_word_ids' in native and pool.stored_spellings:
+            from WordConceptPool import candidate_bytes
+            words = owner.interpret.spelling_seats(bank)
+            longest = max(pool.longest_spelling, native['unit_longest'])
+            isp._ar_bank_bytes, isp._ar_bank_valid = candidate_bytes(pool, self.perceptualSpace.form_links,
+                words, bank >= 0, self.word_surface_capacity, longest)
+            return
+        # A model without native word forms still owns its stored definitions.
         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None for row in rows]
                     for rows in bank.detach().to('cpu').tolist()]
         from WordSurfaces import stage as stage_surfaces
@@ -11858,25 +11891,23 @@ class BasicModel(BaseModel):
         B, W = active.shape
         owner = self._concept_owner()
         percepts = getattr(self.perceptualSpace, '_forward_input', None) or {}
-        surfaces = [[b''] * W for _ in range(B)]
-        live = active.detach().cpu().tolist()
-        for b, row in enumerate(rows.detach().cpu().tolist()):
-            for w, concept_row in enumerate(row):
-                if not live[b][w]:
-                    continue
-                spelling = owner.word_surface_for_row(concept_row) if concept_row >= 0 else None
-                if spelling:
-                    surfaces[b][w] = spelling
-        def tensor_bytes(values, lookahead=0):
+        if 'pool_word_ids' in percepts:
+            from WordConceptPool import candidate_bytes
+            data, valid = candidate_bytes(owner.mtm.word_pool, self.perceptualSpace.form_links,
+                rows, active, self.word_surface_capacity, percepts['unit_longest'])
+        else:
+            # Models without a form table retain the definition's spelling.
+            seated = torch.where(active, rows, -1).tolist()
+            surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
+                         for row in stream] for stream in seated]
             from WordSurfaces import stage as stage_surfaces
-            data, valid, _, _ = stage_surfaces(values, self.word_surface_capacity,
-                device=rows.device, eos=bool(lookahead), with_support=False)
-            return data, valid
+            data, valid, _, _ = stage_surfaces(surfaces, self.word_surface_capacity,
+                device=rows.device, eos=True, with_support=False)
         isp._ar_concept_lookup_rows = rows.clone()
         isp._ar_concept_lookup_atoms = atoms
         isp._ar_concept_lookup_sentence_ids = torch.where(
             rows >= 0, isp._packed_sentence_ids, torch.full_like(rows, -1))
-        isp._ar_bank_bytes, isp._ar_bank_valid = tensor_bytes(surfaces, lookahead=1)
+        isp._ar_bank_bytes, isp._ar_bank_valid = data, valid
         # The word-major stem always stages the sentence bytes and spans.
         from WordSurfaces import bytes_at
         isp._ar_target_word_bytes, isp._ar_target_word_mask = bytes_at(
@@ -13756,8 +13787,9 @@ class BasicModel(BaseModel):
                 from WordSurfaces import unit_texts
                 fi['word_texts'], fi['word_intervals'] = unit_texts(fi['sentence_bytes'], fi['unit_spans'])
             isp = self.inputSpace
-            if 'pool_width' in fi:
-                width = fi['pool_width']
+            if 'pool_word_ids' in fi:
+                bounds = fi['unit_spans']
+                width = int((bounds[..., 1] > bounds[..., 0]).sum(1).amax()) if len(bounds) else 0
             else:
                 width = max(map(len, fi['word_intervals']), default=0)
             isp._valid_len_host = min(isp._valid_len_host, width)

@@ -5822,15 +5822,22 @@ class SparseLDULayer(Layer):
     def entry(self, rows, inputs):
         """W at the entry of each ``rows[k]`` on ``inputs[k]`` (its size the
         weight, its side of zero the option); zero where there is none."""
-        rows = torch.as_tensor(rows, dtype=torch.long)
-        inputs = torch.as_tensor(inputs, dtype=torch.long)
-        found = [self._entry_of.get(key, -1) for key in zip(rows.flatten().tolist(), inputs.flatten().tolist())]
-        index = torch.tensor(found, dtype=torch.long, device=self.value.device)
+        device = self.value.device
+        rows = torch.as_tensor(rows, dtype=torch.long, device=device)
+        inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape_as(rows)
         if not self._n:
             return self.value[:0].sum().expand(rows.shape)
+        # One key per occupied edge. Sorting the entry buffers preserves a
+        # weight's physical address when removal has moved the last entry.
+        stored = self.entry_row[:self._n].to(device=device, dtype=torch.long) * self.nInput
+        stored = stored + self.entry_input[:self._n].to(device)
+        keys, positions = stored.sort()
+        live = (rows >= 0) & (rows < self.nOutput) & (inputs >= 0) & (inputs < self.nInput)
+        query = torch.where(live, rows * self.nInput + inputs, -1)
+        at = torch.searchsorted(keys, query.contiguous()).clamp_max(self._n - 1)
+        found = live & (keys[at] == query)
         w = self.w(occupied_only=True)
-        value = w.index_select(0, index.clamp_min(0)) * (index >= 0).to(w)
-        return value.reshape(rows.shape)
+        return w[torch.where(found, positions[at], 0)] * found.to(w)
 
     # --- the way up and the way back, over the slots ---------------------
 

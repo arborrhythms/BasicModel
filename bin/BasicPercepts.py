@@ -1706,12 +1706,22 @@ class BasicPercepts(nn.Module):
             result[index] = torch.stack((lanes[index][..., 0], against), -1)
         return torch.stack(result)
 
-    def lookup_rows(self, rows, *, valid=None):
+    def lookup_rows(self, rows, *, valid=None, candidates=None):
         from Meaning import require_sentence_tensor
         rows = torch.as_tensor(rows, device=self.value_codes.device, dtype=torch.long)
         valid = torch.ones_like(rows, dtype=torch.bool) if valid is None else valid
         require_sentence_tensor((~valid | ((rows >= 0) & (rows < len(self.index)))).all(),
                                 'unavailable basic percept row')
+        if candidates is not None:
+            if not candidates:
+                require_sentence_tensor(~valid.any(), 'missing basic percept in lexical bank')
+                return self.value_codes.new_zeros(*rows.shape, self.width)
+            names = rows.new_tensor(candidates)
+            at = torch.searchsorted(names, rows.contiguous()).clamp_max(len(names) - 1)
+            require_sentence_tensor((~valid | (names[at] == rows)).all(),
+                                    'missing basic percept in lexical bank')
+            codes = torch.stack(self._codes_for(candidates))
+            return torch.where(valid[..., None], codes[at], 0.)
         selected, inverse = torch.unique(rows[valid], return_inverse=True)
         result = self.value_codes.new_zeros(*rows.shape, self.width)
         if len(selected):
@@ -1719,27 +1729,56 @@ class BasicPercepts(nn.Module):
             result[valid] = codes[inverse]
         return result
 
-    def boundary_rows(self, rows, *, valid=None, role):
-        code = self.lookup_rows(rows, valid=valid)
+    def boundary_rows(self, rows, *, valid=None, role, candidates=None):
+        code = self.lookup_rows(rows, valid=valid, candidates=candidates)
         if role == 0:
             return torch.cat((code[..., :self.identity_width],
                               torch.zeros_like(code[..., self.identity_width:])), -1)
         return torch.cat((torch.ones_like(code[..., :self.identity_width]),
                           code[..., self.identity_width:]), -1)
 
-    def property_presence(self, counts, rows):
-        """Live property meet for each addressed basic-level occurrence."""
-        shape = rows.shape
-        if counts.shape[:-2] != shape[:-1]:
+    def property_presence(self, counts, rows, *, uses_wholes=None):
+        """Meet each addressed percept's live primitive memberships at its word."""
+        from Meaning import require_sentence_tensor
+        if counts.shape[:-2] != rows.shape[:-1]:
             raise ValueError('basic percept presence must align to word locations')
         primitive = self.whole.primitive_properties.on_counts(counts)
-        result = primitive.new_zeros(*primitive.shape[:-1], shape[-1])
-        for row in torch.unique(rows).tolist():
-            if not 0 <= row < len(self.index): continue
-            wholes = self.occurrences[row][1]
-            presence = primitive[..., list(wholes)].amin(-1) if wholes else primitive.new_ones(primitive.shape[:-1])
-            result = result + presence[..., None] * (rows == row).unsqueeze(-2)
-        return result
+        cached = self.__dict__.get('_property_members')
+        if (cached is None or cached[0] is not self.index or cached[1] != len(self.index)
+                or cached[2].device != rows.device):
+            # A basic row's ordered whole references are set at reservation.
+            # Restore replaces the index. A changed form cover updates its
+            # parts but keeps its wholes.
+            groups = [pair[1] for pair in self.occurrences[:len(self.index)]]
+            width = max(map(len, groups), default=0)
+            pad = torch.iinfo(torch.long).min
+            members = rows.new_tensor([list(group) + [pad] * (width - len(group))
+                                       for group in groups] + [[pad] * width], dtype=torch.long)
+            cached = self.index, len(self.index), members
+            self.__dict__['_property_members'] = cached
+        members = cached[2]
+        known = (rows >= 0) & (rows < len(self.index))
+        neutral = known.unsqueeze(-2).expand(*counts.shape[:-1], rows.shape[-1]).to(primitive)
+        if not members.shape[1] or uses_wholes is False:
+            return neutral
+        refs = members[torch.where(known, rows, len(self.index))]
+        held = refs != torch.iinfo(torch.long).min
+        if uses_wholes is None and torch.is_grad_enabled() and primitive.requires_grad:
+            # With no addressed member the scalar reader has no parameter in
+            # its graph. Preserve absent gradients for the optimizer.
+            if not bool(held.any()):
+                return neutral
+        size = primitive.shape[-1]
+        require_sentence_tensor((~held | ((refs >= -size) & (refs < size))).all(),
+                                'basic percept whole outside primitive inventory', IndexError)
+        if not size:
+            return neutral
+        ids = torch.where(held, refs.remainder(size), 0)
+        runs = primitive.shape[-2]
+        expanded = ids.flatten(-2).unsqueeze(-2).expand(*counts.shape[:-2], runs, -1)
+        values = primitive.gather(-1, expanded).unflatten(-1, refs.shape[-2:])
+        minimum = values.masked_fill(~held.unsqueeze(-3), torch.inf).amin(-1)
+        return torch.where(held.any(-1).unsqueeze(-2), minimum, neutral)
 
     def word_weights(self, counts, word_rows):
         # The declared word slab supplies one code seat per location in each

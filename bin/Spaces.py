@@ -14594,9 +14594,7 @@ class ConceptualSpace(Space):
         sigma = self.order_zero
         rows = torch.as_tensor(rows, dtype=torch.long, device=sigma.value.device)
         percepts = torch.as_tensor(percepts, dtype=torch.long, device=sigma.value.device)
-        held = (rows >= 0) & (rows < sigma.nOutput) & (percepts >= 0) & (percepts < sigma.nInput)
-        value = sigma.entry(torch.where(held, rows, 0).cpu(), torch.where(held, percepts, 0).cpu())
-        return (value.to(sigma.value.device) * held)[..., None]
+        return sigma.entry(rows, percepts)[..., None]
 
     #: Entries of the order-zero Sigma allocated beforehand, for each
     #: concept and each basic percept: a concept's own row, and the rows that

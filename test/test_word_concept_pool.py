@@ -252,3 +252,47 @@ def test_sentence_denotations_use_each_streams_expected_order_and_score(device):
     read = torch.compile(preferred_ids, backend='eager', fullgraph=True)
     assert read(ids, orders, rows, scores).tolist() == [[11, 3], [30, 9], [20, 3]]
     assert read(ids, orders, rows, scores[:, :0]).tolist() == [[20, 3]] * 3
+
+
+def test_word_seat_spells_its_stored_form_in_the_nominating_read(device):
+    from FormLinks import FormLinks
+    from WordConceptPool import candidate_bytes
+    table = FormLinks(512, longest=3, rounds=0).to(device)
+    raw = "café".encode()
+    forms = table.insert(torch.tensor([list(raw), list(b"hello")], device=device),
+                         torch.tensor([len(raw), 5], device=device))
+    pool = WordConceptPool(512, forms.new_tensor([91, 92]), threshold=1)
+    pool.free_rows = forms.new_tensor([2, 6])
+    pool.seat_forms = forms.new_full((9,), -1)
+    _, seats, _ = pool.read_seated(forms[None], learn=True)
+    assert seats.tolist() == [[2, 6]]
+    read = torch.compile(candidate_bytes, backend='eager', fullgraph=True)
+    wanted = forms.new_tensor([[6, 2, 6], [8, -1, 75]])
+    active = forms.new_tensor([[1, 1, 0], [1, 1, 1]], dtype=torch.bool)
+    data, valid = read(pool, table, wanted, active, capacity=5, longest=8)
+    assert data.shape == valid.shape == (2, 3, 6)
+    assert [bytes(value[mask].tolist()) for value, mask in zip(data[0], valid[0])] == [b'hello', raw, b'']
+    assert not valid[1].any() and not valid[..., -1].any()
+
+
+def test_word_property_meet_keeps_tied_gradients_and_empty_rows(device):
+    from types import SimpleNamespace
+    from BasicPercepts import BasicPercepts
+    groups = [(0, 2), (), (1,), (-1, 0)]
+    basic = SimpleNamespace(index={i: i for i in range(4)},
+        occurrences=[((), group) for group in groups],
+        whole=SimpleNamespace(primitive_properties=SimpleNamespace(on_counts=lambda counts: counts)))
+    primitive = torch.ones(2, 3, 4, 3, device=device, requires_grad=True)
+    rows = torch.tensor([[[0, 0], [1, 2], [2, -1]], [[3, 0], [7, 2], [0, 1]]], device=device)
+    result = BasicPercepts.property_presence(basic, primitive, rows, uses_wholes=True)
+    reference = torch.zeros_like(result)
+    for row, group in enumerate(groups):
+        presence = primitive[..., list(group)].amin(-1) if group else torch.ones_like(primitive[..., 0])
+        reference = reference + presence[..., None] * (rows == row).unsqueeze(-2)
+    assert torch.equal(result, reference)
+    weights = torch.arange(result.numel(), device=device, dtype=result.dtype).reshape_as(result)
+    got, = torch.autograd.grad((weights * result).sum(), primitive)
+    expected, = torch.autograd.grad((weights * reference).sum(), primitive)
+    assert torch.equal(got, expected)
+    empty = BasicPercepts.property_presence(basic, primitive, -torch.ones_like(rows))
+    assert not empty.requires_grad and not empty.any()

@@ -36,6 +36,7 @@ class WordConceptPool(nn.Module):
         self.register_buffer('free_rows', symbols.new_empty(0), persistent=False)
         self.register_buffer('form_seats', symbols.new_full((form_capacity,), -1), persistent=False)
         self.register_buffer('seats_used', symbols.new_zeros(()), persistent=False)
+        self.register_buffer('seat_forms', symbols.new_empty(0), persistent=False)
         self.register_buffer('initial_places', None, persistent=False)
 
     @torch.no_grad()
@@ -108,8 +109,27 @@ class WordConceptPool(nn.Module):
             assigned = torch.where(live, seats[(self.seats_used + rank).clamp(0, len(self.free_rows))], -1)
             self.seats_used.add_(live.sum())
             self.form_seats.scatter_reduce_(0, new_forms.clamp_min(0), assigned, 'amax')
+            if self.seat_forms.numel():
+                self.seat_forms.scatter_reduce_(0, assigned.clamp_min(0),
+                    torch.where(live, new_forms, -1), 'amax')
         rows = torch.where(words >= 0, self.form_seats[forms.clamp_min(0)], -1)
         return words, rows, arrivals
+
+
+def candidate_bytes(pool, table, seats, active, capacity, longest):
+    """Spell nominated word seats from stored form links with one spare EOS byte."""
+    from Meaning import require_sentence_tensor
+    valid = active & (seats >= 0) & (seats < len(pool.seat_forms))
+    forms = torch.nn.functional.pad(pool.seat_forms, (0, 1), value=-1)
+    rows = forms[torch.where(valid, seats, len(pool.seat_forms))].flatten()
+    width = min(longest, capacity)
+    data, lengths = table.spell(rows, longest=width)
+    require_sentence_tensor((lengths <= capacity).all(),
+                            f'word surface exceeds wordSurfaceCapacity {capacity}')
+    require_sentence_tensor((lengths <= width).all(), 'stored word exceeds its delivered unit bound')
+    data = torch.nn.functional.pad(data, (0, capacity + 1 - width), value=-1)
+    data = data.reshape(*seats.shape, capacity + 1)
+    return data.clamp_min(0).to(torch.uint8), data >= 0
 
 
 def prepare(model):
@@ -167,7 +187,9 @@ def prepare(model):
              tuple(sorted(known)))
     if getattr(pool, '_definitions_stamp', None) == stamp:
         return
-    raw, words = [], []
+    pool.labels = {word: next(iter(value['forms']), '')
+                   for word, value in alloc.word_descriptions.items() if word in known}
+    raw, words, unique = [], [], []
     for word, description in alloc.word_descriptions.items():
         if word not in known:
             continue
@@ -178,7 +200,13 @@ def prepare(model):
             if value:
                 raw.append(value)
                 words.append(word)
+                unique.append(len(description['forms']) == 1)
+    pool.longest_spelling = max(map(len, raw), default=1)
+    pool.stored_spellings = True
     mapping = torch.full_like(pool.words, -1)
+    # The inverse is only for the spelling of a word seat. A word with
+    # several forms identifies input but cannot spell one unique candidate.
+    pool.seat_forms = pool.words.new_full((owner.nVectors,), -1)
     if raw:
         width = max(map(len, raw))
         data = table.left.new_tensor([list(value) + [0] * (width-len(value)) for value in raw])
@@ -187,8 +215,15 @@ def prepare(model):
         # A restored frozen model can have definitions predating its form
         # table. Its missing form remains unknown; inference admits nothing.
         valid = rows >= 0
-        mapping.scatter_reduce_(0, rows.clamp_min(0),
-            torch.where(valid, rows.new_tensor(words), -1), 'amax')
+        word_ids = rows.new_tensor(words)
+        mapping.scatter_reduce_(0, rows.clamp_min(0), torch.where(valid, word_ids, -1), 'amax')
+        seats = matrix.concept_rows(word_ids)
+        if frozen:
+            # Older checkpoints can carry a definition whose spelling was
+            # never in FormLinks. Its inverse still reads that definition.
+            pool.stored_spellings = bool((valid & (seats >= 0)).all())
+        spelled = valid & (seats >= 0) & rows.new_tensor(unique, dtype=torch.bool)
+        pool.seat_forms.scatter_reduce_(0, seats.clamp_min(0), torch.where(spelled, rows, -1), 'amax')
     pool.counts.masked_fill_((pool.words >= 0) & (mapping < 0), 0)
     pool.words.copy_(mapping)
     pool.form_seats.copy_(matrix.concept_rows(mapping))
@@ -212,9 +247,29 @@ def read_units(pool, table, surface, units, longest, chart, discard, *, learn):
     reserved = torch.nn.functional.pad(pool.initial_places, (0, 0, 0, 1))
     initial = reserved[torch.where(live, ordinal, len(pool.symbols))]
     properties = reading_property_signatures(surface, trimmed, chart, discard, latin1_text=False)
-    records = torch.cat((words[..., None], arrivals[..., :1], seats[..., None],
-                         trimmed, units, properties[..., None], data.to(words.dtype)), -1)
-    return words, seats, forms, trimmed, visible, records, initial
+    # Host consumers of new definitions need bytes only for arrivals. Keep
+    # the source seat so they pick the corresponding private initial place.
+    columns = torch.arange(words.numel(), device=words.device).reshape_as(words)
+    records = torch.cat((arrivals, seats[..., None], columns[..., None], lengths[..., None],
+                         properties[..., None], data.to(words.dtype)), -1)
+    return words, seats, forms, trimmed, visible, properties, records, initial
+
+
+class WordLabels:
+    """Display labels of the nominated words, materialized by a text reader."""
+    def __init__(self, words, labels):
+        self.words = words
+        self.labels = labels
+        self._rows = None
+
+    def __len__(self):
+        return len(self.words)
+
+    def __getitem__(self, index):
+        if self._rows is None:
+            self._rows = [[self.labels.get(word, '') for word in stream]
+                          for stream in self.words.tolist()]
+        return self._rows[index]
 
 
 def stage(model, fi):
@@ -234,34 +289,25 @@ def stage(model, fi):
     from Spaces import _analysis_property_signature
     chart, discard = _analysis_property_signature(model.wholeSpace, device=surface.device)
     learn = not getattr(owner, '_online_learning_frozen', False)
-    words, seats, forms, trimmed, visible, records, initial = read_units(
+    words, seats, forms, trimmed, visible, properties, records, initial = read_units(
         pool, table, surface, units, longest, chart, discard, learn=learn)
     fi.update(pool_visible=visible, pool_concept_rows=seats, pool_word_ids=words,
-              pool_form_rows=forms, pool_spans=trimmed)
-    # The open sentence currently has host consumers of its word metadata.
-    # Send a rectangular record once. All recognition and seat choices have
-    # already been made and the original form row accompanies its nomination.
-    labels, readings = [], []
-    width = 0
-    property_count = min(int(model.wholeSpace.nVectors), 63)
-    for b, stream in enumerate(records.cpu().tolist()):
-        word_row, read_row = [], []
-        occupied = 0
-        for w, (word, form, seat, lo, hi, start, stop, bits, *payload) in enumerate(stream):
-            word_row.append(word)
-            wholes = tuple(i for i in range(property_count) if bits & (1 << i)) if word >= 0 else ()
-            read_row.append((word, seat, wholes))
-            occupied += int(stop > start)
-            if form >= 0:
-                raw = bytes(payload[:hi-lo])
-                if owner.interpret.install_nomination(word, seat, form, raw, wholes, initial[b, w]) is None:
+              pool_form_rows=forms, pool_spans=trimmed, pool_properties=properties)
+    if learn:
+        # Sparse catalog updates retain the order of the actual nominations.
+        # Ordinary named occurrences and padding have no record to install.
+        new = records[records[..., 0] >= 0].tolist()
+        if new:
+            labels = pool.labels.copy()
+            places = initial.flatten(0, 1)
+            property_count = min(int(model.wholeSpace.nVectors), 63)
+            for form, word, seat, source, length, bits, *payload in new:
+                raw = bytes(payload[:length])
+                wholes = tuple(i for i in range(property_count) if bits & (1 << i))
+                if owner.interpret.install_nomination(word, seat, form, raw, wholes, places[source]) is None:
                     raise RuntimeError('MTM nominated a word without a free concept row')
-        readings.append(read_row)
-        labels.append(word_row)
-        width = max(width, occupied)
-    fi['pool_readings'] = readings
-    fi['pool_width'] = width
-    descriptions = owner._concept_allocator.word_descriptions
-    fi['pool_word_texts'] = [[next(iter(descriptions.get(word, {}).get('forms', ())), '')
-                             for word in row] for row in labels]
+                description = owner._concept_allocator.word_descriptions[word]
+                labels[word] = next(iter(description['forms']), '')
+            pool.labels = labels
+    fi['pool_word_texts'] = WordLabels(words, pool.labels)
     return True
