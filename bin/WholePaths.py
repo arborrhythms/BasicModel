@@ -185,11 +185,15 @@ def answer_cost(model, construction, thoughts, questions, active, registry, *, s
 def application_cost(language, observation, output_trace, like):
     """Count this path's composed and generated applications, never STOPs."""
     programs = observation.get('entries', ())
-    count = like.new_zeros(len(like))
-    for row, program in enumerate(programs):
-        if program is not None:
-            kinds = program.actions[:, 0]
-            count[row] = ((kinds >= 1) & (kinds <= 3)).sum()
+    count = observation.get('application_count')
+    if count is None:
+        count = like.new_zeros(len(like))
+        for row, program in enumerate(programs):
+            if program is not None:
+                kinds = program.actions[:, 0]
+                count[row] = ((kinds >= 1) & (kinds <= 3)).sum()
+    else:
+        count = count.to(like)
     if output_trace is not None:
         stop = len(language._generate_binary_ops) + len(language._generate_unary_ops)
         actions = output_trace[0]
@@ -208,6 +212,8 @@ def load_cost(model, observation, like):
     from ReadingIndex import steps
     language = model.languageSpace
     allowance = int(model.conceptualSpace.stm.capacity) - 1
+    if 'memory_load' in observation:
+        return observation['memory_load'].to(like) * (language.reduction_cost / max(1, allowance))
     rules = language._compose_binary_rules
     cost = like.new_zeros(len(like))
     for row, program in enumerate(observation.get('entries', ())):

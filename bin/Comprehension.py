@@ -131,6 +131,9 @@ class Evaluation:
         self.trust = float(trust)
         self.owner, self.language = model._concept_owner(), model.languageSpace
         self.stack = []
+        from ParseForest import native
+        self.parse = native(program)
+        self.nodes = {}
         if store is None and program.tree is not None:
             store = program.tree.ideas
         self.leaves = (torch.empty_like(program.leaves) if store is None
@@ -240,6 +243,8 @@ class Evaluation:
                     point[offset:offset+4] = band
         self.stack.append(Value(point, identity, order, self._cases(identity),
             where, when))
+        if self.parse is not None:
+            self.nodes[self.parse.word_actions[word]] = self.stack[-1]
         return identity
 
     def transpose(self):
@@ -249,11 +254,14 @@ class Evaluation:
         from ReferenceContext import denoted_order, OrderReference
         from Queries import StructuralGrammarContext, ConceptualSpaceCapability
         from ChunkJournal import action_context
-        offset = max(0, word) if kind == 2 else 0
-        if offset:
-            self.stack.append(self.stack.pop(-1-offset))
+        offset = max(0, word) if kind == 2 and self.parse is None else 0
         arity = 2 if kind == 1 and rule.method_name != 'bind' else 1
-        children = self.stack[-arity:]; del self.stack[-arity:]
+        if self.parse is None:
+            if offset:
+                self.stack.append(self.stack.pop(-1-offset))
+            children = self.stack[-arity:]; del self.stack[-arity:]
+        else:
+            children = [self.nodes[child] for child in self.parse.operands[at]]
         operands, refs, orders, cases = [], [], [], []
         seats = self.operand_seats[at] if self.operand_seats is not None else (-1, -1, -1)
         for role, child in enumerate(children):
@@ -359,6 +367,8 @@ class Evaluation:
         if band is not None and value.shape[-1] == band[2] and physical.where is not None and physical.when is not None:
             working = torch.cat((value[:band[0]], physical.where, physical.when, value[band[1]:]))
         self.stack.append(Value(working, reference, order, case, physical.where, physical.when))
+        if self.parse is not None:
+            self.nodes[at] = self.stack[-1]
         if offset:
             self.stack.insert(len(self.stack)-1-offset, self.stack.pop())
         return reference
@@ -399,6 +409,8 @@ class Evaluation:
         return value
 
     def finish(self, *, roots=None):
+        if self.parse is not None:
+            self.stack = [self.nodes[root] for root in self.parse.roots]
         end = torch.zeros_like(self.program.end_state)
         for slot, node in enumerate(reversed(self.stack)):
             end[slot] = node.point

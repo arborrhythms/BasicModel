@@ -4,7 +4,6 @@ The input face reads an occurrence's existing activations. Neither a set
 operation nor a determiner searches a codebook for a similar vector.
 """
 
-from ReadingIndex import steps as recorded_steps
 from dataclasses import dataclass
 import torch
 from FieldLogic import reduce
@@ -299,8 +298,11 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
     if program.interpret_forced and len(program.concept_ids):
         ids, leaf_values = _interpreted_values(owner, ids, leaf_values, row)
     stack = []
+    from ParseForest import native, visits
+    parse = native(program)
+    nodes = {}
     dispatch = language._tree_layer(2)
-    for at, (kind, local, word) in enumerate(recorded_steps(program)):
+    for at, (kind, local, word) in visits(program):
         if kind < 0:
             break
         if kind == 0:
@@ -310,6 +312,7 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
                 source = stored(owner, source)
             node=Node(source,reference=('sym',reference) if reference > 0 else None)
             stack.append(node)
+            nodes[at] = node
             if evaluation is not None:
                 evaluation.completed(at, node)
             continue
@@ -324,10 +327,13 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
         rules = language._compose_binary_rules if kind == 1 else language._compose_unary_rules
         rule = rules[local]
         arity = 2 if kind == 1 and rule.method_name != 'bind' else 1
-        offset = max(0,word) if kind == 2 else 0
-        if offset:
-            stack.append(stack.pop(-1-offset))
-        children = tuple(stack[-arity:]); del stack[-arity:]
+        offset = max(0,word) if kind == 2 and parse is None else 0
+        if parse is None:
+            if offset:
+                stack.append(stack.pop(-1-offset))
+            children = tuple(stack[-arity:]); del stack[-arity:]
+        else:
+            children = tuple(nodes[child] for child in parse.operands[at])
         wrapped = (dispatch.ops if kind == 1 else dispatch.unary_ops)[local]
         operator = getattr(wrapped,'gl',wrapped)
         reference = None
@@ -338,12 +344,13 @@ def reading(model, program, field, row, positions, *, install=True, evaluation=N
         context = held_context(owner,rule,reference,open=rule.method_name == 'ask',stream=row)
         value = operator.compose_extend(*(child.field for child in children),context=context)
         node=Node(value,children,operator,context,reference)
+        nodes[at] = node
         stack.append(node)
         if evaluation is not None:
             evaluation.completed(at, node)
         if offset:
             stack.insert(len(stack)-1-offset,stack.pop())
-    roots = tuple(stack)
+    roots = tuple(stack) if parse is None else tuple(nodes[root] for root in parse.roots)
     if evaluation is not None:
         evaluation.finish(roots=roots)
     return roots

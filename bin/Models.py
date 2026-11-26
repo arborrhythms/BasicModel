@@ -12830,6 +12830,25 @@ class BasicModel(BaseModel):
         words, length = counts.amax(1).clamp_min(1).tolist()
         return positions[:, :words], actions[:, :length], targets, columns[:, :length]
 
+    def _parse_program(self, sentence=None):
+        """The chooser's event stamps and execution columns beside its parse."""
+        trace, language = self._reconstruction_stack(), self.languageSpace
+        rule_ids = trace._choice_rule_ids
+        local_b, binary = language.local_op_from_rule_ids(rule_ids.flatten(), language._cs_binary_rule_ids)
+        local_u, unary = language.local_op_from_rule_ids(rule_ids.flatten(), language._cs_unary_rule_ids)
+        kind = torch.where(binary, 1, torch.where(unary, 2, -1)).reshape_as(rule_ids)
+        local = torch.where(binary, local_b, local_u).reshape_as(rule_ids)
+        # A transpose remains a chooser event for its cost/diagnostics, and
+        # owns no parse pair or operator application at the close.
+        parent = trace._parse_pairs[:, 1::2, 0, 0]
+        kind = torch.where((trace._parse_order >= 0) & (kind == 1) & (parent == 0), 3, kind)
+        owners, word_owners, last = self._compose_round_owners(rule_ids)
+        from STMParse import program
+        n_binary = language._cs_binary_rule_ids.numel()
+        return program(trace._parse_word_events, trace._parse_order, kind, local,
+            trace._choice_positions, word_owners, owners, last if sentence is None else sentence,
+            n_binary, n_binary + language._cs_unary_rule_ids.numel(), self._derivation_trace_capacity())
+
     def _derivation_targets(self, t=None, budget=None):
         """``[B, T]`` teacher actions of the recorded derivation (see
         ``_derivation_program``); ``None`` without a trace."""
@@ -12907,7 +12926,7 @@ class BasicModel(BaseModel):
         for slot in slots:
             if sentence_slot is None and slot in captured:
                 continue
-            program = self._derivation_program(slot if packed else None, padded=True)
+            program = self._parse_program(slot if packed else None)
             if packed or sentence_slot is not None:
                 end = (bank[:, slot].reshape(B, 3, D)
                        if torch.is_tensor(bank) and bank.dim() == 3
@@ -12944,6 +12963,7 @@ class BasicModel(BaseModel):
             if value is not None and (not torch.is_tensor(value) or value.shape != shape):
                 raise ValueError(f'word reference {name} must align with the current word slab')
         positions, actions, targets, columns = program
+        structural_columns = columns
         from ChunkJournal import action_rows
         from Meaning import require_sentence_tensor
         log_probabilities = getattr(self._reconstruction_stack(), '_choice_log_probabilities', None)
@@ -13046,9 +13066,16 @@ class BasicModel(BaseModel):
                     positions=pos,orders=selected_leaf_orders)
             from ReadingIndex import ReadingIndex
             kept = None if kept_entries is None else kept_entries[b]
-            action_index = (kept.action_index if kept is not None else
-                            ReadingIndex(acts[:L], n, self.languageSpace,
-                                         records=host_actions[b, :L].tolist()))
+            if kept is not None:
+                action_index = kept.action_index
+            elif parse_roots is not None:
+                from ParseForest import ParseForest
+                action_index = ParseForest(acts[:L], host_actions[b, :L].tolist(), pos,
+                    self._reconstruction_stack()._parse_pairs[b], parse_roots[b],
+                    structural_columns[b, :L], self.languageSpace)
+            else:
+                action_index = ReadingIndex(acts[:L], n, self.languageSpace,
+                    records=host_actions[b, :L].tolist())
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)
@@ -20068,7 +20095,8 @@ class BasicModel(BaseModel):
         trace._chunk_scope = lang[17]
         trace._parse_pairs, trace._parse_roots = lang[26:28]
         trace._parse_order = lang[28]
-        trace._case_state = lang[29:] or None
+        trace._parse_word_events, trace._parse_depths = lang[29:31]
+        trace._case_state = lang[31:] or None
         self._packed_sentence_roots = lang[6]
         self._tensor_sentence_roots_live = lang[10]
         self._tensor_sentence_roots_depth = lang[11]
@@ -20103,6 +20131,12 @@ class BasicModel(BaseModel):
                 lang[11][b, sid] = -1
         depths = lang[11][:, sid]
         mask = active & (depths > 0)
+        owners, word_owners, _ = self._compose_round_owners(lang[15])
+        applied = (lang[28] >= 0) & (owners == sid)
+        arrived = (lang[29][..., 0] >= 0) & (word_owners == sid)
+        parse_costs = dict(application_count=applied.sum(-1) * mask,
+            memory_load=(torch.where(applied, lang[30], 0).sum(-1) +
+                         torch.where(arrived, lang[29][..., 2], 0).sum(-1)) * mask)
         # The host clause reader consumes one bounded depth per stream.
         # Zero denotes an active partial reading, -1 an absent stream.
         row_depths = torch.where(active, depths.clamp_min(0), -1).tolist()
@@ -20122,7 +20156,7 @@ class BasicModel(BaseModel):
             plans = ([source['reference_plans'][row] for row, source in enumerate(kept_rows)]
                      if getattr(self, '_component_reading', False) else ())
             return dict(view, entries=entries, mask=mask, roles=roles,
-                        layout='infix' if infix else 'stm', reference_plans=plans)
+                        layout='infix' if infix else 'stm', reference_plans=plans, **parse_costs)
         disc = getattr(self.symbolSpace, 'expectation', None)
         clauses = []
         registry = _boundary_registry(self)
@@ -20171,6 +20205,7 @@ class BasicModel(BaseModel):
                         and len(entry.tree.roots) > 1 else None
                         for b, entry in enumerate(programs.get(sid, (None,) * B)))
         result = dict(payloads=payloads, depths=depth_list, mask=mask, entries=word_entries,
+                    **parse_costs,
                     partial=partial, comprehensions=comprehensions,
                     meanings=meanings, observed=observed, observed_depths=observed_depths,
                     layout=layout, roles=roles, clauses=clauses, symbol_ids=handles, reference_plans=())
@@ -21147,7 +21182,7 @@ class BasicModel(BaseModel):
                               for entry in pool.entries.values() if entry.pending]
             pending[:len(pending_values)] = pending.new_tensor(pending_values)
             self.languageSpace.stage_verb_groups(resolver, self.inputSpace._ar_word_concept_ids, stm[0])
-            lang = lang[:29]
+            lang = lang[:31]
             before = self._snapshot_sentence_state((stm, lang, feedback))
             from SentenceTraining import separate, strength, combine
             single = self._sentence_training and torch.is_grad_enabled()
@@ -21197,7 +21232,7 @@ class BasicModel(BaseModel):
                 import CaseFlow
                 cases = CaseFlow.empty(before[0][0], cases=len(reference_bank.cases.ids),
                                        journal=before[1][19].shape[1])
-                before = (before[0], (*before[1][:29], *cases), before[2])
+                before = (before[0], (*before[1][:31], *cases), before[2])
             reducer = self._stm_reducer()
             if reducer is not None:
                 from Expectation import OrderPrime
@@ -22094,6 +22129,8 @@ class BasicModel(BaseModel):
             torch.zeros(B, 2 * choices[0].shape[1], 2, 2, dtype=torch.long, device=words.device),
             torch.zeros(B, root_slots, capacity, 2, dtype=torch.long, device=words.device),
             torch.full_like(choices[0], -1),  # choice order; fixation can visit columns out of order
+            torch.full((B, width, 3), -1, dtype=torch.long, device=words.device),
+            torch.zeros_like(choices[0]),  # STM depth after each applied choice
         )
         case_start = len(cs_lang_state)
         case_enabled = any(getattr(getattr(op, 'gl', op), 'case_head_role', 0) and
@@ -22392,6 +22429,10 @@ class BasicModel(BaseModel):
                     if torch.is_tensor(word_view(isp, 'concept_ids')) else None))
             import STMParse
             final_stm = STMParse.push(resolved, index.clamp(0, width - 1), commit.reshape(B))
+            word_events = STMChunks.write(current_cs_lang[29], index.expand(B),
+                torch.stack((current_cs_lang[28].amax(-1) + 1,
+                    (current_cs_lang[29][..., 0] >= 0).sum(-1), final_stm[STMChunks.DEPTH]), -1), commit.reshape(B))
+            current_cs_lang = (*current_cs_lang[:29], word_events, *current_cs_lang[30:])
             case_state = current_cs_lang[case_start:] if case_enabled else ()
             if case_enabled and sentence_transactions:
                 case_state = CaseFlow.push(case_state, language._reference_bank.cases,
@@ -22569,6 +22610,8 @@ class BasicModel(BaseModel):
                     current_cs_lang[26], current_cs_lang[28], language.parts_of_speech._operation_symbols,
                     language._parse_binary_operators, language._parse_unary_operators)
                 current_cs_lang = (*current_cs_lang[:26], parse_pairs, current_cs_lang[27], parse_order, *current_cs_lang[29:])
+                parse_depths = STMChunks.write(current_cs_lang[30], slot.expand(B), final_stm[STMChunks.DEPTH], choice.applied)
+                current_cs_lang = (*current_cs_lang[:30], parse_depths, *current_cs_lang[31:])
                 (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
                     trace_state, position_slab, action_slab, attempted_slab, slot,
                     choice, binary_map, unary_map)
@@ -22655,6 +22698,8 @@ class BasicModel(BaseModel):
                     current_cs_lang[26], current_cs_lang[28], language.parts_of_speech._operation_symbols,
                     language._parse_binary_operators, language._parse_unary_operators)
                 current_cs_lang = (*current_cs_lang[:26], parse_pairs, current_cs_lang[27], parse_order, *current_cs_lang[29:])
+                parse_depths = STMChunks.write(current_cs_lang[30], slot.expand(B), end_stm[STMChunks.DEPTH], choice.applied)
+                current_cs_lang = (*current_cs_lang[:30], parse_depths, *current_cs_lang[31:])
                 (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
                     trace_state, position_slab, action_slab, attempted_slab,
                     slot, choice, binary_map, unary_map)
@@ -22718,6 +22763,7 @@ class BasicModel(BaseModel):
                 torch.where(reset[:, None], -1, unary_history), explorable_slab, log_probability_slab,
                 torch.where(reset[:, None, None], 0., occupation_words),
                 current_cs_lang[26], next_parse_roots, current_cs_lang[28],
+                current_cs_lang[29], current_cs_lang[30],
                 *(CaseFlow.reset(case_state, reset) if case_enabled else ()))
             language_feedback = language.feedback_from_local_choices(
                 (pre_op, post_op), (pre_valid, post_valid),
@@ -22892,6 +22938,7 @@ class BasicModel(BaseModel):
             trace._choice_explorable = final_cs_lang[23] > 0
             trace._parse_pairs, trace._parse_roots = final_cs_lang[26:28]
             trace._parse_order = final_cs_lang[28]
+            trace._parse_word_events, trace._parse_depths = final_cs_lang[29:31]
             trace._chunk_state = final_stm if sentence_transactions else None
             trace._chunk_scope = final_cs_lang[17] if sentence_transactions else None
             trace._case_state = final_cs_lang[case_start:] if sentence_transactions and case_enabled else None

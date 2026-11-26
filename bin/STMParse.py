@@ -44,7 +44,7 @@ def apply(before, after, choice, column, pairs, order, symbols, binary_operators
     operand = torch.where(binary[:, None], torch.stack((torch.full_like(column, RELATION), 2 * column), -1), left)
     parent = torch.stack((torch.stack((torch.full_like(op, SYMBOL), op), -1), operand), -2)
     pairs = STMChunks.write(pairs, 2 * column + 1, parent, active)
-    order = STMChunks.write(order, column, order.amax(-1) + 1, active)
+    order = STMChunks.write(order, column, order.amax(-1) + 1, choice.applied)
     target = STMChunks.at(after, position)
     head = torch.stack((torch.full_like(column, RELATION), 2 * column + 1), -1)
     result = list(after)
@@ -104,3 +104,41 @@ def copy_pairs(pairs, roots, words, names, order):
             compact.append((root, head))
             head = RELATION, len(compact) - 1
     return compact, head
+
+
+def program(word_events, order, kind, local, offsets, word_owners, owners, sentence,
+            binary_count, stop, target_width):
+    """Pack the carry's existing events; topology remains exclusively in heads.
+
+    A word records the next application ordinal at its arrival and its own
+    fixation rank. Sorting these immutable stamps interleaves arrivals and
+    choices without a reduction-stack replay or a guess from source columns.
+    """
+    batch, width = word_events.shape[:2]
+    wanted = sentence if torch.is_tensor(sentence) else torch.full_like(order[:, :1], sentence)
+    words_live = (word_events[..., 0] >= 0) & (word_owners == wanted)
+    ops_live = (order >= 0) & (owners == wanted)
+    ranks = torch.where(words_live, word_events[..., 1], torch.iinfo(torch.long).max)
+    positions = ranks.argsort(dim=1, stable=True)
+    words_live = words_live.gather(1, positions)
+    positions = torch.where(words_live, positions, -1)
+    stamps = word_events[..., 0].gather(1, positions.clamp_min(0))
+    word_actions = torch.stack((torch.zeros_like(positions), torch.full_like(positions, -1),
+        torch.arange(width, device=order.device)[None].expand(batch, -1)), -1)
+    op_actions = torch.stack((kind, local, torch.where(kind == 2, offsets, -1)), -1)
+    actions = torch.cat((word_actions, op_actions), 1)
+    live = torch.cat((words_live, ops_live), 1)
+    stamps = torch.cat((2 * stamps, 2 * order + 1), 1)
+    slots = torch.cat((torch.full_like(positions, -1),
+        torch.arange(order.shape[1], device=order.device)[None].expand(batch, -1)), 1)
+    take = torch.where(live, stamps, torch.iinfo(torch.long).max).argsort(dim=1, stable=True)
+    actions = torch.where(live[..., None], actions, -1).gather(1, take[..., None].expand(-1, -1, 3))
+    columns = torch.where(live, slots, -1).gather(1, take)
+    count = live.sum(1, keepdim=True)
+    from Meaning import require_sentence_tensor
+    require_sentence_tensor((count <= target_width).all(), 'parse events exceed their constructed capacity')
+    targets = torch.where(actions[..., 0] == 0, stop,
+        torch.where(actions[..., 0] == 2, binary_count + actions[..., 1], actions[..., 1]))
+    reverse = count - 1 - torch.arange(target_width, device=order.device)
+    targets = torch.where(reverse >= 0, targets.gather(1, reverse.clamp(0, targets.shape[1] - 1)), -1)
+    return positions, actions[:, :target_width], targets, columns[:, :target_width]

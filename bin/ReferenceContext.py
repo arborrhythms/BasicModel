@@ -199,7 +199,10 @@ def reference_requests(language, actions, *, leaf_orders=None, operation_refs=No
     to each request. No identity is inferred from a word or its coordinates.
     """
     from ReadingIndex import ReadingIndex
-    index = actions if isinstance(actions, ReadingIndex) else getattr(actions, 'action_index', None)
+    from ParseForest import native
+    index = native(actions)
+    if index is None:
+        index = actions if isinstance(actions, ReadingIndex) else getattr(actions, 'action_index', None)
     if index is None:
         values = actions if torch.is_tensor(actions) else actions.actions
         index = ReadingIndex(values, None, language, padded=True)

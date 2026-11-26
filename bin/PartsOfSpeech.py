@@ -1,6 +1,5 @@
 """Formal argument concepts learned from kept word members in conceptual space."""
 
-from ReadingIndex import steps as recorded_steps
 from collections import Counter
 import math
 
@@ -273,7 +272,10 @@ class PartsOfSpeech(nn.Module):
                  else program.word_ids.detach().cpu().tolist())
         stack = []
         operators = []
-        for kind, local, position in recorded_steps(program):
+        from ParseForest import native, visits
+        parse = native(program)
+        carried_words, carried_operators = {}, {}
+        for site, (kind, local, position) in visits(program):
             if kind < 0:
                 break
             if kind == 0:
@@ -281,6 +283,7 @@ class PartsOfSpeech(nn.Module):
                     raise ValueError('occupation journal has an invalid leaf')
                 stack.append(() if words[position] is None else (position,))
                 operators.append(set())
+                carried_words[site], carried_operators[site] = stack[-1], operators[-1]
                 continue
             if kind not in (1, 2, 3):
                 raise ValueError('occupation journal has an invalid operation kind')
@@ -291,7 +294,10 @@ class PartsOfSpeech(nn.Module):
             field_bind = kind == 1 and rule.method_name == 'bind'
             if field_bind:
                 position = 0
-            if kind == 2 or field_bind:
+            if parse is not None:
+                children = parse.operands[site]
+                operands = [carried_words[child] for child in children]
+            elif kind == 2 or field_bind:
                 if not 0 <= position < len(stack):
                     raise ValueError('occupation journal has an invalid unary position')
                 at = len(stack) - 1 - position
@@ -301,7 +307,8 @@ class PartsOfSpeech(nn.Module):
                     raise ValueError('occupation journal underflows')
                 operands = stack[-2:]
             name = operation_name(rule)
-            descendants = operators[at] if kind == 2 or field_bind else set().union(*operators[-2:])
+            descendants = (set().union(*(carried_operators[child] for child in children)) if parse is not None else
+                           operators[at] if kind == 2 or field_bind else set().union(*operators[-2:]))
             current = descendants | {name}
             word_operands = [tuple(words[position] for position in carried) for carried in operands]
             self.observe_use(name, word_operands)
@@ -317,7 +324,9 @@ class PartsOfSpeech(nn.Module):
                 for position in carried:
                     self.add(words[position], f'{name}_argout{i+1}')
                     occupied.setdefault(position, set()).add(f'{name}_argout{i+1}')
-            if kind == 2 or field_bind:
+            if parse is not None:
+                carried_words[site], carried_operators[site] = results[0], current
+            elif kind == 2 or field_bind:
                 stack[at] = results[0]
                 operators[at] = current
             else:

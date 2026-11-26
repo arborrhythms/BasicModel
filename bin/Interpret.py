@@ -46,6 +46,32 @@ def well_formed(language, actions, count, *, forced):
 
 
 def _read_leaves(language, actions, count, *, forced):
+    from ParseForest import native
+    parse = native(actions)
+    if parse is not None:
+        readings = ['symbol' if forced else 'no_op'] * count
+        heads = {}
+        for at in parse.visits:
+            kind, local, word = parse.steps[at]
+            if kind == 0:
+                heads[at] = word
+                continue
+            children = parse.operands[at]
+            leaf = heads[children[0]] if len(children) == 1 else None
+            rule = (language._compose_binary_rules if kind == 1 else language._compose_unary_rules)[local]
+            if rule.method_name == 'interpret':
+                if leaf is None or readings[leaf] != 'no_op':
+                    raise ValueError('interpret requires an uninterpreted leaf')
+                readings[leaf] = 'symbol'
+            elif rule.method_name == 'sign':
+                if leaf is None or readings[leaf] != 'symbol':
+                    raise ValueError('sign requires an interpreted leaf')
+                readings[leaf] = 'sign'
+                leaf = None
+            else:
+                leaf = None
+            heads[at] = leaf
+        return tuple(readings), tuple(heads[root] for root in parse.roots)
     stack, readings, shifted = [], ['symbol' if forced else 'no_op'] * count, set()
     for kind, local, position in recorded_steps(actions):
         if kind < 0:

@@ -5,7 +5,6 @@ operators have already run in the word brick; finishing only assigns roles
 and native references to their actual end-state contents.
 """
 
-from ReadingIndex import steps as recorded_steps
 from dataclasses import replace
 
 import torch
@@ -173,11 +172,16 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         # unwitnessed; only this field schema coerces its absent order to 0.
         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
         return dict(order=order, evidence=input_evidence(words))
-    # Each node owns the exact grammar action and its live operands.
-    for action, (kind, local, word) in enumerate(recorded_steps(program)):
+    from ParseForest import native, visits
+    parse = native(program)
+    nodes = {}
+    # Each node owns the chooser's ordered operand references.
+    for action, (kind, local, word) in visits(program):
         if kind < 0:
             break
         yield action
+        if parse is not None:
+            stack = [nodes[child] for child in parse.operands[action]]
         if kind == 0:
             if numerics is None:
                 reference = opening_refs[word]
@@ -219,11 +223,12 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                 stack[-1].update(order=0, has_point=True)
                 stack[-1]['close_request'] = dict(mode='mint', no_op_leaf=True, leaves=(word,),
                     cue=None, content=point, percept=point)
+            nodes[action] = stack[-1]
             continue
         if kind == 3:
             stack[-2:] = reversed(stack[-2:])
             continue
-        unary_position = max(0, word) if kind == 2 else 0
+        unary_position = max(0, word) if kind == 2 and parse is None else 0
         if unary_position:
             stack.append(stack.pop(-1-unary_position))
         arity = 2 if kind == 1 else 1
@@ -427,8 +432,11 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                             request['addressed_introduction'] = True
                         parent['close_request'] = request
         stack.append(parent)
+        nodes[action] = parent
         if unary_position:
             stack.insert(len(stack)-1-unary_position, stack.pop())
+    if parse is not None:
+        stack = [nodes[root] for root in parse.roots]
     yield None
     if len(stack) not in (1, 3):
         raise ValueError('a completed field must have one or three slots')
