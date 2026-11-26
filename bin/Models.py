@@ -11614,17 +11614,17 @@ class BasicModel(BaseModel):
             orders = torch.where(known, torch.bucketize(rows, ends, right=True), -1)
             owner.propose_word_utility(ids, canonical, properties)
 
-            # Public provenance belongs to the identified word. Repetitions
-            # write the same anchor and fold record regardless of their page.
-            schema = torch.stack((words, seats, basic_rows), -1)[known].unique(dim=0)
-            boundary_percepts = set()
+            # Public provenance belongs to the identified word. Populate from
+            # the live label table without synchronizing device tensors to host.
             support = owner._ordered_fold_support((), ())
-            for name, seat, percept in schema.tolist():
-                label = labels[name]
+            for name, label in labels.items():
+                seat = owner._concept_row_of(name)
+                if seat is None:
+                    continue
                 form = anchors.get(label.casefold()) if isinstance(label, str) else None
                 isp._ar_word_lexical_forms[seat] = form if isinstance(form, str) else None
                 owner.record_concept_fold_support(name, support)
-                boundary_percepts.add(percept)
+            boundary_percepts = {basic.words[name] for name in labels if name in basic.words}
         isp._ar_basic_percept_ids = basic_rows
         isp._ar_word_concept_rows = rows
         isp._ar_word_concept_ids = ids
@@ -11675,8 +11675,9 @@ class BasicModel(BaseModel):
             # Reference ids name basic percepts; the staged witness names
             # bytes. Read their live property definitions before gathering.
             # Unused slots address row zero, including a row admitted in this read.
-            uses_wholes = (bool(B and W and basic.index and basic.occurrences[0][1])
-                           or any(basic.occurrences[row][1] for row in boundary_percepts))
+            has_wholes = (bool(B and W and basic.index and basic.occurrences[0][1])
+                          or any(basic.occurrences[row][1] for row in boundary_percepts))
+            uses_wholes = False if not has_wholes else (True if torch.compiler.is_compiling() else None)
             gathered = basic.property_presence(primitive_counts, whole_codes, uses_wholes=uses_wholes)
             isp._ar_whole_reference_presence = torch.where(
                 primitive_counts.any(dim=-1, keepdim=True), gathered,

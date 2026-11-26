@@ -471,6 +471,9 @@ def stage(model, fi):
         # Sparse catalog updates retain the order of the actual nominations.
         # Ordinary named occurrences and padding have no record to install.
         records = records.flatten(0, 1)
+        if not torch.compiler.is_compiling() and not bool((records[:, 0] >= 0).any()):
+            fi['pool_word_texts'] = WordLabels(words, pool.labels)
+            return True
         width = longest
         labels = pool.labels
         property_count = min(int(model.wholeSpace.nVectors), 63)

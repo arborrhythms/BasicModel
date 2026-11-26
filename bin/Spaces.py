@@ -19618,10 +19618,11 @@ class WholeSpace(Space):
                 values = []
         if not values:
             return ()
-        lut, discard = _analysis_property_signature(self)
-        signature = int(lut[int(values[0]) & 0xFF])
+        lut, discard = _analysis_property_signature(self, device="cpu")
+        lut_list = lut.tolist()
+        signature = lut_list[int(values[0]) & 0xFF]
         for value in values[1:]:
-            signature &= int(lut[int(value) & 0xFF])
+            signature &= lut_list[int(value) & 0xFF]
         signature &= ~int(discard)
         return tuple(
             row for row in range(min(int(self.nVectors), 63))
