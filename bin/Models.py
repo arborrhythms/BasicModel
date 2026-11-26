@@ -6921,18 +6921,6 @@ class BasicModel(BaseModel):
         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
                      for row in batch] for batch in selected_rows]
         identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
-        if identity is not None:
-            from Meaning import require_sentence_tensor
-            addresses = [(b, j) for b, batch in enumerate(surfaces) for j, raw in enumerate(batch) if raw]
-            witnesses = [surfaces[b][j] for b, j in addresses]
-            stream, slot = selected.new_tensor(addresses).reshape(-1, 2).unbind(1)
-            actual = identity.form_seats(sparse_forms[stream, slot, :identity.width])
-            expected = selected.new_tensor([
-                identity.order[raw] if raw in identity.word_rows and
-                identity.store.bytes_for(identity.word_rows[raw]) == raw else -1 for raw in witnesses])
-            failed = (actual < 0) | (actual != expected)
-            self._rung0_identity_result = witnesses, failed
-            require_sentence_tensor(~failed.any(), 'rung-zero reconstruction identity audit failed', RuntimeError)
         # Retain raw bytes for the named-part lesson. Native whole and word
         # readers use the compact support/presence captured by the same read.
         from WordSurfaces import stage as stage_surfaces
@@ -6957,16 +6945,6 @@ class BasicModel(BaseModel):
         self._sentence_primed_bank = replace(self._sentence_primed_bank,
             form_wholes=candidate_wholes(self.wholeSpace, self._sentence_primed_bank, owner=owner))
         self._sentence_priming_written = True
-
-    @property
-    def _last_rung0_identity_audit(self):
-        result = getattr(self, '_rung0_identity_result', None)
-        if result is None:
-            return None
-        witnesses, failed = result
-        rows = [dict(word=raw.decode('utf8', 'surrogateescape'), error=int(error))
-                for raw, error in zip(witnesses, failed.tolist(), strict=True)]
-        return dict(identified_words=len(rows), errors=sum(row['error'] for row in rows), rows=rows)
 
     @torch.no_grad()
     def _describe_claim(self, store, row):

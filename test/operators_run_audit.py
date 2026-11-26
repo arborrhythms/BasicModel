@@ -103,8 +103,7 @@ def geometry(model, record):
                              minimum_linear_weight_norm=float(linear_weights.norm()))
     identity = getattr(getattr(model.perceptualSpace, 'percept_store', None), 'identity', None)
     identity_audit = None if identity is None else dict(**identity.audit(),
-        form_codes_sha256=hashlib.sha256(identity.store._basis.fixed_row_codes.cpu().numpy().tobytes()).hexdigest(),
-        rung0=getattr(model, '_last_rung0_identity_audit', None))
+        form_codes_sha256=hashlib.sha256(identity.store._basis.fixed_row_codes.cpu().numpy().tobytes()).hexdigest())
     return dict(storage=storage_snapshot(model), roots=metrics(root),root_inputs=inputs,codes=books,
                 unit_root_xor_interaction=interaction,interaction_order=order,
                 affine_fit=fit,identity=identity_audit)
@@ -168,12 +167,6 @@ def observe_run():
         if 'start' not in result: result['start']=geometry(model,record)
         if not train: result['end']=geometry(model,record)
         value=trial(model,record)
-        audit = getattr(model, '_last_rung0_identity_audit', None)
-        if audit is not None:
-            totals = result.setdefault('rung0_audit', dict(trials=0, identified_reads=0, errors=0))
-            totals['trials'] += 1
-            totals['identified_reads'] += audit['identified_words']
-            totals['errors'] += audit['errors']
         if train and 'before_learning_readback' not in result:
             trace=model._last_decoder_trace
             result['before_learning_readback']=dict(

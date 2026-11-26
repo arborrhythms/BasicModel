@@ -1,5 +1,5 @@
 """The percept's code: two halves of 64, each on two lanes (sigma-pi §21,
-rules 50 to 55 and 61; certificates 46 to 49 and 53).
+rules 50 to 55; certificates 46 to 49 and 53).
 
 A form's code is its parts half and its wholes half on a for lane and an
 against lane, every value within 0 to 1. The parts half's for lane is the
@@ -49,8 +49,8 @@ def table(spare=2):
 def coded(words=WORDS, measure=None):
     """Each form admitted, reserved as a basic percept with the classes it
     lies in, and coded; returns the identity, the percepts and their rows.
-    The table of wholes is bound before the forms are admitted. With ``measure``, each admission's seconds, the earlier codes it changed
-    and the earlier forms it gave a coordinate are recorded there."""
+    The table of wholes is bound before the forms are admitted. With
+    ``measure``, each admission's seconds are recorded there."""
     store = RadixLayer(128, initial_cap=4 * len(words) + 256)
     identity = WordIdentity(store, property_width=64, basic_capacity=len(words) + 16)
     store.identity = identity
@@ -62,8 +62,6 @@ def coded(words=WORDS, measure=None):
         identity.admit(word)
         if measure is not None:
             measure.setdefault('seconds', []).append(time.perf_counter() - start)
-            measure.setdefault('changed', []).append(len(identity.last_changed))
-            measure.setdefault('touched', []).append(len(identity.last_touched))
     members = book.primitive_properties.members.detach() > 0
     rows = {}
     for word in words:
@@ -73,14 +71,21 @@ def coded(words=WORDS, measure=None):
     return identity, basic, book, rows
 
 
+def dictionary(count=20000, path='/usr/share/dict/words'):
+    """The first ``count`` words of the dictionary that are letters only,
+    2 to 12 long, in lower case; each once, in order (19,821)."""
+    with open(path) as handle:
+        words = [w.lower() for w in handle.read().split()
+                 if w.isascii() and w.isalpha() and 2 <= len(w) <= 12][:count]
+    return list(dict.fromkeys(words))
+
+
 @functools.lru_cache(maxsize=None)
 def dictionary_coded():
-    """The first 20,000 words of /usr/share/dict/words as the trial takes
-    them (19,821), admitted in order, coded and measured; shared by the
-    tests of this file that read them."""
-    import code_trial as ct
+    """The dictionary's 19,821 words admitted in order, coded and measured;
+    shared by the tests of this file that read them."""
     try:
-        words = [w.encode() for w in ct.dictionary()]
+        words = [w.encode() for w in dictionary()]
     except OSError:
         pytest.skip('no /usr/share/dict/words on this host')
     measure = {}
@@ -190,7 +195,7 @@ def test_46_printed_on_the_dictionary():
     """The first 20,000 words of /usr/share/dict/words as the trial takes
     them: the words that share a code on the for lanes and on both, and the
     codes at or below another's by accident on the for lane (a sample of
-    every 40th against all)."""
+    every 40th against all). Forms may share a code: a form is its row."""
     identity, basic, _book, rows, _measure = dictionary_coded()
     words = list(rows)
     F = torch.stack([basic.code(rows[w]) for w in words]).detach().cpu().numpy() > .5
@@ -211,8 +216,6 @@ def test_46_printed_on_the_dictionary():
                sharing_parts_half=sharing(F[:, :64]), inside_true=true, inside_by_accident=accident,
                added_parts=len(identity.added)))
     assert not (F & A).any()
-    # Rule 56: two forms left with one code get the next part; none is left.
-    assert sharing(F) == 0 and sharing(np.concatenate((F, A), 1)) == 0
 
 
 def test_a_checkpoint_of_the_old_layout_is_refused_with_the_reason():
@@ -293,8 +296,7 @@ def test_47_the_first_pi_is_written_again_when_a_nearer_holder_comes():
 def test_48_on_the_dictionary():
     """Printed: the first Pi's entries a row, on the dictionary; and, for a
     sample of every 40th word, the forms whose code holds its code, by kind:
-    as a run, by its parts without the run, or by accident. No form's code
-    holds another's parts without the run (rule 61)."""
+    as a run, by its parts without the run, or by accident."""
     identity, basic, _book, rows, _measure = dictionary_coded()
     words = list(rows)
     index = [rows[w] for w in words]
@@ -312,7 +314,7 @@ def test_48_on_the_dictionary():
                entries_a_row=(min(entries), round(float(np.mean(entries)), 2), max(entries)),
                rows_over_16=sum(e > 16 for e in entries), pi_entries=basic.pi.nnz,
                allocated=basic.capacity * basic.ENTRIES_PER_ROW))
-    assert kinds['run'] and not kinds['parts']
+    assert kinds['run']
 
 
 def test_48_the_lessons_concepts_told_apart():
@@ -424,104 +426,38 @@ def test_49_the_numeric_certificate_keeps_its_bar():
     assert features[0] != features[1]
 
 
-# Certificate 53: no code inside another by accident (rule 61).
+# A stored form is known by its row, one for each spelling.
 
-def test_53_no_accident_on_the_dictionary():
-    """(a) After the 19,821 words are admitted, no code lies inside
-    another's, both halves, unless the one form is linked as a part of the
-    other, over all ordered pairs; no two forms share a code; every linked
-    part lies inside its whole; and the packed codes are the codes.
-    Printed: the forms given a coordinate, the earlier codes an admission
-    changed (and the earlier forms it touched), and the milliseconds of an
-    admission near 1,000, 5,000 and 19,000 stored forms. The admission is
-    shared with certificates 46 and 48 (about 90 s at 64 and 64 on a quiet
-    machine)."""
-    from WordIdentity import bytes_of
+def test_53_every_dictionary_word_is_admitted_as_a_row_of_its_own():
+    """The 19,821 words are admitted with nothing to repair: each spelling
+    has one store row, distinct from every other's, and is spelled back
+    from its parts. Printed: the milliseconds of an admission near 1,000,
+    5,000 and 19,000 stored forms."""
     identity, basic, _book, rows, measure = dictionary_coded()
     words = list(rows)
-    found, outside = identity.accidents()
-    keys = {identity.key(identity.code(w)) for w in words}
-    seconds, changed, touched = (np.array(measure[k]) for k in ('seconds', 'changed', 'touched'))
+    seconds = np.array(measure['seconds'])
     def near(count, window=100):
         part = seconds[max(0, count - window):count] * 1000
         return round(float(part.mean()), 2), round(float(part.max()), 1)
-    print(dict(width=(identity.width, identity.property_width), words=len(words),
-               forms_given_a_coordinate=sum(bytes_of(atom[1]) in identity.words for atom in identity.given),
-               parts_given_a_coordinate=len(identity.given), added_parts=len(identity.added),
-               changed_mean=round(float(changed.mean()), 2), changed_greatest=int(changed.max()),
-               touched_mean=round(float(touched.mean()), 2), touched_greatest=int(touched.max()),
-               admissions_changing_any=int((changed > 0).sum()),
+    print(dict(words=len(words), added_parts=len(identity.added),
                ms_near={count: near(count) for count in (1000, 5000, 19000)},
-               seconds_in_all=round(float(seconds.sum()), 1), accidents=len(found),
-               parts_outside=len(outside), failures=len(identity.failures)))
-    assert not found and not outside and not identity.failures
-    assert len(keys) == len(words)
-    assert all(torch.equal(identity.packed_code(w), identity.code(w)) for w in words[::7])
+               seconds_in_all=round(float(seconds.sum()), 1)))
+    assert len({identity.word_rows[w] for w in words}) == len(words)
+    assert all(identity.spelling(identity.parts(w)) == w for w in words[::7])
 
 
 def test_53_a_forms_links_are_its_runs():
-    """(b) archer is a part of archery and not of reach, in whatever order
-    the three are admitted: the links are the runs, archer's code lies
-    inside archery's and not inside reach's, nor reach's inside archer's.
-    The links and the coordinates given are saved with the forms."""
+    """archer is a part of archery and not of reach, in whatever order the
+    three are admitted: the links are the runs, and archer's code lies
+    inside archery's. The links are saved with the forms."""
     from itertools import permutations
     for words in permutations((b'archer', b'archery', b'reach')):
         identity, _basic, _book, _rows = coded(words)
         assert identity.inside[b'archery'] == {b'archer'} and identity.holders[b'archer'] == {b'archery'}
         assert not identity.inside[b'reach'] and not identity.holders[b'reach']
-        code = identity.code
-        assert bool((code(b'archer') <= code(b'archery')).all())
-        assert not bool((code(b'archer') <= code(b'reach')).all())
-        assert not bool((code(b'reach') <= code(b'archer')).all())
-        assert identity.accidents() == ([], [])
+        form = identity.form
+        assert bool((form(b'archer') <= form(b'archery')).all())
         restored = WordIdentity(RadixLayer(128, initial_cap=256), property_width=64)
         restored.load_vocab_extras(identity.vocab_extras())
         assert (restored.inside, restored.holders) == (identity.inside, identity.holders)
-        assert all(torch.equal(restored.code(w), identity.code(w)) for w in words)
-
-
-def test_53_a_later_form_moves_an_earlier_forms_row_and_lane_and_not_its_concept():
-    """(c) In the lesson's model, after its first four sentences (``is`` is
-    nominated: a basic percept row with a concept), a form admitted later
-    that changes the code of ``is`` changes the store row of ``is``, its
-    basic percept's stored code and against lane, and its row of the first
-    Pi; the concept's entries, which read the row and not its code, do not
-    move (rule 62). The change is the one rule 56 makes when no run tells
-    two forms apart: a part of ``is`` (its own) is given more bits, and
-    every form that holds it is settled again."""
-    from test_item17_order_zero import _read_lesson
-    model, patch = _read_lesson(4)
-    try:
-        owner = model._concept_owner()
-        basic = owner.basic_percepts
-        identity = model.perceptualSpace.percept_store.identity
-        row = next(r for r, raw in basic.forms.items() if raw == b'is' and bool(basic.promoted[r])
-                   and owner.concept_of_basic_percept(r) is not None)
-        concept = owner.concept_of_basic_percept(row)
-        sigma = owner.install_order_zero()
-        store_row = identity.word_rows[b'is']
-        fixed = identity.store._basis.fixed_row_codes[store_row].clone()
-        code, against = basic.code(row).detach().clone(), basic.against(row).detach().clone()
-        members = basic.pi.row_members(row)
-        entries = sigma.entries(concept)
-        # Two forms of one set of characters (``si``) are told apart by their
-        # own parts (rule 43), so no later form collides with ``is``.
-        own = ('part', 'is')
-        identity._atom(own, identity.bits.get(own, identity.ones) + 1)
-        identity._keep(identity._settle(identity._holders([own])))
-        assert b'is' in identity.last_changed
-        now = identity.store._basis.fixed_row_codes[store_row]
-        assert not torch.equal(now, fixed) and torch.equal(now[:identity.width], identity.form(b'is'))
-        # The row's code is read again from its form's new code.
-        assert not torch.equal(basic.code(row).detach(), code)
-        torch.testing.assert_close(basic.bank_codes((row,))[0], basic.lanes(row).detach().clamp(0, 1))
-        assert basic.pi.row_members(row) == basic.member_keys(row)
-        assert sorted(basic.pi.row_against(row)) == sorted(basic.against_keys(row))
-        # The concept reads the row, not its code: its entries do not move.
-        assert sigma.entries(concept) == entries and (row, ) == tuple(i for i, _, _ in entries if i == row)
-        print(dict(changed=sorted(w.decode() for w in identity.last_changed),
-                   parts_gained=[k for k in basic.member_keys(row) if k not in members],
-                   entries=entries))
-    finally:
-        model.End()
-        patch.undo()
+        assert all(torch.equal(restored.form(w), identity.form(w)) for w in words)

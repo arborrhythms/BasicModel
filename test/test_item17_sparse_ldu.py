@@ -260,10 +260,10 @@ def test_e_the_longest_chain_and_the_way_back_on_the_dictionary():
     the longest chain and the seconds of a way back; and, as a trial, with
     each concept also reading the rows of the stored forms it holds as runs
     (a concept after every row it reads, by level)."""
-    import code_trial as ct
+    from test_item17_code import dictionary
     from Layers import NotLayer3, SparseSigmaLDU
     try:
-        words = ct.dictionary()
+        words = dictionary()
     except OSError:
         pytest.skip('no /usr/share/dict/words on this host')
     g = _start()

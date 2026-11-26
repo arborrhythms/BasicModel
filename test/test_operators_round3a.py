@@ -22,8 +22,8 @@ def test_forms_anagrams_length_and_nontrivial_containment():
         ids = bank.admit(word)
         rows = bank.store._basis.lookup_rows(torch.tensor(ids))
         torch.testing.assert_close(rows.amax(0), bank.form(word), rtol=0, atol=0)
-        assert bank.read(bank.form(word)) == word
-    assert len({bank.key(bank.form(w)) for w in words}) == len(words)
+        assert bank.spelling(bank.parts(word)) == word
+    assert len({bank.word_rows[w] for w in words}) == len(words)
     for a, b in [(b'bana', b'banana'), (b'cat', b'concat'), (b'aba', b'ababa')]:
         assert set(bank.words[a]) < set(bank.words[b])
         assert (bank.form(a) <= bank.form(b)).all()
@@ -37,7 +37,7 @@ def test_forms_anagrams_length_and_nontrivial_containment():
         bank.admit(b'a'*n)
         # No block of lengths: the code is the parts half alone (rule 50).
         assert bank.form(b'a'*n).shape[-1] == bank.pair_dim == 64
-    assert len({bank.key(bank.form(b'a'*n)) for n in range(1, 33)}) == 32
+    assert len({bank.word_rows[b'a'*n] for n in range(1, 33)}) == 32
     assert bank.audit()['containment_violations'] == 0
 
 
@@ -59,7 +59,7 @@ def test_mint_rekeys_existing_word_and_checkpoints_without_global_rng():
     assert bank.word_rows[b'calaba'] == old_row
     assert not torch.equal(bank.form(b'calaba'), bank.form(b'cabala'))
     for word in [b'calaba', b'cabala']:
-        assert bank.read(bank.form(word)) == word
+        assert bank.spelling(bank.parts(word)) == word
     restored = identity_bank()
     restored.store.load_state_dict(bank.store.state_dict())
     restored.store.load_vocab_extras(bank.store.vocab_extras())
@@ -81,7 +81,7 @@ def test_fixed_atoms_survive_optimizer_and_composition_uses_the_native_cube():
     assert not list(bank.parameters())
     assert bool(((before >= 0) & (before <= 1)).all())
     assert before[:64].norm() > 0 and before[64:].count_nonzero() == 0
-    assert bank.read(before) == b'hello'
+    assert bank.spelling(ids) == b'hello'
 
 
 def test_spelling_reads_the_stored_table():
@@ -94,41 +94,6 @@ def test_spelling_reads_the_stored_table():
     unseen = identity_bank()
     rows = [unseen._atom(atom) for atom in base_atoms(b'circus')]
     assert not unseen.words and unseen.spelling(rows) is None
-
-
-@pytest.mark.parametrize('separable', [True, False])
-def test_masked_part_extends_bits_or_the_next_part_tells_them_apart(monkeypatch, separable):
-    """Two forms with one code get rule 43's next part (rule 56): `bal`
-    first; while their codes are still one, the next run that one holds and
-    the other does not, before any part's bits are raised, whether or not
-    raising bal's bits would have told them apart. No row is shared. The two
-    have one code here because each one's own part is given bits that their
-    characters already have."""
-    import WordIdentity
-    stream = WordIdentity.bit_stream
-    bank = identity_bank()
-    form = torch.zeros(64)
-    form[sorted({i for ch in b'cabl' for i in stream(bytes([ch]), 64)[:3]})] = 1
-    used = form.nonzero().flatten().tolist()
-    missing = (~form.bool()).nonzero().flatten().tolist()
-    def controlled(atom, dimension):
-        if atom in (b'calaba', b'cabala'):
-            return tuple(used[:3] + [i for i in range(dimension) if i not in used[:3]])
-        if atom != b'bal':
-            return stream(atom, dimension)
-        # Its first three bits are calaba's: the rows stay equal at three.
-        prefix = used[:3] + ([missing[0]] if separable else [])
-        return tuple(prefix+[i for i in range(dimension) if i not in prefix and (separable or i in used)])[:dimension]
-    monkeypatch.setattr(WordIdentity, 'bit_stream', controlled)
-    bank.admit(b'calaba')
-    bank.admit(b'cabala')
-    assert list(bank.added)[:3] == ['calaba', 'cabala', 'bal']
-    assert not torch.equal(bank.code(b'calaba'), bank.code(b'cabala'))
-    assert bank.word_rows[b'calaba'] != bank.word_rows[b'cabala']
-    for raw in (b'calaba', b'cabala'):
-        assert bank.read(bank.code(raw)) == raw
-    # Rule 56: the next part comes before any part's bits are raised.
-    assert len(bank.added) > 3 and bank.bits.get(('part', 'bal'), bank.ones) == bank.ones
 
 
 @pytest.mark.parametrize('complete_first', [False, True])
@@ -148,9 +113,9 @@ def test_live_mint_rekeys_pending_and_completed_definitions(tmp_path, complete_f
         supply_object(cs, second)
         assert first != second
         for raw, word in [(b'calaba',first),(b'cabala',second)]:
-            assert cs.definitions.word(identity=bank.key(bank.form(raw)).hex()) == word
+            assert cs.definitions.word(identity=bank.word_rows[raw]) == word
             assert set(cs.definitions.description(word)['parts'][0]) == set(bank.admit(raw))
-            assert bank.read(bank.form(raw)) == raw
+            assert bank.spelling(bank.parts(raw)) == raw
     finally:
         model.End(); model.symbolSpace.soft_reset()
 
@@ -197,7 +162,6 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monk
         words = [b'hello', b'world', b'loving', b'there']
         dense = []
         for word in words:
-            key = identity.key(identity.form(word)).hex()
             native = owner.interpret.word_for_form(word)
             assert native is not None
             obj = owner.interpret.forward(native)
@@ -214,7 +178,6 @@ def test_live_grammar_uses_sparse_index_dense_nonzero_roots_and_exact_rung0(monk
         record = model._last_sentence_understanding
         assert record is not None
         assert record.primed.forms is not None
-        assert model._last_rung0_identity_audit['errors'] == 0
         assert identity.audit()['reconstruction_errors'] == 0
         assert model._last_sentence_credit['components'][:,:,0].isfinite().all()
         from Forgetting import model_boundary

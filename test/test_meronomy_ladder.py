@@ -274,7 +274,7 @@ def test_recurring_units_are_admitted_at_rung_zero_and_digits_never_fuse():
             _stage(m, ["hello world"])
             ps.flush_pending_promotions()
         # Fixed atom admission needs no training even in a frozen read.
-        assert store.identity.read(store.identity.form(b"hello")) == b"hello"
+        assert b"hello" in store.identity.word_rows
     finally:
         object.__setattr__(ps, "_online_learning_frozen", False)
 

@@ -354,8 +354,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
                                   if sum(n for _,n in fold_counts) else None)),
                     acquisition=phase_acquisition(model, stage.get('measurement',curriculum['measurement']),observations,
                         relations=stage.get('produces') is not None),
-                    native_forms=len(model.perceptualSpace.percept_store.identity.words),
-                    rung0_audit=getattr(model, '_last_rung0_identity_audit', None))
+                    native_forms=len(model.perceptualSpace.percept_store.identity.words))
                 if gradient_report:
                     from SentenceTraining import gradient_receipt
                     row['gradient_report'] = gradient_receipt(model, clear=True)

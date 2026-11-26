@@ -63,8 +63,7 @@ field certificate; its old phase entry remains null and is not a producer.
 **Replaying a failure.** Results do not depend on the process hash: a set whose
 iteration feeds a computation is enumerated in admission or declaration order at
 its producer; `test/test_hash_order_producers.py` certifies this for the
-collision queue of `WordIdentity.admit` and for the registration of the
-grammar's symbolic hosts. The bounded runner draws a `PYTHONHASHSEED` for
+registration of the grammar's symbolic hosts. The bounded runner draws a `PYTHONHASHSEED` for
 each worker when none is supplied, and `test/random_streams.py` records it with
 the torch, NumPy and Python random states (and the CUDA or MPS generator states
 where used) and their hashes: once for each worker before collection, and, for

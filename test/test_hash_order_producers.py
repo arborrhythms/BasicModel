@@ -1,48 +1,7 @@
-"""Hash seeds cannot choose collision work or symbolic host registration order."""
-import inspect
+"""Hash seeds cannot choose symbolic host registration order."""
 import json
 import os
 from pathlib import Path
-import sys
-
-
-def test_collision_queue_follows_admission_order(monkeypatch):
-    from test_operators_round3a import identity_bank
-    from WordIdentity import WordIdentity
-
-    bank = identity_bank()
-    source, first = inspect.getsourcelines(WordIdentity._settle)
-    queue_line = first + next(i for i, line in enumerate(source)
-                              if line.strip() == 'code = self.code(word)')
-    reads, mints = [], []
-    code, separate = bank.code, bank._separate
-
-    def observed_code(raw, **kwargs):
-        caller = sys._getframe(1)
-        if caller.f_code is WordIdentity._settle.__code__ and caller.f_lineno == queue_line:
-            reads.append(bytes(raw).decode('ascii'))
-        return code(raw, **kwargs)
-
-    def observed_separate(left, right):
-        mints.append([left.decode('ascii'), right.decode('ascii')])
-        return separate(left, right)
-
-    monkeypatch.setattr(bank, 'code', observed_code)
-    monkeypatch.setattr(bank, '_separate', observed_separate)
-    bank.admit(b'calaba')
-    bank.admit(b'cabala')
-    print('hash-order-certificate ' + json.dumps(dict(
-        kind='collision', pythonhashseed=os.environ.get('PYTHONHASHSEED'),
-        admission=[word.decode('ascii') for word in bank.words],
-        queue_reads=reads, separated_pairs=mints, added_parts=bank.added)))
-    # Pending is a stack: append the touched words in admission order,
-    # then process the most recently admitted first.
-    assert reads == ['calaba', 'cabala', 'cabala', 'calaba']
-    assert mints == [['calaba', 'cabala']]
-    # Rule 61: once bal tells them apart, calaba lies inside cabala by
-    # accident and becomes a part of the catalog.
-    assert bank.added == {'bal': ('calaba', 'cabala'), 'calaba': ('calaba', 'cabala')}
-    assert all(bank.read(bank.form(word)) == word for word in bank.words)
 
 
 def test_symbolic_hosts_follow_grammar_declaration_order(tmp_path):

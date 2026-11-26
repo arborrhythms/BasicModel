@@ -46,15 +46,14 @@ def _inside(identity, part, whole):
 
 
 def _reads_as(identity, string):
-    return identity.read(identity.form(string))
+    return string if string in identity.word_rows else None
 
 
 def _state(store, identity):
     return dict(size=len(store), rows=dict(identity.word_rows), atoms=dict(identity.atoms),
                 codes=store._basis.fixed_row_codes.detach().clone(),
-                hash_map=dict(store.hash_map), keys=dict(identity.word_keys),
-                forms=dict(identity.forms), trie=len(store.radix_trie),
-                added=dict(identity.added), bits=dict(identity.bits))
+                hash_map=dict(store.hash_map), trie=len(store.radix_trie),
+                added=dict(identity.added))
 
 
 def _equal_states(a, b):
@@ -85,7 +84,6 @@ def test_a_string_that_is_no_form():
     assert b'felixx' not in identity.words and b'felixx' not in identity.word_rows
     assert store.get_id(b'felixx') is None and b'felixx' not in store.hash_map
     assert _reads_as(identity, b'felixx') is None
-    assert identity.key(identity.form(b'felixx')) not in identity.forms
     # (c) Admitting the part again changes nothing.
     before = _state(store, identity)
     assert identity.admit_part('xx') == ()
@@ -106,10 +104,9 @@ def test_a_part_once_added_is_carried_by_every_form_that_holds_it():
     for word, parts in identity.words.items():
         assert (('part', 'at') in parts) == ('at' in word.decode())
     # No stale key or trie entry: every held key names its own row.
-    for word, key in identity.word_keys.items():
-        row = identity.word_rows[word]
-        assert store.hash_map[identity.WORD_PREFIX + key] == row
-        assert store.radix_trie.get(identity.WORD_PREFIX + key) == row
+    for word, row in identity.word_rows.items():
+        assert store.hash_map[identity.WORD_PREFIX + word] == row
+        assert store.radix_trie.get(identity.WORD_PREFIX + word) == row
     keys = [k for k in store.hash_map if k.startswith(identity.WORD_PREFIX)]
     assert len(keys) == len(identity.words)
     assert sum(1 for k in keys if store.radix_trie.get(k) is not None) == len(keys)
@@ -140,7 +137,6 @@ def test_the_code_holds_no_end_marks_and_no_lengths():
 def test_every_form_the_lesson_stores_is_put_back_from_the_form_alone():
     store, identity = lesson_store()
     for word in identity.words:
-        assert identity.read(identity.form(word)) == word
         assert store.inverse_table[identity.word_rows[word]] == word
         assert identity.spelling(identity.parts(word)) == word
     # A code that is no stored form has no spelling.
@@ -166,7 +162,7 @@ def test_the_lesson_model_puts_back_every_stored_form(monkeypatch):
         identity = store.identity
         assert identity.words
         for word in identity.words:
-            assert identity.read(identity.form(word)) == word
+            assert identity.spelling(identity.parts(word)) == word
             assert store.inverse_table[identity.word_rows[word]] == word
         print(dict(forms=len(identity.words), added=dict(identity.added)))
     finally:

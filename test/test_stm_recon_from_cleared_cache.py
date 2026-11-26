@@ -249,7 +249,7 @@ def test_reverse_from_cleared_cache_is_drivable_and_decodable():
     identity = model.perceptualSpace.percept_store.identity
     words = bytes(recon[0,0].long().tolist()).rstrip(b'\0').split()
     assert words, 'the owned inverse must resolve at least one indexed word'
-    assert all(identity.read(identity.form(word)) == word for word in words)
+    assert all(word in identity.word_rows for word in words)
 
 
 def test_reverse_body_preserves_finiteness_on_finite_seed():

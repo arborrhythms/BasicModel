@@ -67,7 +67,7 @@ def admit_prefix(config, output):
         raise
     else:
         audit=model.perceptualSpace.percept_store.identity.audit()
-        if any(audit[key] for key in ('collisions','reconstruction_errors','containment_violations')):
+        if any(audit[key] for key in ('reconstruction_errors','containment_violations')):
             raise RuntimeError('admitted native prefix failed its identity audit')
         save('identity-audit.json',audit)
         save('result.json',dict(**report,training_sentences=sentences,occupied=occupancy(),

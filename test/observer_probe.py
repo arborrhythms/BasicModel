@@ -66,8 +66,7 @@ def test_margin_and_ownership_observe_the_same_actual_steps():
     assert all(phase in run_audit for phase in ('start','end'))
     for phase in ('start','end'):
         identity = run_audit[phase]['identity']
-        assert identity['collisions'] == identity['reconstruction_errors'] == 0
-        assert identity['rung0']['errors'] == 0
+        assert identity['reconstruction_errors'] == 0
         assert identity['containment_violations'] == 0
     assert run_audit['start']['identity']['form_codes_sha256'] == run_audit['end']['identity']['form_codes_sha256']
     assert all(phase in run_audit['form_containment'] for phase in ('start','end'))

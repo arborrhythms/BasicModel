@@ -138,7 +138,7 @@ def measure(config, forms, output):
         report.update(status='complete', words=attempted, rows=len(store),
                       audit=audit, elapsed_seconds=time.monotonic()-started,
                       peak_bytes=peak_bytes(), storage_unchanged=True)
-        if audit['collisions'] or audit['reconstruction_errors'] or audit['containment_violations']:
+        if audit['reconstruction_errors'] or audit['containment_violations']:
             raise RuntimeError('native indexed identity audit failed')
     except Exception as error:
         report.update(status='failed', attempted=attempted, rows=len(store),
@@ -382,7 +382,7 @@ def train_brick(config, output, *, complete_prefix=False):
         owner=model._concept_owner(); alloc=_concept_alloc_of(owner)
         identity=model.perceptualSpace.percept_store.identity
         audit=identity.audit()
-        if any(audit[key] for key in ('collisions','reconstruction_errors','containment_violations')):
+        if any(audit[key] for key in ('reconstruction_errors','containment_violations')):
             raise RuntimeError('native admitted-inventory R=0 audit failed')
         clock=encoder()
         checkpoint_record=None

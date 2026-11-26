@@ -164,7 +164,7 @@ def test_admitted_word_identity_survives_an_empty_feature_gate(monkeypatch):
                     record[key] = 0.
             codebook.mereology._form_valid[row] = False
             code = codebook.lookup_rows(torch.tensor(row))
-        assert identity.read(code[:identity.width]) == raw
+        assert torch.equal(code[:identity.width], identity.form(raw).to(code))
         assert codebook.mereology._definitions([row])[row] == [(owner.basic_percepts.words[word], 0.)]
     finally:
         model.End(); model.symbolSpace.soft_reset()

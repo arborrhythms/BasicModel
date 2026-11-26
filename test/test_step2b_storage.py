@@ -26,7 +26,8 @@ def test_definition_rejects_a_word_object_and_keeps_both_forms():
         assert owner.word_surface_for_row(owner._concept_row_of(obj)) == b'12'
         for symbol in (word, obj):
             row = owner._concept_row_of(symbol)
-            assert identity.read(owner.similarity_codebook.lookup_rows(row)[:identity.width]) == b'12'
+            code = owner.similarity_codebook.lookup_rows(row)[:identity.width]
+            assert torch.equal(code, identity.form(b'12').to(code))
         assert owner.definitions.words(obj) == (word,)
     finally:
         model.End()
