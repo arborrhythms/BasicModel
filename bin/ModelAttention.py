@@ -154,9 +154,12 @@ def native_word_poles(model, spans, forms, known):
         field = torch.maximum(field, both[..., None].to(field))
     native = owner._cs_field_concept_ids[:field.shape[0]]
     native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
+    pool_words = fi.get('pool_word_host')
+    word_rows = (pool_words if pool_words is not None else
+                 [[owner.interpret.word_for_form(form) for form in row] for row in forms])
     objects = [[tuple(dict.fromkeys((word, *owner.definitions.objects(word))))
-                if (word := owner.interpret.word_for_form(form)) is not None else ()
-                for form in row[:width]] for row in forms]
+                if word is not None and word >= 0 else ()
+                for word in row[:width]] for row in word_rows]
     alternatives = max(1, max((len(values) for row in objects for values in row), default=0))
     wanted = native.new_tensor([[list(values)+[-1]*(alternatives-len(values)) for values in row]
                                for row in objects])
@@ -207,11 +210,11 @@ def stage_input(model):
     # read is performed. The stem still supplies every word to the VP path.
     if W == 0:return
     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
-    texts=fi.get('word_texts') or ()
+    texts=fi.get('pool_word_texts', fi.get('word_texts')) or ()
     if not any(row for row in texts) and not any(
             value is not None for value in (getattr(isp, '_scalar_values', None) or ())):
         return  # An absent text/scalar field has no bracket to examine.
-    intervals=fi.get('word_intervals') or ()
+    intervals=fi.get('pool_word_intervals', fi.get('word_intervals')) or ()
     owner=model._concept_owner()
     from WordSurfaces import is_lexical_form
     native_ids=fi.get('native_indices',fi.get('indices'))
@@ -232,6 +235,10 @@ def stage_input(model):
         """The word of a form, counting this reading of it first: the first
         reader of a form in a reading is where MTM nominates it (rule 20),
         so that attention reads it as known in that reading."""
+        pool_words = fi.get('pool_word_host')
+        if pool_words is not None:
+            word = pool_words[b][w]
+            return None if word < 0 else word
         word=owner.interpret.word_for_form(form)
         if (word is not None or not reads_words or not is_lexical_form(form) or whole_space is None
                 or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):

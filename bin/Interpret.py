@@ -355,7 +355,7 @@ class InterpretLayer(GrammarLayer):
         if inventory:
             self.owner._preflight_concept_row(0)
 
-    def lookup_word(self, parts, wholes, *, form=None, word_reading=False, reading=None):
+    def lookup_word(self, parts, wholes, *, form=None, word_reading=False, reading=None, pool_word=None):
         """Fuse and recognise before changing any identity or definition.
 
         A form that names no word yet becomes one only when MTM nominates its
@@ -392,9 +392,9 @@ class InterpretLayer(GrammarLayer):
         elif native is not None:
             parts = tuple(ps.fuse_parts(parts))
         form = form_key(form)
-        word = index.word(unit=parts, form=form, identity=identity_key)
+        word = None if pool_word is not None else index.word(unit=parts, form=form, identity=identity_key)
         objectless = self.objectless()
-        for cid, value in objectless.items():
+        for cid, value in (() if pool_word is not None else objectless.items()):
             if parts in value['parts'] or (form is not None and form in value['forms']):
                 word = cid
                 break
@@ -440,7 +440,7 @@ class InterpretLayer(GrammarLayer):
                 self._description_revision += 1
                 index.add(row)
             return word
-        if not cs.nominates(('form', form) if form is not None else ('parts', parts), reading):
+        if pool_word is None and not cs.nominates(('form', form) if form is not None else ('parts', parts), reading):
             return None
         # In the discovering field, interpretation names the case it admits.
         # It never allocates a competing concept row for the same unit.
@@ -465,7 +465,7 @@ class InterpretLayer(GrammarLayer):
                 cs._preflight_concept_row(0, context='word admission')
             except RuntimeError:
                 return None
-            word = alloc.new_concept()
+            word = alloc.new_concept() if pool_word is None else alloc.claim_word_symbol(pool_word)
             alloc.symbol_types.setdefault(word, set()).add('word')
             for part in parts:
                 cs.add_part(word, part)
@@ -492,7 +492,7 @@ class InterpretLayer(GrammarLayer):
             raise
         # The form owns a row before it has an object. A later witnessed
         # definition may supply one; interpretation cannot invent it.
-        word = alloc.new_concept()
+        word = alloc.new_concept() if pool_word is None else alloc.claim_word_symbol(pool_word)
         alloc.symbol_types.setdefault(word, set()).add('word')
         for part in parts:
             cs.add_part(word, part)

@@ -10806,7 +10806,8 @@ class PartSpace(Space):
         if not found.numel():
             return
         from WordIdentity import text_of
-        spelled, lengths = table.spell(found)
+        longest = max(table.longest, int(table.length[found].amax()))
+        spelled, lengths = table.spell(found, longest=longest)
         rows, words, parts = [], [], []
         for row, spelling, n in zip(found.tolist(), spelled.tolist(), lengths.tolist()):
             raw = bytes(spelling[:n])
@@ -11071,7 +11072,7 @@ class PartSpace(Space):
         import Meronomy
         P = table.longest
         # The host's static bound on the units' lengths, staged before the sentence.
-        top = min(P, int(getattr(self, '_staged_unit_longest', None) or P))
+        top = int(getattr(self, '_staged_unit_longest', None) or P)
         compact = Meronomy.delivered_bytes(byte_slab.reshape(batch, -1))
         L = compact.shape[1]
         layout = Meronomy.sentence_unit_spans(
@@ -11111,12 +11112,13 @@ class PartSpace(Space):
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)
         # Insert and count each visible unit, its bytes gathered at fixed width;
         # then the forms returned as percepts and the units read take one pull step.
-        width = min(P, L)
+        width = min(top, L)
         extent = (slots[..., 1] - slots[..., 0]).clamp_min(0)
         visible = word_active & (extent <= width)
         if hiding:
             visible = visible & ~hidden_forms.any(-1)
-        at = (slots[..., :1] + positions[:width]).clamp(0, L - 1).reshape(batch, -1)
+        unit_positions = torch.arange(width, device=compact.device)
+        at = (slots[..., :1] + unit_positions).clamp(0, L - 1).reshape(batch, -1)
         unit_bytes = compact.gather(1, at).reshape(batch * W, width)
         admit = not getattr(self, "_online_learning_frozen", False)
         form_rows = table.read(unit_bytes, torch.where(visible, extent, 0).reshape(-1),
@@ -11151,6 +11153,7 @@ class PartSpace(Space):
             "word_active_mask": word_active, "word_truncated_mask": word_truncated,
             "sentence_word_truncated_mask": sentence_truncated,
             "form_rows": form_rows,
+            "unit_longest": top,
             "element_input": True,
             "sentence_bytes": surface,
             "unit_spans": slots,
@@ -14140,7 +14143,7 @@ class ConceptualSpace(Space):
         # monotonic numbers are not reserved concept-bank coordinates.
         unseated = sum(self._concept_row_of(symbol) is None
                        for symbol in alloc.parts.indices().tolist())
-        return nxt, nxt + n - int(alloc.reclaimed_seats) - unseated, capacity
+        return nxt, nxt + n - int(alloc.reclaimed_seats) - unseated - len(alloc.reserved_word_symbols), capacity
 
     def _preflight_concept_row(self, order=0, *, context="word admission", count=1):
         """Check the physical seat before changing identity or definition records."""

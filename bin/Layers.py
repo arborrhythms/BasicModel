@@ -7182,6 +7182,7 @@ class ConceptAllocator:
 
     def __init__(self, layer_sizer=None, order_cap=None, *, member_capacity=8192, member_width=0, relation_capacity=8192):
         self.next_id = 1                 # 0 reserved
+        self.reserved_word_symbols = set()  # names available to MTM, not concepts yet
         self.reclaimed_seats = 0         # capacity credits, never recycled handles
         self.concepts = {}               # the live concept ids, insertion-ordered; no stored order
         self.raised = set()              # σ-raised: never re-refined
@@ -7272,6 +7273,8 @@ class ConceptAllocator:
 
     def _part_handle_reserved(self, cid):
         """An expired relation handle can still name an independent symbol."""
+        if cid in self.reserved_word_symbols:
+            return True
         if self.seated_order(cid) is not None or self.symbol_types.get(cid) or self.store_of(cid).constituents(cid):
             return True
         for layer in self._layers.values():
@@ -7304,6 +7307,21 @@ class ConceptAllocator:
         self.concepts[cid] = None
         self.layer(0).ensure_row_key(cid)
         return cid
+
+    def reserve_word_symbols(self, count):
+        """Reserve names for MTM without installing any concept or tensor row."""
+        end = self.next_id + count
+        if count < 0 or end > self.parts.capacity:
+            raise OverflowError('LTM2 symbol capacity exhausted before word reservation')
+        names = tuple(range(self.next_id, end))
+        self.reserved_word_symbols.update(names)
+        self.next_id = end
+        return names
+
+    def claim_word_symbol(self, symbol):
+        """Install the name selected by MTM's word pool in this sentence."""
+        self.reserved_word_symbols.remove(symbol)
+        return self.touch(symbol)
 
     def touch(self, cid):
         """Register an externally-supplied cid (first-touch, order 0)."""

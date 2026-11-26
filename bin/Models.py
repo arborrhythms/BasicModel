@@ -3116,7 +3116,8 @@ class BaseModel(Mereology, nn.Module):
             if alloc is None:
                 continue
             # next_id is one past every restored stable concept handle.
-            required = max(required, int(getattr(alloc, "next_id", 1) or 1) - alloc.reclaimed_seats)
+                required = max(required, int(getattr(alloc, "next_id", 1) or 1) - alloc.reclaimed_seats
+                               - len(alloc.reserved_word_symbols))
             for layer in getattr(alloc, "_layers", {}).values():
                 tensor_rows = getattr(layer, "_tensor_rows", None) or {}
                 if tensor_rows:
@@ -3965,7 +3966,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
-            "declared_classes", "order_zero_members", "brought",
+            "declared_classes", "order_zero_members", "brought", "reserved_word_symbols",
         )
         cs_fields = (
             "_autobound_percept_ids", "_recognized_words",
@@ -4135,7 +4136,7 @@ class BaseModel(Mereology, nn.Module):
             "relate_idx", "word_forms", "testimony_seen",
             "testimony_current", "reclaimed_seats", "individuals", "form_regions",
             "symbol_types", "word_descriptions", "named_identities", "formal_arguments", "operator_concepts",
-            "declared_classes", "order_zero_members", "brought",
+            "declared_classes", "order_zero_members", "brought", "reserved_word_symbols",
         )
         for name in fields:
             if name not in saved:
@@ -4169,7 +4170,7 @@ class BaseModel(Mereology, nn.Module):
         next_id = int(saved.get("next_id", 1) or 1)
         known_ids = {0}
         for name in ("concepts", "raised", "singletons", "retired",
-                     "identity"):
+                     "identity", "reserved_word_symbols"):
             value = getattr(alloc, name, {})
             known_ids.update(int(v) for v in (
                 value.keys() if isinstance(value, dict) else value) if type(v) is int)
@@ -8572,6 +8573,8 @@ class BasicModel(BaseModel):
             seat(delivery[1])
             self._delivery_seated = delivery[0]
             self._delivery_longest = self._longest_unit(delivery[1])
+            from WordConceptPool import prepare as prepare_word_pool
+            prepare_word_pool(self)
 
     def _longest_unit(self, surfaces):
         """The longest stretch between two cuts of the delivered surfaces (a unit or a gap), to a power of two.
@@ -11163,8 +11166,12 @@ class BasicModel(BaseModel):
             extents, observations = BasicModel._legacy_word_witnesses(self, raw, ids, spans, attention)
         grammar_words = []
         for b, lo, hi, surface, parts, last, wholes in observations:
-            word = owner.interpret.lookup_word(parts, wholes, form=surface, word_reading=True,
-                                               reading=owner.reading(b))
+            if 'pool_by_extent' in fi:
+                word = fi['pool_by_extent'].get((b, lo, hi), -1)
+                word = None if word < 0 else word
+            else:
+                word = owner.interpret.lookup_word(parts, wholes, form=surface, word_reading=True,
+                                                   reading=owner.reading(b))
             if word is not None:
                 object_id, object_row, object_order = owner.interpret.reading(word, batch=b)
                 grammar_words.append((b, lo, hi, surface.decode('latin1'), last, word,
@@ -11438,7 +11445,7 @@ class BasicModel(BaseModel):
         active = getattr(isp, "_word_active_mask", None)
         ps_fwd = getattr(getattr(self, "perceptualSpace", None),
                          "_forward_input", None)
-        word_texts = (ps_fwd.get("word_texts")
+        word_texts = (ps_fwd.get("pool_word_texts", ps_fwd.get("word_texts"))
                       if isinstance(ps_fwd, dict) else None)
         if (not torch.is_tensor(part_ids) or part_ids.dim() != 3
                 or not torch.is_tensor(part_mask)
@@ -11528,7 +11535,11 @@ class BasicModel(BaseModel):
                 if not is_lexical_form(value):
                     continue
                 key = str(value)
-                word_id = definitions.word(form=key)
+                pool_words = ps_fwd.get('pool_word_host')
+                word_id = definitions.word(form=key) if pool_words is None else pool_words[b][p]
+                if word_id is not None and word_id < 0:
+                    pending.append((b, p, key))
+                    continue
                 ordered_parts = [
                     int(pid_host[b][p][j]) for j in range(P)
                     if bool(mask_host[b][p][j])
@@ -13706,10 +13717,13 @@ class BasicModel(BaseModel):
         if isinstance(fi, dict) and 'word_texts' not in fi and torch.is_tensor(fi.get('sentence_bytes')):
             # Attention's nomination and the aligned word rows look words up by
             # spelling: the word-major stem's units are spelled here, after it.
-            from WordSurfaces import unit_texts
-            fi['word_texts'], fi['word_intervals'] = unit_texts(fi['sentence_bytes'], fi['unit_spans'])
+            from WordConceptPool import stage as stage_word_pool
+            if not stage_word_pool(self, fi):
+                from WordSurfaces import unit_texts
+                fi['word_texts'], fi['word_intervals'] = unit_texts(fi['sentence_bytes'], fi['unit_spans'])
             isp = self.inputSpace
-            isp._valid_len_host = min(isp._valid_len_host, max(map(len, fi['word_intervals']), default=0))
+            intervals = fi.get('pool_word_intervals', fi.get('word_intervals', ()))
+            isp._valid_len_host = min(isp._valid_len_host, max(map(len, intervals), default=0))
         stage_input(self)
         attention = self._attention_words
         self._attention_words = None

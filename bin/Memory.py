@@ -1994,6 +1994,9 @@ class MediumTermMemory(MemoryStore):
                             for timeline in entry.timelines)) for key, entry in self.entries.items()),
             names=tuple((mention, name.token, name.reading) for mention, name in self.names.items()),
             sightings=tuple((key, tuple(readings)) for key, readings in self.sightings.items()),
+            word_pool=None if getattr(self, 'word_pool', None) is None else dict(
+                threshold=self.word_pool.threshold,
+                tensors={name: snapshot(value) for name, value in self.word_pool.state_dict().items()}),
             word_ties=None if getattr(self, 'word_ties', None) is None else self.word_ties.state())
 
     def sight(self, key, reading):
@@ -2005,6 +2008,16 @@ class MediumTermMemory(MemoryStore):
 
     def restore(self, state, *, device=None):
         """Validate a complete pool before replacing its current context."""
+        held_pool = None if state is None else state.get('word_pool')
+        if held_pool is None:
+            self.__dict__.pop('word_pool', None)
+        else:
+            from WordConceptPool import WordConceptPool
+            tensors = held_pool['tensors']
+            self.word_pool = WordConceptPool(len(tensors['words']), tensors['symbols'],
+                                             threshold=held_pool['threshold'])
+            self.word_pool.load_state_dict(tensors)
+            self.word_pool.to(device=device)
         self.sightings = {} if state is None else {
             key: set(readings) for key, readings in state.get('sightings', ())}
         held = None if state is None else state.get('word_ties')
