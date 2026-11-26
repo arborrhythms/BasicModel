@@ -1175,14 +1175,9 @@ class BasicPercepts(nn.Module):
         stamp = (len(identity.words), len(identity.added), identity.revision, len(self.index))
         if getattr(self, '_pi_stamp', None) == stamp:
             return
+        self.pi.refresh_members([(self.member_keys(row), self.against_keys(row))
+                                 for row in range(len(self.index))])
         self._pi_stamp = stamp
-        rows = range(len(self.index))
-        if all(self.pi.row_members(r) == self.member_keys(r)
-               and sorted(self.pi.row_against(r)) == sorted(self.against_keys(r)) for r in rows):
-            return
-        self.pi.clear()
-        for row in rows:
-            self.pi.append(self.member_keys(row), against=self.against_keys(row))
 
     def lanes(self, row):
         """A percept's two lanes, ``[2, width]``: for, then against."""

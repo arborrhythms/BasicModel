@@ -65,11 +65,16 @@ class SparsePiLayer3(nn.Module):
             self.keys.append(key)
         return found
 
+    @staticmethod
+    def _row_ids(member, keys, against):
+        positive = dict.fromkeys(map(member, keys))
+        negative = dict.fromkeys(map(member, against))
+        return list(positive), [i for i in negative if i not in positive]
+
     def append(self, keys, weight=1.0, against=(), weights=None):
         """Write the next row over its members at ``weight`` on both lanes
         (or each at its own of ``weights``), then its against entries."""
-        ids = list(dict.fromkeys(self.member(key) for key in keys))
-        opposed = [i for i in dict.fromkeys(self.member(key) for key in against) if i not in ids]
+        ids, opposed = self._row_ids(self.member, keys, against)
         row, start = self.n_rows, self.nnz
         if row + 1 >= len(self.crow):
             raise OverflowError('the first Pi has no room for another row')
@@ -90,6 +95,49 @@ class SparsePiLayer3(nn.Module):
         # The column index is made again when it is next read.
         self._columns_stale = True
         return row
+
+    def refresh_members(self, rows):
+        """Refresh an entire changed membership topology in the existing CSR storage."""
+        # Compare one snapshot. An unchanged topology keeps its current
+        # weights, including when a holder enumerates the same against keys
+        # in a different order.
+        count = self.n_rows
+        signed = torch.where(self.against[:self.nnz], ~self.col[:self.nnz], self.col[:self.nnz])
+        snapshot = torch.cat((self.crow[:count + 1], signed)).tolist()
+        ends, entries = snapshot[:count + 1], snapshot[count + 1:]
+        if len(rows) == count:
+            for row, (positive, negative) in enumerate(rows):
+                old = entries[ends[row]:ends[row + 1]]
+                if ([self.keys[i] for i in old if i >= 0] != positive or
+                        sorted(self.keys[~i] for i in old if i < 0) != sorted(negative)):
+                    break
+            else:
+                return
+
+        # Use the same encounter order as append: a row's for keys first,
+        # then its against keys. A repeated key has one entry on a row.
+        members, columns, against, ends = {}, [], [], [0]
+        def member(key):
+            return members.setdefault(key, len(members))
+        for positive, negative in rows:
+            first, extra = self._row_ids(member, positive, negative)
+            columns.extend(first)
+            columns.extend(extra)
+            against.extend([False] * len(first))
+            against.extend([True] * len(extra))
+            ends.append(len(columns))
+        if len(ends) > len(self.crow) or len(columns) > len(self.col):
+            raise OverflowError('the first Pi has no room for the refreshed topology')
+        topology = self.col.new_tensor(ends + columns)
+        polarity = self.against.new_tensor(against)
+        self.clear()
+        self.members, self.keys = members, list(members)
+        self.n_rows, self._nnz = len(rows), len(columns)
+        self.crow[:len(ends)].copy_(topology[:len(ends)])
+        self.col[:self.nnz].copy_(topology[len(ends):])
+        self.against[:self.nnz].copy_(polarity)
+        self.value[:, :self.nnz].fill_(1.)
+        self._columns_stale = True
 
     def row_members(self, row):
         """A row's for entries."""

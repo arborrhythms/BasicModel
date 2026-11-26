@@ -5704,6 +5704,7 @@ class SparseLDULayer(Layer):
             entry = self._n
             if entry >= self.capacity:
                 raise OverflowError('the sparse LDU has no room for another entry')
+            isolated = input not in self._in_slot and row not in self._out_slot
             kind = self._place(entry, row, input, zero=weight == 0)
             self.entry_row[entry], self.entry_input[entry] = row, input
             self.entry_apart[entry] = weight == 0
@@ -5718,9 +5719,14 @@ class SparseLDULayer(Layer):
             # Started where it changes nothing (a slot that held only one of
             # the two had ``d`` at one; an entry of U or L at nothing adds
             # nothing), then written, every other stored W kept.
-            self.value[entry] = 1. if kind == self.DIAGONAL else 0.
             self._product_cache = None
-            self.set_w(entry, signed)
+            if isolated:
+                # A fresh word and its fresh percept share no slot with an
+                # older entry. W here is exactly its sole factor.
+                self.value[entry] = signed
+            else:
+                self.value[entry] = 1. if kind == self.DIAGONAL else 0.
+                self.set_w(entry, signed)
             return entry
         current = float(self.w()[entry])
         sign = -1. if current < 0 else 1.

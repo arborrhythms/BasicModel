@@ -57,6 +57,25 @@ def test_the_first_pi_is_stored_as_compressed_rows_in_capacity_allocated_beforeh
         pi.append([('ps', (2,)), ('ws', 4)])
 
 
+def test_refreshed_pi_preserves_weights_until_a_row_changes():
+    pi = SparsePiLayer3(3, 6)
+    pi.append(['a'], weight=.25, against=['b', 'c'])
+    pi.refresh_members([(['a'], ['c', 'b'])])
+    assert pi.value[0, :3].tolist() == [.25] * 3
+    rows = [(['a', 'a', 'c'], ['a', 'd']), ([], ['e']), (['b'], [])]
+    pi.refresh_members(rows)
+    expected = SparsePiLayer3(3, 6)
+    for positive, negative in rows:
+        expected.append(positive, against=negative)
+    assert pi.keys == expected.keys
+    for name in ('crow', 'col', 'against', 'value'):
+        assert torch.equal(getattr(pi, name), getattr(expected, name))
+    assert pi.rows_reading('d') == expected.rows_reading('d')
+    with pytest.raises(OverflowError):
+        pi.refresh_members(rows + [(['overflow'], [])])
+    assert pi.keys == expected.keys
+
+
 def test_a_row_with_no_member_present_or_none_at_all_reads_nothing():
     pi = SparsePiLayer3(4, 8)
     pi.append([('ps', (1,)), ('ws', 2)])

@@ -164,7 +164,8 @@ class GrowthTrial:
                 events = [(batch, trial.looks[turn][batch]) for batch, trial in enumerate(winners)
                           if turn < len(trial.looks) and batch in trial.looks[turn]]
                 offers = retained_pair_offers(owner, pool, events) if together else {}
-                if offers:
+                things = retained_things(owner, events) if together else {}
+                if offers or things:
                     alloc = owner._concept_allocator
                     table, store = alloc.symbol_table(), alloc.layer(0)
                     stamp = table.revision, len(store._tensor_row_keys)
@@ -176,13 +177,17 @@ class GrowthTrial:
                         pending = []
                         # A preceding Sigma promotion can create a new symbol.
                         # Re-read the layout if its membership has changed.
-                        if offers and stamp != (table.revision, len(store._tensor_row_keys)):
+                        if (offers or things) and stamp != (table.revision, len(store._tensor_row_keys)):
                             offers.clear()
+                            things.clear()
                         pi_step(owner, sentence, collect=pending, prior=releases[:written], offers=offers.get(batch))
                         if pending:
                             releases[written].copy_(pending[0][1])
                             written += 1
-                    sigma_step(trial.owner, present, expected)
+                    if batch in things:
+                        sigma_step(trial.owner, present, expected, things_read=things[batch])
+                    else:
+                        sigma_step(trial.owner, present, expected)
         finally:
             if written:
                 # Only the spread reads these pairs. During replay its
@@ -482,7 +487,49 @@ def pair_rows(owner):
     return [] if pool is None else [tuple(pair) for pair in pool.promoted_pairs().tolist()]
 
 
-def sigma_step(owner, present, expected, batch=None, *, collect=None):
+def present_things(names, values, ranks, members, capacity):
+    """Read the things at each look. First member orders offers, last member supplies presence."""
+    padded, placed = F.pad(values, (0, 1)), F.pad(ranks, (0, 1))
+    valid = members >= 0
+    seats = seat_of(names, members)
+    named = valid.any(-1) & ((seats < len(names)) | ~valid).all(-1)
+    seen = named & ((padded[..., seats] >= PRESENT) | ~valid).all(-1)
+    positions = placed[..., seats]
+    first = positions.masked_fill(~valid, torch.iinfo(ranks.dtype).max).amin(-1)
+    last = positions.masked_fill(~valid, -1).argmax(-1, keepdim=True)
+    width = min(capacity, len(members))
+    if len(members) > width:
+        torch._assert_async((seen.sum(-1) <= width).all(), 'more things present at a look than architecture.candidateThings')
+    order = first.masked_fill(~seen, torch.iinfo(first.dtype).max).argsort(dim=-1, stable=True)[..., :width]
+    things = torch.where(seen.gather(-1, order), order, -1)
+    last_seats = seats.expand_as(positions).gather(-1, last).squeeze(-1)
+    return things, padded.gather(-1, last_seats.gather(-1, order))
+
+
+def retained_things(owner, events):
+    """Share the symbol membership read among retained streams with the same binding."""
+    bindings = {}
+    for batch, (present, _, _) in events:
+        if isinstance(present, tuple):
+            names, values, ranks, count = present
+            if count:
+                bindings.setdefault(id(names), (names, []))[1].append((batch, values, ranks))
+    prepared = {}
+    for names, streams in bindings.values():
+        if len(streams) < 2:
+            continue
+        symbols = owner.mtm._candidate_relations
+        symbols.read_symbols(owner)
+        members = symbols.members[:len(owner._concept_allocator.symbol_table())]
+        values = torch.stack([value for _, value, _ in streams])
+        ranks = torch.stack([rank for _, _, rank in streams])
+        things, presence = present_things(names, values, ranks, members, symbols.thing_width)
+        for (batch, _, _), held, levels in zip(streams, things.unbind(), presence.unbind(), strict=True):
+            prepared[batch] = held, levels
+    return prepared
+
+
+def sigma_step(owner, present, expected, batch=None, *, collect=None, things_read=None):
     """One step of the Sigma's candidates at a look: a kind expected there
     and not read, with a thing present there. The entries written."""
     alloc = owner._concept_allocator
@@ -516,27 +563,13 @@ def sigma_step(owner, present, expected, batch=None, *, collect=None):
         start = min(owner._order_caps()[0], len(levels))
         rows, levels = torch.arange(start, len(levels), device=levels.device), levels[start:]
     kinds = symbols.kinds[rows]
-    top = len(names)
-    padded, placed = F.pad(values, (0, 1)), F.pad(ranks, (0, 1))
-    observed = padded[seat_of(names, kinds)].to(held.activity)
-    # A thing is a symbol whose members are all present. The first member
-    # to occur sets its offer order; the last supplies its observed value.
-    table = store.symbol_table
-    member = symbols.members[:len(table)]
-    valid = member >= 0
-    seats = seat_of(names, member)
-    named = valid.any(-1) & ((seats < top) | ~valid).all(-1)
-    seen = named & ((padded[seats] >= PRESENT) | ~valid).all(-1)
-    first = placed[seats].masked_fill(~valid, torch.iinfo(ranks.dtype).max).amin(-1)
-    last = placed[seats].masked_fill(~valid, -1).argmax(-1, keepdim=True)
-    # The things present, in offer order, at a fixed width: no more than
-    # there are symbols.
-    width = min(symbols.thing_width, len(member))
-    if len(member) > width:
-        torch._assert_async(seen.sum() <= width, 'more things present at a look than architecture.candidateThings')
-    order = first.masked_fill(~seen, torch.iinfo(first.dtype).max).argsort(stable=True)[:width]
-    things = F.pad(torch.where(seen[order], order, -1), (0, width - len(order)), value=-1)
-    presence = F.pad(padded[seats.gather(1, last)[:, 0]][order], (0, width - len(order))).to(held.activity)
+    observed = F.pad(values, (0, 1))[seat_of(names, kinds)].to(held.activity)
+    member = symbols.members[:len(store.symbol_table)]
+    if things_read is None:
+        things_read = present_things(names, values, ranks, member, symbols.thing_width)
+    things, presence = things_read
+    presence = presence.to(held.activity)
+    width = things.shape[-1]
     # A kind may be offered a thing of lower order on which it has no entry.
     sources, columns = store._indices(names.device)
     place = torch.full((len(member) + 1,), width, dtype=torch.long, device=names.device)
