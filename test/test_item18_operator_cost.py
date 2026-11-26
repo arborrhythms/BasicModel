@@ -32,9 +32,11 @@ def test_binary_bind_dummy_pays_the_declared_operator_cost():
     from Expectation import OrderPrime
     layer = OperationSelectionLayer(d_model=2, ops=[SumLayer()])
     layer.operator_cost = .75
+    # The rule table marks the one binary rule as bind; its first variant is the dummy.
+    layer.bind_rules, layer._bind_rules = (True,), torch.ones(1, dtype=torch.bool)
     value = torch.tensor([[[.8, .4], [.2, .1]]])
-    refs = dict(binary_ops=(0,), unary_ops=(), binary_bind=(True,),
-        binary_bind_dummy=(True,), unary_bind_dummy=(),
+    refs = dict(binary_ops=(0,), unary_ops=(),
+        binary_bind_dummy=(True,),
         binary_valid=torch.ones(1, 1, 1, dtype=torch.bool),
         unary_valid=torch.zeros(1, 2, 0, dtype=torch.bool),
         left=value[:, :1, None], right=torch.zeros(1, 1, 1, 2), unary=torch.zeros(1, 2, 0, 2))

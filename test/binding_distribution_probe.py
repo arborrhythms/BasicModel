@@ -58,7 +58,8 @@ def binding_distributions():
 
     def observed(module, x, **kwargs):
         data = kwargs.get('reference_data')
-        if not data or not any(data.get('binary_bind',())):
+        binds = () if not data else tuple(module.bind_rules[op] for op in data['binary_ops'])
+        if not any(binds):
             return original(module, x, **kwargs)
         # Observe the existing chooser before occupation/form priors,
         # reduction pressure and the expectation prime are added. Selection
@@ -85,7 +86,7 @@ def binding_distributions():
         chunks = data['binary_choices'].detach().cpu()
         for row in range(len(x)):
             for position in range(width-1):
-                actions = [position*nr+column for column,bind in enumerate(data['binary_bind'])
+                actions = [position*nr+column for column,bind in enumerate(binds)
                            if bind and torch.isfinite(logits[row,position*nr+column])]
                 if not actions:
                     continue

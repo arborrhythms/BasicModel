@@ -153,7 +153,7 @@ def composition_orders(orders, denotations, binary_rules, unary_rules, *, refere
     binary = []
     for variant, index in enumerate(binary_ops):
         value = denoted_order(binary_rules[index], (orders[:, :-1], orders[:, 1:]), binary_ids, None)
-        if references is not None and references['binary_bind'][variant]:
+        if references is not None and getattr(binary_rules[index], 'method_name', None) == 'bind':
             from Memory import STMChunks
             chunk = references['binary_choices'][:, :, variant, 1]
             bound = STMChunks.gather(chunks[STMChunks.ORDERS], chunk.clamp_min(0))
@@ -690,7 +690,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     lefts, rights, brefs, brels, bvalid, case_weights, binary_ops = [], [], [], [], [], [], []
     bchoices, uchoices, bfound, ufound = [], [], [], []
     bresolved, uresolved, borders, uorders = [], [], [], []
-    binary_bind, binary_dummy = [], []
+    binary_dummy = []
 
     def found(option):
         return option[4] if len(option) > 4 else torch.zeros_like(option[3])
@@ -718,7 +718,6 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 codebook=codebook)
             for column in range(points.shape[2]):
                 binary_ops.append(operation)
-                binary_bind.append(True)
                 binary_dummy.append(column == 0)
                 lefts.append(mention)
                 rights.append(points[:,:,column])
@@ -750,7 +749,6 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
         for left in left_options:
             for right in right_options:
                 binary_ops.append(operation)
-                binary_bind.append(False)
                 binary_dummy.append(False)
                 lefts.append(left[0])
                 rights.append(right[0])
@@ -776,7 +774,7 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
                 case_weights.append(weights)
                 bvalid.append(valid)
     values, urefs, urels, uvalid, unary_ops = [], [], [], [], []
-    own_values, record_values, identity_choices, bind_dummies = [], [], [], []
+    own_values, record_values, identity_choices = [], [], []
     for operation, rule in enumerate(unary_rules):
         name = getattr(rule, 'method_name', None)
         if name == 'sign':
@@ -822,7 +820,6 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
             own_values.append(operand[0])
             record_values.append(torch.zeros_like(operand[0]))
             identity_choices.append(torch.zeros_like(identities))
-            bind_dummies.append(False)
             urefs.append(torch.stack((operand[1], torch.full_like(operand[1], -1)), -1))
             uresolved.append(torch.stack((operand[5], torch.zeros_like(operand[5])), -1))
             uorders.append(torch.stack((operand[6], torch.full_like(operand[6], -1)), -1))
@@ -835,10 +832,9 @@ def prepare_operands(window, identities, flags, positions, *, orders, rules, una
     def stack(items, width, tail=(), *, dtype=None):
         return torch.stack(items, 2) if items else torch.zeros((B, width, 0, *tail), device=window.device, dtype=dtype or window.dtype)
     return dict(binary_ops=tuple(binary_ops), unary_ops=tuple(unary_ops),
-                binary_bind=tuple(binary_bind), binary_bind_dummy=tuple(binary_dummy),
+                binary_bind_dummy=tuple(binary_dummy),
                 unary_own=stack(own_values, N, (D,)), unary_record=stack(record_values, N, (D,)),
                 unary_identity=stack(identity_choices, N, dtype=torch.long),
-                unary_bind_dummy=tuple(bind_dummies),
                 binding_choices=interpreter is not None,
                 case_bank=case_bank, case_weights=stack(case_weights, N-1, (case_count, 2)), left=stack(lefts, N-1, (D,)), right=stack(rights, N-1, (D,)), unary=stack(values, N, (D,)),
                 binary_refs=stack(brefs, N-1, (2,), dtype=torch.long), unary_refs=stack(urefs, N, (2,), dtype=torch.long),

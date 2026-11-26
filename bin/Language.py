@@ -6388,7 +6388,16 @@ class OperationSelectionLayer(nn.Module):
         self.r_reduce, self.r_apply = len(self.ops), len(self.unary_ops)
         self.pair_rewrites = tuple(bool(getattr(getattr(op, 'gl', op), 'preserves_pair', False))
                                    for op in self.ops)
+        self.bind_rules = tuple(getattr(getattr(op, 'gl', op), 'rule_name', None) == 'bind' for op in self.ops)
         declared = tuple(getattr(op, 'gl', op) for op in self.unary_ops)
+        self.unary_order_deltas = tuple(int(getattr(op, 'order_delta', 0) or 0) for op in declared)
+        # The grammar's rule tables, read by each menu variant's rule index.
+        self.register_buffer('_binary_rule_index', torch.arange(self.r_reduce), persistent=False)
+        self.register_buffer('_unary_rule_index', torch.arange(self.r_apply), persistent=False)
+        self.register_buffer('_pair_rewrite_rules', torch.tensor(self.pair_rewrites, dtype=torch.bool), persistent=False)
+        self.register_buffer('_bind_rules', torch.tensor(self.bind_rules, dtype=torch.bool), persistent=False)
+        self.register_buffer('_unary_order_delta_rules', torch.tensor(self.unary_order_deltas, dtype=torch.long),
+                             persistent=False)
         matches = [i for i, op in enumerate(declared) if getattr(op, 'rule_name', None) == 'interpret']
         if len(matches) > 1:
             raise ValueError('interpret has more than one unary declaration')
@@ -6425,6 +6434,29 @@ class OperationSelectionLayer(nn.Module):
         self.unary_names = list(unary_names) if unary_names is not None else None
         self.op_space_roles = list(op_space_roles) if op_space_roles is not None else None
         self.register_buffer('argument_inputs', torch.empty((self.r_reduce+self.r_apply, 2), dtype=torch.long), persistent=False)
+
+    @staticmethod
+    def variant_rules(rule_ids, layout):
+        """Each menu variant's rule, read from the rule table.
+
+        Each run of one rule's variants is a view of that rule's row of the
+        table; nothing is built from the layout's values.
+        """
+        if tuple(layout) == tuple(range(len(rule_ids))):
+            return rule_ids
+        runs = [(rule, len(tuple(group))) for rule, group in itertools.groupby(layout)]
+        return torch.cat([rule_ids[rule:rule+1].expand(count) for rule, count in runs]) if runs else rule_ids[:0]
+
+    @staticmethod
+    def _variant_columns(layout, rule, device):
+        """The menu columns of one rule's variants, one range for each run."""
+        runs, at = [], 0
+        for value, group in itertools.groupby(layout):
+            count = len(tuple(group))
+            if value == rule:
+                runs.append(torch.arange(at, at+count, device=device))
+            at += count
+        return runs[0] if len(runs) == 1 else torch.cat(runs)
 
     def configure_arguments(self, arguments, binary_rules, unary_rules):
         from PartsOfSpeech import operation_name
@@ -6512,7 +6544,7 @@ class OperationSelectionLayer(nn.Module):
 
     @staticmethod
     def _distinct_departures(x, depth, candidates, logits, reference, n_binary, n_unary,
-                             r_reduce, r_apply, stop_exact=None, reference_ids=None, pair_rewrites=(), field_binds=(),
+                             r_reduce, r_apply, stop_exact=None, reference_ids=None, pair_rewrites=None, field_binds=None,
                              order_deltas=None):
         """One representative of each distinct numerical next state.
 
@@ -6526,16 +6558,18 @@ class OperationSelectionLayer(nn.Module):
         A = logits.shape[1]
         ids = torch.arange(A, device=x.device)
         binary = ids < n_binary
-        transpose = (torch.tensor(pair_rewrites, device=x.device, dtype=torch.bool)[ids.clamp_max(max(0, n_binary-1)) % r_reduce]
-                     & binary) if pair_rewrites and any(pair_rewrites) else torch.zeros_like(binary)
-        field = (torch.tensor(field_binds,device=x.device,dtype=torch.bool)[ids.clamp_max(max(0,n_binary-1)) % r_reduce] & binary) if field_binds and any(field_binds) else torch.zeros_like(binary)
+        # A variant's rewrite and bind flags (device tensors over the variants),
+        # or None when no variant on the menu has one.
+        transpose = (pair_rewrites[ids.clamp_max(max(0, n_binary-1)) % r_reduce]
+                     & binary) if pair_rewrites is not None else torch.zeros_like(binary)
+        field = (field_binds[ids.clamp_max(max(0,n_binary-1)) % r_reduce] & binary) if field_binds is not None else torch.zeros_like(binary)
         binary = binary & ~transpose
         unary = (ids >= n_binary) & (ids < n_binary + n_unary)
         position = torch.where(binary | transpose, ids // max(1, r_reduce),
             (ids - n_binary) // max(1, r_apply)).clamp(0, N - 1)
         order_state = (None if order_deltas is None else
             (torch.arange(N, device=x.device)[None] == position[:, None]) * order_deltas[:, None])
-        if A > 128 and not any(pair_rewrites) and not any(field_binds) and not torch.compiler.is_compiling() and not bool(torch.isnan(x).any()):
+        if A > 128 and pair_rewrites is None and field_binds is None and not torch.compiler.is_compiling() and not bool(torch.isnan(x).any()):
             counts, category, positions, payload, unchanged = OperationSelectionLayer._compact_departure_groups(
                 x, depth, candidates, binary, unary, position)
             if reference_ids is not None:
@@ -6750,12 +6784,16 @@ class OperationSelectionLayer(nn.Module):
                       else reference_data.get('binary_ops', tuple(range(self.r_reduce))))
         unary_ops = (tuple(range(self.r_apply)) if reference_data is None
                      else reference_data.get('unary_ops', tuple(range(self.r_apply))))
-        bi = torch.tensor(binary_ops, device=x.device, dtype=torch.long)
-        ui = torch.tensor(unary_ops, device=x.device, dtype=torch.long)
+        bi = self.variant_rules(self._binary_rule_index, binary_ops)
+        ui = self.variant_rules(self._unary_rule_index, unary_ops)
         r_reduce, r_apply = len(binary_ops), len(unary_ops)
-        pair_rewrites = tuple(self.pair_rewrites[i] for i in binary_ops)
-        swaps = torch.tensor(pair_rewrites, device=x.device, dtype=torch.bool)
-        binds = torch.tensor(reference_data.get('binary_bind', (False,)*r_reduce) if reference_data is not None else (False,)*r_reduce,device=x.device,dtype=torch.bool)
+        swaps = self._pair_rewrite_rules.index_select(0, bi)
+        rewrites = any(self.pair_rewrites[i] for i in binary_ops)
+        # Only a reference menu carries bind's variants; the first of a bind
+        # rule's variants is its dummy (ReferenceContext.prepare_operands).
+        binding = reference_data is not None and any(self.bind_rules[i] for i in binary_ops)
+        binds = self._bind_rules.index_select(0, bi) & (reference_data is not None)
+        binary_dummy = binds & torch.cat((binds[:1] | True, bi[1:] != bi[:-1]))
         content = x[..., :self.d_model]
         symbol_read = getattr(self, '_symbol_expectation_read', None)
         what_ctx = getattr(self, '_what_context', None) if what_ctx is None else what_ctx
@@ -6851,14 +6889,8 @@ class OperationSelectionLayer(nn.Module):
         if reference_data is not None:
             binary_scores = binary_scores.masked_fill(~reference_data['binary_valid'], -torch.inf)
             unary_scores = unary_scores.masked_fill(~reference_data['unary_valid'], -torch.inf)
-            dummy = reference_data.get('binary_bind_dummy')
-            if dummy is not None:
-                fixed = torch.tensor(dummy, device=x.device, dtype=torch.bool)[None,None]
-                binary_scores = torch.where(fixed & reference_data['binary_valid'] & torch.isfinite(binary_scores), 0., binary_scores)
-            dummy = reference_data.get('unary_bind_dummy')
-            if dummy is not None:
-                fixed = torch.tensor(dummy, device=x.device, dtype=torch.bool)[None, None]
-                unary_scores = torch.where(fixed & reference_data['unary_valid'] & torch.isfinite(unary_scores), 0., unary_scores)
+            binary_scores = torch.where(binary_dummy[None, None] & reference_data['binary_valid']
+                                        & torch.isfinite(binary_scores), 0., binary_scores)
         owner = getattr(self, '_rule_owner', None)
         if owner is not None and len(owner._compose_binary_rules) == self.r_reduce \
                 and len(owner._compose_unary_rules) == self.r_apply:
@@ -6916,11 +6948,7 @@ class OperationSelectionLayer(nn.Module):
         if reference_data is not None:
             # The dummy has no learned score, including expectation bias.
             # Preserve every eligibility/deadline decision already applied.
-            dummy = torch.tensor(reference_data.get('unary_bind_dummy',()), device=x.device,
-                                 dtype=torch.bool).expand(N, -1).reshape(-1)
-            binary_dummy = torch.tensor(reference_data.get('binary_bind_dummy',(False,)*r_reduce),
-                device=x.device,dtype=torch.bool).expand(N-1,-1).reshape(-1)
-            fixed = torch.cat((binary_dummy, dummy, dummy.new_zeros(1)))[None]
+            fixed = torch.cat((binary_dummy.expand(N-1, -1).reshape(-1), binary_dummy.new_zeros(nu + 1)))[None]
             fixed_score = torch.zeros_like(logits)
             logits = torch.where(fixed & torch.isfinite(logits), fixed_score, logits)
         logits = operator_scores(logits, self.operator_cost)
@@ -6933,14 +6961,12 @@ class OperationSelectionLayer(nn.Module):
             reference_ids = torch.cat((reference_data['binary_choices'].reshape(B, nb, 2),
                 reference_data['unary_choices'].reshape(B, nu, 2),
                 torch.full((B, 1, 2), -1, device=x.device, dtype=torch.long)), 1)
-        deltas = tuple(int(getattr(getattr(op, 'gl', op), 'order_delta', 0) or 0)
-                       for op in self.unary_ops)
         order_deltas = (torch.cat((torch.zeros(nb, device=x.device, dtype=torch.long),
-            torch.tensor(deltas, device=x.device).index_select(0, ui).repeat(N),
-            torch.zeros(1, device=x.device, dtype=torch.long))) if any(deltas) else None)
+            self._unary_order_delta_rules.index_select(0, ui).repeat(N),
+            torch.zeros(1, device=x.device, dtype=torch.long))) if any(self.unary_order_deltas) else None)
         departure_eligible = self._distinct_departures(x, depth, candidates, logits, reference,
             nb, nu, r_reduce, r_apply, stop_exact=stop_exact, reference_ids=reference_ids,
-            pair_rewrites=pair_rewrites, field_binds=reference_data.get('binary_bind',()) if reference_data is not None else (),
+            pair_rewrites=swaps if rewrites else None, field_binds=binds if binding else None,
             order_deltas=order_deltas)
         action, probabilities, has_choice, proposal_inverse = self.select_logits(logits, structural=flags,
             masked_action=masked_action,replay_action=replay_action,sample=sample, departure_eligible=departure_eligible,
@@ -7097,8 +7123,7 @@ class OperationSelectionLayer(nn.Module):
             B, P, R, D = reference_data['left'].shape
             result = x.new_zeros(B, P, R, D)
             for local in dict.fromkeys(operations):
-                columns = torch.tensor([i for i, op in enumerate(operations) if op == local],
-                                       device=x.device, dtype=torch.long)
+                columns = self._variant_columns(operations, local, x.device)
                 count = len(columns)
                 implementation = getattr(self.ops[local], 'gl', self.ops[local])
                 if (callable(getattr(implementation, 'compose_with_context', None))
@@ -7192,8 +7217,7 @@ class OperationSelectionLayer(nn.Module):
             B, N, R, D = reference_data['unary'].shape
             result = x.new_zeros(B,N,R,D)
             for local in dict.fromkeys(operations):
-                columns = torch.tensor([i for i, op in enumerate(operations) if op == local],
-                                       device=x.device, dtype=torch.long)
+                columns = self._variant_columns(operations, local, x.device)
                 implementation = getattr(self.unary_ops[local], 'gl', self.unary_ops[local])
                 if grammar_context is not None and getattr(implementation, 'case_head_role', 0):
                     # Phase views index positions independently of lexical alternatives.
