@@ -89,6 +89,7 @@ class PartsOfSpeech(nn.Module):
         self.frozen = False
         self.register_buffer('_value_arguments', torch.empty(0, 0), persistent=False)
         self.register_buffer('_argument_rows', torch.empty(0, dtype=torch.long), persistent=False)
+        self.register_buffer('_operation_symbols', torch.empty(0, dtype=torch.long), persistent=False)
         self._value_start = self._value_width = 0
         if space is not None:
             self.bind(space)
@@ -112,6 +113,8 @@ class PartsOfSpeech(nn.Module):
         self._space = weakref.ref(space)
         from OperationSeats import OperationSeats
         self.seats = OperationSeats(space, self.operations)
+        self._operation_symbols = torch.tensor([self.seats[name].concept for name in self.operations],
+            device=space.similarity_codebook.W.device, dtype=torch.long)
         self._revision += 1
         self.prepare_values()
 

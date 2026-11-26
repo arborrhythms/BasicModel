@@ -179,6 +179,10 @@ class Trace:
         self.index = index
         self.leaves = program.leaves
         self.frames = getattr(program, 'operation_values', None)
+        self.parse_pairs = getattr(program, 'parse_pairs', None)
+        self.parse_roots = getattr(program, 'parse_roots', None)
+        self.parse_words = getattr(program, 'parse_words', None)
+        self.parse_order = getattr(program, 'parse_order', None)
         finite = self.leaves.isfinite().all()
         if any(kind != 0 for kind, _, _ in index.steps):
             if self.frames is None:
@@ -243,6 +247,13 @@ class Tree:
         shifted = (concepts.index_select(0, words) if torch.is_tensor(concepts)
                    else [concepts[word] for word, _ in shifts])
         names = store.append_words(points, shifted)
+        if trace.parse_pairs is not None:
+            from STMParse import copy_pairs
+            pairs, head = copy_pairs(trace.parse_pairs, trace.parse_roots,
+                trace.parse_words.index_select(0, words), names, trace.parse_order)
+            handles = store.parts.write_tree_pairs(pairs)
+            trace.head = (RELATION, handles[head[1]]) if head is not None and head[0] == RELATION else head
+            return (concepts <= 0).sum() if torch.is_tensor(concepts) else sum(concept is None for concept in concepts)
         for (_, at), name in zip(shifts, names, strict=True):
             heads[at] = OCCURRENCE, name
         from PartsOfSpeech import operation_name

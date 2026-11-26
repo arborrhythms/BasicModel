@@ -37,10 +37,12 @@ class STMChunks:
     BUFFER, DEPTH, ORDERS, GRAMMAR, ROWS, ACTIVATIONS = range(6)
     REFS, IDENTITY, TIMELINE, STACK, READ, WHERE, WHEN = range(6, 13)
     TRUTH = 13
+    HEADS = 14
     SYMBOL, IDENTITY_REF, ACTION, RELATION, OCCURRENCE = range(1, 6)
     FIELDS = ('buffer', 'depth', 'orders', 'grammar_orders', 'concept_rows',
               'concept_activations', 'chunk_refs', 'chunk_identity', 'chunk_timeline',
-              'chunk_stack', 'chunk_read', 'chunk_where', 'chunk_when', 'chunk_truth')
+              'chunk_stack', 'chunk_read', 'chunk_where', 'chunk_when', 'chunk_truth',
+              'chunk_heads')
 
 
     @staticmethod
@@ -60,7 +62,7 @@ class STMChunks:
         return (floats((int(width),)), torch.zeros(shape[0], dtype=torch.long, device=device),
                 longs(fill=-1), longs(fill=-1), longs(fill=-1), floats(),
                 longs((2, 2)), longs(fill=-1), longs(), longs(fill=-1), longs(),
-                floats((4,)), floats((4,)), floats((2,)))
+                floats((4,)), floats((4,)), floats((2,)), longs((2,)))
 
 
     @staticmethod

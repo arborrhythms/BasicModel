@@ -103,6 +103,11 @@ class Reading:
     held_writes: Any = None
     held_round_reads: Any = None
     held_final: Any = None
+    # Chooser-written parse: static pair rows and native typed stack heads.
+    parse_pairs: Any = None
+    parse_roots: Any = None
+    parse_words: Any = None
+    parse_order: Any = None
     tree: Any = field(default=None, repr=False)
     action_index: Any = field(default=None, repr=False)
 
@@ -117,7 +122,7 @@ class Reading:
                                              "form_wholes", "form_whole_counts", "form_whole_presence",
                                              "form_whole_counts_raw", "operation_orders", "operation_resolved",
                                              "staged_object_ids", "staged_object_rows", "held_refresh", "held_bind",
-                                             "held_writes", "held_round_reads")
+                                             "held_writes", "held_round_reads", "parse_pairs", "parse_roots", "parse_words", "parse_order")
                             if getattr(self, name) is not None)
 
     def __post_init__(self) -> None:

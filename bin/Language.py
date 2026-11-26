@@ -11093,8 +11093,12 @@ class LanguageSpace(nn.Module):
         # trial assignments themselves live only in chunks and their journal.
         self.register_buffer('_free_transient_ids', torch.full((int(TheXMLConfig.space(
             'ConceptualSpace', 'mtmCapacity')),), -1, dtype=torch.long), persistent=False)
-        from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask
+        from PartsOfSpeech import PartsOfSpeech, formal_arguments, flow_mask, operation_name
         self.parts_of_speech = PartsOfSpeech(formal_arguments(TheGrammar.rules_upward))
+        for kind, rules in (('binary', self._compose_binary_rules), ('unary', self._compose_unary_rules)):
+            self.register_buffer('_parse_' + kind + '_operators', torch.tensor(
+                [self.parts_of_speech.operations.index(operation_name(rule)) for rule in rules],
+                dtype=torch.long), persistent=False)
         self.register_buffer('_occupation_binary_flow', torch.tensor(
             [flow_mask(rule) for rule in self._compose_binary_rules], dtype=torch.long), persistent=False)
         self.register_buffer('_occupation_unary_flow', torch.tensor(
