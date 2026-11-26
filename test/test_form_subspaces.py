@@ -9,18 +9,19 @@ import pytest
 import torch
 from torch import nn
 
-from PerceptProperties import PrimitiveProperties, catalog_coordinates
+from PerceptProperties import PrimitiveProperties
 from WordIdentity import WordIdentity, resolve_identity_layout
 
-#: The wholes half (sigma-pi rule 50): 64 coordinates, a byte at 3 of them.
+#: The wholes half (sigma-pi rule 50): 64 coordinates, a byte at its group's.
 P = 64
 
 
-def at(byte, *others):
-    """A coordinate of ``byte``'s catalog code that no byte of ``others``
-    holds, in the wholes half."""
-    taken = {c for other in others for c in catalog_coordinates(bytes([other]), P, 3)}
-    return next(c for c in catalog_coordinates(bytes([byte]), P, 3) if c not in taken)
+def at(properties, byte, *others):
+    """The coordinate of ``byte``'s group in the wholes half, which no byte
+    of ``others`` shares."""
+    coordinate = properties.byte_coordinate[byte]
+    assert all(properties.byte_coordinate[other] != coordinate for other in others)
+    return coordinate
 
 
 def property_book(rows=4, identity=3, band=0):
@@ -42,6 +43,7 @@ def extended_fixture():
         ws.primitive_properties.observed[:2] = True
         ps.W[4, :3] = torch.tensor([.2, .2, .2])
         ps.W[7, :3] = torch.tensor([.8, .3, .2])
+    ws.primitive_properties.regroup()
     ws.begin_forward()
     cs._model.wholeSpace = NS(subspace=NS(what=ws))
     from BasicPercepts import BasicPercepts
@@ -57,7 +59,6 @@ def test_construction_resolves_the_split_and_preserves_numeric_layout():
               'PartSpace': {'nDim': 9}, 'ConceptualSpace': {'nDim': 137}}
     resolve_identity_layout(config)
     assert config['PartSpace']['propertyDim'] == 64
-    assert config['PartSpace']['propertyOnes'] == 3
     for name in ('InputSpace', 'PartSpace', 'WholeSpace'):
         assert config[name]['nDim'] == 64 + 64 + 8
     assert config['ConceptualSpace']['nDim'] == 64 + 64 + 8 + 128
@@ -71,37 +72,38 @@ def test_construction_resolves_the_split_and_preserves_numeric_layout():
     assert numeric == before
 
 
-@pytest.mark.parametrize('width,ones', [(2, 3), (0, 1), (256, 0)])
-def test_invalid_property_construction_fails_loud(width, ones):
+def test_invalid_property_construction_fails_loud():
     with pytest.raises(ValueError, match='propertyDim'):
         resolve_identity_layout({'architecture': {'data': {'dataType': 'embedding'}},
-                                 'PartSpace': {'propertyDim': width, 'propertyOnes': ones}})
+                                 'PartSpace': {'propertyDim': 0}})
 
 
 def test_catalog_byte_union_is_monotone_and_differentiable_for_weighted_members():
-    properties = PrimitiveProperties(4, property_width=P, ones=3)
+    properties = PrimitiveProperties(4, property_width=P)
     with torch.no_grad():
         properties.members[0, 97] = .2
         properties.members[1, 97:99] = torch.tensor([.4, .3])
         properties.members[2, 97:100] = torch.tensor([.6, .5, .4])
         properties.members[3, 97:101] = torch.tensor([.8, .7, .6, .5])
-    # Every byte is a part of the catalog with 3 coordinates of the wholes
-    # half; a property's code is the OR (greatest) of its members' codes.
-    assert properties.byte_bits.sum(1).eq(3).all()
+    properties.regroup()
+    # Every byte is one at its group's coordinate of the wholes half; a
+    # property's code is the OR (greatest) of its members' codes.
+    assert properties.byte_bits.sum(1).eq(1).all()
     codes = properties.codes()
     direct = (properties.members[:, :, None] * properties.byte_bits).amax(1)
     torch.testing.assert_close(codes, direct)
     assert (codes[:-1] <= codes[1:]).all()
-    columns = sorted({c for byte in range(97, 101) for c in catalog_coordinates(bytes([byte]), P, 3)})
+    columns = sorted({properties.byte_coordinate[byte] for byte in range(97, 101)})
     codes[:, columns].sum().backward()
     assert properties.members.grad[:, 97:101].gt(0).any(0).all()
     torch.testing.assert_close(properties.codes(torch.tensor([1, 3])), codes[[1, 3]])
 
 
-def test_hashed_union_matches_direct_max_without_a_broadcast_workspace():
-    properties = PrimitiveProperties(4, property_width=7, ones=2)
+def test_grouped_union_matches_direct_max_without_a_broadcast_workspace():
+    properties = PrimitiveProperties(4, property_width=7)
     with torch.no_grad():
         properties.members.copy_(torch.arange(1024).reshape(4, 256) / 1024)
+    properties.regroup()
     direct = (properties.coefficients()[:, :, None] * properties.byte_bits).amax(1)
     torch.testing.assert_close(properties.codes(), direct)
 
@@ -116,11 +118,11 @@ def test_tower1_refresh_preserves_storage_and_routes_gradient_to_members():
     book.begin_forward()
     assert book.W.data_ptr() == pointer and not isinstance(book.W, nn.Parameter)
     torch.testing.assert_close(book.W, torch.cat((torch.ones(4, 3), properties.codes(), torch.zeros(4, 8)), -1))
-    book.lookup_rows(0)[3 + at(97, 98)].backward()
+    book.lookup_rows(0)[3 + at(properties, 97, 98)].backward()
     assert properties.members.grad[0, 97] == 1
     properties.members.grad = None
     book.begin_forward()
-    book.getW()[:, 3 + at(98, 97)].sum().backward()
+    book.getW()[:, 3 + at(properties, 98, 97)].sum().backward()
     # Row 0 holds 98 alone at its coordinate; an untaught row's zero members
     # tie there and share the derivative.
     assert properties.members.grad[0, 98] == 1 and properties.members.grad[:, 98].gt(0).all()
@@ -130,7 +132,7 @@ def test_tower1_refresh_preserves_storage_and_routes_gradient_to_members():
         properties.members[0, 97] = .75
     assert properties.revision > revision
     book.begin_forward()
-    assert book.W[0, 3 + at(97, 98)] == .75
+    assert book.W[0, 3 + at(properties, 97, 98)] == .75
 
 
 def test_retired_property_fills_leave_live_basic_percept_reads():
@@ -274,10 +276,11 @@ def test_basic_certificate_allows_ties_and_imposes_no_part_type_order():
         properties.members[2, 97] = .5
         properties.observed[:3] = True
         ps.W[8].copy_(ps.W[4])
+    properties.regroup()
     ws.begin_forward()
     # A soft meet need not be contained in every selected type.
-    assert properties.fill(b'a')[at(97)] == .75
-    assert properties.codes()[0, at(97)] == .5
+    assert properties.fill(b'a')[at(properties, 97)] == .75
+    assert properties.codes()[0, at(properties, 97)] == .5
     report = cb.mereology.containment_audit()
     assert report['tower1']['pairs'] == 3
     assert report['premises'] == 'basic_percepts'
@@ -360,10 +363,9 @@ def test_cost_certificate_has_no_pairwise_or_three_axis_union_workspace():
             result = func(*args, **(kwargs or {}))
             self.shapes.extend(list(t.shape) for t in tree_flatten(result)[0] if torch.is_tensor(t))
             return result
-    # 37 rows: a coordinate of the catalog holds 2 to 21 bytes, so no
-    # rows-by-bytes slice of the union is square by coincidence.
+    # 37 rows: no rows-by-bytes slice of the union is square by coincidence.
     book = property_book(rows=37)
-    hashed = PrimitiveProperties(37, property_width=7, ones=2)
+    hashed = PrimitiveProperties(37, property_width=7)
     allocation = Allocations()
     with allocation:
         book.begin_forward()
@@ -408,3 +410,37 @@ def test_native_lesson_certificate(tmp_path, monkeypatch, eager_reading):
     finally:
         model.End()
         model.symbolSpace.soft_reset()
+
+
+def test_contrast_table_reads_exactly_one_and_zero():
+    """Each row of the table of wholes read against every byte, every row and
+    some forms by ``min_k max(1 - p_k, r_k)``: exactly 1 where the row holds
+    the percept (on every byte of it) and 0 where it does not."""
+    from Spaces import _CANONICAL_PROPERTY_ROWS, _CHAR_CLASS_RANGES
+    names = [name for name, _ in _CANONICAL_PROPERTY_ROWS]
+    properties = PrimitiveProperties(len(names) + 1, property_width=P)
+    for row, (name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
+        if name == 'word':
+            properties.define_word(row)
+            continue
+        targets = torch.zeros(256)
+        for lo, hi in _CHAR_CLASS_RANGES[int(kind)]:
+            targets[lo:hi + 1] = 1.
+        properties.teach(row, torch.arange(256), targets)
+    properties.define_by_rows(len(names), (names.index('letter'), names.index('capital')))
+    holds = properties.coefficients().detach() > .5
+    codes = properties.codes().detach()
+
+    def read(p, r):
+        return torch.maximum(1 - p, r).amin(-1)
+
+    assert len(set(properties.byte_coordinate)) == 8
+    assert torch.equal(read(properties.byte_bits[None], codes[:, None]), holds.float())
+    inside = (~holds[:, None] | holds[None]).all(-1)
+    assert torch.equal(read(codes[:, None], codes[None]), inside.float())
+    for raw in (b'a1', b'ab', b'A', b'12', b'Ab', b'a b'):
+        form = properties.byte_bits[list(raw)].amax(0)
+        assert torch.equal(read(form, codes), holds[:, list(raw)].all(1).float()), raw
+    mixed = properties.byte_bits[list(b'a1')].amax(0)
+    assert read(mixed, codes[names.index('letter')]) == 0 and read(mixed, codes[names.index('digit')]) == 0
+    assert read(mixed, properties.top()) == 1

@@ -40,11 +40,10 @@ def resolve_identity_layout(config):
     pair = int(ps.setdefault('identityPairDim', 64))
     ones = int(ps.setdefault('identityOnes', 3))
     property_width = int(ps.setdefault('propertyDim', 64))
-    property_ones = int(ps.setdefault('propertyOnes', 3))
     if pair < ones or ones < 1:
         raise ValueError('identity requires D >= s > 0')
-    if not 0 < property_ones <= property_width:
-        raise ValueError('property codes require propertyDim >= propertyOnes > 0')
+    if property_width < 1:
+        raise ValueError('property codes require propertyDim > 0')
     width = pair + property_width
     old_ps = int(ps.get('nDim', 0))
     old_cs = int(config.get('ConceptualSpace', {}).get('nDim', old_ps)) or old_ps
@@ -108,12 +107,12 @@ class WordIdentity(nn.Module):
     PREFIX = b'\x00identity/atom/'
     WORD_PREFIX = b'\x00identity/form/'
 
-    def __init__(self, store, pair_dim=64, ones=3, property_width=0, property_ones=3, basic_capacity=None):
+    def __init__(self, store, pair_dim=64, ones=3, property_width=0, basic_capacity=None):
         super().__init__()
         object.__setattr__(self, 'store', store)
         self.pair_dim, self.ones = int(pair_dim), int(ones)
         self.width = self.pair_dim
-        self.property_width, self.property_ones = int(property_width), int(property_ones)
+        self.property_width = int(property_width)
         if (store.dim != self.width + self.property_width or self.property_width < 0
                 or not 0 < self.ones <= self.pair_dim):
             raise ValueError('Radix bank width must be identity + property, with 0 < s <= D')
@@ -156,17 +155,27 @@ class WordIdentity(nn.Module):
             self._codes[atom] = result
         return self._codes[atom]
 
+    def _wholes_table(self):
+        """The table of wholes the catalog reads, or ``None`` where none is bound."""
+        properties = self.properties
+        if properties is None:
+            properties = getattr(getattr(self.basic, 'whole', None), 'primitive_properties', None)
+        return properties if properties is not None and properties.property_width == self.property_width else None
+
+    def _layout(self):
+        """The table's count of byte regroupings; -1 with no table."""
+        properties = self._wholes_table()
+        return -1 if properties is None else properties.layout
+
     def catalog_code(self, atom):
-        """A part's code in the wholes half: the catalog drawn a second time
-        in that half's own coordinates. A character's is its byte's in the
-        table of wholes."""
-        key = ('catalog', atom)
-        if key not in self._catalog:
-            from PerceptProperties import catalog_coordinates
-            result = torch.zeros(self.property_width, device='cpu')
-            result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, self.property_ones))] = 1
-            self._catalog[key] = result
-        return self._catalog[key]
+        """A part's code in the wholes half: the OR of its bytes' codes in the
+        table of wholes, a byte one at its group's coordinate (every byte at
+        the first where no table is bound)."""
+        properties = self._wholes_table()
+        result = torch.zeros(self.property_width, device='cpu')
+        raw = bytes_of(atom[1])
+        result[[0] * len(raw) if properties is None else [properties.byte_coordinate[b] for b in raw]] = 1
+        return result
 
     def _row_atoms(self, rows):
         """The parts these store rows stand for, a part's row for itself and
@@ -189,7 +198,8 @@ class WordIdentity(nn.Module):
         row is no part or form of this catalog."""
         if not self.property_width:
             return None
-        key = (tuple(map(int, rows)), self.revision, len(self.added), len(self.atoms), len(self.word_rows))
+        key = (tuple(map(int, rows)), self.revision, len(self.added), len(self.atoms), len(self.word_rows),
+               self._layout())
         if key in self._catalog:
             return self._catalog[key]
         atoms = self._row_atoms(rows)
@@ -214,7 +224,7 @@ class WordIdentity(nn.Module):
         The cache holds addresses and fixed catalog coordinates. Native part
         codes are read through the actual basis on each differentiable forward.
         """
-        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, device)
+        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, self._layout(), device)
         key = ('occurrence_bank', escaped_elements)
         cached = self._catalog.get(key)
         if cached is not None and cached[0] == stamp:

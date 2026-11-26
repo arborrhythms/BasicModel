@@ -546,7 +546,6 @@
     <identityPairDim>64</identityPairDim>
     <identityOnes>3</identityOnes>
     <propertyDim>64</propertyDim>
-    <propertyOnes>3</propertyOnes>
     <nInput>0</nInput>
     <nOutput>0</nOutput>
     <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->

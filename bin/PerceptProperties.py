@@ -85,17 +85,6 @@ class _PropertySupportRead(torch.autograd.Function):
         return (torch.cat(chunks, 0) if chunks else torch.zeros_like(weights)), None, None
 
 
-#: The prefix that draws the catalog a second time for the wholes half.
-CATALOG_PREFIX = b'\x00whole-basis/'
-
-
-def catalog_coordinates(part, width, ones):
-    """A catalog part's coordinates in the wholes half: the part drawn a
-    second time, apart from its coordinates in the parts half."""
-    from WordIdentity import bit_stream
-    return bit_stream(CATALOG_PREFIX + bytes(part), int(width))[:int(ones)]
-
-
 #: The row of the table of wholes for the class of all characters.
 TOP = -1
 
@@ -109,34 +98,55 @@ class PrimitiveProperties(nn.Module):
     subsequently refine the same coefficients.
     """
 
-    def __init__(self, rows, *, property_width=0, ones=3, device=None, dtype=None):
+    def __init__(self, rows, *, property_width=0, device=None, dtype=None):
         super().__init__()
-        self.property_width, self.ones = int(property_width), int(ones)
-        if self.property_width < 0 or self.ones < 1 or (self.property_width and self.ones > self.property_width):
-            raise ValueError('property codes require propertyDim >= propertyOnes > 0')
+        self.property_width = int(property_width)
+        if self.property_width < 0:
+            raise ValueError('property codes require propertyDim >= 0')
         self.members = nn.Parameter(torch.zeros(int(rows), 256, device=device, dtype=dtype))
         # A coefficient of zero can mean either a witnessed exclusion or an
         # unwritten primitive. Only the former supplies counterevidence.
         self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
         self.register_buffer('fixed_rows', torch.zeros(int(rows), device=device, dtype=torch.bool))
         self.register_buffer('fixed_members', torch.zeros(int(rows), 256, device=device, dtype=dtype))
-        # Every byte is a part of the catalog, drawn a second time in the
-        # wholes half's own coordinates (sigma-pi rule 52); a property's code
-        # is the OR of its member bytes' codes, and all bytes OR'ed are the top.
-        bits = torch.zeros(256, self.property_width, device=device, dtype=dtype)
-        if self.property_width:
-            for byte in range(256):
-                bits[byte, list(catalog_coordinates(bytes([byte]), self.property_width, self.ones))] = 1
-        if self.property_width and not bool(bits.amax(0).eq(1).all()):
-            raise ValueError('the catalog must cover the wholes half: its OR is the class of all characters')
-        self.register_buffer('byte_bits', bits, persistent=bool(self.property_width))
-        self._byte_columns = tuple(tuple(bits[:, i].nonzero().flatten().cpu().tolist())
-                                   for i in range(self.property_width))
+        # A byte's code in the wholes half: one at its group's coordinate
+        # (``regroup``); a property's code is the OR of its member bytes'.
+        self.register_buffer('byte_bits', torch.zeros(256, self.property_width, device=device, dtype=dtype),
+                             persistent=False)
+        self.byte_coordinate, self._byte_columns, self.layout = None, (), 0
         # A row given by other rows of the table: row -> those rows. Its code
         # is the AND of theirs, and it holds of a byte as far as all of them do.
         self.given_by = {}
         self._revision = 0
         self._revision_versions = self._member_versions()
+        self.regroup()
+
+    @torch.no_grad()
+    def regroup(self):
+        """Group the bytes by the exact set of rows holding them (coefficient
+        above one half); each group takes one coordinate of the wholes half,
+        the groups in the order of their sets of rows. ``layout`` counts the
+        changes. Host side, at a declaration."""
+        if not self.property_width:
+            return
+        holds = (self.coefficients().detach() > .5).t().cpu().tolist()
+        sets = [tuple(r for r, held in enumerate(byte) if held) for byte in holds]
+        order = sorted(set(sets))
+        if len(order) > self.property_width:
+            raise ValueError(f'{len(order)} groups of bytes exceed the {self.property_width} '
+                             'coordinates of the wholes half')
+        place = {held: i for i, held in enumerate(order)}
+        coordinate = tuple(place[held] for held in sets)
+        if coordinate == self.byte_coordinate:
+            return
+        self.byte_coordinate = coordinate
+        bits = torch.zeros_like(self.byte_bits)
+        bits[torch.arange(256, device=bits.device), torch.tensor(coordinate, device=bits.device)] = 1
+        self.byte_bits.copy_(bits)
+        self._byte_columns = tuple(tuple(b for b in range(256) if coordinate[b] == i)
+                                   for i in range(self.property_width))
+        self.layout += 1
+        self._revision += 1
 
     def _member_versions(self):
         return tuple((id(value), value._version) for value in
@@ -198,6 +208,7 @@ class PrimitiveProperties(nn.Module):
         self.members[row].copy_(self.coefficients()[list(rows)].amin(0))
         self.observed[row] = self.observed[list(rows)].all(0)
         self._revision += 1
+        self.regroup()
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state
@@ -209,9 +220,8 @@ class PrimitiveProperties(nn.Module):
 
     def top(self):
         """The code of the class of all characters, the row ``TOP`` of the
-        table of wholes: every byte belongs to it, so it is the OR of the
-        whole catalog, all ones."""
-        return self.byte_bits.amax(0)
+        table of wholes: all ones."""
+        return self.byte_bits.new_ones(self.property_width)
 
     def directly_inside(self):
         """Each whole of the table with the wholes directly inside it.
@@ -254,6 +264,7 @@ class PrimitiveProperties(nn.Module):
         self.fixed_members[row].copy_(value)
         self.members[row].copy_(value)
         self.observed[row]=True
+        self.regroup()
 
     def coefficients(self, rows=None):
         if self.given_by:
@@ -363,6 +374,7 @@ class PrimitiveProperties(nn.Module):
         for _ in range(int(steps)):
             self.members[row, ids] += float(rate) * (targets - self.members[row, ids])
         self.project()
+        self.regroup()
         after = (self.members[row, ids] - targets).square().mean()
         return float(before), float(after)
 
@@ -393,5 +405,8 @@ class PrimitiveProperties(nn.Module):
             state_dict[prefix + 'observed'] = state_dict[key] != 0
         for name in ('fixed_rows','fixed_members'):
             state_dict.setdefault(prefix+name,getattr(self,name).clone())
+        # The byte codes are derived from the memberships, never loaded.
+        state_dict.pop(prefix + 'byte_bits', None)
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)
+        self.regroup()

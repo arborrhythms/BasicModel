@@ -10592,7 +10592,6 @@ class PartSpace(Space):
                     pair_dim=pair if resolved else self.nDim,
                     ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
                     property_width=property_width if resolved else 0,
-                    property_ones=int(TheXMLConfig.space(section, 'propertyOnes', default=3)),
                     basic_capacity=int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=262144)))
             from BasicPercepts import BasicPercepts
             identity = getattr(self.percept_store, 'identity', None)
@@ -19818,7 +19817,6 @@ class WholeSpace(Space):
                    and self.nDim == identity_width + property_width)
         basis.primitive_properties = PrimitiveProperties(
             self.nVectors, property_width=property_width if derived else 0,
-            ones=int(TheXMLConfig.space('PartSpace', 'propertyOnes', default=3)),
             device=basis.getW().device, dtype=basis.getW().dtype)
         for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
             if row < int(self.nVectors):

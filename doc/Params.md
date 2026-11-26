@@ -343,7 +343,6 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
 | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
 | `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
 | `propertyDim` | positive int | `64` | Width of the wholes half of a percept's code, after the parts half, at text-model construction. The part catalog is drawn a second time in these coordinates; a whole's code is the OR of the codes of the catalog parts that belong to it, so the class of all characters is all ones. Numeric layouts are unchanged. |
-| `propertyOnes` | positive int | `3` | Coordinates each catalog part takes in the wholes half; must not exceed `propertyDim`. Every byte is a part of the catalog, so the OR of all of them covers the half. |
 | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
 | `hasAttention` | bool | `false` | Inert: the boolean constructs no attention pass and is kept as an alias. Use `<attention>` (`off`, `primer`, `second-order`, `low-rank`). |
 | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |

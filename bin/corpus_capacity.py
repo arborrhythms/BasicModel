@@ -109,7 +109,7 @@ def measure(config, forms, output):
     width = ps['identityPairDim'] + ps['propertyDim']
     store = RadixLayer(width, initial_cap=ps['nVectors'], word_bounded=True)
     bank = WordIdentity(store, pair_dim=ps['identityPairDim'], ones=ps['identityOnes'],
-                        property_width=ps['propertyDim'], property_ones=ps['propertyOnes'])
+                        property_width=ps['propertyDim'])
     store.identity = bank
     whole = WholeSpace([ws['nInput'], ws['nInputDim']],
                        [ws['nVectors'], ws['nDim'] - sum(canonical_shape('WholeSpace'))],

@@ -203,10 +203,7 @@ def test_wholespace_owns_one_property_codebook_and_no_concept_store(tmp_path):
     property_rows = []
     for key, value in state.items():
         if "_owned_bases.what" in key and value.ndim > 0:
-            if key == '_owned_bases.what.primitive_properties.byte_bits':
-                # Every byte is a part of the catalog, in the wholes half.
-                assert value.shape == (256, 64)
-            elif key == '_owned_bases.what.primitive_properties._extra_state':
+            if key == '_owned_bases.what.primitive_properties._extra_state':
                 # The record of the rows given by other rows, packed.
                 continue
             else:

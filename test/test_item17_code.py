@@ -42,6 +42,7 @@ def table(spare=2):
         for row, (_name, cls) in enumerate(CLASSES):
             for lo, hi in _CHAR_CLASS_RANGES[cls]:
                 book.primitive_properties.members[row, lo:hi + 1] = 1
+    book.primitive_properties.regroup()
     book.enable_property_codes(identity_width=64, property_width=64)
     return book
 

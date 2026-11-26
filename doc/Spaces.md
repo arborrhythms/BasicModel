@@ -837,8 +837,13 @@ offered to grammars as `intersection` and `union`.
 
 One percept vector of `percept_width` coordinates serves every tower. At text-model construction it splits into a parts half
 `[0, identity_width)` of `identityPairDim` coordinates and a wholes half
-`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64, each part or whole drawn on `identityOnes` and
-`propertyOnes` coordinates, 3 by default (`resolve_identity_layout`). Each
+`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64 (`resolve_identity_layout`). A part
+is drawn on `identityOnes` coordinates of the parts half, 3 by default. In the
+wholes half the bytes are grouped by the exact set of rows of the table of
+wholes that hold them (a coefficient above one half); each group has one
+coordinate, the groups in the order of their sets of rows, and a byte's code
+is one there (`PrimitiveProperties.regroup`, run where a row is declared or
+redefined and at load). Each
 half holds two lanes, for and against (`BasicPercepts.codes` and
 `against_codes`). The `.where`/`.when` band follows `percept_width`. Numeric
 configurations have no wholes half. The split is fixed at construction, and
@@ -846,8 +851,8 @@ a checkpoint of another layout is rejected.
 
 | row | parts half | wholes half |
 |---|---|---|
-| part (a character or an added run) | its fixed bits (`WordIdentity.atom_code`) | its bits drawn again in the wholes half's coordinates (`WordIdentity.catalog_code`) |
-| whole (a row of the table of wholes) | not read: a whole bounds only the wholes half | the OR of the catalog codes of the parts that belong to it, or the AND of the wholes it is given by (`PrimitiveProperties.codes`); the class of all characters is all ones |
+| part (a character or an added run) | its fixed bits (`WordIdentity.atom_code`) | the OR of its bytes' codes (`WordIdentity.catalog_code`) |
+| whole (a row of the table of wholes) | not read: a whole bounds only the wholes half | the OR of the codes of the bytes that belong to it, or the AND of the wholes it is given by (`PrimitiveProperties.codes`); the class of all characters is all ones |
 | basic percept | for: the greatest of its parts' codes; against: the parts its nearest holders add | for: the least of its wholes' codes, its own tightest whole among them; against: what that bound cuts away (`BasicPercepts.against`) |
 
 A part's content lies in the parts half and a whole's in the wholes half;
