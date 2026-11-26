@@ -9692,3 +9692,63 @@ Augustine, in which the Not is removed at every order.
 of `372abe55c1`, and this. No full sweep has been run since step V; the
 files of 47's run and of 47.20 were.
 
+
+## Wholes over values: ORed in the space of properties (Alec, 2026-11-25)
+
+Alec, 2026-11-25: "parthood over real numbers is just less-than. 1 is a
+part of 2. Number generalize line segments with one end at zero, think
+of it that way." And: "the wholes not being OR'd in the space of
+properties is a bug." Earlier the same day: "for characters, we do AND
+as spatial conjunction in the part space and OR as character-set union
+in the whole space. For values, the character set is replaced by a
+codebook (the learning of that codebook is Basic VQ and determined by
+parthood)."
+
+**The requirement.**
+
+- *Parts.* A value is the segment from zero to itself. A lesser value is
+  a part of a greater: its parts-half code lies inside the greater's.
+  This holds today (`BasicPercepts.value_code`: the bins at or below
+  the value).
+- *Wholes.* A range of values is a whole over the levels of the
+  alphabet inside it, and its code in the property half is the OR of
+  those levels' codes, as a class of characters is the OR of its
+  characters. Two ranges, 0.3 to 0.4 and 0.6 to 0.7, OR into the whole
+  that holds exactly the values of both. The top of the tower is the
+  whole that applies to every percept.
+- *The read.* A whole r holds a percept p exactly when
+  `min_k max(1 - p_k, r_k)` is one, the first Pi's read; for a value
+  inside a range it is 1 and for a value outside it 0.
+
+**The bug.** A value's wholes half is today the bins at or below it,
+the same code as its parts half. The OR of such codes keeps only the
+greatest level, so a range loses its lower end: the whole of 0.3 to 0.4
+holds 0.1, and the OR of the two ranges above holds 0.5.
+`test/test_item16_value_wholes.py` states the requirement; three of
+its five tests fail on this branch (a range holds a value below its
+lower end; the OR of two ranges holds a value between them; the same
+after the alphabet has learned) and two pass (less-than as parthood;
+the top).
+
+**The fix, at the merge with item 1.5** (one mechanism, not a second
+for values). The whole space built for characters on `item1-5` groups
+the leaves by the exact set of classes that hold them and gives each
+group one coordinate of the property half; a class is the OR of its
+groups and the top the OR of all. The levels of the alphabet become
+leaves beside the characters, a range is a row of the same property
+table (`PrimitiveProperties`), and a value's own whole is its level's
+group. The parts half keeps less-than.
+
+**The levels are dynamic** (Alec, 2026-11-25): "they should be dynamic
+and arranged with a linear SOM overlay, so that the grid maintains
+order while adapting to the distribution." So the alphabet is a
+one-dimensional self-organizing map on the line of values: a level
+that takes an intensity moves toward it and draws its neighbours on the
+line a lesser step with it, so the levels stay in order and settle
+where the intensities are dense. Today only the level an intensity
+falls to moves (`BasicPercepts.learn`); the neighbours' step is to be
+added. A range is then a set of levels of that grid, and what it holds
+follows the grid as it adapts.
+
+The merge is not complete while `test/test_item16_value_wholes.py`
+fails.
