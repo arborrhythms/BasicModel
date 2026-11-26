@@ -148,42 +148,16 @@ def host_units(units):
     return rows
 
 
-def native_values(ps, units):
-    """Loss-only byte codes, without admitting an unseen target to the store.
+def native_values(ps, surface, width):
+    """Loss-only byte codes of the presented surface, read by each byte's store row.
 
-    Known bytes use their actual code. A new target byte gets the store's
-    normalized Gaussian initializer from a private copy of the random stream;
-    neither the inventory nor the forward random stream observes that target.
+    ``surface`` [B, L] compact bytes; ``width`` the longest row. Every delivered
+    byte is seated before the sentence (``seat_bytes``); an unseated one is invalid.
     """
-    store = ps.percept_store
-    like = store._basis.W
-    alphabet = dict.fromkeys(byte for raw, _ in units for byte in raw)
-    width = max((len(raw) for raw, _ in units), default=0)
-    if not width:
-        return like.new_zeros(len(units), 0, store.dim), like.new_zeros(len(units), 0, dtype=torch.bool)
-    # Use the first encounter order for the private initializer. The final
-    # zero row supplies padding even when NUL itself is a real target.
-    codes = like.new_zeros(len(alphabet) + 1, store.dim)
-    generator = torch.Generator(device='cpu')
-    generator.set_state(torch.random.get_rng_state())
-    known, rows, missing, initial = [], [], [], []
-    for seat, byte in enumerate(alphabet):
-        alphabet[byte] = seat
-        pid = store.get_id(bytes([byte]))
-        if pid is None:
-            value = torch.randn(store.dim, generator=generator, dtype=like.dtype, device='cpu')
-            initial.append((value / value.norm().clamp_min(1e-8)).clamp(0., 1.))
-            missing.append(seat)
-        else:
-            known.append(seat)
-            rows.append(pid)
-    if rows:
-        codes[known] = store._basis.lookup_rows(torch.tensor(rows, device=like.device)).detach()
-    if missing:
-        codes[missing] = torch.stack(initial).to(like)
-    seats = torch.tensor([[alphabet[byte] for byte in raw] + [len(alphabet)] * (width - len(raw))
-                          for raw, _ in units], device=like.device, dtype=torch.long).reshape(len(units), width)
-    return codes[seats], seats < len(alphabet)
+    rows = ps.byte_store_rows[surface[:, :width].long()]
+    valid = (surface[:, :width] != 0) & (rows >= 0)
+    codes = ps.percept_store._basis.lookup_rows(rows.clamp_min(0)).detach()
+    return codes * valid[..., None], valid
 
 
 def stage(model):
@@ -193,9 +167,6 @@ def stage(model):
     if not model.word_brackets:
         return
     prepared = model.__dict__.pop('_omission_prepared')
-    # Only a drawn sentence has 'bytes'; its hiding is host work (identity.form below).
-    if 'bytes' in prepared and not bool(prepared['draw'].forms.any()):
-        del prepared['bytes']
     valid = isp._ar_word_part_mask
     draw = prepared.get('draw')
     can_hide = draw is not None
@@ -233,25 +204,25 @@ def stage(model):
     prepared.update(native=native, word_values=word_values, valid=valid.detach().clone(),
                     ids=isp._ar_word_part_ids.detach().clone(), spans=spans)
     if hiding or 'unit_spans' not in native:
+        prepared['surface'] = prepared['units'][0]
         prepared['units'] = host_units(prepared['units'])
         prepared['word_bytes'] = tuple(tuple(raw[lo:hi] for lo, hi in units)
                                        for raw, units in prepared['units'])
     model._omission_targets = prepared
     if not hiding:
         prepared.pop('units')
+        prepared.pop('surface', None)
         return
-    values, native_valid = native_values(ps, prepared['units'])
+    width = max((len(raw) for raw, _ in prepared['units']), default=0)
+    values, native_valid = native_values(ps, prepared['surface'], width)
     prepared.update(native_values=values, native_valid=native_valid)
-    identity = getattr(ps.percept_store, 'identity', None)
-    for b, w in forms.any(-1).nonzero().tolist():
-        raw, units = prepared['units'][b]
-        lo, hi = units[w]
-        if identity is not None:
-            form = identity.form(raw[lo:hi]).to(word_values)
-            word_values[b, w, :ps.nWhat] = 0
-            word_values[b, w, :len(form)] = form
-        else:
-            word_values[b, w, :ps.nWhat] = values[b, lo:hi].amax(0)
+    # Every unit at fixed shape; the hidden ones take their visible reading.
+    visible = prepared.pop('visible').to(word_values)
+    hidden = forms.any(-1)
+    N, W = word_values.shape[1], visible.shape[1]
+    visible = torch.nn.functional.pad(visible[:, :N], (0, word_values.shape[-1] - visible.shape[-1], 0, max(0, N - W)))
+    hidden = torch.nn.functional.pad(hidden[:, :N], (0, max(0, N - W)))
+    word_values.copy_(torch.where(hidden[..., None].to(word_values.device), visible, word_values))
     original = prepared['raw']
     model._staged_concepts_in = original.masked_fill(prepared['bytes'][:, None], 0)
     object.__setattr__(model, '_ws_universe', model._staged_concepts_in)
@@ -260,6 +231,7 @@ def stage(model):
     from Occurrence import restage_presented
     restage_presented(model, model._staged_concepts_in)
     prepared.pop('units')
+    prepared.pop('surface')
 
 
 def target(model):

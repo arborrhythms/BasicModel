@@ -11099,10 +11099,13 @@ class PartSpace(Space):
             surface = compact.masked_fill(hidden_bytes, 0)
         known = torch.where(parts >= 0, self.form_part_rows[parts.clamp_min(0)], -1)
         pid_grid = torch.where(part_mask, known, self.byte_store_rows[0])
-        if hiding:
-            pid_grid = pid_grid.masked_fill(hidden_forms, -1)
         part_spans = torch.where(part_mask[..., None], extents, 0)
         part_offsets = torch.where(part_mask, part_spans[..., 0], -1)
+        if hiding:
+            # A hidden word's target is its visible reading: the same cover, unhidden.
+            with torch.no_grad():
+                omission['visible'] = self.synthesize_word_parts(pid_grid, part_mask, part_offsets)
+            pid_grid = pid_grid.masked_fill(hidden_forms, -1)
         with torch.no_grad():
             part_events = self._radix_part_events(pid_grid, part_offsets)
             word_event = self.synthesize_word_parts(pid_grid, part_mask, part_offsets, events=part_events)

@@ -256,8 +256,13 @@ def test_partial_omission_admits_only_the_visible_form_parts(tmp_path, monkeypat
         ids = model.inputSpace._ar_word_part_ids[0, 1]
         assert int(ids[0]) == -1 and bool((ids[1:len(parts)] >= 0).all())
         assert bool(model.inputSpace._ar_embedded_N[0, 1, :identity.width].any())
-        torch.testing.assert_close(model._omission_targets['word_values'][0, 1, :identity.width],
-                                   identity.form(b'gamma'))
+        # The hidden target is the word's visible reading: its cover by the existing byte parts.
+        ps = model.perceptualSpace
+        rows = ps.form_part_rows[torch.tensor(list(b'gamma'))][None, None]
+        offsets = torch.arange(len(b'gamma'))[None, None]
+        visible = ps.synthesize_word_parts(rows, torch.ones_like(rows, dtype=torch.bool), offsets)
+        torch.testing.assert_close(model._omission_targets['word_values'][0, 1, :ps.nWhat],
+                                   visible[0, 0, :ps.nWhat], rtol=0, atol=0)
         assert model._omission_targets['word_bytes'][0][1] == b'gamma'
     finally:
         model.End()
