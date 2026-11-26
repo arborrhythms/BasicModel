@@ -1914,6 +1914,25 @@ generation is expected at this stage and is recorded, not tuned away.
 - **1.5. Computation by wiring; then lookups as one matmul, whole/part
    folds as scatters, the percept pass per sentence** (Alec,
    2026-10-30; and 2026-11-18: "Please move all 1.6 work into 1.5").
+   **Current priority (Alec, 2026-11-26).** Pause the other 1.5
+   optimizations. Focus only on making exploration faster in ordinary
+   training and testing. Convert each sentence to percepts once. Share
+   the opening bank and greedy prefix across its alternatives. Keep each
+   path's evolving parse and provisional memory private, with one clock
+   per sentence and only the winner committed.
+
+   On local branch `item1-5`, `7e6e34dafd` still walks the alternatives
+   sequentially. The first experiment is four sentences with three
+   explorations each. After the greedy pass, run the twelve exploration
+   lanes together wherever practical. Compare against the same three
+   departures run serially, checking choices, winners, committed state
+   and elapsed training time including packing and winner selection.
+   Group changes before the 12-update replay and the sampled/evaluation
+   reading lesson. If separate lanes require substantial bookkeeping or
+   give no speedup, revert the path-as-batch experiment and keep the
+   simpler shared work. The existing one-versus-three timings measure
+   sequential walks. The next comparison needs the same path count.
+
    **Open, 2026-11-24 UTC.** Local main shares sentence percept reads and
    the opening forecast. Each stream selects its winning exploration at
    sentence close. The ordinary input ladder still reads learned span

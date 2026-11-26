@@ -340,7 +340,12 @@ class Looks:
         # A record that nothing reads (§19.125): each reading's .where
         # wires and code on the .what columns, at its bracket in the bank.
         from Places import readings
-        found_where, _, found_code = readings(bank)
+        if self.prior is None:
+            found_where, _, found_code = readings(bank)
+            self.observed_readings = found_where.detach(), found_code.detach()
+        else:
+            self.observed_readings = self.prior.observed_readings
+        found_where, found_code = self.observed_readings
         read = model.request_read
         V = int(owner.nVectors)
         from SentenceField import inventory

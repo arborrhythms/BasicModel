@@ -21308,13 +21308,8 @@ class BasicModel(BaseModel):
                 if exploit is not None:
                     self._publish_sentence_scratch(exploit)
                     trace = self._reconstruction_stack()
-                    actions = trace._choice_actions.detach().clone()
-                    owners, _, _ = self._compose_round_owners(actions)
-                    eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
                     draw = self._sentence_departure
-                    self._sentence_departure = draw
-                    forced = (torch.arange(actions.shape[1],device=words.device)[None]
-                              == draw['compose_round'][:,None])
+                    forced = (compose_slots[None] == draw['compose_round'][:,None])
                     self._compose_forced_slots = forced
                     fork.start(dict(draw, narrowing=draw['narrowing'] | (draw['interpret_round'] >= 0)))
                     self._compose_sampling_scale = trace._choice_alternative_counts * (
@@ -21549,22 +21544,18 @@ class BasicModel(BaseModel):
                 paired_costs.append(result.parts[:, 0] + result.parts[:, 2])
                 return result
 
-            def draw_path():
-                self._publish_sentence_scratch(complete_paths[0].state)
+            def greedy_departures():
+                path = complete_paths[0]
+                self._publish_sentence_scratch(path.state)
                 trace = self._reconstruction_stack()
                 owners, _, _ = self._compose_round_owners(trace._choice_actions)
                 eligible = trace._choice_attempted & trace._choice_explorable & (owners == sid)
                 interpretations = (None if not look_trials or look_trials[0] is None
                     or not look_trials[0].decisions else
-                    torch.stack([decision['eligible'] for decision in look_trials[0].decisions],-1))
-                bind_rounds = observations[0]['bind_decisions'][0]
-                from SentenceCredit import departure
-                output = complete_paths[0].output_trace
-                return departure(greedy_attention, eligible, active=present,
-                    sentence_ids=sentence_ids, sentence=sid, compose_round=fork.choose(draws),
-                    interpretations=interpretations, binds=bind_rounds,
-                    thought=complete_paths[0].thinking.eligible(present),
-                    output=None if output is None else output[1], used=draws)
+                    torch.stack([decision['eligible'] for decision in look_trials[0].decisions], -1))
+                return eligible, dict(interpretations=interpretations,
+                    binds=path.observation['bind_decisions'][0], thought=path.thinking.eligible(present),
+                    output=None if path.output_trace is None else path.output_trace[1])
 
             from CandidateGrowth import GrowthTrial
             growth = []
@@ -21584,8 +21575,15 @@ class BasicModel(BaseModel):
                 with trial_scope():
                     first = compose(cache, None)
                     score(first, False)
+                if single and self.explore_paths:
+                    from SentenceCredit import departure
+                    eligible, menus = greedy_departures()
+                    compose_slots = torch.arange(eligible.shape[1], device=words.device)
                 for path_index in range(self.explore_paths if single else 0):
-                    draw = draw_path()
+                    if path_index:
+                        self._publish_sentence_scratch(complete_paths[0].state)
+                    draw = departure(greedy_attention, eligible, active=present, sentence_ids=sentence_ids,
+                        sentence=sid, compose_round=fork.choose(draws), used=draws, **menus)
                     draws.append(draw)
                     self._sentence_departure = draw
                     reading = bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
