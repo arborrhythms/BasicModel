@@ -563,9 +563,9 @@ code. A request over concepts is carried down by the transposes of the
 matrices of the way up, through the Sigma's weights, the Not and the first
 Pi's own entries, onto every member of a row, its parts on the part tower
 and its properties on the property tower, and onto its where
-([Architecture](Architecture.md#one-attention)). Two forms that no class of
-characters tells apart, such as `archer` and `archery`, are told apart by
-the next part above.
+([Architecture](Architecture.md#one-attention)). Two forms such as `archer` and `archery` are told apart by their parts
+(`archery` has parts `archer` lacks), by their wholes, or by a class of
+characters that holds every character but `y`.
 
 **The way back of a form starts from the form alone** ("we
 are not always doing reconstruction: sometimes we do generation"). No place
