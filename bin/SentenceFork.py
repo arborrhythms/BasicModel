@@ -59,9 +59,16 @@ class SentenceFork:
         rank = torch.where(self.count <= len(self.reservoir), self.count - 1, rank)
         places = torch.arange(len(self.reservoir), device=rank.device)
         take = eligible[:, None] & (rank[:, None] == places)
+        changed = None
+        if not torch.compiler.is_compiling():
+            changed = take.any(0).tolist()
+            if not any(changed):
+                return
         state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
         prefix = None if self.inverse_candidates is None else self.inverse_candidates.snapshot()
         for i, prior in enumerate(self.reservoir):
+            if changed is not None and not changed[i]:
+                continue
             selected = take[:, i]
             saved = dict(state=state, latches=latches, inverse_prefix=prefix,
                 word=torch.zeros_like(self.word) + word,

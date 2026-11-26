@@ -225,6 +225,8 @@ class OccurrenceCredit:
         inside, around = extent_members(bank.span, span[:, None])
         seen = (inside | around)[:, 0] & (bank.activity[..., 0] > 0)
         live = seen.any(1)
+        if not torch.compiler.is_compiling() and not bool(live.any()):
+            return
         # The fixation limits *both* sides. Its action probability is absent
         # from this cost. Overlapping events at a byte share the same place.
         starts = torch.where(seen, bank.span[..., 0], 0)
