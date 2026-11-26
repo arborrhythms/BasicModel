@@ -68,10 +68,17 @@ def copy_pairs(pairs, roots, words, names, order):
     Compact in column order, preserving the native allocator's write order.
     This walks references; it does not replay choices or a reduction stack.
     """
-    records = pairs.tolist()
-    turns = order.tolist()
-    heads = [tuple(head) for head in roots.tolist() if head[0]]
-    occurrences = dict(zip(words.tolist(), names, strict=True))
+    n_pairs, n_turns, n_roots = pairs.numel(), order.numel(), roots.numel()
+    flat = torch.cat((pairs.reshape(-1), order.reshape(-1), roots.reshape(-1), words.reshape(-1))).tolist()
+    i0 = n_pairs
+    i1 = i0 + n_turns
+    i2 = i1 + n_roots
+    p_flat = flat[:i0]
+    records = [((p_flat[k], p_flat[k + 1]), (p_flat[k + 2], p_flat[k + 3])) for k in range(0, n_pairs, 4)]
+    turns = flat[i0:i1]
+    r_flat = flat[i1:i2]
+    heads = [(r_flat[k], r_flat[k + 1]) for k in range(0, n_roots, 2) if r_flat[k]]
+    occurrences = dict(zip(flat[i2:], names, strict=True))
     reachable = set()
     todo = list(heads)
     while todo:

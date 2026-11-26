@@ -20400,8 +20400,9 @@ class BasicModel(BaseModel):
                        category='expectation')
         if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
             source_rows = self._reading_lesson_sources
+            active_rows = active.tolist()
             for b, program in enumerate(observation['entries']):
-                if program is None or not bool(active[b]):
+                if program is None or not active_rows[b]:
                     continue
                 source = None if source_rows is None else source_rows[b]
                 if isinstance(source, (tuple, list)):
