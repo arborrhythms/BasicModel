@@ -120,8 +120,8 @@ def joined(model, bank, sentence, image, values):
     basic = model._concept_owner().basic_percepts
     rows = image_rows(model)
     image = replace(image, rows=tuple(rows), codes=basic.bank_codes(rows).to(values.device))
-    lanes = basic.read_values(image)                                                  # [R, B, Ki, 2]
     events = basic.value_events(image) if rows else image.table.new_zeros(0, *image.token.shape, 2)
+    lanes = basic.read_values(image, events)                                          # [R, B, Ki, 2]
     own = set(rows)
     keys = tuple(sentence.keys) + tuple(('bp', row) for row in rows if ('bp', row) not in sentence.keys)
     N, B, K = len(keys), sentence.values.shape[1], sentence.values.shape[2]
@@ -273,8 +273,8 @@ def relations(bank):
         index = {p: i for i, p in enumerate(places)}
         P = torch.tensor(places, device=device)                                       # [N, D]
         holds = torch.zeros(n, len(places), device=device)                            # [n, N]
-        for t, (_, held) in enumerate(things):
-            holds[t, [index[tuple(p)] for p in held]] = 1
+        pairs = [(t, index[tuple(p)]) for t, (_, held) in enumerate(things) for p in held]
+        holds[tuple(torch.tensor(i, device=device) for i in zip(*pairs))] = 1
         big = torch.iinfo(torch.long).max
         low = torch.where(holds.bool()[..., None], P[None], big).amin(1)              # [n, D]
         high = torch.where(holds.bool()[..., None], P[None], -big).amax(1)

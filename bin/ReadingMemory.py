@@ -2,6 +2,7 @@
 import torch
 from architecture import WHERE_WIRES
 from Memory import OCCURRENCE, SYMBOL, RELATION
+from MemoryActivity import written_complete
 
 
 def covered_units(ids, spans, units):
@@ -393,8 +394,8 @@ def commit(stores, heads, durable):
             for store, plan in zip(stores, plans) if plan is not None])
         _publish_sequential_pairs(parts, allocator, refs, tags, next_id,
                                   assigned[live], fresh[live], evidence)
-        durable.retain_idea_batch([(store, *plan[:3]) for store, plan in zip(stores, plans) if plan is not None],
-                              written=True)
+        written_complete(durable, durable.retain_idea_batch(
+            [(store, *plan[:3]) for store, plan in zip(stores, plans) if plan is not None], written=True))
         return tuple(None if plan is None else tuple(root) for plan, root in zip(plans, roots.tolist()))
     else:
         for store, plan in zip(stores, plans, strict=True):
@@ -417,8 +418,8 @@ def commit(stores, heads, durable):
     if n_pairs and parts.allocate is not None and not sequential:
         planned = _bind_allocated_handles(parts, planned)
 
-    durable.retain_idea_batch([(store, *plan[:3]) for store, plan in zip(stores, plans) if plan is not None],
-                              written=True)
+    retained = durable.retain_idea_batch(
+        [(store, *plan[:3]) for store, plan in zip(stores, plans) if plan is not None], written=True)
     committed = []
     for store, plan, allocation in zip(stores, plans, planned, strict=True):
         if allocation is None:
@@ -432,6 +433,9 @@ def commit(stores, heads, durable):
             parts.add((ka, a), (kb, b), symbol=name, truth_plus=positive, truth_minus=negative,
                       surprise=activity)
         committed.append(root)
+    # Offered to consolidation with their relations written, as in the
+    # sequential branch.
+    written_complete(durable, retained)
     return tuple(committed)
 
 

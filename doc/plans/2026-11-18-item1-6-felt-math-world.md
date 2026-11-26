@@ -9875,6 +9875,136 @@ Tests run through `test/bounded_tests.py` with 19.2 GiB in all (80% of the
 machine) and two workers. The where grid of a registry is built on its
 first reader again, and when a model installs its registry: built with
 the registry, at twelve wires, it was a row for every address of every
-registry made, and one test alone passed 9.6 GiB. Seventy-one files that
-touch the changed code pass except the failures that item 1.5 has alone.
-The complete suite was not finished on the final tree.
+registry made, and one test alone passed 9.6 GiB.
+
+### After the second review, by Gemini (Claude, 2026-11-26)
+
+Alec: "Please fix all issues, including the things that are 'Not worth
+acting on now'."
+
+**Fixed.**
+
+- `property_presence` passed a thing's row's whole, a seat of the table
+  of values, to the primitive properties. A thing's row holds no
+  primitive property, as a value's holds none.
+- A checkpoint from before the alphabet of intensity loads: `levels`,
+  `level_meets` and `level_seats` start as they are built.
+- `bin_of` is a value's code only where the two halves agree: the
+  coordinate of the wholes half is that of a level of the parts half's
+  bin (`level_agree`).
+- `collection_code` reads `range_whole`, which is the OR of the levels
+  from the level the least falls to to the level the greatest falls to,
+  whatever the order of their coordinates.
+- `commit`, in its branch that is not sequential, offered the retained
+  rows to consolidation before their relations were written. Both
+  branches now write the relations first. `retain_idea_batch` returns its
+  rows and the caller offers them.
+- Staged ideas copied to LTM0 at close keep the activity that promoted
+  them and are offered to consolidation then; one at exactly 1 was passed
+  over at every later close.
+- `pooled_over_readings` set its bracket over every reading, so a reading
+  that holds nothing moved it and nothing matched, and under an aperture
+  the readings of a sentence were narrowed to the sentence's bracket. The
+  aperture is of the places of intensity: only the readings outside the
+  range `text` that hold something set the bracket and are narrowed
+  (`test/test_pooled_over_readings.py`, which failed before).
+- The word-pool path names the words a sentence read by one read of the
+  device; under capture, where there is none, it reads the live label
+  table as item 1.5 did.
+- `ImagePercepts.joined` reads `value_events` once and hands it to
+  `read_values`.
+- A copied registry keeps a built grid; `_box_table` is kept by device.
+- `thing_events` reads every shift of a thing's row at an occurrence at
+  once; `relations` writes what each thing holds at once; `units` finds
+  each concept's ranges once.
+
+**Not changed, with the reason.**
+
+- `value_pi` stays. It is the Pi of the value space that item 1.6
+  declares, `test_item16_things.py` and `test_item16_values.py` read its
+  entries, and it is sparse: three small vectors as long as its entries,
+  not a matrix of rows by columns.
+- `with_things` still finds the runs of touching places and reserves each
+  thing's row on the host, and `ImagePercepts.relations` and
+  `FamiliarTier.units` still walk host tables. A thing is keyed by its
+  arrangement in a dictionary of the table; reading scenes under capture
+  needs things keyed and found on the device, which is a piece of work of
+  its own and not part of this merge.
+- In eager reading the word-pool path still reads the device once a
+  sentence. Naming a sentence's words with no read needs the bank of
+  boundary codes addressed by device rows.
+
+**To decide with Alec.** Whether a sentence's readings are rightly left
+out of the aperture (the review calls the narrowing a leak; the text of
+`pooled_over_readings` before this did not say).
+
+### Tests that fail on item 1.5 alone, for whoever takes them (Claude, 2026-11-26)
+
+Alec: "I will have a different agent take those."
+
+Each of these fails on this merge and fails the same way on
+`origin/item1-5` (`ce2a173370`) alone, run on the CPU with the repository's
+bounded runner. Except for the lesson tests (pass on `main`, first bad
+commit `53825210c5`) and `test_text_uses_the_same_percept_collection_reader`
+(fails on `main` and on item 1.6 too) they were not run on `main`, and
+none was looked into. The list covers the tests that were run, about a
+quarter of the suite and the files the merge touches, not the whole of it.
+
+- `test/test_assessment.py::test_probe_restores_memory_clocks_parameters_and_random_streams`
+- `test/test_compiled_expectation_boundary.py::test_explicit_boundary_retains_one_entry_and_skips_masked_rows`
+- `test/test_concept_output.py::test_contained_ordered_group_reconstructs_at_its_extent`
+- `test/test_decomposition_chooser.py::test_native_training_keeps_joint_argmin_out_of_optimizer_and_registry`
+- `test/test_definition_integrity.py::test_word_concepts_exist_before_grounded_case_discovery`
+- `test/test_definition_taxonomy.py::test_closing_binds_subject_form_to_particular_without_widening_compose_access`
+- `test/test_doc_links.py::test_relative_links_resolve[doc/Params.md]`
+- `test/test_doc_links.py::test_relative_links_resolve[doc/Philosophy.md]`
+- `test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-11-14-sigma-pi-layers.md]`
+- `test/test_doc_links.py::test_relative_links_resolve[doc/plans/2026-11-25-item1-5-claude-completion.md]`
+- `test/test_item17_code.py::test_48_the_lessons_concepts_told_apart`
+- `test/test_item17_places.py::test_a_place_concept_asked_lights_its_own_readings_band`
+- `test/test_item17_places.py::test_a_place_is_nominated_by_the_cone_and_brings_a_concept`
+- `test/test_item17_places.py::test_the_request_for_a_place_at_an_untaught_start`
+- `test/test_item17_reading_memory.py::test_fixating_a_repeated_letter_keeps_its_own_content_and_extent`
+- `test/test_item17_reading_memory.py::test_looks_extend_one_head_and_commit_it_once`
+- `test/test_item17_symbols.py::test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_apart`
+- `test/test_item17_symbols.py::test_cert_c_an_operator_class_reads_its_arguments_through_symbols`
+- `test/test_item17_table.py::test_62_33b_what_is_where`
+- `test/test_item18_perceptual_scalar.py::test_text_uses_the_same_percept_collection_reader`
+- `test/test_item20_round5_memory.py::test_native_kept_close_uses_all_three_link_callers`
+- `test/test_live_concepts_from_percepts.py::test_native_field_lifecycle_clears_only_reset_rows_then_releases_graph`
+- `test/test_modal_timelines.py::test_bound_idea_has_both_value_and_retained_identity_reference[False]`
+- `test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[False]`
+- `test/test_modal_timelines.py::test_fixed_query_reads_event_order_and_never_asserts_the_question[True]`
+- `test/test_order0_percept_definitions.py::test_word_group_becomes_a_recurrent_row_without_changing_its_read`
+- `test/test_review14_contracts.py::test_sentence_reverse_reaches_native_prototypes_and_evidence`
+- `test/test_sentence_journal.py::test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading`
+- `test/test_stm_parse.py::test_chooser_heads_match_replay_for_unequal_partial_and_transposed_rows[mps-False]`
+- `test/test_stm_parse.py::test_chooser_heads_match_replay_for_unequal_partial_and_transposed_rows[mps-True]`
+- `test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_grammar.xml]`
+- `test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[MM_text.xml]`
+- `test/test_word_admission.py::test_29_each_reading_publishes_only_its_words[XOR_grammar.xml]`
+
+### Failing on the merge and not yet compared with item 1.5 (Claude, 2026-11-26)
+
+The last run of the files the merge touches was stopped part way, at
+Alec's word to push ("If there are any errors the other LLM can address
+them"). These failed in it and are not in the list above. They were not
+run on item 1.5 alone, so whether the merge or item 1.5 breaks them is
+not known.
+
+- `test/test_item16_grid.py::test_g1_built_widths_are_as_before[MM_image.xml]`
+- `test/test_item16_grid.py::test_g1_built_widths_are_as_before[MM_xor.xml]`
+- `test/test_item17_looks.py::test_31_33d_a_request_returns_what_it_asks_and_words_returns_every_word`
+- `test/test_item17_looks.py::test_32_a_known_word_is_not_read_inside_a_longer_known_word`
+- `test/test_item17_looks.py::test_56a_a_request_for_a_words_concept_lights_its_parts_and_its_properties`
+- `test/test_item17_tree_attend_trial.py::test_each_look_records_its_request_and_the_where_and_code_of_its_word`
+- `test/test_item20_round6_reverse.py::test_native_word_and_observed_promoted_part_have_the_same_byte_events`
+- `test/test_item20_round6_reverse.py::test_sparse_activity_at_8192_positions_never_crosses_the_native_inventory`
+
+`test_compiled_lesson_step.py::test_one_lesson_sentence_trains_with_the_compiled_output_walk`
+was left out of that run: on item 1.5 alone it reaches 10.9 GiB and does
+not finish in thirty minutes. The complete suite has not finished on the
+merge.
+
+`.gitignore` names `.venv` with no stroke after it, so a link of that
+name in a worktree is ignored as the directory is.

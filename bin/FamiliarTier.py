@@ -59,17 +59,23 @@ def percept_range(owner, percept):
     return 'text'
 
 
-def ranges(owner, concept, members):
+def ranges(owner, concept, members, known=None):
     """The ranges of the registry that ``concept`` lies in: of a concept of
     order zero, those of its basic percepts (:func:`percept_range`); above
     order zero, those of the concepts its Sigma reads through symbols
     (``members``, by concept)."""
+    if known is not None and concept in known:
+        return known[concept]
     row = owner._concept_row_of(concept)
     if row is None:
-        return set()
-    if owner._row_order(row) == 0:
-        return {percept_range(owner, percept) for percept in owner.concept_percepts(row)}
-    return set().union(*(ranges(owner, member, members) for member in members.get(concept, ())), set())
+        found = set()
+    elif owner._row_order(row) == 0:
+        found = {percept_range(owner, percept) for percept in owner.concept_percepts(row)}
+    else:
+        found = set().union(*(ranges(owner, member, members, known) for member in members.get(concept, ())), set())
+    if known is not None:
+        known[concept] = found
+    return found
 
 
 def held_members(owner):
@@ -101,9 +107,10 @@ def units(owner):
         return []
     alloc = owner._concept_allocator
     members = held_members(owner)
-    found = []
+    found, known = [], {}
     for cid in sorted(set(members) - alloc.retired):
-        lying = {member: ranges(owner, member, members) for member in members[cid]}
+        # Each concept's ranges are found once for all the units that hold it.
+        lying = {member: ranges(owner, member, members, known) for member in members[cid]}
         single = tuple(member for member, held in lying.items() if len(held) == 1)
         if {next(iter(lying[member])) for member in single} == set(MODALITIES):
             found.append((cid, alloc.order_of(cid), single))

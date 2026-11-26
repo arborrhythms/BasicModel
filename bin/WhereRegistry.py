@@ -66,9 +66,12 @@ class WhereRegistry:
 
     def _box_table(self, device):
         """Each live range's first address, origin and shape, ``[R, 1 + 2 * axes]``."""
-        rows = [(lo, *self.boxes[name][0], *self.boxes[name][1])
-                for name, (lo, hi) in self.slices.items() if hi > lo]
-        return torch.tensor(rows, dtype=torch.long, device=device).reshape(len(rows), -1)
+        tables = self.__dict__.setdefault('_box_tables', {})
+        if device not in tables:
+            rows = [(lo, *self.boxes[name][0], *self.boxes[name][1])
+                    for name, (lo, hi) in self.slices.items() if hi > lo]
+            tables[device] = torch.tensor(rows, dtype=torch.long, device=device).reshape(len(rows), -1)
+        return tables[device]
 
     def place(self, addresses):
         """The place ``[..., axes]`` of each address; an address below zero
@@ -148,6 +151,10 @@ class WhereRegistry:
                             for name in self.slices)
         memo[id(self)] = copied
         copied.encoding = deepcopy(self.encoding, memo)
+        if 'grid' in self.__dict__:
+            # A built grid stays built in the copy: a captured reader of the
+            # copied model meets a plain attribute too.
+            copied.grid = deepcopy(self.grid, memo)
         return copied
 
     def intervals(self, name, indices):

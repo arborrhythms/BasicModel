@@ -888,13 +888,37 @@ class InterpretLayer(GrammarLayer):
             resolved = torch.where(keys[at] == words, values[at], resolved)
         return resolved
 
+    def _named_objects(self, words, objects):
+        """``objects`` ``[B, W]`` with each word that has no object of its own
+        given the one :meth:`named` gives it, by its stream. Only the words
+        held by a unit across modality are looked at, so a model with no
+        such unit reads nothing here."""
+        from FamiliarTier import units
+        from WordConceptPool import basic_word_rows
+        held = {}
+        for _, _, members in units(self.owner):
+            for member in members:
+                held.setdefault(int(member), []).extend(m for m in members if m != member)
+        names = sorted(word for word in held if word in self.owner._concept_allocator.word_descriptions)
+        if not names:
+            return objects
+        table = words.new_tensor([[(self.preferred_objects(tuple(dict.fromkeys(held[word])), batch=b) or (word,))[0]
+                                   for word in names] for b in range(words.shape[0])])
+        at = basic_word_rows(words.flatten(), words.new_tensor(names),
+                             torch.arange(len(names), device=words.device)).reshape(words.shape)
+        found = table.gather(1, at.clamp_min(0))
+        return torch.where((at >= 0) & (objects == words), found, objects)
+
     def sentence_objects(self, words):
         """Resolve this presentation, allocating needed blank objects in reading order."""
         from WordConceptPool import basic_word_rows
         cs = self.owner
         alloc = cs._concept_allocator
         if self.mandatory:
-            if not getattr(cs, '_online_learning_frozen', False):
+            # With the key false no blank object is made (as in
+            # :meth:`sentence_object`): a word's object is then the other
+            # member of a unit across modality that holds it (:meth:`named`).
+            if self.create_meta_concepts and not getattr(cs, '_online_learning_frozen', False):
                 possible = sorted(name for name in alloc.word_descriptions
                                   if not alloc.named_identities.get(name))
                 if possible:
@@ -913,6 +937,8 @@ class InterpretLayer(GrammarLayer):
                             raise RuntimeError('an identified word has no conceptual row')
                         self.blank(name)
             objects = self.sentence_referents(words)
+            if not self.create_meta_concepts:
+                objects = self._named_objects(words, objects)
         else:
             objects = words
         matrix = alloc.layer(0)

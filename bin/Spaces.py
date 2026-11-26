@@ -20785,7 +20785,8 @@ def pooled_over_readings(field, owner):
     it; any other concept (of a value, a thing, a conjunction, or above order
     zero) can be read at places farther apart than the aperture, and is read
     at the reading that holds them all, its bracket, as the field read it
-    there."""
+    there. The readings of text, and a reading that holds nothing, are not
+    readings of places: they neither set the bracket nor are narrowed."""
     from util import TheXMLConfig
     evidence, ids = field.evidence, field.concept_ids
     if ids.ndim == 1:
@@ -20793,9 +20794,19 @@ def pooled_over_readings(field, owner):
     sigma = int(TheXMLConfig.get('architecture.intensityPartSigma'))
     if sigma and field.where is not None:
         where = field.where.to(evidence.device)                                         # [B, K, 2]
-        low, high = where[..., 0].amin(1, keepdim=True), where[..., 1].amax(1, keepdim=True)
-        bracket = (where[..., 0] == low) & (where[..., 1] == high)
-        wide = high - low > 2 * sigma - 1                                                # [B, 1]
+        # The aperture is of the places of intensity. A reading that holds
+        # nothing (padding, a stream with no image) has no place, and a
+        # reading of text is pooled as ever.
+        of_places = (where[..., 1] > where[..., 0]) & (where[..., 0] >= 0)
+        registry = getattr(getattr(owner, '_model', None), 'where_registry', None)
+        text = None if registry is None else registry.slices.get('text')
+        if text is not None:
+            of_places = of_places & ~((where[..., 0] >= text[0]) & (where[..., 0] < text[1]))
+        limit = torch.iinfo(where.dtype).max if not where.is_floating_point() else float('inf')
+        low = torch.where(of_places, where[..., 0], limit).amin(1, keepdim=True)
+        high = torch.where(of_places, where[..., 1], -limit).amax(1, keepdim=True)
+        bracket = of_places & (where[..., 0] == low) & (where[..., 1] == high)
+        wide = of_places.any(1, keepdim=True) & (high - low > 2 * sigma - 1)                # [B, 1]
         if bool(wide.any()):
             basic = owner.basic_percepts
             percepts = {}
@@ -20806,6 +20817,6 @@ def pooled_over_readings(field, owner):
             at = torch.tensor([[int(cid) > 0 and owner._concept_row_of(int(cid)) is not None
                                 and placed(owner._concept_row_of(int(cid))) for cid in column]
                                for column in ids.tolist()], dtype=torch.bool, device=evidence.device)  # [C, B]
-            keep = at[..., None] | bracket[None] | ~wide[None]
+            keep = at[..., None] | bracket[None] | ~wide[None] | ~of_places[None]
             evidence = evidence * keep[..., None].to(evidence)
     return evidence.amax(2)

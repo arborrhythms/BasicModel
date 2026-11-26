@@ -551,6 +551,12 @@ class BasicPercepts(nn.Module):
         self.register_buffer('level_coordinate', torch.tensor(
             leaf_groups(((level * runs // cardinality,) for level in range(cardinality)), runs),
             dtype=torch.long), persistent=False)
+        # The bins of the parts half and the coordinates of the wholes half
+        # that one level gives together: a value's code agrees in its halves.
+        agree = torch.zeros(max(1, self.identity_width), max(1, self.property_width), dtype=torch.bool)
+        level = torch.arange(cardinality)
+        agree[level * max(1, min(self.identity_width, cardinality)) // cardinality, self.level_coordinate] = True
+        self.register_buffer('level_agree', agree, persistent=False)
         # The width in places of the Gaussian aperture about a part's centre
         # (``intensityPartSigma``): a part holds the places nearer its centre
         # than it, each weighed by the Gaussian; 0 sets no limit.
@@ -643,11 +649,14 @@ class BasicPercepts(nn.Module):
         return F.one_hot(coordinate, self.property_width).to(self.value_codes.dtype)
 
     def range_whole(self, low, high):
-        """The whole over the levels of the alphabet from ``low`` to
-        ``high``, the OR of theirs; nothing where no level lies there. What
-        it holds follows the levels as they learn."""
-        inside = (self.levels >= low) & (self.levels <= high)
-        return (self.value_whole(self.levels) * inside[:, None].to(self.value_codes.dtype)).amax(0)
+        """The whole over the levels of the alphabet from the level
+        ``low`` falls to to the level ``high`` falls to, the OR of theirs.
+        What it holds follows the levels as they learn, whatever the order
+        of their coordinates."""
+        index = torch.arange(len(self.levels), device=self.levels.device)
+        inside = (index >= self.fall(low)) & (index <= self.fall(high))
+        wholes = F.one_hot(self.level_coordinate, max(1, self.property_width))[:, :self.property_width]
+        return (wholes * inside[:, None]).amax(0).to(self.value_codes.dtype)
 
     def segment_whole(self, felt):
         """A value as a whole over values: the segment from zero to itself,
@@ -757,7 +766,8 @@ class BasicPercepts(nn.Module):
     def bin_of(self, codes):
         """The bin a value code cuts at, from its parts half: the last of its
         run of ones from the first bin. ``-1`` where the parts half is no such
-        run, or where the wholes half is not one group's coordinate alone."""
+        run, or where the wholes half is not the one coordinate of a level
+        of that bin (the two halves are cut by the same levels)."""
         half = codes[..., :self.identity_width]
         count = half.eq(1).long().sum(-1)
         prefix = torch.arange(half.shape[-1], device=half.device) < count[..., None]
@@ -765,6 +775,8 @@ class BasicPercepts(nn.Module):
         if self.property_width:
             whole = codes[..., self.identity_width:self.width]
             valid = valid & (whole.eq(1).long().sum(-1) == 1) & (whole.ne(0).long().sum(-1) == 1)
+            agree = self.level_agree.to(codes.device)
+            valid = valid & agree[(count - 1).clamp_min(0), whole.argmax(-1)]
         return torch.where(valid, count - 1, -1)
 
     def _felt_presence(self, value):
@@ -894,9 +906,7 @@ class BasicPercepts(nn.Module):
         value, felt = self._value_rows(rows)
         if value and all(value) and self.property_width:
             felt = torch.stack(felt)
-            least, greatest = (self.level_coordinate[self.fall(v)] for v in (felt.amin(), felt.amax()))
-            at = torch.arange(self.property_width, device=covering.device)
-            covering = ((at >= least) & (at <= greatest)).to(covering)
+            covering = self.range_whole(felt.amin(), felt.amax()).to(covering)
         return torch.cat((codes[..., :self.identity_width].amin(0), covering))
 
     def read_points(self, points, rows):
@@ -1125,8 +1135,8 @@ class BasicPercepts(nn.Module):
         if not mine and not held:
             return events
         pixel = events.new_ones(events.shape[1:3])
-        for b, o, _ in held:
-            pixel[b, o] = 0
+        if held:
+            pixel[tuple(torch.tensor(i, device=pixel.device) for i in zip(*((b, o) for b, o, _ in held)))] = 0
         keep = torch.stack([pixel.new_zeros(()).expand_as(pixel) if n in mine else pixel for n in range(len(rows))])
         events = events * keep[..., None]
         if not mine or not held:
@@ -1139,21 +1149,23 @@ class BasicPercepts(nn.Module):
             wholes = self.occurrences[rows[n]][1]
             offsets = [offset for offset, _ in arrangement]
             weight = self.weights(offsets).to(point)
+            upper = self.felt_of(list(wholes)).to(point) if wholes else None
             for b, o, members in held:
                 there = dict(members)
                 shifts = {tuple(e - d for e, d in zip(place, offsets[0])) for place in there}
                 for offset in offsets[1:]:
                     shifts = {s for s in shifts if tuple(a + d for a, d in zip(s, offset)) in there}
-                lanes = []
-                for s in sorted(shifts):
-                    x = point[b, [there[tuple(a + d for a, d in zip(s, offset))] for offset in offsets]]
-                    part = (1 - weight * (x < parts).to(x)).amin()
-                    under = ((1 - weight * (x > self.felt_of(list(wholes)).to(x)).to(x)).amin() if wholes
-                             else x.new_ones(()))
-                    lanes.append(torch.stack((part * under, part * (1 - under))))
-                if lanes:
-                    index.append((n, b, o))
-                    found.append(torch.stack(lanes).amax(0) * at[n, b, o])
+                if not shifts:
+                    continue
+                # Every shift at once: the places of the occurrence under
+                # the row's places, ``[shifts, places]``.
+                under_row = torch.tensor([[there[tuple(a + d for a, d in zip(s, offset))] for offset in offsets]
+                                          for s in sorted(shifts)], device=point.device)
+                x = point[b][under_row]
+                part = (1 - weight * (x < parts).to(x)).amin(1)
+                under = (1 - weight * (x > upper).to(x)).amin(1) if wholes else torch.ones_like(part)
+                index.append((n, b, o))
+                found.append(torch.stack((part * under, part * (1 - under)), 1).amax(0) * at[n, b, o])
         if found:
             n, b, o = (torch.tensor(i, device=events.device) for i in zip(*index))
             events = events.index_put((n, b, o), torch.stack(found).to(events))
@@ -2197,7 +2209,7 @@ class BasicPercepts(nn.Module):
             read[index] = True
         return back.reshape(B, P), read.reshape(B, P)
 
-    def read_values(self, bank):
+    def read_values(self, bank, events=None):
         """The Pi over values: each row of an image's bank at each of its
         readings, ``[rows, B, readings, 2]``, each occurrence read as a form
         is, by its part and its whole on two lanes, and by the row's entries
@@ -2215,7 +2227,8 @@ class BasicPercepts(nn.Module):
         B, K = bank.where.shape[:2]
         if not rows:
             return bank.table.new_zeros(0, B, K, 2)
-        events = self.value_events(bank)                                               # [R, B, O, 2]
+        if events is None:
+            events = self.value_events(bank)                                           # [R, B, O, 2]
         # Each occurrence lies in its own reading; a reading that holds
         # several (the bracket) is the greatest over them.
         slot = torch.where(bank.token >= 0, bank.token, K)
@@ -2339,8 +2352,10 @@ class BasicPercepts(nn.Module):
             # A basic row's ordered whole references are set at reservation.
             # Restore replaces the index. A changed form cover updates its
             # parts but keeps its wholes.
-            # A value's row holds no primitive property: its whole is a value.
-            valued = [self.is_value(row) for row in range(len(self.index))]
+            # A value's row holds no primitive property: its whole is a
+            # value, and so is a thing's, the greatest of its pixels'.
+            things = getattr(self, 'things', ())
+            valued = [bool(self.is_value(row)) or row in things for row in range(len(self.index))]
             groups = [() if value else pair[1]
                       for value, pair in zip(valued, self.occurrences[:len(self.index)])]
             width = max(map(len, groups), default=0)
@@ -2448,5 +2463,8 @@ class BasicPercepts(nn.Module):
         # Older checkpoints did not yet have value-bearing native endpoints.
         state.setdefault(prefix+'value_codes', torch.zeros_like(self.value_codes))
         state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))
+        # Nor the alphabet of intensity: it starts as it is built, unlearned.
+        for name in ('levels', 'level_meets', 'level_seats'):
+            state.setdefault(prefix+name, getattr(self, name).detach().clone())
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
         self.promoted_rows = set(self.promoted.nonzero().flatten().tolist())

@@ -11628,9 +11628,12 @@ class BasicModel(BaseModel):
             owner.propose_word_utility(ids, canonical, properties)
 
             # Public provenance belongs to the identified word: the words
-            # this sentence read, not the whole vocabulary.
+            # this sentence read, not the whole vocabulary. Naming them is
+            # one read of the device; under capture, where there is none,
+            # the live label table stands for them.
             support = owner._ordered_fold_support((), ())
-            read = ids[ids >= 0].unique().tolist()
+            read = (tuple(labels) if torch.compiler.is_compiling()
+                    else ids[ids >= 0].unique().tolist())
             for name in read:
                 label = labels.get(name)
                 seat = owner._concept_row_of(name)

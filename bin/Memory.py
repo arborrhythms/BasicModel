@@ -1321,7 +1321,12 @@ class MediumTermMemory(MemoryStore):
                                      True).nonzero().flatten()
             rows = rows[:max(0, durable.capacity - len(durable))]
             if rows.numel():
-                durable.retain_ideas(staged, rows, staged.row_names[rows], staged.referent[rows])
+                # The rows keep the activity that promoted them and are
+                # offered to consolidation now: one at exactly 1 would be
+                # passed over at every later close.
+                from MemoryActivity import written_complete
+                written_complete(durable, durable.retain_ideas(staged, rows, staged.row_names[rows],
+                                                               staged.referent[rows]))
         live = set(self.names) | set(self.pending)
         for token in self.entries.values():
             live.update(token.occurrences)
@@ -2714,17 +2719,19 @@ class LTM0(IdeaRows):
 
     def retain_ideas(self, source, rows, names, referents):
         """Copy STM rows as they stand, including their time and graded evidence."""
-        self.retain_idea_batch([(source, rows, names, referents)])
+        return self.retain_idea_batch([(source, rows, names, referents)])
 
     @torch.no_grad()
     def retain_idea_batch(self, selections, *, written=False):
-        """Publish one contiguous block for the retained occurrences of every stream.
-        ``written``: the rows are new writes of this store, so they start at
-        the default activity and are offered to consolidation, as an appended
-        idea is."""
+        """Publish one contiguous block for the retained occurrences of every stream,
+        and return its rows. ``written``: the rows are new writes of this
+        store, so they start at the default activity, as an appended idea
+        does. The caller offers the rows to consolidation
+        (``MemoryActivity.written_complete``) once their relations are
+        written too."""
         selections = [entry for entry in selections if entry[1].numel()]
         if not selections:
-            return
+            return range(0)
         first = len(self)
         end = first + sum(rows.numel() for _, rows, _, _ in selections)
         if end > self.capacity:
@@ -2740,9 +2747,7 @@ class LTM0(IdeaRows):
         if written:
             self.activity[first:end] = self.activity_config.default
         self._write_count(end)
-        if written:
-            from MemoryActivity import written_complete
-            written_complete(self, range(first, end))
+        return range(first, end)
 
     def _idea_description(self, index, reference):
         value = super()._idea_description(index, reference)
