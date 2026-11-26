@@ -326,21 +326,27 @@ def native_target(model, field):
         return ps._radix_code_events(values.clone(), positions).detach() * (valid & owned)[..., None]
     native = ps._forward_input if targets is None else targets['native']
     ids, spans = native['native_indices'], native['native_part_spans']
-    # A promoted native part can span several bytes on the parallel path.
-    # The target still has the same per-byte layout as the common decoder.
-    width = max(1, int(spans[..., 1].max()) if spans.shape[1] else 0)
-    byte_ids = ids.new_full((len(ids), width), -1)
-    for batch, (parts, extents) in enumerate(zip(ids.tolist(), spans.tolist())):
-        for part, (begin, end) in zip(parts, extents):
-            if part < 0 or end <= begin:
-                continue
-            raw = ps.percept_store.bytes_for(part)
-            if len(raw) != end - begin:
-                raise ValueError('observed native part disagrees with its byte bracket')
-            rows = [ps.percept_store.get_id(bytes([byte])) for byte in raw]
-            if any(row is None for row in rows):
-                raise ValueError('observed native part has an unadmitted byte')
-            byte_ids[batch, begin:end] = ids.new_tensor(rows)
+    if 'byte_width' in native:
+        # The element stem already staged one physical byte row per position.
+        # The original target owns these indices even after attention moves.
+        width = max(1, native['byte_width'])
+        byte_ids = ids[:, :width]
+    else:
+        # A promoted native part can span several bytes on the parallel path.
+        # The target still has the same per-byte layout as the common decoder.
+        width = max(1, int(spans[..., 1].max()) if spans.shape[1] else 0)
+        byte_ids = ids.new_full((len(ids), width), -1)
+        for batch, (parts, extents) in enumerate(zip(ids.tolist(), spans.tolist())):
+            for part, (begin, end) in zip(parts, extents):
+                if part < 0 or end <= begin:
+                    continue
+                raw = ps.percept_store.bytes_for(part)
+                if len(raw) != end - begin:
+                    raise ValueError('observed native part disagrees with its byte bracket')
+                rows = [ps.percept_store.get_id(bytes([byte])) for byte in raw]
+                if any(row is None for row in rows):
+                    raise ValueError('observed native part has an unadmitted byte')
+                byte_ids[batch, begin:end] = ids.new_tensor(rows)
     positions = torch.arange(width, device=ids.device).expand(len(ids), -1)
     event = ps._radix_part_events(byte_ids.clamp_min(0), positions).detach()
     owned = ((positions[:, :, None] >= field.where[:, None, :, 0]) &
@@ -353,12 +359,15 @@ def word_percepts(reverse, field, width):
     """A reporting/forecast view of decoded native rows at field brackets."""
     event = reverse._reconstruction_percepts
     positions = torch.arange(event.shape[1], device=event.device)
+    # Bound the temporary [stream, word, byte, wire] mask application on
+    # long pages. Each maximum still covers the complete original byte axis.
+    chunk = max(1, (1 << 22) // max(1, event.numel()))
     values = []
-    for word in range(field.where.shape[1]):
-        begin, end = field.where[:, word].unbind(-1)
-        mask = (positions[None] >= begin[:, None]) & (positions[None] < end[:, None])
-        values.append(torch.where(mask[..., None], event, 0.).amax(1))
-    result = torch.stack(values, 1)
+    for bounds in field.where.split(chunk, dim=1):
+        begin, end = bounds.unbind(-1)
+        mask = (positions >= begin[..., None]) & (positions < end[..., None])
+        values.append(torch.where(mask[..., None], event[:, None], 0.).amax(2))
+    result = torch.cat(values, 1)
     return F.pad(result, (0, width - result.shape[-1])) if result.shape[-1] < width else result[..., :width]
 
 

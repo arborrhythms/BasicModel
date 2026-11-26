@@ -188,8 +188,8 @@ class WordIdentity(nn.Module):
             self._row_spellings[row] = raw
             self._unseated.discard(raw)
 
-    def _registered_parts(self, raw, part_rows):
-        """Resolve device containment against the inventory at this nomination."""
+    def _registration_index(self):
+        """Restore the form-address index once, including pre-table spellings."""
         if self._row_spellings is None:
             self._row_spellings = {byte: bytes([byte]) for byte in range(256)}
             self._row_spellings.update((row, spelling) for spelling, row in self._table_rows.items())
@@ -212,6 +212,16 @@ class WordIdentity(nn.Module):
                             self._remember_form(word, row)
                         else:
                             self._unseated.add(word)
+
+    def registered_words(self):
+        """Stored word roots on the form chart, with their byte lengths."""
+        self._registration_index()
+        return [(raw[0] if len(raw) == 1 else self._table_rows[raw], len(raw))
+                for raw in self.words if raw not in self._unseated]
+
+    def _registered_parts(self, raw, part_rows):
+        """Resolve device containment against the inventory at this nomination."""
+        self._registration_index()
         inside, runs = set(), set()
         for address in set(part_rows):
             if address < 0:
@@ -397,7 +407,7 @@ class WordIdentity(nn.Module):
         groups[row] = children
         self.store._canonical_group_cache = None
 
-    def _link(self, raw, *, inside=None):
+    def _link(self, raw, *, inside=None, holders=None):
         """Link a new stored form to the stored forms it holds as a run (its
         parts among the forms) and to those that hold it (its holders), on
         both sides of each link."""
@@ -406,11 +416,12 @@ class WordIdentity(nn.Module):
             inside = {text[start:start + size] for size in range(1, len(text))
                       for start in range(len(text) - size + 1)
                       if text[start:start + size] in self.inside}
-        by_byte = self._forms_by_byte(text)
-        lists = [self.holders[run] for run in inside]
-        lists.extend(by_byte[byte] for byte in set(text))
-        shortest = min(lists, key=len)
-        holders = {word for word in shortest if word != text and text in word}
+        if holders is None:
+            by_byte = self._forms_by_byte(text)
+            lists = [self.holders[run] for run in inside]
+            lists.extend(by_byte[byte] for byte in set(text))
+            shortest = min(lists, key=len)
+            holders = {word for word in shortest if word != text and text in word}
         self.inside[text], self.holders[text] = inside, holders
         for run in self.inside[text]:
             self.holders[run].add(text)
@@ -594,7 +605,7 @@ class WordIdentity(nn.Module):
         atoms = set(atoms)
         return [word for word, parts in self.words.items() if atoms.intersection(parts)]
 
-    def admit(self, raw, *, form_row=None, witnesses=None):
+    def admit(self, raw, *, form_row=None, witnesses=None, holder_rows=None):
         raw = bytes(raw)
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
@@ -621,7 +632,14 @@ class WordIdentity(nn.Module):
                     self._remember_form(octets, row)
                 inside, added = self._registered_parts(raw, part_rows)
                 self.words[raw] = base + added
-            self._link(raw, inside=inside)
+            holders = None
+            if holder_rows is not None:
+                # Other new roots from this batch may become words later.
+                # A reading can update only a holder already in the catalog.
+                holders = {self._row_spellings[row] for row in holder_rows
+                           if self._row_spellings.get(row) in self.inside}
+                holders.update(holder for holder in self._unseated if holder in self.inside and raw in holder)
+            self._link(raw, inside=inside, holders=holders)
             carriers = [holder for holder in sorted(self.holders[raw], key=self.order.__getitem__)
                         if own not in self.words[holder]] if len(text) > 1 else []
             for holder in carriers:

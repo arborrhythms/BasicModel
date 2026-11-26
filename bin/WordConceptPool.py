@@ -301,6 +301,34 @@ def registration_witnesses(table, roots, data, lengths):
     return characters, found[:, :-1] if dense else torch.cat(levels, dim=1)
 
 
+def form_holders(table, roots, wanted, longest):
+    """Which stored roots strictly contain each wanted form, by link address."""
+    matches = roots.new_zeros((len(wanted), len(roots)), dtype=torch.int32)
+    level = roots[:, None]
+    for _ in range(1, longest):
+        # At a given depth the left child at each start and the last
+        # right child enumerate every shorter run, including overlaps.
+        level = torch.cat((table.left[level.clamp_min(0)], table.right[level[:, -1:].clamp_min(0)]), 1).long()
+        # Row zero is a leaf. Its links, like those of an absent row, are -1.
+        matched = (wanted[:, None, None] == level).int().amax(-1)
+        matches = torch.maximum(matches, matched)
+    return (matches > 0) & (wanted[:, None] >= 0) & (roots >= 0)
+
+
+def registration_holders(identity, table, nominations, width):
+    """Existing and simultaneously nominated roots, resolved in bounded slabs."""
+    existing = identity.registered_words()
+    roots = torch.cat((nominations.new_tensor([row for row, _ in existing]), nominations))
+    longest = max(width, max((size for _, size in existing), default=0))
+    held = []
+    # Bound both the number of lookups and the width of each link frontier.
+    group = max(1, (1 << 20) // max(1, longest * len(nominations)))
+    for slab in roots.split(group):
+        links = form_holders(table, slab, nominations, longest)
+        held.append(torch.where(links, slab, -1))
+    return torch.cat(held, 1)
+
+
 def basic_word_rows(words, names, rows):
     """Each nominated word's live basic percept, with -1 for absent words."""
     at = torch.searchsorted(names, words.contiguous())
@@ -404,11 +432,15 @@ def stage(model, fi):
             property_count = min(int(model.wholeSpace.nVectors), 63)
             # Bound temporary storage for wide batches of long nominations.
             columns = min(width * (width + 1) // 2, table.capacity) + 3 * width + 6
+            identity = ps.percept_store.identity
+            columns += len(identity.words) + len(new)
             for group in new.split(max(1, (1 << 20) // columns)):
                 data, lengths = table.spell(group[:, 0], longest=width)
                 elements, parts = registration_witnesses(table, group[:, 0], data, lengths)
-                publication = torch.cat((group, lengths[:, None], data, elements.flatten(1), parts), 1).tolist()
-                for form, word, seat, ordinal, bits, length, *payload in publication:
+                holders = registration_holders(identity, table, group[:, 0], width)
+                publication = torch.cat((group, lengths[:, None], data, elements.flatten(1), parts, holders), 1)
+                end = 3 * width + parts.shape[1]
+                for form, word, seat, ordinal, bits, length, *payload in publication.tolist():
                     raw = bytes(payload[:length])
                     addresses = zip(payload[width:3 * width:2], payload[width + 1:3 * width:2], strict=True)
                     characters = [(raw[pos:pos + size], row)
@@ -416,7 +448,7 @@ def stage(model, fi):
                     wholes = tuple(i for i in range(property_count) if bits & (1 << i))
                     installed = owner.interpret.install_nomination(
                         word, seat, form, raw, wholes, pool.initial_places[ordinal],
-                        witnesses=(characters, payload[3 * width:]))
+                        witnesses=(characters, payload[3 * width:end]), holder_rows=payload[end:])
                     if installed is None:
                         raise RuntimeError('MTM nominated a word without a free concept row')
                     pool.form_labels[form] = raw.decode('latin1')

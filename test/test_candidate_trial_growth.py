@@ -52,7 +52,8 @@ def test_mixed_winners_replay_observations_in_look_then_stream_order(monkeypatch
                       [('pi', {cid: 1.}), ('sigma', {cid: .5}, [(cid, .25)])]]
 
 
-def test_published_pairs_cannot_be_renominated_by_later_winning_reads():
+@pytest.mark.parametrize('native', [False, True])
+def test_published_pairs_cannot_be_renominated_by_later_winning_reads(native):
     from test_item17_symbols import _small_space
     baseline, _, names, _ = _small_space()
     owner, _, trial_names, _ = _small_space()
@@ -61,7 +62,11 @@ def test_published_pairs_cannot_be_renominated_by_later_winning_reads():
     retained = growth.GrowthTrial(owner)
     first_read = {left: 1., right: 1.}
     next_read = {**first_read, first: 1., second: 1.}
+    bound = torch.tensor(sorted(next_read))
     def observation(read):
+        if native:
+            values = torch.tensor([read.get(name, 0.) for name in bound.tolist()])
+            read = (bound, values, torch.arange(len(bound)), len(bound))
         return read, read, []
     retained.looks = [{0: observation(first_read), 1: observation(next_read)} for _ in range(6)]
     for space in (baseline, owner):

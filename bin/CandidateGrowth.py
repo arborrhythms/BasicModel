@@ -161,15 +161,24 @@ class GrowthTrial:
         written = 0
         try:
             for turn in range(turns):
-                for batch, trial in enumerate(winners):
-                    if turn >= len(trial.looks) or batch not in trial.looks[turn]:
-                        continue
-                    present, sentence, expected = trial.looks[turn][batch]
+                events = [(batch, trial.looks[turn][batch]) for batch, trial in enumerate(winners)
+                          if turn < len(trial.looks) and batch in trial.looks[turn]]
+                offers = retained_pair_offers(owner, pool, events) if together else {}
+                if offers:
+                    alloc = owner._concept_allocator
+                    table, store = alloc.symbol_table(), alloc.layer(0)
+                    stamp = table.revision, len(store._tensor_row_keys)
+                for batch, (present, sentence, expected) in events:
+                    trial = winners[batch]
                     if releases is None:
                         pi_step(trial.owner, sentence)
                     else:
                         pending = []
-                        pi_step(owner, sentence, collect=pending, prior=releases[:written])
+                        # A preceding Sigma promotion can create a new symbol.
+                        # Re-read the layout if its membership has changed.
+                        if offers and stamp != (table.revision, len(store._tensor_row_keys)):
+                            offers.clear()
+                        pi_step(owner, sentence, collect=pending, prior=releases[:written], offers=offers.get(batch))
                         if pending:
                             releases[written].copy_(pending[0][1])
                             written += 1
@@ -180,7 +189,9 @@ class GrowthTrial:
                 # forecasts are already fixed. Later offers in the replay
                 # still see each earlier promotion in the device slab.
                 promoted = releases[:written].flatten(0, 1)
-                pool.append_pairs(promoted, len(pool.publish(promoted)))
+                count, number = torch.stack((pool.count, (promoted[:, 0] >= 0).sum())).tolist()
+                pool._remember_count(count)
+                pool.append_pairs(promoted, number)
 
 
 def row_scope(owner, batch):
@@ -382,26 +393,15 @@ def seat_of(names, keys):
     return torch.where((keys >= 0) & (F.pad(names, (0, 1), value=-1)[place] == keys), place, len(names))
 
 
-def pi_step(owner, present, *, collect=None, prior=None):
-    """One step of the Pi's candidates from the concepts present at a look;
-    the symbols made."""
-    held = matrices(owner)['pi']
-    alloc = owner._concept_allocator
-    store = alloc.layer(0)
-    if isinstance(present, tuple):
-        names, levels, _, count = present
-    else:
-        count = sum(value >= PRESENT for value in present.values())
-    occupied = held._known_count()
-    if count < 2 and occupied == 0:
-        return []
-    if not isinstance(present, tuple):
-        names, levels = dict_readings(held, present)
+def pair_layout(owner, held, names):
+    """The unpromoted pairs of like order for one binding of native names."""
     symbols = owner.mtm._candidate_relations
     symbols.read_symbols(owner)
     # Pairs in ascending order of their two names, each read where both
     # concepts are present, of one order, held together by no symbol and
     # not yet a row.
+    alloc = owner._concept_allocator
+    store = alloc.layer(0)
     width = len(names)
     seats = torch.triu_indices(width, width, 1, device=names.device).T
     ends = store.concept_rows(names)
@@ -414,7 +414,51 @@ def pi_step(owner, present, *, collect=None, prior=None):
     blocked[promoted[:, 0], promoted[:, 1]] = True
     left, right = seats.unbind(-1)
     admitted = (order[left] == order[right]) & (order[left] >= 0) & ~blocked[left, right]
-    pairs = torch.where((admitted & (levels[seats] >= PRESENT).all(-1))[:, None], names[seats], -1)
+    return seats, torch.where(admitted[:, None], names[seats], -1)
+
+
+def present_pairs(seats, pairs, levels):
+    """Offer a pair to each retained stream in which both names are present."""
+    both = (levels[..., seats] >= PRESENT).all(-1)
+    return torch.where(both[..., None], pairs, -1)
+
+
+def retained_pair_offers(owner, held, events):
+    """Streams sharing one binding use its topology once for the whole look."""
+    bindings = {}
+    for batch, (_, sentence, _) in events:
+        if isinstance(sentence, tuple):
+            names, levels, _, count = sentence
+            if count >= 2:
+                bindings.setdefault(id(names), (names, []))[1].append((batch, levels))
+    prepared = {}
+    for names, streams in bindings.values():
+        if len(streams) < 2:
+            continue
+        seats, pairs = pair_layout(owner, held, names)
+        levels = torch.stack([value for _, value in streams])
+        offers = present_pairs(seats, pairs, levels)
+        prepared.update((batch, page) for (batch, _), page in zip(streams, offers.unbind(), strict=True))
+    return prepared
+
+
+def pi_step(owner, present, *, collect=None, prior=None, offers=None):
+    """One step of the Pi's candidates from the concepts present at a look;
+    the symbols made."""
+    held = matrices(owner)['pi']
+    if isinstance(present, tuple):
+        names, levels, _, count = present
+    else:
+        count = sum(value >= PRESENT for value in present.values())
+    occupied = held._known_count()
+    if count < 2 and occupied == 0:
+        return []
+    if not isinstance(present, tuple):
+        names, levels = dict_readings(held, present)
+    if offers is None:
+        seats, pairs = pair_layout(owner, held, names)
+        offers = present_pairs(seats, pairs, levels)
+    pairs = offers
     levels = levels.to(held.activity)
     if prior is not None:
         pairs = unpromoted_offers(pairs, prior)

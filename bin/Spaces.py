@@ -9349,12 +9349,14 @@ class InputSpace(Space):
         if self.byte_mode:
             rows = rows[:, :self.outputShape[0]]
         surfaces = []
-        used = 0
+        used = compact_length = 0
         for row in rows.detach().numpy():
             raw = row.tobytes().rstrip(b'\0')
             used = max(used, len(raw))
-            surfaces.append(raw.replace(b'\0', b'').decode('utf-8', errors='surrogateescape'))
-        self._staged_delivery = slab, surfaces, used, all(surface.isascii() for surface in surfaces)
+            compact = raw.replace(b'\0', b'')
+            compact_length = max(compact_length, len(compact))
+            surfaces.append(compact.decode('utf-8', errors='surrogateescape'))
+        self._staged_delivery = slab, surfaces, used, all(surface.isascii() for surface in surfaces), compact_length
 
     def _lex_batch(self, input):
         """DELIVERY, not lexing (Alec 2026-07-12; restores the 2026-06-08
@@ -9421,8 +9423,10 @@ class InputSpace(Space):
         self._staged_delivery = None
         self._delivered_length = None
         self.subspace._ascii_delivery = False
+        self._delivered_compact_length = None
         if delivery is not None and delivery[0] is host_slab:
-            self._analyse_surfaces, self._delivered_length, self.subspace._ascii_delivery = delivery[1:]
+            (self._analyse_surfaces, self._delivered_length, self.subspace._ascii_delivery,
+             self._delivered_compact_length) = delivery[1:]
         else:
             self._analyse_surfaces = []
             for b in range(batch):
@@ -10198,14 +10202,10 @@ class InputSpace(Space):
         embedded = self._ar_embedded
         if embedded is None:
             return None
-        # D8 piece 2 (eager-revised after metalbaby 2026-05-19):
-        # ``_valid_len_host`` is populated EAGERLY by ``forward()`` at
-        # the IS boundary; ``next_word`` does a pure host-int compare
-        # with ZERO ``.item()`` inside. The lazy-on-first-call variant
-        # was Dynamo-traceable under the per-word-body's isolated
-        # eager-backend compile, but the whole-forward Inductor fullgraph
-        # compile (production training) traces through ``next_word`` and
-        # an ``.item()`` here blocks the trace.
+        # The legacy cursor consumes an integer bound. A native word
+        # presentation leaves its count on device until a host reader asks.
+        if torch.is_tensor(self._valid_len_host):
+            self._valid_len_host = int(self._valid_len_host)
         p = self._per_word_cursor
         if p >= self._valid_len_host:
             # NULL/end-of-sentence sentinel reached -- pure input stop.

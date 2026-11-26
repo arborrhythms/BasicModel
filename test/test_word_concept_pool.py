@@ -330,7 +330,7 @@ def test_nominated_characters_follow_form_rows_in_first_occurrence_order(device)
 def test_contained_rows_preserve_admission_order_and_taught_runs():
     from FormLinks import FormLinks
     from Layers import RadixLayer
-    from WordConceptPool import registration_witnesses
+    from WordConceptPool import registration_holders, registration_witnesses
     from WordIdentity import WordIdentity
     words = [b'cab', b'ab', b'abcab', b'bc', 'éab'.encode(), b'\xa9a', b'\xa9ab']
     table = FormLinks(1024, longest=5, rounds=0)
@@ -355,7 +355,10 @@ def test_contained_rows_preserve_admission_order_and_taught_runs():
         else:
             elements = [(raw[pos:pos + n], row) for pos, (row, n) in
                         enumerate(characters[i].tolist()) if n]
-            native.admit(raw, form_row=forms[i].item(), witnesses=(elements, parts[i].tolist()))
+            held = registration_holders(native, table, forms[i:], data.shape[1])
+            native.admit(raw, form_row=forms[i].item(), witnesses=(elements, parts[i].tolist()),
+                         holder_rows=held[0].tolist())
+            assert native.holders == reference.holders and native.inside == reference.inside
         assert native.vocab_extras() == reference.vocab_extras()
 
 

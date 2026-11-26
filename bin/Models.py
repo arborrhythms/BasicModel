@@ -13760,10 +13760,13 @@ class BasicModel(BaseModel):
             isp = self.inputSpace
             if 'pool_word_ids' in fi:
                 bounds = fi['unit_spans']
-                width = int((bounds[..., 1] > bounds[..., 0]).sum(1).amax()) if len(bounds) else 0
+                # The tensor reader and the static word loop need no host
+                # trip count. Only the eager word loop or cursor requests it.
+                counts = (bounds[..., 1] > bounds[..., 0]).sum(1)
+                isp._valid_len_host = counts.amax().clamp_max(isp._valid_len_host) if len(bounds) else 0
             else:
                 width = max(map(len, fi['word_intervals']), default=0)
-            isp._valid_len_host = min(isp._valid_len_host, width)
+                isp._valid_len_host = min(isp._valid_len_host, width)
         stage_input(self)
         attention = self._attention_words
         self._attention_words = None

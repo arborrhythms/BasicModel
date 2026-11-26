@@ -211,6 +211,10 @@ def stage(model):
         if key in source:
             value = source[key].detach()
             native[key] = value if elements else value.clone()
+    if elements:
+        delivered = getattr(isp, '_delivered_compact_length', None)
+        if delivered is not None:
+            native['byte_width'] = min(delivered, native['sentence_bytes'].shape[1])
     spans = source['part_spans'].reshape(*valid.shape, 2).detach()
     if not elements:
         spans = spans.clone()
@@ -235,7 +239,9 @@ def stage(model):
     if not hiding:
         prepared.pop('units')
         return
-    width = int((surface != 0).sum(1).amax()) if len(surface) else 0
+    width = native.get('byte_width')
+    if width is None:
+        width = int((surface != 0).sum(1).amax()) if len(surface) else 0
     values, native_valid = native_values(ps, surface, width)
     prepared.update(native_values=values, native_valid=native_valid)
     # Every unit at fixed shape; the hidden ones take their visible reading.
