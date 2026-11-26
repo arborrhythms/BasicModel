@@ -27,7 +27,7 @@ def default_side(owner):
     return 'A' if owner in ('output', 'generate_lesson', 'chooser', 'compose_policy', 'generate_policy') else 'R'
 
 
-def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definition_rows=None):
+def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definition_rows=None, reader_count=None):
     """Read trained terms from Error, retaining lesson and penalty boundaries."""
     result = {}
     for name, term in registry._terms.items():
@@ -51,11 +51,17 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definit
             if rows is not None:
                 # A discarded trial supplies no Adam step, including no
                 # momentum-only update from a fabricated zero gradient.
-                if not bool(rows.any()):
+                if rows is reader_rows:
+                    if reader_count is None:
+                        reader_count = int(rows.count_nonzero())
+                    count = reader_count
+                else:
+                    count = int(rows.count_nonzero())
+                if count == 0:
                     continue
                 if value.ndim:
                     value = value * rows.to(value)
-                elif not bool(rows.all()):
+                elif count != rows.numel():
                     raise ValueError('a trial reader cost must retain its batch rows')
             if value.ndim:
                 active = registry.row_mask

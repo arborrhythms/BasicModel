@@ -291,8 +291,15 @@ def main():
                 record['region_backend'] = args.region_backend or 'eager'
             original_method = inspect.getattr_static(target, name)
             descriptor = isinstance(original_method, (classmethod, staticmethod))
+            backend = args.strict_sentence or args.region_backend or 'eager'
+            if backend == 'inductor' and next(model.parameters()).device.type == 'mps':
+                import torch._inductor.config as inductor_config
+                from util import configure_metal_fusion
+                configure_metal_fusion(inductor_config, print)
+                record['max_fusion_unique_io_buffers'] = getattr(inductor_config, 'max_fusion_unique_io_buffers', None)
+                record['max_fusion_size'] = inductor_config.max_fusion_size
             method = torch.compile(original_method.__func__ if descriptor else original_method,
-                                   backend=args.strict_sentence or args.region_backend or 'eager', fullgraph=True)
+                                   backend=backend, fullgraph=True)
             record['probe_calls'] = 0
             def probe(*inputs, **options):
                 record['probe_calls'] += 1

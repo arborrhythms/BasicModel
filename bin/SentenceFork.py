@@ -1,6 +1,6 @@
 """A reservoir snapshot, joined independently by each batch row."""
 import torch
-from SentenceCompose import select_rows
+from SentenceCompose import select_paths, select_rows
 
 
 def snapshot(value, *, live=False):
@@ -57,15 +57,17 @@ class SentenceFork:
         # choose any remaining member uniformly without replaying a prefix.
         rank = (torch.rand_like(self.count, dtype=torch.float32) * self.count).long()
         rank = torch.where(self.count <= len(self.reservoir), self.count - 1, rank)
-        take = eligible & (rank < len(self.reservoir))
-        if not bool(take.any()):
+        places = torch.arange(len(self.reservoir), device=rank.device)
+        take = eligible[:, None] & (rank[:, None] == places)
+        changed = take.any(0).tolist()
+        if not any(changed):
             return
         state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
         prefix = None if self.inverse_candidates is None else self.inverse_candidates.snapshot()
         for i, prior in enumerate(self.reservoir):
-            selected = take & (rank == i)
-            if not bool(selected.any()):
+            if not changed[i]:
                 continue
+            selected = take[:, i]
             saved = dict(state=state, latches=latches, inverse_prefix=prefix,
                 word=torch.zeros_like(self.word) + word,
                 slot=torch.zeros_like(self.slot) + slot, action=choice.action,
@@ -80,22 +82,32 @@ class SentenceFork:
     def choose(self, used):
         """Select an unused saved round; its marginal proposal is uniform."""
         from WalkTrials import departure_at
+        slots = torch.stack([torch.full_like(self.slot, -1) if item is None else item['slot']
+                             for item in self.reservoir], -1)
         eligible = torch.stack([torch.zeros_like(self.selected) if item is None else item['valid']
                                 for item in self.reservoir], -1)
-        for previous in used:
-            for i, item in enumerate(self.reservoir):
-                if item is not None:
-                    eligible[:, i] &= item['slot'] != previous['compose_round']
+        if used:
+            previous = torch.stack([draw['compose_round'] for draw in used], -1)
+            eligible &= (slots[:, :, None] != previous[:, None, :]).all(-1)
         chosen = departure_at(eligible)
-        self.slot.fill_(-1)
-        for i, item in enumerate(self.reservoir):
-            if item is None:
+        self.slot = torch.where(chosen >= 0, slots.gather(1, chosen.clamp_min(0)[:, None])[:, 0], -1)
+        occupied = [i for i, item in enumerate(self.reservoir) if item is not None]
+        if not occupied:
+            return self.slot
+        for key in ('state', 'latches', 'inverse_prefix', 'word', 'action'):
+            old = getattr(self, key)
+            available = [i for i in occupied if self.reservoir[i][key] is not None]
+            if not available:
                 continue
-            rows = chosen == i
-            for key in ('state', 'latches', 'inverse_prefix', 'word', 'slot', 'action'):
-                value, old = item[key], getattr(self, key)
-                if value is not None:
-                    setattr(self, key, value if old is None else select_rows(old, value, rows))
+            first = self.reservoir[available[0]][key]
+            if len(available) == 1:
+                value = first if old is None else select_rows(old, first, chosen == available[0])
+            else:
+                baseline = first if old is None else old
+                values = [baseline] + [baseline if item is None or item[key] is None else item[key]
+                                       for item in self.reservoir]
+                value = select_paths(values, chosen + 1)
+            setattr(self, key, value)
         return self.slot
 
     def start(self, draw):

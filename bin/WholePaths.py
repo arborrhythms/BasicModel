@@ -341,7 +341,7 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
         model._path_thinking = old_thinking
 
 
-def credit(model, exploit, path, active):
+def credit(model, exploit, path, active, *, schedule=None):
     """A departure's sole reward is its complete path's change in R + A."""
     from WalkTrials import generate_credit
     from ObjectiveOwnership import policy_objective
@@ -350,7 +350,12 @@ def credit(model, exploit, path, active):
     costs = torch.stack((exploit.parts[:, 0] + exploit.parts[:, 2],
                          path.parts[:, 0] + path.parts[:, 2]), -1)
     reading = path.attention_words
-    if reading is not None and bool((draw['attention_round'] >= 0).any()):
+    first, other = exploit.output_trace, path.output_trace
+    if schedule is None:
+        schedule = dict(attention=reading is not None and bool((draw['attention_round'] >= 0).any()),
+                        output=first is not None and other is not None and bool((draw['output_round'] >= 0).any()),
+                        thoughts=draw['thought_round'].tolist())
+    if reading is not None and schedule['attention']:
         at = torch.arange(reading.actions.shape[1], device=costs.device)[None]
         chosen = active[:, None] & (at == draw['attention_round'][:, None]) & (reading.proposal > 0)
         rounds = (draw['walk_count'] * draw['walk_rounds'])[:, None]
@@ -358,8 +363,7 @@ def credit(model, exploit, path, active):
         policy, _ = score_function(reading.probabilities, correction, chosen, costs)
         path.registry.add('attention.outcome', policy,
             category='output', objective='attention', side='A')
-    first, other = exploit.output_trace, path.output_trace
-    if first is not None and other is not None and bool((draw['output_round'] >= 0).any()):
+    if first is not None and other is not None and schedule['output']:
         audit = dict(departure=draw['output_round'], greedy=first[0], explore=other[0],
             eligible=first[1], costs=costs, proposal_rounds=draw['walk_count'] * draw['walk_rounds'])
         value = generate_credit(model.languageSpace, audit, other[-1], other[-2])
@@ -368,7 +372,7 @@ def credit(model, exploit, path, active):
     # The close supplies host-owned thought records once. Price the selected
     # departures together; no per-stream scorer or scalar device read.
     choices = [None if at < 0 else path.thinking.traces[row]['choices'][at]
-               for row, at in enumerate(draw['thought_round'].tolist())]
+               for row, at in enumerate(schedule['thoughts'])]
     first_choice = next((choice for choice in choices if choice is not None), None)
     if first_choice is not None:
         probabilities = torch.stack([costs.new_zeros(()) if choice is None else
@@ -395,6 +399,7 @@ def objectives(paths, parts, active, draws, *, selected=None, active_winners=Non
     if active_winners is None:
         active_winners = torch.where(active, selected, -1).tolist()
     weights = reader_weights(parts, active, draws, winner=selected)
+    reader_counts = weights.count_nonzero(dim=0).tolist()
     result = {}
     scale = 2. / len(paths)
     for index, path in enumerate(paths):
@@ -410,13 +415,13 @@ def objectives(paths, parts, active, draws, *, selected=None, active_winners=Non
                 if index in active_winners:
                     final._terms[name] = dict(term, multiplier=term.get('multiplier', 1.) * kept)
             elif name.startswith('output.walk_residual.'):
-                if not bool(weights[:, index].any()):
+                if not reader_counts[index]:
                     del registry._terms[name]
                 else:
                     registry._terms[name] = dict(term,
                         multiplier=term.get('multiplier', 1.) * weights[:, index])
         combine(result, registry_costs(final))
-        costs = registry_costs(registry, reader_rows=weights[:, index])
+        costs = registry_costs(registry, reader_rows=weights[:, index], reader_count=reader_counts[index])
         # Every other ordinary path cost has the same exposure, including lessons,
         # attention and regularizers. Answer costs already carry reader rows;
         # answer-side departure credits occur once at their selected walk.

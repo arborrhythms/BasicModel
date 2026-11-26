@@ -752,6 +752,47 @@ def _patch_inductor_paths():
         pass
 
 
+def configure_metal_fusion(config, log):
+    """Use the model's Metal buffer budget for both training and explicit captures."""
+    # Metal caps kernel arguments at 31 buffers, but the inductor MPS
+    # scheduler is limit-unaware: a large fusion binds one constant
+    # buffer per distinct input, and the MM-scale forward produced
+    # kernels with ~118 args ("number of constant buffers exceeds
+    # maximum supported (31)", 6 kernels, deterministic — 2026-07-07,
+    # fullgraph trace of MM_20M_grammar). ``max_fusion_unique_io_
+    # buffers`` is the buffer-count-aware fusion cap (default None =
+    # unlimited); 24 leaves headroom for the runtime's own bindings.
+    # Verified: 6 failing kernels -> 0; compile completes. Config-level
+    # so out-of-process compile workers inherit it.
+    if getattr(config, "max_fusion_unique_io_buffers", "absent") is None:
+        # Unique-I/O is a PROXY for Metal's 31-buffer kernel-arg cap:
+        # big fused reductions add accumulator/temp buffers beyond the
+        # unique-I/O count, so wide graphs (the N=64 whole-sentence
+        # config) can still overflow at 24 where the N=8 graph fit.
+        # BASICMODEL_MPS_IOBUF tunes it down (12 is a safe floor);
+        # BASICMODEL_MPS_FUSE additionally caps nodes-per-fusion.
+        _iobuf = int(os.environ.get("BASICMODEL_MPS_IOBUF", "24"))
+        config.max_fusion_unique_io_buffers = _iobuf
+        _fuse = os.environ.get("BASICMODEL_MPS_FUSE")
+        if _fuse:
+            config.max_fusion_size = int(_fuse)
+        # Scalar loss-term chains inline transitively at lowering
+        # (34 0-dim reads in one Metal kernel on the N=64 config --
+        # over the 31-buffer arg limit; immune to the fusion caps).
+        # BASICMODEL_MPS_REALIZE tightens inductor's realization
+        # thresholds so long accumulation chains materialize into
+        # intermediate buffers (more, smaller kernels).
+        _rlz = os.environ.get("BASICMODEL_MPS_REALIZE")
+        if _rlz:
+            config.realize_acc_reads_threshold = int(_rlz)
+            config.realize_reads_threshold = min(
+                int(_rlz), config.realize_reads_threshold)
+            config.realize_acc_reads_size_threshold = 0
+        log(f"MPS: inductor max_fusion_unique_io_buffers={_iobuf}"
+             + (f", max_fusion_size={_fuse}" if _fuse else "")
+             + " (Metal 31-buffer kernel-arg limit)")
+
+
 def compile(model, verbose=True, fullgraph=False):
     """Try to torch.compile the model; return the (possibly compiled) model.
 
@@ -1202,43 +1243,7 @@ def compile(model, verbose=True, fullgraph=False):
                 _metal_kernel.call_kernel = _call_kernel_scalar_sum_patched
                 _msg("MPS: oversized scalar-gradient sums lowered via "
                      "stack/sum/copy wrapper fallback")
-            # Metal caps kernel arguments at 31 buffers, but the inductor MPS
-            # scheduler is limit-unaware: a large fusion binds one constant
-            # buffer per distinct input, and the MM-scale forward produced
-            # kernels with ~118 args ("number of constant buffers exceeds
-            # maximum supported (31)", 6 kernels, deterministic — 2026-07-07,
-            # fullgraph trace of MM_20M_grammar). ``max_fusion_unique_io_
-            # buffers`` is the buffer-count-aware fusion cap (default None =
-            # unlimited); 24 leaves headroom for the runtime's own bindings.
-            # Verified: 6 failing kernels -> 0; compile completes. Config-level
-            # so out-of-process compile workers inherit it.
-            if getattr(_ind, "max_fusion_unique_io_buffers", "absent") is None:
-                # Unique-I/O is a PROXY for Metal's 31-buffer kernel-arg cap:
-                # big fused reductions add accumulator/temp buffers beyond the
-                # unique-I/O count, so wide graphs (the N=64 whole-sentence
-                # config) can still overflow at 24 where the N=8 graph fit.
-                # BASICMODEL_MPS_IOBUF tunes it down (12 is a safe floor);
-                # BASICMODEL_MPS_FUSE additionally caps nodes-per-fusion.
-                _iobuf = int(os.environ.get("BASICMODEL_MPS_IOBUF", "24"))
-                _ind.max_fusion_unique_io_buffers = _iobuf
-                _fuse = os.environ.get("BASICMODEL_MPS_FUSE")
-                if _fuse:
-                    _ind.max_fusion_size = int(_fuse)
-                # Scalar loss-term chains inline transitively at lowering
-                # (34 0-dim reads in one Metal kernel on the N=64 config --
-                # over the 31-buffer arg limit; immune to the fusion caps).
-                # BASICMODEL_MPS_REALIZE tightens inductor's realization
-                # thresholds so long accumulation chains materialize into
-                # intermediate buffers (more, smaller kernels).
-                _rlz = os.environ.get("BASICMODEL_MPS_REALIZE")
-                if _rlz:
-                    _ind.realize_acc_reads_threshold = int(_rlz)
-                    _ind.realize_reads_threshold = min(
-                        int(_rlz), _ind.realize_reads_threshold)
-                    _ind.realize_acc_reads_size_threshold = 0
-                _msg(f"MPS: inductor max_fusion_unique_io_buffers={_iobuf}"
-                     + (f", max_fusion_size={_fuse}" if _fuse else "")
-                     + " (Metal 31-buffer kernel-arg limit)")
+            configure_metal_fusion(_ind, _msg)
     except Exception:
         pass
 

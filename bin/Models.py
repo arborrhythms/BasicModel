@@ -21626,7 +21626,10 @@ class BasicModel(BaseModel):
                     GrowthTrial.keep_forecasts(self, growth, selected, winner_indices)
                 wins, costs = selected.ne(0), audit['costs']
                 if single:
+                    from SentenceCredit import credit_schedule
+                    schedule = credit_schedule(draws)
                     for path_index, candidate in enumerate(complete_paths[1:], 1):
+                        credit = schedule[path_index - 1]
                         draw = draws[path_index - 1]
                         self._sentence_departure = draw
                         self._sentence_cost_registry = candidate.registry
@@ -21634,10 +21637,10 @@ class BasicModel(BaseModel):
                         self._compose_forced_slots = candidate.compose_forced_slots
                         self._attention_words = candidate.attention_words
                         pair = costs[:, [0, path_index]]
-                        if bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any()):
+                        if credit['reading']:
                             self._compose_score_function_loss(candidate.state, pair)
                         plans = candidate.observation.get('reference_plans')
-                        if plans and bool((draw['bind_round'] >= 0).any()):
+                        if plans and credit['bind']:
                             from SentenceCredit import score_function
                             from ReferenceClose import departed_probability
                             _, probabilities, departed = candidate.observation['bind_decisions']
@@ -21649,7 +21652,7 @@ class BasicModel(BaseModel):
                             candidate.registry.add('expectation.bind_score_function', policy,
                                 category='expectation', objective='expectation', side='A')
                         looks = look_trials[path_index]
-                        if looks is not None and bool((draw['interpret_round']>=0).any()):
+                        if looks is not None and credit['interpret']:
                             from SentenceCredit import score_function
                             decisions = looks.decisions
                             probabilities = torch.stack([entry['probability'] for entry in decisions],-1)
@@ -21660,7 +21663,7 @@ class BasicModel(BaseModel):
                             from ObjectiveOwnership import policy_objective
                             candidate.registry.add('output.interpret_score_function',policy,
                                 category='output',objective=policy_objective(self,'compose','chooser'),side='A')
-                        path_credit(self, complete_paths[0], candidate, present)
+                        path_credit(self, complete_paths[0], candidate, present, schedule=credit)
                     single_costs, weights = path_objectives(complete_paths, parts, present, draws,
                         selected=selected, active_winners=active_winners)
                     self._sentence_reader_weights = weights

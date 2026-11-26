@@ -152,3 +152,25 @@ def test_impossible_distinct_path_is_reported_without_a_fake_noop():
     exploit = step.derive(torch.ones(1, 2, 1), slots=1, rounds=1, greedy=True)
     with pytest.raises(RuntimeError, match='no legal alternative'):
         step.derive(torch.ones(1, 2, 1), slots=1, rounds=1, exploit=exploit)
+
+
+def test_fork_joins_saved_rows_after_excluding_previous_departures():
+    from SentenceFork import SentenceFork
+    active = torch.ones(4, dtype=torch.bool)
+    fork = SentenceFork(active, live=True, capacity=3)
+    carry = [torch.arange(4., requires_grad=True) for _ in range(3)]
+    for i, rows in enumerate(([1,1,0,0], [0,1,1,0], [0,0,1,0])):
+        slot = torch.full((4,), i + 9, dtype=torch.long)
+        value = carry[i] + i * 10
+        fork.reservoir[i] = dict(state=(value,), latches=(value,), inverse_prefix=None,
+                                 word=slot, slot=slot, action=slot,
+                                 valid=torch.tensor(rows, dtype=torch.bool))
+    fork.state = (torch.full((4,), -5.),)
+    used = [dict(compose_round=torch.tensor([-1, 9, 10, -1]))]
+    assert fork.choose(used).tolist() == [9, 10, 11, -1]
+    assert fork.state[0].tolist() == [0., 11., 22., -5.]
+    assert fork.latches[0].tolist() == [0., 11., 22., 3.]
+    assert fork.action.tolist() == [9, 10, 11, -1]
+    fork.state[0].sum().backward()
+    for i, source in enumerate(carry):
+        assert source.grad.tolist() == [float(row == i) for row in range(4)]

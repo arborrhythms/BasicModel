@@ -82,6 +82,23 @@ def path_comparison(parts, active):
         policy_against_keep=torch.zeros_like(active), answer_against_keep=torch.zeros_like(active))
 
 
+def credit_schedule(draws):
+    """Which policies each exploration used, plus its host thought record per stream."""
+    if not draws:
+        return ()
+    flags = []
+    for draw in draws:
+        walk = draw['walk']
+        flags.append(torch.stack(((walk >= 0) & (walk < 3), draw['bind_round'] >= 0,
+                                  draw['interpret_round'] >= 0, draw['attention_round'] >= 0,
+                                  draw['output_round'] >= 0), 1).any(0))
+    thoughts = torch.stack([draw['thought_round'] for draw in draws])
+    rows = torch.cat((torch.stack(flags).long(), thoughts), 1).tolist()
+    return [dict(reading=reading, bind=bind, interpret=interpret, attention=attention,
+                 output=output, thoughts=choices)
+            for reading, bind, interpret, attention, output, *choices in rows]
+
+
 def describe_comparison(audit):
     """Materialize human-readable reasons only when the audit is inspected."""
     if 'deciding' not in audit:
