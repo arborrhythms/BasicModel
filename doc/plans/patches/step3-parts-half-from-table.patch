@@ -1,0 +1,1442 @@
+diff --git a/bin/BasicPercepts.py b/bin/BasicPercepts.py
+index 6911e4a162..2e86d4ec9b 100644
+--- a/bin/BasicPercepts.py
++++ b/bin/BasicPercepts.py
+@@ -498,9 +498,6 @@ class BasicPercepts(nn.Module):
+         # The stored form each row of a form spells, and the rows of each
+         # form; each row's key in ``index``.
+         self._form_roots, self.form_rows, self._keys = {}, {}, {}
+-        # The run of characters of each row that spells no stored form and
+-        # whose parts are in order (:meth:`_run_of`).
+-        self.runs = {}
+         # A place's row: its kept where wires (on their two lanes) and the
+         # what it keeps (:mod:`Places`); the cones met at each band.
+         self.place_rows = PlaceRows(self.capacity, self.width)
+@@ -883,15 +880,6 @@ class BasicPercepts(nn.Module):
+             return None
+         return identity.tightest(parts)
+ 
+-    def _run_tightest(self, run):
+-        """The tightest whole of a run of characters: the OR of the catalog
+-        codes of its parts, as an occurrence of the run reads it."""
+-        identity = self._identity()
+-        if not identity.property_width:
+-            return None
+-        atoms = identity.words.get(run) or identity.atoms_of(run)
+-        return torch.stack([identity.catalog_code(atom) for atom in atoms]).amax(0)
+-
+     def _stored_boundary_codes(self, references, *, whole, row):
+         # Occurrence addresses already live in the host inventory. Only value
+         # references require a place-specific chart. Native codes stay live.
+@@ -906,11 +894,7 @@ class BasicPercepts(nn.Module):
+         ones), the classes it lies in, and the form itself as its tightest
+         whole."""
+         parts, wholes = self.occurrences[int(row)]
+-        run = self.runs.get(int(row))
+-        if run is None:
+-            identity = self._stored_boundary_codes(parts, whole=False, row=row).amax(0)
+-        else:
+-            identity = self._identity().form(run).to(self.value_codes)
++        identity = self._stored_boundary_codes(parts, whole=False, row=row).amax(0)
+         if not self.property_width:
+             return identity, identity.new_empty(0)
+         if wholes:
+@@ -919,7 +903,7 @@ class BasicPercepts(nn.Module):
+             properties = self._stored_boundary_codes(wholes, whole=True, row=row).amin(0)
+         else:
+             properties = identity.new_ones(self.property_width)
+-        tightest = self._tightest(parts) if run is None else self._run_tightest(run)
++        tightest = self._tightest(parts)
+         if tightest is not None:
+             properties = torch.minimum(properties, tightest.to(properties))
+         return identity, properties
+@@ -958,7 +942,7 @@ class BasicPercepts(nn.Module):
+                 codes[n] = self.code(row)
+                 continue
+             p, w = members
+-            if (row in self.place_rows or row in self.runs or row in self.conjunctions
++            if (row in self.place_rows or row in self.conjunctions
+                     or min((*p, *w), default=0) < -self.identity_width):
+                 codes[n] = self.code(row)
+             else:
+@@ -990,15 +974,10 @@ class BasicPercepts(nn.Module):
+         root = None
+         parts = self.occurrences[row][0]
+         if row not in self.conjunctions and identity is not None and min(parts) >= -self.identity_width:
+-            try:
+-                root = identity.spelling_row(parts)
+-            except (IndexError, KeyError):
+-                pass
++            root = identity.stored_row(parts)
+         self._form_roots[row] = root
+         if root is not None:
+             self.form_rows.setdefault(self.native.bytes_for(root), []).append(row)
+-        elif row not in self.conjunctions:
+-            self._run_of(row)
+         return root
+ 
+     def form_of(self, row):
+@@ -1012,31 +991,6 @@ class BasicPercepts(nn.Module):
+     def forms(self):
+         return {row: self.form_of(row) for row in self._form_roots}
+ 
+-    def _run_of(self, row):
+-        """A row of two or more parts in order that spells no stored form:
+-        the run of their characters is a part of its own in the part map
+-        (``WordIdentity.admit_part``), carried by every stored form and every
+-        occurrence that holds that run, so that the order of the parts is
+-        kept in the code."""
+-        identity = self._identity()
+-        parts = self.occurrences[row][0]
+-        if identity is None or len(parts) < 2 or min(parts) < -self.identity_width:
+-            return None
+-        texts = [self._part_text(part) for part in parts]
+-        if any(text is None for text in texts):
+-            return None
+-        from WordIdentity import text_of
+-        run = b''.join(texts)
+-        if len(text_of(run)) < 2:
+-            return None
+-        self.runs[row] = run
+-        from WordIdentity import base_atoms
+-        for atom in base_atoms(run):
+-            identity._atom(atom)
+-        if text_of(run) not in identity.added:
+-            identity.admit_part(run)
+-        return run
+-
+     def _extend(self, row, parts):
+         """A row of a form takes the parts its form has gained, after its
+         own, under a key of its new parts."""
+@@ -1114,7 +1068,7 @@ class BasicPercepts(nn.Module):
+         if identity is not None and raw is not None:
+             atoms = identity.against_atoms(raw)
+             if atoms:
+-                bits = torch.stack([identity.atom_code(atom) for atom in atoms]).amax(0)
++                bits = self.part_codes([identity.atoms[atom] for atom in atoms]).amax(0)
+                 held = torch.minimum(bits.to(code), 1 - code[:self.identity_width].detach().clamp(0, 1))
+         # A conjunction over this percept is a strict whole of it like any
+         # other (rule 53): what its other members add tells against it.
+@@ -1393,12 +1347,11 @@ class BasicPercepts(nn.Module):
+         atoms = (set(identity.atoms.values()) | set(identity.word_rows.values())) if identity is not None else set()
+         valid = (part_ids >= 0) & (part_spans[..., 1] > part_spans[..., 0])
+         starts, ends = [], []
+-        # A stored form's parts are a set; a row's run is in order.
+-        ordered = {tuple(self.occurrences[row][0]) for row in self.runs}
+         for key in keys:
+             run = key[1] if key[0] == 'ps' and isinstance(key[1], tuple) else ()
+             count = part_ids.shape[1] - len(run) + 1
+-            if len(run) < 2 or count < 1 or (set(run) <= atoms and run not in ordered):
++            # A stored form's parts are a set, not a run.
++            if len(run) < 2 or count < 1 or set(run) <= atoms:
+                 continue
+             match = valid[:, :count].clone()
+             for offset, pid in enumerate(run):
+@@ -1774,7 +1727,6 @@ class BasicPercepts(nn.Module):
+         self._pi_stamp = None
+         self.conjunctions = {}
+         self._form_roots, self.form_rows, self._keys = {}, {}, {}
+-        self.runs = {}
+         for row, raw in state.get('forms', ()):
+             self._form_roots[int(row)] = bytes(raw)
+             self.form_rows.setdefault(bytes(raw), []).append(int(row))
+diff --git a/bin/Models.py b/bin/Models.py
+index bfbd7a81c2..676e20df1b 100644
+--- a/bin/Models.py
++++ b/bin/Models.py
+@@ -6921,18 +6921,6 @@ class BasicModel(BaseModel):
+         surfaces = [[owner.word_surface_for_row(row) if row >= 0 else None
+                      for row in batch] for batch in selected_rows]
+         identity = getattr(getattr(self.perceptualSpace, 'percept_store', None), 'identity', None)
+-        if identity is not None:
+-            from Meaning import require_sentence_tensor
+-            addresses = [(b, j) for b, batch in enumerate(surfaces) for j, raw in enumerate(batch) if raw]
+-            witnesses = [surfaces[b][j] for b, j in addresses]
+-            stream, slot = selected.new_tensor(addresses).reshape(-1, 2).unbind(1)
+-            actual = identity.form_seats(sparse_forms[stream, slot, :identity.width])
+-            expected = selected.new_tensor([
+-                identity.order[raw] if raw in identity.word_rows and
+-                identity.store.bytes_for(identity.word_rows[raw]) == raw else -1 for raw in witnesses])
+-            failed = (actual < 0) | (actual != expected)
+-            self._rung0_identity_result = witnesses, failed
+-            require_sentence_tensor(~failed.any(), 'rung-zero reconstruction identity audit failed', RuntimeError)
+         # Retain raw bytes for the named-part lesson. Native whole and word
+         # readers use the compact support/presence captured by the same read.
+         from WordSurfaces import stage as stage_surfaces
+@@ -6958,16 +6946,6 @@ class BasicModel(BaseModel):
+             form_wholes=candidate_wholes(self.wholeSpace, self._sentence_primed_bank, owner=owner))
+         self._sentence_priming_written = True
+ 
+-    @property
+-    def _last_rung0_identity_audit(self):
+-        result = getattr(self, '_rung0_identity_result', None)
+-        if result is None:
+-            return None
+-        witnesses, failed = result
+-        rows = [dict(word=raw.decode('utf8', 'surrogateescape'), error=int(error))
+-                for raw, error in zip(witnesses, failed.tolist(), strict=True)]
+-        return dict(identified_words=len(rows), errors=sum(row['error'] for row in rows), rows=rows)
+-
+     @torch.no_grad()
+     def _describe_claim(self, store, row):
+         from WalkTrials import ThoughtTrialState
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index 977bc4b1c9..64892e57ac 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -2392,9 +2392,9 @@ class Codebook(Tensor):
+             return self.lookup_rows(slice(None))
+         if hasattr(self, '_property_identity_width'):
+             return self.W
+-        if hasattr(self, 'fixed_row_mask'):
++        if hasattr(self, 'fixed_form_rows'):
+             rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
+-            return torch.where(self.fixed_row_mask[:, None], self.fixed_row_codes, rows)
++            return torch.where((self.fixed_form_rows >= 0)[:, None], self._form_codes(self.fixed_form_rows), rows)
+         if (self.W is not None
+                 and getattr(self, "is_percept_store", False)
+                 and meronomy_enabled()):
+@@ -2436,10 +2436,11 @@ class Codebook(Tensor):
+             rows = self.W[idx]
+         if hasattr(self, '_property_identity_width'):
+             return rows
+-        if hasattr(self, 'fixed_row_mask'):
++        if hasattr(self, 'fixed_form_rows'):
+             if getattr(self, 'is_percept_store', False):
+                 rows = _unorm_ste(rows)
+-            return torch.where(self.fixed_row_mask[idx][..., None], self.fixed_row_codes[idx], rows)
++            form = self.fixed_form_rows[idx]
++            return torch.where((form >= 0)[..., None], self._form_codes(form).to(rows), rows)
+         if (getattr(self, "is_percept_store", False)
+                 and meronomy_enabled()):
+             return _unorm_ste(rows)
+@@ -2447,6 +2448,14 @@ class Codebook(Tensor):
+ 
+ 
+ 
++    def _form_codes(self, form):
++        """The codes of rows named to rows of the table of forms: the parts half
++        gathered from the table at the read, the wholes half nothing."""
++        table = self.form_links
++        half = min(int(self.fixed_parts_width), table.code.shape[-1] // 2)
++        code = table.code[form.clamp_min(0), :half]
++        return F.pad(code, (0, self.W.shape[-1] - half))
++
+     def enable_property_codes(self, *, identity_width, property_width):
+         """Give the property dictionary fixed storage derived from byte members."""
+         identity_width, property_width = int(identity_width), int(property_width)
+@@ -10578,6 +10587,11 @@ class PartSpace(Space):
+                 promotion_threshold=self.chunk_promotion_threshold,
+                 promotion_min_length=self.chunk_promotion_min_length,
+                 word_bounded=True, basis=self.subspace.what)
++            # The table of forms, by two links a row; text models only.
++            from FormLinks import FormLinks
++            self.form_links = FormLinks(int(TheXMLConfig.space(section, 'formCapacity')),
++                                        int(TheXMLConfig.space(section, 'formLongest')),
++                                        self.chunk_promotion_threshold)
+             # Standalone dimension fixtures do not construct a full identity
+             # layout. Configured text models resolve their two halves before
+             # this point.
+@@ -10588,9 +10602,8 @@ class PartSpace(Space):
+                 # Small standalone PartSpace fixtures retain their explicit
+                 # identity-only layout; resolved text models use both widths.
+                 resolved = self.nDim == pair + property_width
+-                self.percept_store.identity = WordIdentity(self.percept_store,
++                self.percept_store.identity = WordIdentity(self.percept_store, self.form_links,
+                     pair_dim=pair if resolved else self.nDim,
+-                    ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
+                     property_width=property_width if resolved else 0,
+                     property_ones=int(TheXMLConfig.space(section, 'propertyOnes', default=3)),
+                     basic_capacity=int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=262144)))
+@@ -10609,13 +10622,9 @@ class PartSpace(Space):
+                 int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=self.nVectors)))
+         else:
+             object.__setattr__(self, 'basic_percepts', self.percept_store.basic_percepts)
+-        # The table of forms, by two links a row; text models only.
+-        self.form_links = None
+-        if self.percept_store is not None:
+-            from FormLinks import FormLinks
+-            self.form_links = FormLinks(int(TheXMLConfig.space(section, 'formCapacity')),
+-                                        int(TheXMLConfig.space(section, 'formLongest')),
+-                                        self.chunk_promotion_threshold)
++        if self.percept_store is None:
++            self.form_links = None
++        else:
+             # Store rows by form row: the part a form is read as, and its
+             # word once admitted; and each byte's own store row. -1: none.
+             self.register_buffer('form_part_rows', torch.full((self.form_links.capacity,), -1, dtype=torch.long))
+diff --git a/bin/WordIdentity.py b/bin/WordIdentity.py
+index 80484eb89b..6c38ae1e1e 100644
+--- a/bin/WordIdentity.py
++++ b/bin/WordIdentity.py
+@@ -1,18 +1,14 @@
+-"""Rung-zero identity: a form's code is the set of its parts.
+-
+-A part is a run of adjacent characters. A form's parts are its characters,
+-the space among them, and every longer part that has been added and lies
+-inside it. A longer part is added only where two forms would otherwise
+-have the same parts, or where it is taught (``admit_part``); once added it
+-is carried by every form that holds that run. So one form lies inside
+-another exactly when its set of parts lies inside the other's. Atom and
+-word rows belong to the existing RadixLayer; their codes are fixed
+-functions of the parts' bytes, not parameters.
++"""Rung-zero identity: the store rows of forms and their parts, read through the table of forms.
++
++A form's parts half is the code of its row of the table of forms
++(``FormLinks.code``); a store row of a form or of a part names that row
++(``fixed_form_rows`` on the store's basis) and is read from it. A part is
++a run of adjacent characters: a form's parts are its characters and every
++stored form inside it. The wholes half is the OR of the parts' catalog
++codes. Atom and word rows belong to the existing RadixLayer.
+ """
+ import hashlib
+-from collections import Counter
+ from functools import lru_cache
+-from itertools import groupby
+ 
+ import numpy as np
+ import torch
+@@ -23,10 +19,9 @@ def resolve_identity_layout(config):
+     """Resolve text form storage before constructing any spaces.
+ 
+     A form's code is a parts half and a wholes half (sigma-pi rule 50):
+-    ``identityPairDim`` coordinates for the parts, spread over all of them,
+-    and ``propertyDim`` for the wholes. Preserve the declared meaning
+-    complement and live slot/row counts; numeric configurations are
+-    untouched.
++    ``identityPairDim`` coordinates for the parts and ``propertyDim`` for the
++    wholes. Preserve the declared meaning complement and live slot/row
++    counts; numeric configurations are untouched.
+     """
+     from architecture import canonical_shape
+     arch = config.get('architecture', {})
+@@ -38,11 +33,10 @@ def resolve_identity_layout(config):
+     if 'identityLengthDim' in ps:
+         raise ValueError('identityLengthDim is retired: the parts half has no block of 32')
+     pair = int(ps.setdefault('identityPairDim', 64))
+-    ones = int(ps.setdefault('identityOnes', 3))
+     property_width = int(ps.setdefault('propertyDim', 64))
+     property_ones = int(ps.setdefault('propertyOnes', 3))
+-    if pair < ones or ones < 1:
+-        raise ValueError('identity requires D >= s > 0')
++    if pair < 1:
++        raise ValueError('identity requires a parts half')
+     if not 0 < property_ones <= property_width:
+         raise ValueError('property codes require propertyDim >= propertyOnes > 0')
+     width = pair + property_width
+@@ -82,96 +76,28 @@ def bit_stream(atom, dimension):
+     return tuple(map(int, np.random.default_rng(seed).permutation(dimension)))
+ 
+ 
+-def pack_coordinates(codes, word_bits):
+-    """Pack each row's occupied coordinates in little-endian order."""
+-    width = codes.shape[-1]
+-    bits = torch.nn.functional.pad(codes.detach().eq(1), (0, -width % word_bits))
+-    groups = bits.reshape(*codes.shape[:-1], (width + word_bits - 1) // word_bits, word_bits)
+-    shifts = torch.arange(word_bits, device=codes.device, dtype=torch.long)
+-    return (groups.long() << shifts).sum(-1)
+-
+-
+-def containment_accidents(packed, queries, linked):
+-    """Unexpected inner and outer code matches, in inventory order for each query.
+-
+-    Linked seats index the flattened [direction, query, form] result. The
+-    two directions share one intersection across all the code's limbs.
+-    """
+-    selected = packed.index_select(0, queries)[:, None]
+-    common = selected & packed
+-    matches = torch.stack(((common == packed).all(-1), (common == selected).all(-1)))
+-    matches = matches & (queries[:, None] != torch.arange(len(packed), device=packed.device))
+-    return matches.flatten().index_fill(0, linked, False).reshape_as(matches)
+-
+-
+-def distinguishing_coordinates(lacking, kept, opposed, added, usage, pending):
+-    """Rule 61 on device, for each independent inventory's outstanding holders.
+-
+-    Each eligible coordinate covers at least one pending outer. After at most
+-    min(outers, coordinates) choices, all remaining outers are inseparable.
+-    """
+-    width = lacking.shape[-1]
+-    coordinates = torch.arange(width, device=lacking.device)
+-    given = torch.zeros_like(kept)
+-    for _ in range(min(lacking.shape[-2], width)):
+-        eligible = lacking & pending[..., None] & ~given[..., None, :]
+-        preferred = (eligible & kept[..., None, :]).sum(-2)
+-        covers = torch.where(preferred.any(-1, keepdim=True), preferred, eligible.sum(-2))
+-        choice = (covers > 0) & (covers == covers.amax(-1, keepdim=True))
+-        unopposed = choice & ~opposed
+-        choice = torch.where(unopposed.any(-1, keepdim=True), unopposed, choice)
+-        for cost in (added, usage):
+-            least = torch.where(choice, cost, torch.iinfo(cost.dtype).max).amin(-1, keepdim=True)
+-            choice = choice & (cost == least)
+-        best = choice.long().argmax(-1, keepdim=True)
+-        selected = choice & (coordinates == best)
+-        given = given | selected
+-        pending = pending & ~(lacking & selected[..., None, :]).any(-1)
+-    return given, pending
+-
+-
+ def base_atoms(raw):
+     """A form's characters, each once, in order; the space is one of them."""
+     return tuple(dict.fromkeys(('part', ch) for ch in text_of(raw)))
+ 
+ 
+-def runs(text, size):
+-    return {text[i:i+size] for i in range(len(text)-size+1)}
+-
+-
+-def distinguishing_run(left, right, *, one_sided=False):
+-    """The shortest run that ``left`` holds and ``right`` does not, or, by
+-    default, that one of the two holds and the other does not. Of runs of
+-    one length the first in code-point order is taken; ``None`` if none."""
+-    a, b = text_of(left), text_of(right)
+-    for size in range(1, max(len(a), len(b))+1):
+-        held, other = runs(a, size), runs(b, size)
+-        found = held - other if one_sided else held ^ other
+-        if found:
+-            return min(found)
+-    return None
+-
+-
+ class WordIdentity(nn.Module):
+     PREFIX = b'\x00identity/atom/'
+-    #: Forms of the repair's queue tested against every stored code at once.
+-    TESTED_AT_ONCE = 128
+     WORD_PREFIX = b'\x00identity/form/'
+ 
+-    def __init__(self, store, pair_dim=64, ones=3, property_width=0, property_ones=3, basic_capacity=None):
++    def __init__(self, store, forms, pair_dim=64, property_width=0, property_ones=3, basic_capacity=None):
+         super().__init__()
+         object.__setattr__(self, 'store', store)
+-        self.pair_dim, self.ones = int(pair_dim), int(ones)
++        # The table of forms is owned by the perceptual space; its code is read here, never copied.
++        object.__setattr__(self, 'forms_table', forms)
++        self.pair_dim = int(pair_dim)
+         self.width = self.pair_dim
+         self.property_width, self.property_ones = int(property_width), int(property_ones)
+-        if (store.dim != self.width + self.property_width or self.property_width < 0
+-                or not 0 < self.ones <= self.pair_dim):
+-            raise ValueError('Radix bank width must be identity + property, with 0 < s <= D')
++        if store.dim != self.width + self.property_width or self.property_width < 0 or self.pair_dim < 1:
++            raise ValueError('Radix bank width must be identity + property, with a parts half')
+         object.__setattr__(self, 'properties', None)
+         self._fixed_bytes = {}
+-        self._codes = {}
+-        self.atoms, self.bits, self.words, self.word_rows, self.forms = {}, {}, {}, {}, {}
+-        self.word_keys = {}
++        self.atoms, self.words, self.word_rows = {}, {}, {}
+         # Each stored form's links, written when it is admitted and saved:
+         # the stored forms that hold it as a run (its holders, its wholes
+         # among the forms) and those it holds as a run (its parts among the
+@@ -179,78 +105,35 @@ class WordIdentity(nn.Module):
+         # neither.
+         self.holders = {}
+         self.inside = {}
+-        # No code lies inside another's by accident (rule 61). A part may be
+-        # given coordinates of its own over both halves; each stored form's
+-        # code is kept packed, one row per form in the order of admission,
+-        # so that a new code is tested against every stored code at once.
+         self.total = self.width + self.property_width
+-        self.limbs = (self.total + 63) // 64
+-        self.given = {}
+-        self.order = {}
+-        self._ordered = []
+-        # Every admitted form occupies a radix row. Restore rebuilds these
+-        # derived rows in place from the saved definitions.
+-        device = store._basis.W.device
+-        self.register_buffer('_packed', torch.zeros(store._capacity, self.limbs, dtype=torch.long,
+-                                                    device=device), persistent=False)
+-        self.register_buffer('usage', torch.zeros(self.total, dtype=torch.long, device=device), persistent=False)
+-        self._given_revision = 0
+-        self._parts_key = {}
+-        # The earlier forms whose code the last admission changed, and those
+-        # it gave a coordinate, whether or not they had it.
+-        self.last_changed = self.last_touched = frozenset()
+-        self._altered = set()
+-        self.failures = []
+-        self._table_stamp = self._table = None
+         self._atom_rows = {}
+         self._catalog = {}
+-        # Each added part, with the two forms it told apart (None if taught).
++        # Each stored form of several characters, a part of its own.
+         self.added = {}
+-        # Each parts half's stored forms, for a reader that has only that.
+-        self.by_parts = {}
+         self.nested = {}
+         self.revision = 0
+         from BasicPercepts import BasicPercepts
+         self.basic = BasicPercepts(store, self.width, self.property_width,
+             store._capacity if basic_capacity is None else basic_capacity)
+         basis = store._basis
+-        if not hasattr(basis, 'fixed_row_mask'):
+-            basis.register_buffer('fixed_row_mask', torch.zeros(store._capacity, dtype=torch.bool, device=basis.W.device))
+-            basis.register_buffer('fixed_row_codes', torch.zeros_like(basis.W, requires_grad=False))
+-
+-    def atom_code(self, atom, bits=None):
+-        """A part's fixed bits, drawn over every coordinate of the parts half."""
+-        if bits is None and atom in self._codes:
+-            return self._codes[atom]
+-        _kind, value = atom
+-        n = self.bits.get(atom, self.ones) if bits is None else int(bits)
+-        result = torch.zeros(self.width, device='cpu')
+-        result[list(bit_stream(bytes_of(value), self.pair_dim)[:n])] = 1
+-        given = self.given.get(atom)
+-        if given is not None:
+-            result = torch.maximum(result, given[:self.width])
+-        if bits is None:
+-            self._codes[atom] = result
+-        return result
+-
+-    def catalog_code(self, atom, bits=None):
++        if not hasattr(basis, 'fixed_form_rows'):
++            # Each store row's row of the table of forms, -1 where none: its code is that row's.
++            basis.register_buffer('fixed_form_rows', torch.full((store._capacity,), -1, dtype=torch.long,
++                                                                device=basis.W.device))
++        object.__setattr__(basis, 'form_links', forms)
++        basis.fixed_parts_width = self.width
++
++    def catalog_code(self, atom):
+         """A part's code in the wholes half: the catalog drawn a second time
+         in that half's own coordinates. A character's is its byte's in the
+-        table of wholes; a part given more bits in the parts half is given
+-        as many more here (``bits``: read at those bits). The coordinates
+-        given to a part (rule 61) are joined in either half."""
+-        bits = self.bits.get(atom, self.ones) if bits is None else int(bits)
+-        n = self.property_ones + bits - self.ones
+-        key = (atom, n)
++        table of wholes."""
++        key = ('catalog', atom)
+         if key not in self._catalog:
+             from PerceptProperties import catalog_coordinates
+             result = torch.zeros(self.property_width, device='cpu')
+-            result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, n))] = 1
++            result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, self.property_ones))] = 1
+             self._catalog[key] = result
+-        given = self.given.get(atom)
+-        if given is None:
+-            return self._catalog[key]
+-        return torch.maximum(self._catalog[key], given[self.width:])
++        return self._catalog[key]
+ 
+     def tightest(self, rows):
+         """The tightest whole of the form whose parts are these store rows:
+@@ -258,8 +141,7 @@ class WordIdentity(nn.Module):
+         row is no part or form of this catalog."""
+         if not self.property_width:
+             return None
+-        key = (tuple(map(int, rows)), self.revision, self._given_revision, len(self.added),
+-               len(self.atoms), len(self.word_rows))
++        key = (tuple(map(int, rows)), self.revision, len(self.added), len(self.atoms), len(self.word_rows))
+         if key in self._catalog:
+             return self._catalog[key]
+         if len(self._atom_rows) != len(self.atoms) + len(self.word_rows):
+@@ -291,7 +173,7 @@ class WordIdentity(nn.Module):
+         The cache holds addresses and fixed catalog coordinates. Native part
+         codes are read through the actual basis on each differentiable forward.
+         """
+-        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, self._given_revision, device)
++        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, device)
+         key = ('occurrence_bank', escaped_elements)
+         cached = self._catalog.get(key)
+         if cached is not None and cached[0] == stamp:
+@@ -450,18 +332,6 @@ class WordIdentity(nn.Module):
+             self.__dict__['_rank_stamp'] = stamp
+         return self.__dict__['_rank']
+ 
+-    @torch.no_grad()
+-    def _fixed(self, row, value, raw=None):
+-        basis = self.store._basis
+-        value = value.to(basis.W)
+-        if raw is not None:
+-            self._fixed_bytes[int(row)] = bytes(raw)
+-        if self.property_width:
+-            value = torch.nn.functional.pad(value[:self.width], (0, self.property_width))
+-        basis.fixed_row_mask[row] = True
+-        basis.fixed_row_codes[row].copy_(value)
+-        basis.W[row].copy_(value)
+-
+     @torch.no_grad()
+     def refresh_property_fills(self, properties=None):
+         if properties is not None:
+@@ -473,483 +343,98 @@ class WordIdentity(nn.Module):
+         # BasicPercepts reads the property lanes live; identity atoms own no fill.
+         _ = self.properties.revision  # Observe writes at the same boundary as the live property reader.
+ 
+-    def _storage_code(self, identity_code):
+-        """Admission reserves both subspaces; _fixed writes the property fill."""
+-        return torch.nn.functional.pad(identity_code, (0, self.property_width))
+-
+-    def _atom(self, atom, bits=None):
+-        if bits is not None:
+-            self.bits[atom] = max(self.bits.get(atom, self.ones), int(bits))
+-            self._codes.pop(atom, None)
+-            self._catalog.pop(('occurrence_bank', False), None)
+-            self._catalog.pop(('occurrence_bank', True), None)
+-        code = self.atom_code(atom)
+-        if atom not in self.atoms:
+-            key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
+-            self.atoms[atom] = self.store.insert(key, init_vector=self._storage_code(code))
+-        self._fixed(self.atoms[atom], code, bytes_of(atom[1]))
+-        return self.atoms[atom]
++    # The store rows, read through the table of forms -------------------
+ 
+     @torch.no_grad()
+-    def _admit_atoms(self, atoms):
+-        """Refresh established part rows together, in between new radix admissions."""
+-        basis = self.store._basis
+-        for seated, group in groupby(atoms, key=self.atoms.__contains__):
+-            if not seated:
+-                for atom in group:
+-                    self._atom(atom)
+-                continue
+-            members = tuple(group)
+-            rows = [self.atoms[atom] for atom in members]
+-            if len(members) == 1 or len(set(rows)) != len(rows):
+-                for atom in members:
+-                    self._atom(atom)
+-                continue
+-            codes = torch.stack([self.atom_code(atom) for atom in members]).to(basis.W)
+-            codes = torch.nn.functional.pad(codes, (0, self.property_width))
+-            addresses = torch.tensor(rows, device=basis.W.device, dtype=torch.long)
+-            basis.fixed_row_mask.index_fill_(0, addresses, True)
+-            basis.fixed_row_codes.index_copy_(0, addresses, codes)
+-            basis.W.index_copy_(0, addresses, codes)
+-            self._fixed_bytes.update((row, bytes_of(atom[1])) for row, atom in zip(rows, members))
+-
+-    def form(self, raw, *, override=None):
+-        """The fold of a form's parts' codes in the fixed width.
+-
+-        ``override`` is ``(atom, bits)``: that part read at those bits.
+-        """
+-        raw = bytes(raw)
+-        atoms = self.words.get(raw) or self.atoms_of(raw)
+-        codes = [self.atom_code(a, override[1] if override is not None and a == override[0] else None)
+-                 for a in atoms]
+-        return torch.stack(codes).amax(0)
+-
+-    def code(self, raw, *, override=None):
+-        """A form's code as rule 56 compares it: its parts half (:meth:`form`)
+-        and its own tightest whole, the OR of its parts' catalog codes in the
+-        wholes half. Both are read from its parts, so a set of parts found
+-        gives the same code (:meth:`spelling`). ``override`` as in
+-        :meth:`form`."""
+-        form = self.form(raw, override=override)
+-        if not self.property_width:
+-            return form
+-        atoms = self.words.get(bytes(raw)) or self.atoms_of(raw)
+-        wholes = torch.stack([self.catalog_code(a, override[1] if override is not None and a == override[0]
+-                                                else None) for a in atoms]).amax(0)
+-        return torch.cat((form, wholes))
+-
+-    @staticmethod
+-    def key(form):
+-        return np.packbits(form.detach().eq(1).cpu().numpy(), bitorder='little').tobytes()
+-
+-    def _keyed(self, word, key, parts_key):
+-        """Record a form's key and its parts half's key."""
+-        self.forms[key] = word
+-        self.word_keys[word] = key
+-        self.by_parts.setdefault(parts_key, set()).add(word)
+-        self._parts_key[word] = parts_key
+-
+-    def definition_key(self, raw):
+-        """The admitted form's parts-half key, maintained by collision repair and restore."""
+-        return self._parts_key[raw].hex()
+-
+-    def _reindex(self):
+-        """Key every stored form and pack its code, in the order of
+-        admission. Returns the first two forms found with one code, if any."""
+-        self.forms, self.word_keys, self.by_parts, self._parts_key = {}, {}, {}, {}
+-        self.order = {word: index for index, word in enumerate(self.words)}
+-        self._ordered = list(self.words)
+-        codes = [self.code(raw) for raw in self._ordered]
+-        self._packed.zero_()
+-        if codes:
+-            self._packed[:len(codes)].copy_(self._pack(torch.stack(codes)))
+-        collision = None
+-        for raw, code in zip(self._ordered, codes):
+-            key = self.key(code)
+-            if key in self.forms and self.forms[key] != raw:
+-                collision = collision or (self.forms[key], raw)
+-                continue
+-            self._keyed(raw, key, self.key(code[:self.width]))
+-        return collision
+-
+-    def _unkey(self, word):
+-        old = self.word_keys.pop(word, None)
+-        if old is not None and self.forms.get(old) == word:
+-            del self.forms[old]
+-            self.store.hash_map.pop(self.WORD_PREFIX+old, None)
+-            self.store.radix_trie.remove(self.WORD_PREFIX+old)
+-        parts_key = self._parts_key.pop(word, None)
+-        held = self.by_parts.get(parts_key)
+-        if held is not None:
+-            held.discard(word)
+-            if not held:
+-                del self.by_parts[parts_key]
+-
+-    # Packed codes ---------------------------------------------------------
+-
+-    def _pack(self, codes):
+-        """Codes of zeros and ones, ``[n, width + property_width]``, as rows
+-        of 64-bit words, ``[n, limbs]``: coordinate ``i`` is bit ``i % 64``
+-        of word ``i // 64``."""
+-        return pack_coordinates(codes.reshape(-1, self.total), 64)
+-
+-    def _unpack(self, packed):
+-        """Rows of 64-bit words as codes of zeros and ones (``long``)."""
+-        bits = (packed[..., None] >> torch.arange(64, dtype=torch.long, device=packed.device)) & 1
+-        return bits.flatten(-2)[..., :self.total]
+-
+-    def _place(self, raw):
+-        """A new stored form's row of the packed codes."""
+-        index = len(self._ordered)
+-        self.order[raw] = index
+-        self._ordered.append(raw)
+-        self._packed[index].copy_(self._pack(self.code(raw))[0])
+-
+-    def packed_code(self, raw):
+-        """A stored form's code as the packed rows hold it."""
+-        return self._unpack(self._packed[self.order[bytes(raw)]]).to(torch.float32)
++    def _rows_of(self, spellings, insert=False):
++        """Each spelling's row of the table of forms [n], -1 where unknown or
++        longer than the table holds; with ``insert``, the unknown ones are
++        inserted first (not counted). A host act at admission."""
++        table = self.forms_table
++        device = table.code.device
++        fits = [0 < len(raw) <= table.longest for raw in spellings]
++        width = max([1] + [len(raw) for raw, fit in zip(spellings, fits) if fit])
++        data = torch.tensor([list(raw) + [0] * (width - len(raw)) if fit else [0] * width
++                             for raw, fit in zip(spellings, fits)], dtype=torch.long, device=device)
++        lengths = torch.tensor([len(raw) if fit else 0 for raw, fit in zip(spellings, fits)], device=device)
++        rows = table.read(data, lengths, admit=False)
++        if insert:
++            missing = (rows < 0) & (lengths > 0)
++            if bool(missing.any()):
++                rows = torch.where(missing, table.insert(data, torch.where(missing, lengths, 0)), rows)
++        return rows
+ 
+     @torch.no_grad()
+-    def _rewrite(self, forms):
+-        """Write the store rows and the keys of ``forms`` from their packed
+-        codes, the rows in one indexed write. Returns the pairs of forms
+-        that now have one code."""
+-        forms = sorted(forms, key=self.order.__getitem__)
+-        if not forms:
+-            return []
+-        packed = self._packed.index_select(0, self._packed.new_tensor([self.order[word] for word in forms]))
+-        bits = self._unpack(packed)
++    def _fix(self, rows, spellings):
++        """Name each store row's row of the table of forms; its code is read from there."""
++        if not rows:
++            return
+         basis = self.store._basis
+-        rows = torch.tensor([self.word_rows[word] for word in forms], device=basis.W.device)
+-        value = torch.nn.functional.pad(bits[:, :self.width].to(basis.W), (0, self.property_width))
+-        basis.fixed_row_mask[rows] = True
+-        basis.fixed_row_codes[rows] = value
+-        basis.W[rows] = value
+-        # The legacy trie still accepts byte keys. Only the packed rows
+-        # cross this boundary, and the native basis already has its values.
+-        keys = packed.cpu().numpy().view(np.uint8)[:, :(self.total + 7) // 8]
+-        parts = keys[:, :(self.width + 7) // 8].copy()
+-        if self.width % 8:
+-            parts[:, -1] &= (1 << (self.width % 8)) - 1
+-        collided = []
+-        for word, key, parts_key in zip(forms, keys, parts):
+-            key = key.tobytes()
+-            if self.word_keys.get(word) != key:
+-                self._unkey(word)
+-                other = self.forms.get(key)
+-                if other is not None and other != word:
+-                    collided.append((other, word))
+-                self._keyed(word, key, parts_key.tobytes())
+-            row = self.word_rows[word]
+-            self.store.hash_map[self.WORD_PREFIX + key] = row
+-            self.store.radix_trie.insert(self.WORD_PREFIX + key, row)
+-        return collided
++        self._fixed_bytes.update(zip(map(int, rows), spellings))
++        index = torch.tensor(list(rows), dtype=torch.long, device=basis.fixed_form_rows.device)
++        basis.fixed_form_rows.index_copy_(0, index, self._rows_of(spellings, insert=True).to(index))
+ 
+-    # Rule 56: two forms with one code ------------------------------------
+-
+-    def _next_part(self, left, right):
+-        """Rule 43's next part for two forms with one code (rule 56): the
+-        shortest run that one holds and the other does not and that is not
+-        a part yet; of runs of one length the first in code-point order."""
+-        a, b = text_of(left), text_of(right)
+-        known = {atom[1] for atom in self.atoms}
+-        for size in range(1, max(len(a), len(b)) + 1):
+-            found = (runs(a, size) ^ runs(b, size)) - known
+-            if found:
+-                return min(found)
+-        return None
+-
+-    def _add_part(self, run, between):
+-        self.added[run] = between
+-        atom = ('part', run)
+-        self._atom(atom)
+-        for word in self.words:
+-            if run in text_of(word):
+-                self.words[word] = self.atoms_of(word)
+-        return atom
++    def _zero(self):
++        return torch.zeros(self.total)
+ 
+-    def _holders(self, atoms):
+-        atoms = set(atoms)
+-        return [word for word, parts in self.words.items() if atoms.intersection(parts)]
++    def _atom(self, atom):
++        if atom not in self.atoms:
++            key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
++            self.atoms[atom] = self.store.insert(key, init_vector=self._zero())
++            self._fix([self.atoms[atom]], [bytes_of(atom[1])])
++        return self.atoms[atom]
+ 
+-    def _seen(self, word, *, override=None):
+-        """A stored form's code as its basic percept keeps it: the wholes
+-        half within the classes that hold every one of its characters
+-        (:meth:`_kept`)."""
+-        code = self.code(word, override=override)
+-        return code * self._kept(word).to(code)
++    def _admit_atoms(self, atoms):
++        """Seat the new part rows together, each named to its row of the table."""
++        new = [atom for atom in dict.fromkeys(atoms) if atom not in self.atoms]
++        for atom in new:
++            key = self.PREFIX + atom[0].encode() + b'/' + bytes_of(atom[1])
++            self.atoms[atom] = self.store.insert(key, init_vector=self._zero())
++        self._fix([self.atoms[atom] for atom in new], [bytes_of(atom[1]) for atom in new])
+ 
+-    def _twin(self, word, code):
+-        """A stored form with the same parts half whose code, as its basic
+-        percept keeps it, is the same as ``word``'s, or ``None``."""
+-        if not self.property_width:
++    @torch.no_grad()
++    def form(self, raw):
++        """A form's parts half: the code of its row of the table of forms; a
++        form the table does not hold reads the greatest of its bytes'."""
++        raw = bytes(raw)
++        table = self.forms_table
++        half = min(self.width, table.code.shape[-1] // 2)
++        row = int(self._rows_of([raw])[0])
++        code = (table.code[row, :half] if row >= 0 else
++                table.code[torch.tensor(list(raw), device=table.code.device), :half].amax(0))
++        return torch.nn.functional.pad(code, (0, self.width - half))
++
++    def stored_row(self, rows):
++        """The store row of the stored form whose parts are exactly these
++        store rows, found by its spelling (the longest part's); ``None``
++        where none is."""
++        spellings = [self._fixed_bytes.get(int(row)) for row in rows]
++        if not spellings or any(raw is None for raw in spellings):
+             return None
+-        held = self.by_parts.get(self.key(code[:self.width]), ())
+-        if not held:
++        raw = max(spellings, key=len)
++        if raw not in self.words or set(map(int, rows)) != set(self.parts(raw)):
+             return None
+-        mine = self.key(self._seen(word))
+-        for other in sorted(held, key=self.order.__getitem__):
+-            if other != word and self.key(self._seen(other)) == mine:
+-                return other
+-        return None
+-
+-    def _separate(self, left, right, *, read=False):
+-        """Tell two forms with one code apart (rule 56); return the forms
+-        whose code changed, or ``None`` where no part tells them apart.
+-
+-        Rule 43's next part is added, the shortest run that one holds and
+-        the other does not, until their codes differ. Where no such run is
+-        left, an added part that one holds and the other does not is given
+-        more bits, the part held by the fewest forms first.
+-        """
+-        changed = []
+-        seen = self._seen if read else (lambda word, **kw: self.code(word, **kw))
+-        alike = lambda: self.key(seen(left)) == self.key(seen(right))
+-        while alike():
+-            run = self._next_part(left, right)
+-            if run is None:
+-                break
+-            changed.append(self._add_part(run, (text_of(left), text_of(right))))
+-        if not alike():
+-            return self._holders(changed)
+-        held = Counter(atom for parts in self.words.values() for atom in parts)
+-        candidates = sorted((atom for atom in set(self.words[left]) ^ set(self.words[right])
+-                             if atom[1] in self.added),
+-                            key=lambda atom: (held[atom], -len(atom[1]), atom[1]))
+-        for atom in candidates:
+-            for bits in range(self.bits.get(atom, self.ones)+1, self.pair_dim+1):
+-                if not torch.equal(seen(left, override=(atom, bits)),
+-                                   seen(right, override=(atom, bits))):
+-                    self._atom(atom, bits)
+-                    changed.append(atom)
+-                    self.revision += 1
+-                    return self._holders(changed)
+-        return None
+-
+-    def _settle(self, pending):
+-        """Key each pending form, telling apart any two with one code (rule
+-        56), and write the row of every form whose code changed. Returns
+-        those forms. No stale key or trie entry is left."""
+-        affected, pending = set(pending), list(pending)
+-        while pending:
+-            word = pending.pop()
+-            self._unkey(word)
+-            code = self.code(word)
+-            key = self.key(code)
+-            other = self.forms.get(key)
+-            read = False
+-            if other is None or other == word:
+-                # Two codes that differ only where a class that holds both
+-                # forms cuts the wholes half are one code to their percepts.
+-                other, read = self._twin(word, code), True
+-            if other is not None and other != word:
+-                touched = self._separate(other, word, read=read)
+-                if touched is None:
+-                    raise RuntimeError(f'no part tells {text_of(other)!r} from {text_of(word)!r}')
+-                self._unkey(other)
+-                # The work stack keeps admission order, so hash order never
+-                # decides which of two forms a later collision changes.
+-                touched = set(touched) | {word, other}
+-                again = [w for w in self.words if w in touched]
+-                affected.update(again)
+-                pending.extend(again)
+-            else:
+-                self._keyed(word, key, self.key(code[:self.width]))
+-        for word in sorted(affected):
+-            if word not in self.word_rows:
+-                row = self.store.insert(self.WORD_PREFIX + self.word_keys[word],
+-                                        init_vector=self._storage_code(self.form(word)))
+-                self.word_rows[word] = row
+-                self.store.inverse_table[row] = word
+-                self._fixed_bytes[row] = word
+-                # Keep byte rows distinct for one-letter words/descent.
+-                if len(word) > 1:
+-                    self.store.hash_map[word] = row
+-                    self.store.radix_trie.insert(word, row)
+-        if affected:
+-            ordered = sorted(affected, key=self.order.__getitem__)
+-            index = self._packed.new_tensor([self.order[word] for word in ordered])
+-            self._packed.index_copy_(0, index, self._pack(torch.stack([self.code(word) for word in ordered])).to(index))
+-            self._rewrite(ordered)
+-        return affected
+-
+-    # Rule 61: no code inside another by accident -------------------------
+-
+-    def accidents_of(self, raw):
+-        """The accidents of a stored form (rule 61), in one pass over every
+-        stored code, both halves: the stored forms whose code lies inside its
+-        code and that it does not hold as a run, then those whose code its
+-        code lies inside and that do not hold it as a run; pairs ``(inner,
+-        outer)``."""
+-        return self._accidents_of_many([bytes(raw)])[bytes(raw)]
+-
+-    def _accidents_of_many(self, forms):
+-        """:meth:`accidents_of` for several stored forms, against every
+-        stored code in one pass."""
+-        live = self._packed[:len(self._ordered)]
+-        queries = live.new_tensor([self.order[raw] for raw in forms])
+-        links = [(direction * len(forms) + query) * len(live) + self.order[other]
+-                 for direction, neighbors in enumerate((self.inside, self.holders))
+-                 for query, raw in enumerate(forms) for other in neighbors[raw]]
+-        matches = containment_accidents(live, queries, live.new_tensor(links))
+-        found = {raw: [] for raw in forms}
+-        for direction, i, j in matches.nonzero().tolist():
+-            raw, other = forms[i], self._ordered[j]
+-            found[raw].append((other, raw) if direction == 0 else (raw, other))
+-        return found
+-
+-    def accidents(self, chunk=64):
+-        """Over all ordered pairs of stored forms: the accidents, pairs
+-        ``(inner, outer)`` whose codes lie one inside the other with no
+-        link; and the linked parts whose code does not lie inside their
+-        holder's, pairs ``(part, holder)``."""
+-        live = self._packed[:len(self._ordered)]
+-        found, outside = [], []
+-        for start in range(0, len(live), chunk):
+-            block = live[start:start + chunk]
+-            inner = ((live[None] & ~block[:, None]) == 0).all(-1)
+-            for i, j in inner.nonzero().tolist():
+-                outer, other = self._ordered[start + i], self._ordered[j]
+-                if other != outer and other not in self.inside[outer]:
+-                    found.append((other, outer))
+-            for i in range(len(block)):
+-                outer = self._ordered[start + i]
+-                outside.extend((part, outer) for part in self.inside[outer]
+-                               if not bool(inner[i, self.order[part]]))
+-        return found, outside
+-
+-    def _repair(self, start):
+-        """Remove every accident from the forms of ``start`` on (rule 61): a
+-        form whose code changes is tested again, the latest admitted first,
+-        until none is left. Returns the forms whose code changed."""
+-        changed = set()
+-        queue = sorted(start, key=self.order.__getitem__)
+-        queued = set(queue)
+-        # The next forms of the queue are tested together; a repair, which
+-        # changes codes, sets the tests made before it aside.
+-        tested = {}
+-        while queue:
+-            word = queue.pop()
+-            queued.discard(word)
+-            if word not in tested:
+-                tested = self._accidents_of_many(queue[-self.TESTED_AT_ONCE + 1:] + [word])
+-            by_inner = {}
+-            for inner, outer in tested.pop(word):
+-                by_inner.setdefault(inner, []).append(outer)
+-            for inner, outers in by_inner.items():
+-                touched = self._separate_inner(inner, outers)
+-                if touched is None:
+-                    continue
+-                tested = {}
+-                changed.update(touched)
+-                fresh = [w for w in touched if w not in queued]
+-                queue.extend(fresh)
+-                queued.update(fresh)
+-        return changed
++        return self.word_rows[raw]
+ 
+-    def _separate_inner(self, inner, outers):
+-        """Give ``inner`` coordinates that each of ``outers`` lacks (rule
+-        61), chosen and not drawn, among the zeros of either half: one at a
+-        time, the coordinate that the most outers still lack (among those its
+-        basic percept keeps, :meth:`_kept`, where any will do), then one that
+-        is not on inner's against lane (what its nearest holders add), then
+-        the one that adds the fewest ones to inner's holders, then the least
+-        used, then the first. ``inner`` becomes a part of the catalog (a part
+-        already, it takes the coordinates), and every stored form that holds
+-        it as a run carries them, so a part stays inside its wholes. Returns
+-        the forms whose code changed, in order of admission; ``None``, and
+-        nothing changed, where an outer code has no zero to give."""
+-        order = self.order.__getitem__
+-        own = self._packed[order(inner)]
+-        lacking = self._unpack(~self._packed.index_select(0, own.new_tensor([order(o) for o in outers])) & ~own).bool()
+-        holders = sorted(self.holders[inner], key=order)
+-        added = (len(holders) - self._unpack(self._packed.index_select(0, own.new_tensor([order(h) for h in holders]))).sum(0)
+-                 if holders else torch.zeros_like(self.usage))
+-        # What tells against inner, the parts its nearest holders add (rule
+-        # 51), is kept: a coordinate of it is taken only where no other will do.
+-        opposed = torch.zeros(self.total, dtype=torch.bool, device=own.device)
+-        against = self.against_atoms(inner)
+-        if against:
+-            opposed[:self.width] = torch.stack([self.atom_code(atom) for atom in against]).amax(0).eq(1)
+-        kept = self._kept(inner, device=own.device)
+-        pending = torch.ones(len(outers), dtype=torch.bool, device=own.device)
+-        given, pending = distinguishing_coordinates(lacking, kept, opposed, added, self.usage, pending)
+-        # A new identity atom is still named in the host catalog. Gather
+-        # its repair and any unsatisfied constraints in one transfer.
+-        report = torch.cat((given, pending)).cpu()
+-        remaining = report[self.total:].tolist()
+-        if any(remaining):
+-            self.failures.append((inner, tuple(o for o, p in zip(outers, remaining) if p)))
+-            return None
+-        text = text_of(inner)
+-        atom = ('part', text)
+-        touched = sorted(self.holders[inner] | {inner}, key=order)
+-        value = report[:self.total].to(torch.float32)
+-        if atom in self.atoms:
+-            old = self.given.get(atom)
+-            self.given[atom] = value if old is None else torch.maximum(old, value)
+-            self._codes.pop(atom, None)
+-            self._atom(atom)
+-        else:
+-            self.added[text] = (text, text_of(outers[0]))
+-            self.bits[atom] = 0
+-            self.given[atom] = value
+-            self._atom(atom)
+-            for word in touched:
+-                self.words[word] = self.words[word] + (atom,)
+-        index = own.new_tensor([order(word) for word in touched])
+-        old = self._packed[index]
+-        new = old | self._pack(given)[0]
+-        self._packed[index] = new
+-        self._altered.update(touched[i] for i in (old != new).any(1).nonzero().flatten().tolist())
+-        self.usage += given.long()
+-        self._given_revision += 1
+-        return touched
+-
+-    def _kept(self, raw, *, device='cpu'):
+-        """Where a coordinate given to a form stays in its basic percept's
+-        code: all of the parts half, and of the wholes half the AND of the
+-        codes of the rows of the table of wholes that hold on every byte of
+-        the form, since a percept's wholes half is at or below each of its
+-        wholes' (rules 5 and 52). All of the code where no table is bound."""
+-        properties = getattr(getattr(self.basic, 'whole', None), 'primitive_properties', None)
+-        if properties is None or not self.property_width:
+-            return torch.ones(self.total, dtype=torch.bool, device=device)
+-        stamp = (id(properties), properties.revision, properties.members.device)
+-        if self._table_stamp != stamp:
+-            with torch.no_grad():
+-                self._table = (properties.coefficients().detach() > .5,
+-                               properties.codes().detach() >= 1 - 1e-6)
+-            self._table_stamp = stamp
+-        holds, codes = self._table
+-        if codes.shape[-1] != self.property_width:
+-            return torch.ones(self.total, dtype=torch.bool, device=device)
+-        elements = torch.tensor(sorted(set(raw)), device=holds.device, dtype=torch.long)
+-        rows = holds.index_select(1, elements).all(1)
+-        upper = (~rows[:, None] | codes).all(0)
+-        return torch.nn.functional.pad(upper, (self.width, 0), value=True).to(device)
++    def spelling(self, rows):
++        root = self.stored_row(rows)
++        return None if root is None else self.store.bytes_for(root)
+ 
+-    def _keep(self, affected, new=None):
+-        """After a change (rule 61): repair until no accident is left,
+-        telling apart by rule 56 any two forms the repair leaves with one
+-        code; write the rows and keys of every form whose code changed; and
+-        the basic percepts follow (``BasicPercepts.follow_forms``). Returns
+-        those forms. ``last_changed`` holds those admitted before ``new``;
+-        ``last_touched`` also the holders that took a coordinate they had."""
+-        changed, pending, touched = set(affected), set(affected), set()
+-        while pending:
+-            self._altered = set()
+-            touched |= self._repair(pending)
+-            changed |= self._altered
+-            collided = self._rewrite(self._altered)
+-            pending = self._settle({word for pair in collided for word in pair}) if collided else set()
+-            changed |= pending
+-        self.last_touched = frozenset((touched | set(affected)) - {new})
+-        self.last_changed = frozenset(changed - {new})
+-        if self.last_changed:
+-            self.revision += 1
+-        self.basic.follow_forms(changed, new)
+-        return changed
++    def definition_key(self, raw):
++        """An admitted form's key in the definitions: its spelling."""
++        return bytes(raw).hex()
++
++    def _word_row(self, raw):
++        """The store row of a stored form, named to its row of the table."""
++        row = self.store.insert(self.WORD_PREFIX + raw, init_vector=self._zero())
++        self.word_rows[raw] = row
++        self.store.inverse_table[row] = raw
++        # Keep byte rows distinct for one-letter words/descent.
++        if len(raw) > 1:
++            self.store.hash_map[raw] = row
++            self.store.radix_trie.insert(raw, row)
++        self._fix([row], [raw])
++        return row
+ 
+     def admit(self, raw):
+         raw = bytes(raw)
+@@ -965,37 +450,19 @@ class WordIdentity(nn.Module):
+                 self.added[text] = None
+             self.words[raw] = self.atoms_of(raw)
+             self._link(raw)
+-            carriers = [holder for holder in sorted(self.holders[raw], key=self.order.__getitem__)
++            carriers = [holder for holder in self.holders[raw]
+                         if own not in self.words[holder]] if len(text) > 1 else []
+             for holder in carriers:
+                 self.words[holder] = self.words[holder] + (own,)
+             self._admit_atoms(self.words[raw])
+-            self._place(raw)
++            self._word_row(raw)
+             if carriers:
+-                index = self._packed.new_tensor([self.order[word] for word in carriers])
+-                self._packed.index_copy_(0, index, self._pack(torch.stack([self.code(word) for word in carriers])).to(index))
+-            self._keep(self._settle(carriers + [raw]), new=raw)
++                self.revision += 1
++            # The rows of the forms that gained a part take it (``follow_forms``).
++            self.basic.follow_forms(set(carriers) | {raw}, raw)
+             self.retain_spelling(raw)
+         return self.parts(raw)
+ 
+-    def admit_part(self, run):
+-        """Add a run of characters as a part. Every form held that contains
+-        it takes it and is rekeyed. A part that exists, or a single
+-        character, changes nothing. Returns the forms that took it."""
+-        run = text_of(run) if isinstance(run, (bytes, bytearray)) else str(run)
+-        if len(run) < 2 or run in self.added:
+-            return ()
+-        atom = self._add_part(run, None)
+-        holders = self._holders([atom])
+-        self._keep(self._settle(holders))
+-        self.revision += 1
+-        return tuple(holders)
+-
+-    def part_between(self, string, word):
+-        """The part that tells a string from a word read in its place: the
+-        shortest run the string holds and the word does not."""
+-        return distinguishing_run(string, word, one_sided=True)
+-
+     def parts(self, raw):
+         """The form's part rows and its witnessed nested wholes."""
+         return (tuple(self.atoms[a] for a in self.words[raw]) +
+@@ -1007,73 +474,11 @@ class WordIdentity(nn.Module):
+             atoms.update(self.part_atoms(part))
+         return atoms
+ 
+-    def row_for_form(self, form):
+-        """The row of the stored form whose code (:meth:`code`) this is. A
+-        parts half alone names a form only where no other stored form has
+-        that parts half."""
+-        full = self.property_width > 0 and form.shape[-1] >= self.total
+-        return self._row_for_key(self.key(form[..., :self.total if full else self.width]), full)
+-
+-    def _row_for_key(self, key, full):
+-        if full:
+-            raw = self.forms.get(key)
+-        else:
+-            held = self.by_parts.get(key, ())
+-            raw = next(iter(held)) if len(held) == 1 else None
+-        return None if raw is None else self.word_rows[raw]
+-
+-    def read(self, form):
+-        row = self.row_for_form(form)
+-        return None if row is None else self.store.bytes_for(row)
+-
+-    def read_forms(self, forms):
+-        """Translate the selected seats at the external byte-output boundary."""
+-        return [None if seat < 0 else self.store.bytes_for(self.word_rows[self._ordered[seat]])
+-                for seat in self.form_seats(forms).tolist()]
+-
+-    def form_seats(self, forms):
+-        """Match each exact code in the occupied device bank. Ambiguous parts have no seat."""
+-        full = self.property_width > 0 and forms.shape[-1] >= self.total
+-        width = self.total if full else self.width
+-        visible = forms[..., :width]
+-        if (visible.shape[-1] + 7) // 8 != (width + 7) // 8:
+-            return forms.new_full(forms.shape[:-1], -1, dtype=torch.long)
+-        query = pack_coordinates(torch.nn.functional.pad(visible, (0, width - visible.shape[-1])), 64)
+-        count = len(self._ordered)
+-        if not count:
+-            return query.new_full(query.shape[:-1], -1)
+-        bank = self._packed[:count, :query.shape[-1]].to(query.device)
+-        difference = query[..., None, :] ^ bank
+-        if width % 64:
+-            last = (difference[..., -1] & ((1 << (width % 64)) - 1)) == 0
+-            matched = last if difference.shape[-1] == 1 else last & (difference[..., :-1] == 0).all(-1)
+-        else:
+-            matched = (difference == 0).all(-1)
+-        return torch.where(matched.sum(-1) == 1, matched.long().argmax(-1), -1)
+-
+-    def spelling_row(self, rows):
+-        """Native form addressed by the fold of these parts and their tightest whole."""
+-        rows = list(map(int, rows))
+-        form = self.store._basis.fixed_row_codes[rows].amax(0).detach().cpu()[:self.width]
+-        if self.property_width:
+-            wholes = self.tightest(rows)
+-            if wholes is None:
+-                return None
+-            form = torch.cat((form, wholes))
+-        return self.row_for_form(form)
+-
+-    def spelling(self, rows):
+-        root = self.spelling_row(rows)
+-        return None if root is None else self.store.bytes_for(root)
+-
+     def vocab_extras(self):
+-        return dict(atoms=self.atoms, bits=self.bits, words=self.words,
+-                    word_rows=self.word_rows, added=self.added,
++        return dict(atoms=self.atoms, words=self.words, word_rows=self.word_rows, added=self.added,
+                     revision=self.revision, nested=self.nested,
+                     holders={word: tuple(sorted(found)) for word, found in self.holders.items()},
+-                    inside={word: tuple(sorted(found)) for word, found in self.inside.items()},
+-                    given={atom: tuple(value.nonzero().flatten().tolist()) for atom, value in self.given.items()},
+-                    usage=self.usage.tolist())
++                    inside={word: tuple(sorted(found)) for word, found in self.inside.items()})
+ 
+     def _relink(self):
+         """The links of every stored form, from the forms alone, for a
+@@ -1089,10 +494,9 @@ class WordIdentity(nn.Module):
+                         self.holders[run].add(word)
+ 
+     def load_vocab_extras(self, value):
+-        for name in ('atoms', 'bits', 'words', 'word_rows', 'added', 'revision'):
++        for name in ('atoms', 'words', 'word_rows', 'added', 'revision'):
+             setattr(self, name, value[name])
+         self.__dict__.pop('_by_byte', None)
+-        self._codes = {}
+         self.nested = value.get('nested', {})
+         self._fixed_bytes = {row: bytes_of(atom[1]) for atom, row in self.atoms.items()}
+         self._fixed_bytes.update({row: raw for raw, row in self.word_rows.items()})
+@@ -1102,34 +506,6 @@ class WordIdentity(nn.Module):
+             self.inside = {word: set(found) for word, found in value['inside'].items()}
+         else:
+             self._relink()
+-        self.given = {}
+-        for atom, coordinates in value.get('given', {}).items():
+-            self.given[atom] = torch.zeros(self.total, device='cpu')
+-            self.given[atom][list(coordinates)] = 1
+-        self.usage.copy_(self.usage.new_tensor(value.get('usage', [0] * self.total)))
+-        self._given_revision += 1
+-        self.failures = []
+-        self.last_changed = self.last_touched = frozenset()
+-        self._reindex()
+         for word, row in self.word_rows.items():
+             if row not in self.store.part_groups:
+                 self.retain_spelling(word)
+-
+-    def audit(self):
+-        words = sorted(self.words)
+-        forms = {w: self.form(w) for w in words}
+-        postings = {}
+-        for word in words:
+-            for atom in self.words[word]:
+-                postings.setdefault(atom, set()).add(word)
+-        comparable = []
+-        for word in words:
+-            lists = sorted((postings[a] for a in self.words[word]), key=len)
+-            supersets = lists[0].intersection(*lists[1:])
+-            comparable.extend((word, other) for other in sorted(supersets) if other != word)
+-        return dict(vocabulary=[text_of(w) for w in words], pair_dim=self.pair_dim,
+-            ones=self.ones,
+-            collisions=len(words)-len({self.key(v) for v in forms.values()}),
+-            containment_pairs=[(text_of(a), text_of(b)) for a, b in comparable],
+-            containment_violations=sum(bool((forms[a] > forms[b]).any()) for a,b in comparable),
+-            reconstruction_errors=sum(self.read(forms[w]) != w for w in words), added=self.added)
+diff --git a/bin/corpus_capacity.py b/bin/corpus_capacity.py
+index 9361df8115..e65a83e762 100644
+--- a/bin/corpus_capacity.py
++++ b/bin/corpus_capacity.py
+@@ -62,8 +62,8 @@ def allocation_plan(config, output):
+         'Spaces.py Space.__init__: expected and observed knowing')
+     add('intuition sparse banks', [int(arch.get('intuitionCapacity',4096)), 1], 4, 2*stages,
+         'IntuitionLayer.py: preallocated Pi and Sigma parameters')
+-    add('percept prototypes and fixed copies', [parts, form], 4, 2,
+-        'RadixLayer codebook W and fixed_row_codes')
++    add('percept prototypes', [parts, form], 4, 1, 'RadixLayer codebook W')
++    add('fixed form rows', [parts], 8, 1, 'WordIdentity: each store row\'s row of the table of forms')
+     add('retained LTM0 ideas', [capacity, cs['nDim']], 4, 1,
+         'Memory.py LTM0.__init__: slots; excludes other columns')
+     report = dict(kind='source-derived nominal storage lower bound, not resident memory',
+@@ -96,6 +96,7 @@ def measure(config, forms, output):
+     import torch
+     from util import TheXMLConfig, init_config, ProjectPaths
+     from WordIdentity import resolve_identity_layout, WordIdentity
++    from FormLinks import FormLinks
+     from Layers import RadixLayer
+     from Spaces import WholeSpace, _ladder_periods
+     from architecture import canonical_shape
+@@ -108,14 +109,14 @@ def measure(config, forms, output):
+     ps, ws = cfg['PartSpace'], cfg['WholeSpace']
+     width = ps['identityPairDim'] + ps['propertyDim']
+     store = RadixLayer(width, initial_cap=ps['nVectors'], word_bounded=True)
+-    bank = WordIdentity(store, pair_dim=ps['identityPairDim'], ones=ps['identityOnes'],
++    bank = WordIdentity(store, FormLinks(ps['formCapacity'], ps['formLongest']), pair_dim=ps['identityPairDim'],
+                         property_width=ps['propertyDim'], property_ones=ps['propertyOnes'])
+     store.identity = bank
+     whole = WholeSpace([ws['nInput'], ws['nInputDim']],
+                        [ws['nVectors'], ws['nDim'] - sum(canonical_shape('WholeSpace'))],
+                        [ws['nOutput'], ws['nOutputDim']])
+     bank.refresh_property_fills(whole.subspace.what.primitive_properties)
+-    pointers = store._basis.W.data_ptr(), store._basis.fixed_row_codes.data_ptr()
++    pointers = store._basis.W.data_ptr(), store._basis.fixed_form_rows.data_ptr()
+     report = dict(config_sha256=hashlib.sha256(Path(config).read_bytes()).hexdigest(),
+         forms_sha256=hashlib.sha256(Path(forms).read_bytes()).hexdigest(),
+         resolved=cfg, ps_capacity=store.capacity, ps_width=width,
+@@ -132,14 +133,11 @@ def measure(config, forms, output):
+                 if attempted % 10000 == 0:
+                     print(json.dumps(dict(words=attempted, rows=len(store), added_parts=len(bank.added),
+                         seconds=time.monotonic()-started, peak_bytes=peak_bytes())), flush=True)
+-        audit = bank.audit()
+-        if pointers != (store._basis.W.data_ptr(), store._basis.fixed_row_codes.data_ptr()):
++        if pointers != (store._basis.W.data_ptr(), store._basis.fixed_form_rows.data_ptr()):
+             raise RuntimeError('native word admission replaced fixed storage')
+         report.update(status='complete', words=attempted, rows=len(store),
+-                      audit=audit, elapsed_seconds=time.monotonic()-started,
++                      elapsed_seconds=time.monotonic()-started,
+                       peak_bytes=peak_bytes(), storage_unchanged=True)
+-        if audit['collisions'] or audit['reconstruction_errors'] or audit['containment_violations']:
+-            raise RuntimeError('native indexed identity audit failed')
+     except Exception as error:
+         report.update(status='failed', attempted=attempted, rows=len(store),
+                       words_admitted=len(bank.word_rows), error=str(error),
+@@ -381,9 +379,6 @@ def train_brick(config, output, *, complete_prefix=False):
+         if not observations:raise RuntimeError('capacity measurement processed no brick')
+         owner=model._concept_owner(); alloc=_concept_alloc_of(owner)
+         identity=model.perceptualSpace.percept_store.identity
+-        audit=identity.audit()
+-        if any(audit[key] for key in ('collisions','reconstruction_errors','containment_violations')):
+-            raise RuntimeError('native admitted-inventory R=0 audit failed')
+         clock=encoder()
+         checkpoint_record=None
+         if complete_prefix:
+@@ -393,7 +388,7 @@ def train_brick(config, output, *, complete_prefix=False):
+         report.update(status='complete',bricks=len(observations),observations=observations,
+             optimizer_bytes_after=materialize_optimizer(optimizer),
+             percept_optimizer_bytes_after=optimizer_parameter_bytes(optimizer,model.percept_expectation.parameters()),
+-            tensors=training_inventory(model),rung0_audit=audit,
++            tensors=training_inventory(model),
+             occupied=dict(percept=len(model.perceptualSpace.percept_store),words=len(identity.word_rows),
+                 conceptual_next=alloc.next_id,relation_highest=int(alloc.parts.count)-1,
+                 equality_witnesses=len(alloc.singleton_members)),
+diff --git a/bin/corpus_lessons.py b/bin/corpus_lessons.py
+index 26557901ee..692dd7a0e9 100644
+--- a/bin/corpus_lessons.py
++++ b/bin/corpus_lessons.py
+@@ -354,8 +354,7 @@ def measure(config, lessons, output, *, eager=False, presentations=None, curricu
+                                   if sum(n for _,n in fold_counts) else None)),
+                     acquisition=phase_acquisition(model, stage.get('measurement',curriculum['measurement']),observations,
+                         relations=stage.get('produces') is not None),
+-                    native_forms=len(model.perceptualSpace.percept_store.identity.words),
+-                    rung0_audit=getattr(model, '_last_rung0_identity_audit', None))
++                    native_forms=len(model.perceptualSpace.percept_store.identity.words))
+                 if gradient_report:
+                     from SentenceTraining import gradient_receipt
+                     row['gradient_report'] = gradient_receipt(model, clear=True)
+diff --git a/data/model.xml b/data/model.xml
+index 8a316ea2cd..a267219649 100644
+--- a/data/model.xml
++++ b/data/model.xml
+@@ -544,7 +544,6 @@
+     <identityByParts>true</identityByParts>
+     <basicPerceptCapacity>262144</basicPerceptCapacity>
+     <identityPairDim>64</identityPairDim>
+-    <identityOnes>3</identityOnes>
+     <propertyDim>64</propertyDim>
+     <propertyOnes>3</propertyOnes>
+     <nInput>0</nInput>
+diff --git a/data/model.xsd b/data/model.xsd
+index 06da78ea86..6963345d61 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -1004,7 +1004,6 @@
+            of order zero) bounds how many are nominated. -->
+       <xs:element name="basicPerceptCapacity" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
+-      <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="propertyDim" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="propertyOnes" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+diff --git a/doc/Params.md b/doc/Params.md
+index ed4e46dee8..1dfd031700 100644
+--- a/doc/Params.md
++++ b/doc/Params.md
+@@ -16,8 +16,8 @@ wholes half (`identityPairDim`, `propertyDim`). Seeds, versions,
+ booleans, 0 and 1, rates, weights and ratios are not sizes; nor are counts that
+ the structure fixes (the eight canonical property rows plus the word row,
+ MNIST's 784 inputs and 10 classes) or values such as ports and angles. Some free
+-sizes are not yet powers of two, among them `maxDocs` 10000, `verbGroups` 24,
+-`placementNegatives` 5 and `identityOnes` 3.
++sizes are not yet powers of two, among them `maxDocs` 10000, `verbGroups` 24
++and `placementNegatives` 5.
+ 
+ ## Relation to LLMs, Formal Concept Analysis, and DisCoCat
+ 
+@@ -353,7 +353,6 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
+ | `basicPerceptCapacity` | positive int | `262144` | Fixed number of basic-percept rows, allocated at construction; a full table raises. Lesson configurations may declare a smaller capacity. |
+ | `identityByParts` | bool | `true` | A text form's code is the set of its parts, a parts half beside a wholes half; see the width rule below. |
+ | `identityPairDim` | positive int | `64` | Width $D$ of the parts half of a percept's code. The parts are spread over all $D$ coordinates. |
+-| `identityOnes` | positive int | `3` | Coordinates $s$ each part takes in the parts half, $0 < s \le D$; a form's half is the join of its parts'. |
+ 
+ A form's code holds no length; a configuration that declares
+ `identityLengthDim` raises.
+diff --git a/doc/Spaces.md b/doc/Spaces.md
+index 16545ad665..72bcc5ccea 100644
+--- a/doc/Spaces.md
++++ b/doc/Spaces.md
+@@ -837,8 +837,9 @@ offered to grammars as `intersection` and `union`.
+ 
+ One percept vector of `percept_width` coordinates serves every tower. At text-model construction it splits into a parts half
+ `[0, identity_width)` of `identityPairDim` coordinates and a wholes half
+-`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64, each part or whole drawn on `identityOnes` and
+-`propertyOnes` coordinates, 3 by default (`resolve_identity_layout`). Each
++`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64 (`resolve_identity_layout`). A form's
++parts half is the code of its row of the table of forms (`FormLinks.code`), read through its store row
++(`fixed_form_rows`); each whole is drawn on `propertyOnes` coordinates, 3 by default. Each
+ half holds two lanes, for and against (`BasicPercepts.codes` and
+ `against_codes`). The `.where`/`.when` band follows `percept_width`. Numeric
+ configurations have no wholes half. The split is fixed at construction, and

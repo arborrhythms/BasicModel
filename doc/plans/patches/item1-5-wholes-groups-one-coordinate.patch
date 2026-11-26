@@ -1,0 +1,591 @@
+diff --git a/bin/PerceptProperties.py b/bin/PerceptProperties.py
+index 79a8f5b4e4..694139c024 100644
+--- a/bin/PerceptProperties.py
++++ b/bin/PerceptProperties.py
+@@ -85,17 +85,6 @@ class _PropertySupportRead(torch.autograd.Function):
+         return (torch.cat(chunks, 0) if chunks else torch.zeros_like(weights)), None, None
+ 
+ 
+-#: The prefix that draws the catalog a second time for the wholes half.
+-CATALOG_PREFIX = b'\x00whole-basis/'
+-
+-
+-def catalog_coordinates(part, width, ones):
+-    """A catalog part's coordinates in the wholes half: the part drawn a
+-    second time, apart from its coordinates in the parts half."""
+-    from WordIdentity import bit_stream
+-    return bit_stream(CATALOG_PREFIX + bytes(part), int(width))[:int(ones)]
+-
+-
+ #: The row of the table of wholes for the class of all characters.
+ TOP = -1
+ 
+@@ -109,34 +98,55 @@ class PrimitiveProperties(nn.Module):
+     subsequently refine the same coefficients.
+     """
+ 
+-    def __init__(self, rows, *, property_width=0, ones=3, device=None, dtype=None):
++    def __init__(self, rows, *, property_width=0, device=None, dtype=None):
+         super().__init__()
+-        self.property_width, self.ones = int(property_width), int(ones)
+-        if self.property_width < 0 or self.ones < 1 or (self.property_width and self.ones > self.property_width):
+-            raise ValueError('property codes require propertyDim >= propertyOnes > 0')
++        self.property_width = int(property_width)
++        if self.property_width < 0:
++            raise ValueError('property codes require propertyDim >= 0')
+         self.members = nn.Parameter(torch.zeros(int(rows), 256, device=device, dtype=dtype))
+         # A coefficient of zero can mean either a witnessed exclusion or an
+         # unwritten primitive. Only the former supplies counterevidence.
+         self.register_buffer('observed', torch.zeros(int(rows), 256, device=device, dtype=torch.bool))
+         self.register_buffer('fixed_rows', torch.zeros(int(rows), device=device, dtype=torch.bool))
+         self.register_buffer('fixed_members', torch.zeros(int(rows), 256, device=device, dtype=dtype))
+-        # Every byte is a part of the catalog, drawn a second time in the
+-        # wholes half's own coordinates (sigma-pi rule 52); a property's code
+-        # is the OR of its member bytes' codes, and all bytes OR'ed are the top.
+-        bits = torch.zeros(256, self.property_width, device=device, dtype=dtype)
+-        if self.property_width:
+-            for byte in range(256):
+-                bits[byte, list(catalog_coordinates(bytes([byte]), self.property_width, self.ones))] = 1
+-        if self.property_width and not bool(bits.amax(0).eq(1).all()):
+-            raise ValueError('the catalog must cover the wholes half: its OR is the class of all characters')
+-        self.register_buffer('byte_bits', bits, persistent=bool(self.property_width))
+-        self._byte_columns = tuple(tuple(bits[:, i].nonzero().flatten().cpu().tolist())
+-                                   for i in range(self.property_width))
++        # A byte's code in the wholes half: one at its group's coordinate
++        # (``regroup``); a property's code is the OR of its member bytes'.
++        self.register_buffer('byte_bits', torch.zeros(256, self.property_width, device=device, dtype=dtype),
++                             persistent=False)
++        self.byte_coordinate, self._byte_columns, self.layout = None, (), 0
+         # A row given by other rows of the table: row -> those rows. Its code
+         # is the AND of theirs, and it holds of a byte as far as all of them do.
+         self.given_by = {}
+         self._revision = 0
+         self._revision_versions = self._member_versions()
++        self.regroup()
++
++    @torch.no_grad()
++    def regroup(self):
++        """Group the bytes by the exact set of rows holding them (coefficient
++        above one half); each group takes one coordinate of the wholes half,
++        the groups in the order of their sets of rows. ``layout`` counts the
++        changes. Host side, at a declaration."""
++        if not self.property_width:
++            return
++        holds = (self.coefficients().detach() > .5).t().cpu().tolist()
++        sets = [tuple(r for r, held in enumerate(byte) if held) for byte in holds]
++        order = sorted(set(sets))
++        if len(order) > self.property_width:
++            raise ValueError(f'{len(order)} groups of bytes exceed the {self.property_width} '
++                             'coordinates of the wholes half')
++        place = {held: i for i, held in enumerate(order)}
++        coordinate = tuple(place[held] for held in sets)
++        if coordinate == self.byte_coordinate:
++            return
++        self.byte_coordinate = coordinate
++        bits = torch.zeros_like(self.byte_bits)
++        bits[torch.arange(256, device=bits.device), torch.tensor(coordinate, device=bits.device)] = 1
++        self.byte_bits.copy_(bits)
++        self._byte_columns = tuple(tuple(b for b in range(256) if coordinate[b] == i)
++                                   for i in range(self.property_width))
++        self.layout += 1
++        self._revision += 1
+ 
+     def _member_versions(self):
+         return tuple((id(value), value._version) for value in
+@@ -198,6 +208,7 @@ class PrimitiveProperties(nn.Module):
+         self.members[row].copy_(self.coefficients()[list(rows)].amin(0))
+         self.observed[row] = self.observed[list(rows)].all(0)
+         self._revision += 1
++        self.regroup()
+ 
+     def get_extra_state(self):
+         from IndependentComponents import _pack_state
+@@ -209,9 +220,8 @@ class PrimitiveProperties(nn.Module):
+ 
+     def top(self):
+         """The code of the class of all characters, the row ``TOP`` of the
+-        table of wholes: every byte belongs to it, so it is the OR of the
+-        whole catalog, all ones."""
+-        return self.byte_bits.amax(0)
++        table of wholes: all ones."""
++        return self.byte_bits.new_ones(self.property_width)
+ 
+     def directly_inside(self):
+         """Each whole of the table with the wholes directly inside it.
+@@ -254,6 +264,7 @@ class PrimitiveProperties(nn.Module):
+         self.fixed_members[row].copy_(value)
+         self.members[row].copy_(value)
+         self.observed[row]=True
++        self.regroup()
+ 
+     def coefficients(self, rows=None):
+         if self.given_by:
+@@ -363,6 +374,7 @@ class PrimitiveProperties(nn.Module):
+         for _ in range(int(steps)):
+             self.members[row, ids] += float(rate) * (targets - self.members[row, ids])
+         self.project()
++        self.regroup()
+         after = (self.members[row, ids] - targets).square().mean()
+         return float(before), float(after)
+ 
+@@ -393,5 +405,8 @@ class PrimitiveProperties(nn.Module):
+             state_dict[prefix + 'observed'] = state_dict[key] != 0
+         for name in ('fixed_rows','fixed_members'):
+             state_dict.setdefault(prefix+name,getattr(self,name).clone())
++        # The byte codes are derived from the memberships, never loaded.
++        state_dict.pop(prefix + 'byte_bits', None)
+         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
+                                      missing_keys, unexpected_keys, error_msgs)
++        self.regroup()
+diff --git a/bin/Spaces.py b/bin/Spaces.py
+index b9193f6989..00ccb3f267 100644
+--- a/bin/Spaces.py
++++ b/bin/Spaces.py
+@@ -10592,7 +10592,6 @@ class PartSpace(Space):
+                     pair_dim=pair if resolved else self.nDim,
+                     ones=int(TheXMLConfig.space(section, 'identityOnes', default=3)),
+                     property_width=property_width if resolved else 0,
+-                    property_ones=int(TheXMLConfig.space(section, 'propertyOnes', default=3)),
+                     basic_capacity=int(TheXMLConfig.space(section, 'basicPerceptCapacity', default=262144)))
+             from BasicPercepts import BasicPercepts
+             identity = getattr(self.percept_store, 'identity', None)
+@@ -19818,7 +19817,6 @@ class WholeSpace(Space):
+                    and self.nDim == identity_width + property_width)
+         basis.primitive_properties = PrimitiveProperties(
+             self.nVectors, property_width=property_width if derived else 0,
+-            ones=int(TheXMLConfig.space('PartSpace', 'propertyOnes', default=3)),
+             device=basis.getW().device, dtype=basis.getW().dtype)
+         for row, (_name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
+             if row < int(self.nVectors):
+diff --git a/bin/WordIdentity.py b/bin/WordIdentity.py
+index 80484eb89b..3cec59122b 100644
+--- a/bin/WordIdentity.py
++++ b/bin/WordIdentity.py
+@@ -40,11 +40,10 @@ def resolve_identity_layout(config):
+     pair = int(ps.setdefault('identityPairDim', 64))
+     ones = int(ps.setdefault('identityOnes', 3))
+     property_width = int(ps.setdefault('propertyDim', 64))
+-    property_ones = int(ps.setdefault('propertyOnes', 3))
+     if pair < ones or ones < 1:
+         raise ValueError('identity requires D >= s > 0')
+-    if not 0 < property_ones <= property_width:
+-        raise ValueError('property codes require propertyDim >= propertyOnes > 0')
++    if property_width < 1:
++        raise ValueError('property codes require propertyDim > 0')
+     width = pair + property_width
+     old_ps = int(ps.get('nDim', 0))
+     old_cs = int(config.get('ConceptualSpace', {}).get('nDim', old_ps)) or old_ps
+@@ -158,12 +157,12 @@ class WordIdentity(nn.Module):
+     TESTED_AT_ONCE = 128
+     WORD_PREFIX = b'\x00identity/form/'
+ 
+-    def __init__(self, store, pair_dim=64, ones=3, property_width=0, property_ones=3, basic_capacity=None):
++    def __init__(self, store, pair_dim=64, ones=3, property_width=0, basic_capacity=None):
+         super().__init__()
+         object.__setattr__(self, 'store', store)
+         self.pair_dim, self.ones = int(pair_dim), int(ones)
+         self.width = self.pair_dim
+-        self.property_width, self.property_ones = int(property_width), int(property_ones)
++        self.property_width = int(property_width)
+         if (store.dim != self.width + self.property_width or self.property_width < 0
+                 or not 0 < self.ones <= self.pair_dim):
+             raise ValueError('Radix bank width must be identity + property, with 0 < s <= D')
+@@ -195,6 +194,7 @@ class WordIdentity(nn.Module):
+                                                     device=device), persistent=False)
+         self.register_buffer('usage', torch.zeros(self.total, dtype=torch.long, device=device), persistent=False)
+         self._given_revision = 0
++        self._keyed_layout = -1
+         self._parts_key = {}
+         # The earlier forms whose code the last admission changed, and those
+         # it gave a coordinate, whether or not they had it.
+@@ -233,24 +233,29 @@ class WordIdentity(nn.Module):
+             self._codes[atom] = result
+         return result
+ 
+-    def catalog_code(self, atom, bits=None):
+-        """A part's code in the wholes half: the catalog drawn a second time
+-        in that half's own coordinates. A character's is its byte's in the
+-        table of wholes; a part given more bits in the parts half is given
+-        as many more here (``bits``: read at those bits). The coordinates
+-        given to a part (rule 61) are joined in either half."""
+-        bits = self.bits.get(atom, self.ones) if bits is None else int(bits)
+-        n = self.property_ones + bits - self.ones
+-        key = (atom, n)
+-        if key not in self._catalog:
+-            from PerceptProperties import catalog_coordinates
+-            result = torch.zeros(self.property_width, device='cpu')
+-            result[list(catalog_coordinates(bytes_of(atom[1]), self.property_width, n))] = 1
+-            self._catalog[key] = result
++    def _wholes_table(self):
++        """The table of wholes the catalog reads, or ``None`` where none is bound."""
++        properties = self.properties
++        if properties is None:
++            properties = getattr(getattr(self.basic, 'whole', None), 'primitive_properties', None)
++        return properties if properties is not None and properties.property_width == self.property_width else None
++
++    def _layout(self):
++        """The table's count of byte regroupings; -1 with no table."""
++        properties = self._wholes_table()
++        return -1 if properties is None else properties.layout
++
++    def catalog_code(self, atom):
++        """A part's code in the wholes half: the OR of its bytes' codes in the
++        table of wholes, a byte one at its group's coordinate (every byte at
++        the first where no table is bound). The coordinates given to a part
++        (rule 61) are joined in either half."""
++        properties = self._wholes_table()
++        result = torch.zeros(self.property_width, device='cpu')
++        raw = bytes_of(atom[1])
++        result[[0] * len(raw) if properties is None else [properties.byte_coordinate[b] for b in raw]] = 1
+         given = self.given.get(atom)
+-        if given is None:
+-            return self._catalog[key]
+-        return torch.maximum(self._catalog[key], given[self.width:])
++        return result if given is None else torch.maximum(result, given[self.width:])
+ 
+     def tightest(self, rows):
+         """The tightest whole of the form whose parts are these store rows:
+@@ -259,7 +264,7 @@ class WordIdentity(nn.Module):
+         if not self.property_width:
+             return None
+         key = (tuple(map(int, rows)), self.revision, self._given_revision, len(self.added),
+-               len(self.atoms), len(self.word_rows))
++               len(self.atoms), len(self.word_rows), self._layout())
+         if key in self._catalog:
+             return self._catalog[key]
+         if len(self._atom_rows) != len(self.atoms) + len(self.word_rows):
+@@ -291,7 +296,8 @@ class WordIdentity(nn.Module):
+         The cache holds addresses and fixed catalog coordinates. Native part
+         codes are read through the actual basis on each differentiable forward.
+         """
+-        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, self._given_revision, device)
++        stamp = (len(self.atoms), len(self.added), len(self.word_rows), self.revision, self._given_revision,
++                 self._layout(), device)
+         key = ('occurrence_bank', escaped_elements)
+         cached = self._catalog.get(key)
+         if cached is not None and cached[0] == stamp:
+@@ -472,6 +478,14 @@ class WordIdentity(nn.Module):
+             return
+         # BasicPercepts reads the property lanes live; identity atoms own no fill.
+         _ = self.properties.revision  # Observe writes at the same boundary as the live property reader.
++        # The wholes half of a stored code follows the table's byte groups:
++        # rekey every stored form when they change, repairing any two that
++        # now have one code (rule 56), earliest admitted first.
++        if self._keyed_layout != self._layout():
++            self._keyed_layout = self._layout()
++            for word in self._ordered:
++                self._unkey(word)
++            self._settle(self._ordered[::-1])
+ 
+     def _storage_code(self, identity_code):
+         """Admission reserves both subspaces; _fixed writes the property fill."""
+@@ -534,8 +548,7 @@ class WordIdentity(nn.Module):
+         if not self.property_width:
+             return form
+         atoms = self.words.get(bytes(raw)) or self.atoms_of(raw)
+-        wholes = torch.stack([self.catalog_code(a, override[1] if override is not None and a == override[0]
+-                                                else None) for a in atoms]).amax(0)
++        wholes = torch.stack([self.catalog_code(a) for a in atoms]).amax(0)
+         return torch.cat((form, wholes))
+ 
+     @staticmethod
+@@ -556,6 +569,7 @@ class WordIdentity(nn.Module):
+     def _reindex(self):
+         """Key every stored form and pack its code, in the order of
+         admission. Returns the first two forms found with one code, if any."""
++        self._keyed_layout = self._layout()
+         self.forms, self.word_keys, self.by_parts, self._parts_key = {}, {}, {}, {}
+         self.order = {word: index for index, word in enumerate(self.words)}
+         self._ordered = list(self.words)
+diff --git a/bin/corpus_capacity.py b/bin/corpus_capacity.py
+index 9361df8115..990b214687 100644
+--- a/bin/corpus_capacity.py
++++ b/bin/corpus_capacity.py
+@@ -109,7 +109,7 @@ def measure(config, forms, output):
+     width = ps['identityPairDim'] + ps['propertyDim']
+     store = RadixLayer(width, initial_cap=ps['nVectors'], word_bounded=True)
+     bank = WordIdentity(store, pair_dim=ps['identityPairDim'], ones=ps['identityOnes'],
+-                        property_width=ps['propertyDim'], property_ones=ps['propertyOnes'])
++                        property_width=ps['propertyDim'])
+     store.identity = bank
+     whole = WholeSpace([ws['nInput'], ws['nInputDim']],
+                        [ws['nVectors'], ws['nDim'] - sum(canonical_shape('WholeSpace'))],
+diff --git a/data/model.xml b/data/model.xml
+index 8a316ea2cd..266edd2033 100644
+--- a/data/model.xml
++++ b/data/model.xml
+@@ -546,7 +546,6 @@
+     <identityPairDim>64</identityPairDim>
+     <identityOnes>3</identityOnes>
+     <propertyDim>64</propertyDim>
+-    <propertyOnes>3</propertyOnes>
+     <nInput>0</nInput>
+     <nOutput>0</nOutput>
+     <!-- EVENT width (embraces .where/.when); content nWhat = nDim - 8. -->
+diff --git a/data/model.xsd b/data/model.xsd
+index 06da78ea86..d80733c288 100644
+--- a/data/model.xsd
++++ b/data/model.xsd
+@@ -1006,7 +1006,6 @@
+       <xs:element name="identityPairDim" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="identityOnes" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="propertyDim" type="xs:positiveInteger" minOccurs="0"/>
+-      <xs:element name="propertyOnes" type="xs:positiveInteger" minOccurs="0"/>
+       <xs:element name="nInput" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="nOutput" type="xs:nonNegativeInteger" minOccurs="0"/>
+       <xs:element name="nActive" type="xs:nonNegativeInteger" minOccurs="0"/>
+diff --git a/doc/Params.md b/doc/Params.md
+index ed4e46dee8..d9064e9f39 100644
+--- a/doc/Params.md
++++ b/doc/Params.md
+@@ -343,7 +343,6 @@ optimizer owns it. BasicModel reserves 32,768 rows, a small-run setting.
+ | `nDim` | int | `9` | Per-vector muxed EVENT width; content $\mathrm{nWhat} = \mathrm{nDim} - \mathrm{nWhere} - \mathrm{nWhen}$ (default 9 = 1 + 4 + 4). |
+ | `nVectors` | int | sentinel | Fixed physical percept-codebook capacity. Logical admission writes unused rows without changing tensor shape or optimizer ownership. Exhaustion raises an error naming this knob. Serial attention may select `nOutput` rows; parallel attention reads all active percepts. |
+ | `propertyDim` | positive int | `64` | Width of the wholes half of a percept's code, after the parts half, at text-model construction. The part catalog is drawn a second time in these coordinates; a whole's code is the OR of the codes of the catalog parts that belong to it, so the class of all characters is all ones. Numeric layouts are unchanged. |
+-| `propertyOnes` | positive int | `3` | Coordinates each catalog part takes in the wholes half; must not exceed `propertyDim`. Every byte is a part of the catalog, so the OR of all of them covers the half. |
+ | `invertible` | bool | `false` | Space construction flag; native reconstruction uses retained ordered perceptual views and canonical part ids, without an inverse fold. |
+ | `hasAttention` | bool | `false` | Inert: the boolean constructs no attention pass and is kept as an alias. Use `<attention>` (`off`, `primer`, `second-order`, `low-rank`). |
+ | `nonlinear` | bool | `true` | Tanh-bound output to $[-1, 1]$. |
+diff --git a/doc/Spaces.md b/doc/Spaces.md
+index 16545ad665..08cf083fe4 100644
+--- a/doc/Spaces.md
++++ b/doc/Spaces.md
+@@ -837,8 +837,13 @@ offered to grammars as `intersection` and `union`.
+ 
+ One percept vector of `percept_width` coordinates serves every tower. At text-model construction it splits into a parts half
+ `[0, identity_width)` of `identityPairDim` coordinates and a wholes half
+-`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64, each part or whole drawn on `identityOnes` and
+-`propertyOnes` coordinates, 3 by default (`resolve_identity_layout`). Each
++`[identity_width, percept_width)` of `propertyDim` coordinates, 64 and 64 (`resolve_identity_layout`). A part
++is drawn on `identityOnes` coordinates of the parts half, 3 by default. In the
++wholes half the bytes are grouped by the exact set of rows of the table of
++wholes that hold them (a coefficient above one half); each group has one
++coordinate, the groups in the order of their sets of rows, and a byte's code
++is one there (`PrimitiveProperties.regroup`, run where a row is declared or
++redefined and at load). Each
+ half holds two lanes, for and against (`BasicPercepts.codes` and
+ `against_codes`). The `.where`/`.when` band follows `percept_width`. Numeric
+ configurations have no wholes half. The split is fixed at construction, and
+@@ -846,8 +851,8 @@ a checkpoint of another layout is rejected.
+ 
+ | row | parts half | wholes half |
+ |---|---|---|
+-| part (a character or an added run) | its fixed bits (`WordIdentity.atom_code`) | its bits drawn again in the wholes half's coordinates (`WordIdentity.catalog_code`) |
+-| whole (a row of the table of wholes) | not read: a whole bounds only the wholes half | the OR of the catalog codes of the parts that belong to it, or the AND of the wholes it is given by (`PrimitiveProperties.codes`); the class of all characters is all ones |
++| part (a character or an added run) | its fixed bits (`WordIdentity.atom_code`) | the OR of its bytes' codes (`WordIdentity.catalog_code`) |
++| whole (a row of the table of wholes) | not read: a whole bounds only the wholes half | the OR of the codes of the bytes that belong to it, or the AND of the wholes it is given by (`PrimitiveProperties.codes`); the class of all characters is all ones |
+ | basic percept | for: the greatest of its parts' codes; against: the parts its nearest holders add | for: the least of its wholes' codes, its own tightest whole among them; against: what that bound cuts away (`BasicPercepts.against`) |
+ 
+ A part's content lies in the parts half and a whole's in the wholes half;
+diff --git a/test/test_form_subspaces.py b/test/test_form_subspaces.py
+index d46d25e1d2..dba88988cd 100644
+--- a/test/test_form_subspaces.py
++++ b/test/test_form_subspaces.py
+@@ -9,18 +9,19 @@ import pytest
+ import torch
+ from torch import nn
+ 
+-from PerceptProperties import PrimitiveProperties, catalog_coordinates
++from PerceptProperties import PrimitiveProperties
+ from WordIdentity import WordIdentity, resolve_identity_layout
+ 
+-#: The wholes half (sigma-pi rule 50): 64 coordinates, a byte at 3 of them.
++#: The wholes half (sigma-pi rule 50): 64 coordinates, a byte at its group's.
+ P = 64
+ 
+ 
+-def at(byte, *others):
+-    """A coordinate of ``byte``'s catalog code that no byte of ``others``
+-    holds, in the wholes half."""
+-    taken = {c for other in others for c in catalog_coordinates(bytes([other]), P, 3)}
+-    return next(c for c in catalog_coordinates(bytes([byte]), P, 3) if c not in taken)
++def at(properties, byte, *others):
++    """The coordinate of ``byte``'s group in the wholes half, which no byte
++    of ``others`` shares."""
++    coordinate = properties.byte_coordinate[byte]
++    assert all(properties.byte_coordinate[other] != coordinate for other in others)
++    return coordinate
+ 
+ 
+ def property_book(rows=4, identity=3, band=0):
+@@ -42,6 +43,7 @@ def extended_fixture():
+         ws.primitive_properties.observed[:2] = True
+         ps.W[4, :3] = torch.tensor([.2, .2, .2])
+         ps.W[7, :3] = torch.tensor([.8, .3, .2])
++    ws.primitive_properties.regroup()
+     ws.begin_forward()
+     cs._model.wholeSpace = NS(subspace=NS(what=ws))
+     from BasicPercepts import BasicPercepts
+@@ -57,7 +59,6 @@ def test_construction_resolves_the_split_and_preserves_numeric_layout():
+               'PartSpace': {'nDim': 9}, 'ConceptualSpace': {'nDim': 137}}
+     resolve_identity_layout(config)
+     assert config['PartSpace']['propertyDim'] == 64
+-    assert config['PartSpace']['propertyOnes'] == 3
+     for name in ('InputSpace', 'PartSpace', 'WholeSpace'):
+         assert config[name]['nDim'] == 64 + 64 + 8
+     assert config['ConceptualSpace']['nDim'] == 64 + 64 + 8 + 128
+@@ -71,37 +72,38 @@ def test_construction_resolves_the_split_and_preserves_numeric_layout():
+     assert numeric == before
+ 
+ 
+-@pytest.mark.parametrize('width,ones', [(2, 3), (0, 1), (256, 0)])
+-def test_invalid_property_construction_fails_loud(width, ones):
++def test_invalid_property_construction_fails_loud():
+     with pytest.raises(ValueError, match='propertyDim'):
+         resolve_identity_layout({'architecture': {'data': {'dataType': 'embedding'}},
+-                                 'PartSpace': {'propertyDim': width, 'propertyOnes': ones}})
++                                 'PartSpace': {'propertyDim': 0}})
+ 
+ 
+ def test_catalog_byte_union_is_monotone_and_differentiable_for_weighted_members():
+-    properties = PrimitiveProperties(4, property_width=P, ones=3)
++    properties = PrimitiveProperties(4, property_width=P)
+     with torch.no_grad():
+         properties.members[0, 97] = .2
+         properties.members[1, 97:99] = torch.tensor([.4, .3])
+         properties.members[2, 97:100] = torch.tensor([.6, .5, .4])
+         properties.members[3, 97:101] = torch.tensor([.8, .7, .6, .5])
+-    # Every byte is a part of the catalog with 3 coordinates of the wholes
+-    # half; a property's code is the OR (greatest) of its members' codes.
+-    assert properties.byte_bits.sum(1).eq(3).all()
++    properties.regroup()
++    # Every byte is one at its group's coordinate of the wholes half; a
++    # property's code is the OR (greatest) of its members' codes.
++    assert properties.byte_bits.sum(1).eq(1).all()
+     codes = properties.codes()
+     direct = (properties.members[:, :, None] * properties.byte_bits).amax(1)
+     torch.testing.assert_close(codes, direct)
+     assert (codes[:-1] <= codes[1:]).all()
+-    columns = sorted({c for byte in range(97, 101) for c in catalog_coordinates(bytes([byte]), P, 3)})
++    columns = sorted({properties.byte_coordinate[byte] for byte in range(97, 101)})
+     codes[:, columns].sum().backward()
+     assert properties.members.grad[:, 97:101].gt(0).any(0).all()
+     torch.testing.assert_close(properties.codes(torch.tensor([1, 3])), codes[[1, 3]])
+ 
+ 
+-def test_hashed_union_matches_direct_max_without_a_broadcast_workspace():
+-    properties = PrimitiveProperties(4, property_width=7, ones=2)
++def test_grouped_union_matches_direct_max_without_a_broadcast_workspace():
++    properties = PrimitiveProperties(4, property_width=7)
+     with torch.no_grad():
+         properties.members.copy_(torch.arange(1024).reshape(4, 256) / 1024)
++    properties.regroup()
+     direct = (properties.coefficients()[:, :, None] * properties.byte_bits).amax(1)
+     torch.testing.assert_close(properties.codes(), direct)
+ 
+@@ -116,11 +118,11 @@ def test_tower1_refresh_preserves_storage_and_routes_gradient_to_members():
+     book.begin_forward()
+     assert book.W.data_ptr() == pointer and not isinstance(book.W, nn.Parameter)
+     torch.testing.assert_close(book.W, torch.cat((torch.ones(4, 3), properties.codes(), torch.zeros(4, 8)), -1))
+-    book.lookup_rows(0)[3 + at(97, 98)].backward()
++    book.lookup_rows(0)[3 + at(properties, 97, 98)].backward()
+     assert properties.members.grad[0, 97] == 1
+     properties.members.grad = None
+     book.begin_forward()
+-    book.getW()[:, 3 + at(98, 97)].sum().backward()
++    book.getW()[:, 3 + at(properties, 98, 97)].sum().backward()
+     # Row 0 holds 98 alone at its coordinate; an untaught row's zero members
+     # tie there and share the derivative.
+     assert properties.members.grad[0, 98] == 1 and properties.members.grad[:, 98].gt(0).all()
+@@ -130,7 +132,7 @@ def test_tower1_refresh_preserves_storage_and_routes_gradient_to_members():
+         properties.members[0, 97] = .75
+     assert properties.revision > revision
+     book.begin_forward()
+-    assert book.W[0, 3 + at(97, 98)] == .75
++    assert book.W[0, 3 + at(properties, 97, 98)] == .75
+ 
+ 
+ def test_retired_property_fills_leave_live_basic_percept_reads():
+@@ -274,10 +276,11 @@ def test_basic_certificate_allows_ties_and_imposes_no_part_type_order():
+         properties.members[2, 97] = .5
+         properties.observed[:3] = True
+         ps.W[8].copy_(ps.W[4])
++    properties.regroup()
+     ws.begin_forward()
+     # A soft meet need not be contained in every selected type.
+-    assert properties.fill(b'a')[at(97)] == .75
+-    assert properties.codes()[0, at(97)] == .5
++    assert properties.fill(b'a')[at(properties, 97)] == .75
++    assert properties.codes()[0, at(properties, 97)] == .5
+     report = cb.mereology.containment_audit()
+     assert report['tower1']['pairs'] == 3
+     assert report['premises'] == 'basic_percepts'
+@@ -360,10 +363,9 @@ def test_cost_certificate_has_no_pairwise_or_three_axis_union_workspace():
+             result = func(*args, **(kwargs or {}))
+             self.shapes.extend(list(t.shape) for t in tree_flatten(result)[0] if torch.is_tensor(t))
+             return result
+-    # 37 rows: a coordinate of the catalog holds 2 to 21 bytes, so no
+-    # rows-by-bytes slice of the union is square by coincidence.
++    # 37 rows: no rows-by-bytes slice of the union is square by coincidence.
+     book = property_book(rows=37)
+-    hashed = PrimitiveProperties(37, property_width=7, ones=2)
++    hashed = PrimitiveProperties(37, property_width=7)
+     allocation = Allocations()
+     with allocation:
+         book.begin_forward()
+@@ -408,3 +410,37 @@ def test_native_lesson_certificate(tmp_path, monkeypatch, eager_reading):
+     finally:
+         model.End()
+         model.symbolSpace.soft_reset()
++
++
++def test_contrast_table_reads_exactly_one_and_zero():
++    """Each row of the table of wholes read against every byte, every row and
++    some forms by ``min_k max(1 - p_k, r_k)``: exactly 1 where the row holds
++    the percept (on every byte of it) and 0 where it does not."""
++    from Spaces import _CANONICAL_PROPERTY_ROWS, _CHAR_CLASS_RANGES
++    names = [name for name, _ in _CANONICAL_PROPERTY_ROWS]
++    properties = PrimitiveProperties(len(names) + 1, property_width=P)
++    for row, (name, kind) in enumerate(_CANONICAL_PROPERTY_ROWS):
++        if name == 'word':
++            properties.define_word(row)
++            continue
++        targets = torch.zeros(256)
++        for lo, hi in _CHAR_CLASS_RANGES[int(kind)]:
++            targets[lo:hi + 1] = 1.
++        properties.teach(row, torch.arange(256), targets)
++    properties.define_by_rows(len(names), (names.index('letter'), names.index('capital')))
++    holds = properties.coefficients().detach() > .5
++    codes = properties.codes().detach()
++
++    def read(p, r):
++        return torch.maximum(1 - p, r).amin(-1)
++
++    assert len(set(properties.byte_coordinate)) == 8
++    assert torch.equal(read(properties.byte_bits[None], codes[:, None]), holds.float())
++    inside = (~holds[:, None] | holds[None]).all(-1)
++    assert torch.equal(read(codes[:, None], codes[None]), inside.float())
++    for raw in (b'a1', b'ab', b'A', b'12', b'Ab', b'a b'):
++        form = properties.byte_bits[list(raw)].amax(0)
++        assert torch.equal(read(form, codes), holds[:, list(raw)].all(1).float()), raw
++    mixed = properties.byte_bits[list(b'a1')].amax(0)
++    assert read(mixed, codes[names.index('letter')]) == 0 and read(mixed, codes[names.index('digit')]) == 0
++    assert read(mixed, properties.top()) == 1
+diff --git a/test/test_item17_code.py b/test/test_item17_code.py
+index da28fbeb1f..9b47bdcd74 100644
+--- a/test/test_item17_code.py
++++ b/test/test_item17_code.py
+@@ -42,6 +42,7 @@ def table(spare=2):
+         for row, (_name, cls) in enumerate(CLASSES):
+             for lo, hi in _CHAR_CLASS_RANGES[cls]:
+                 book.primitive_properties.members[row, lo:hi + 1] = 1
++    book.primitive_properties.regroup()
+     book.enable_property_codes(identity_width=64, property_width=64)
+     return book
+ 
+diff --git a/test/test_wholespace_property_migration.py b/test/test_wholespace_property_migration.py
+index b41563a975..60480a1a5d 100644
+--- a/test/test_wholespace_property_migration.py
++++ b/test/test_wholespace_property_migration.py
+@@ -203,10 +203,7 @@ def test_wholespace_owns_one_property_codebook_and_no_concept_store(tmp_path):
+     property_rows = []
+     for key, value in state.items():
+         if "_owned_bases.what" in key and value.ndim > 0:
+-            if key == '_owned_bases.what.primitive_properties.byte_bits':
+-                # Every byte is a part of the catalog, in the wholes half.
+-                assert value.shape == (256, 64)
+-            elif key == '_owned_bases.what.primitive_properties._extra_state':
++            if key == '_owned_bases.what.primitive_properties._extra_state':
+                 # The record of the rows given by other rows, packed.
+                 continue
+             else:
