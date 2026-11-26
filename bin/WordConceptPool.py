@@ -33,6 +33,10 @@ class WordConceptPool(nn.Module):
         self.register_buffer('words', symbols.new_full((form_capacity,), -1))
         self.register_buffer('counts', symbols.new_zeros(form_capacity))
         self.register_buffer('used', symbols.new_zeros(()))
+        self.register_buffer('free_rows', symbols.new_empty(0), persistent=False)
+        self.register_buffer('form_seats', symbols.new_full((form_capacity,), -1), persistent=False)
+        self.register_buffer('seats_used', symbols.new_zeros(()), persistent=False)
+        self.register_buffer('initial_places', None, persistent=False)
 
     @torch.no_grad()
     def read(self, forms, *, learn=True, available=None):
@@ -93,6 +97,20 @@ class WordConceptPool(nn.Module):
         arrivals = torch.stack((torch.where(take, rows, -1), names), -1)
         return result.reshape_as(forms), arrivals.reshape(*forms.shape, 2)
 
+    def read_seated(self, forms, *, learn):
+        """Assign the next free order-zero seat alongside each nominated name."""
+        words, arrivals = self.read(forms, learn=learn, available=len(self.free_rows) - self.seats_used)
+        if learn:
+            new_forms = arrivals[..., 0].flatten()
+            live = new_forms >= 0
+            rank = live.long().cumsum(0) - 1
+            seats = torch.nn.functional.pad(self.free_rows, (0, 1), value=-1)
+            assigned = torch.where(live, seats[(self.seats_used + rank).clamp(0, len(self.free_rows))], -1)
+            self.seats_used.add_(live.sum())
+            self.form_seats.scatter_reduce_(0, new_forms.clamp_min(0), assigned, 'amax')
+        rows = torch.where(words >= 0, self.form_seats[forms.clamp_min(0)], -1)
+        return words, rows, arrivals
+
 
 def prepare(model):
     """Reserve MTM's names and attach existing definitions at the host boundary.
@@ -107,15 +125,17 @@ def prepare(model):
         return
     alloc = owner._concept_allocator
     pool = getattr(owner.mtm, 'word_pool', None)
+    frozen = getattr(owner, '_online_learning_frozen', False)
+    matrix = alloc.layer()
+    start, end = owner.order_slice(0)
+    first = start + matrix._row_next.get(start, 0)
+    free_rows = [row for row in range(first, end) if row not in matrix._tensor_row_keys]
     if pool is None:
-        start, end = owner.order_slice(0)
-        matrix = alloc.layer()
-        capacity = sum(row not in matrix._tensor_row_keys for row in range(start, end))
-        if getattr(owner, '_online_learning_frozen', False):
-            capacity = 0
-        names = alloc.reserve_word_symbols(capacity)
         pool = owner.mtm.word_pool = WordConceptPool(table.capacity,
-            table.left.new_tensor(names, dtype=torch.long), threshold=owner.mtm.mint_count)
+            table.left.new_empty(0, dtype=torch.long), threshold=owner.mtm.mint_count)
+    pool.to(device=table.left.device)
+    if not frozen and not len(pool.symbols):
+        pool.symbols = table.left.new_tensor(alloc.reserve_word_symbols(len(free_rows)), dtype=torch.long)
         # Migrate a legacy checkpoint's pending readings once, preserving the
         # naming reading. New word-major readings use only the pool's counts.
         pending = []
@@ -125,16 +145,25 @@ def prepare(model):
             raw = bytes_of(key[1]) if isinstance(key[1], str) else key[1]
             if raw:
                 pending.append((key, raw, len(readings)))
-        if pending and not getattr(owner, '_online_learning_frozen', False):
+        if pending:
             width = max(len(raw) for _, raw, _ in pending)
             data = table.left.new_tensor([list(raw) + [0] * (width-len(raw)) for _, raw, _ in pending])
             rows = table.insert(data, table.left.new_tensor([len(raw) for _, raw, _ in pending]))
             pool.counts.index_add_(0, rows.long(), pool.counts.new_tensor([count for _, _, count in pending]))
             for key, _, _ in pending:
                 del owner.mtm.sightings[key]
-    pool.to(device=table.left.device)
+    # Concept placement uses a private CPU generator seeded by the symbol's
+    # name. Reserve exactly those starting positions along with the names.
+    # They acquire physical rows only when the device nominates a word.
+    from ConceptPlacement import positions, reserved_seeds
+    places = positions(owner)
+    if (pool.initial_places is None or len(pool.initial_places) != len(pool.symbols)
+            or pool.initial_places.dtype != places.dtype):
+        pool.initial_places = reserved_seeds(pool.symbols.tolist(), places[0])
+    pool.free_rows = table.left.new_tensor(free_rows, dtype=torch.long)
+    pool.seats_used.zero_()
     known = set(owner.definitions.word_ids) | set(owner.interpret.objectless())
-    stamp = (owner.interpret._description_revision, ps.percept_store.identity.revision,
+    stamp = (frozen, owner.interpret._description_revision, ps.percept_store.identity.revision,
              tuple(sorted(known)))
     if getattr(pool, '_definitions_stamp', None) == stamp:
         return
@@ -154,7 +183,6 @@ def prepare(model):
         width = max(map(len, raw))
         data = table.left.new_tensor([list(value) + [0] * (width-len(value)) for value in raw])
         lengths = table.left.new_tensor(list(map(len, raw)))
-        frozen = getattr(owner, '_online_learning_frozen', False)
         rows = table.read(data, lengths, admit=False) if frozen else table.insert(data, lengths)
         # A restored frozen model can have definitions predating its form
         # table. Its missing form remains unknown; inference admits nothing.
@@ -163,7 +191,30 @@ def prepare(model):
             torch.where(valid, rows.new_tensor(words), -1), 'amax')
     pool.counts.masked_fill_((pool.words >= 0) & (mapping < 0), 0)
     pool.words.copy_(mapping)
+    pool.form_seats.copy_(matrix.concept_rows(mapping))
     pool._definitions_stamp = stamp
+
+
+def read_units(pool, table, surface, units, longest, chart, discard, *, learn):
+    """Read native word names, physical seats and their property witnesses together."""
+    from WordSurfaces import bytes_at, reading_property_signatures, trimmed_spans
+    trimmed = trimmed_spans(surface, units)
+    lengths = trimmed[..., 1] - trimmed[..., 0]
+    data, valid = bytes_at(surface, trimmed, lengths > 0, longest)
+    visible = (lengths > 0) & ((data != 0) | ~valid).all(-1)
+    forms = table.read(data.flatten(0, 1), torch.where(visible, lengths, 0).flatten(),
+                       admit=False).reshape_as(lengths)
+    first = pool.used.clone()
+    words, seats, arrivals = pool.read_seated(forms, learn=learn)
+    live = arrivals[..., 0] >= 0
+    ordinal = first + live.flatten().long().cumsum(0).reshape_as(forms) - 1
+    # The final row supplies the absent value even for an empty frozen pool.
+    reserved = torch.nn.functional.pad(pool.initial_places, (0, 0, 0, 1))
+    initial = reserved[torch.where(live, ordinal, len(pool.symbols))]
+    properties = reading_property_signatures(surface, trimmed, chart, discard, latin1_text=False)
+    records = torch.cat((words[..., None], arrivals[..., :1], seats[..., None],
+                         trimmed, units, properties[..., None], data.to(words.dtype)), -1)
+    return words, seats, forms, trimmed, visible, records, initial
 
 
 def stage(model, fi):
@@ -173,7 +224,6 @@ def stage(model, fi):
     still a sentence capture break until the concept/definition consumers
     read the pool's rows directly.
     """
-    from WordSurfaces import bytes_at, trimmed_spans
     owner, ps = model._concept_owner(), model.perceptualSpace
     pool = getattr(owner.mtm, 'word_pool', None)
     if pool is None or 'form_rows' not in fi:
@@ -181,45 +231,37 @@ def stage(model, fi):
     table = ps.form_links
     surface, units = fi['sentence_bytes'], fi['unit_spans']
     longest = min(fi['unit_longest'], surface.shape[1])
-    trimmed = trimmed_spans(surface, units)
-    lengths = trimmed[..., 1] - trimmed[..., 0]
-    active = lengths > 0
-    data, valid = bytes_at(surface, trimmed, active, longest)
-    active &= ((data != 0) | ~valid).all(-1)
-    forms = table.read(data.flatten(0, 1), torch.where(active, lengths, 0).flatten(),
-                       admit=False).reshape_as(lengths)
-    start, end = owner.order_slice(0)
-    available = (~owner._concept_allocator.layer().assigned[start:end]).sum()
-    words, arrivals = pool.read(forms, learn=not getattr(owner, '_online_learning_frozen', False),
-                                available=available)
-    # The old metadata consumers are ported separately. They no longer decide
-    # whether the word exists: that decision and its name came from MTM above.
-    fi['pool_word_ids'] = words
-    fi['pool_form_rows'] = forms
-    fi['pool_spans'] = trimmed
-    fi['pool_word_host'] = words.tolist()
-    host_spans = trimmed.tolist()
-    for b, row in enumerate(arrivals.tolist()):
-        for w, (form, word) in enumerate(row):
-            if form < 0:
-                continue
-            spelling, size = table.spell(forms[b, w].reshape(1), longest=longest)
-            raw = bytes(spelling[0, :int(size[0])].tolist())
-            parts = [int(ps.byte_store_rows[byte]) for byte in raw]
-            wholes = model.wholeSpace.property_rows_for_bytes(raw)
-            admitted = owner.interpret.lookup_word(parts, wholes, form=raw,
-                word_reading=True, reading=owner.reading(b), pool_word=word)
-            if admitted is None:
-                raise RuntimeError('MTM nominated a word without a free concept row')
-    # Text labels are compatibility metadata of already named concepts.
-    # Unnamed units have no label here; reporting and reset can still spell
-    # the input at their boundary. Attention never spells an input to find it.
+    from Spaces import _analysis_property_signature
+    chart, discard = _analysis_property_signature(model.wholeSpace, device=surface.device)
+    learn = not getattr(owner, '_online_learning_frozen', False)
+    words, seats, forms, trimmed, visible, records, initial = read_units(
+        pool, table, surface, units, longest, chart, discard, learn=learn)
+    fi.update(pool_visible=visible, pool_concept_rows=seats, pool_word_ids=words,
+              pool_form_rows=forms, pool_spans=trimmed)
+    # The open sentence currently has host consumers of its word metadata.
+    # Send a rectangular record once. All recognition and seat choices have
+    # already been made and the original form row accompanies its nomination.
+    labels, readings = [], []
+    width = 0
+    property_count = min(int(model.wholeSpace.nVectors), 63)
+    for b, stream in enumerate(records.cpu().tolist()):
+        word_row, read_row = [], []
+        occupied = 0
+        for w, (word, form, seat, lo, hi, start, stop, bits, *payload) in enumerate(stream):
+            word_row.append(word)
+            wholes = tuple(i for i in range(property_count) if bits & (1 << i)) if word >= 0 else ()
+            read_row.append((word, seat, wholes))
+            occupied += int(stop > start)
+            if form >= 0:
+                raw = bytes(payload[:hi-lo])
+                if owner.interpret.install_nomination(word, seat, form, raw, wholes, initial[b, w]) is None:
+                    raise RuntimeError('MTM nominated a word without a free concept row')
+        readings.append(read_row)
+        labels.append(word_row)
+        width = max(width, occupied)
+    fi['pool_readings'] = readings
+    fi['pool_width'] = width
     descriptions = owner._concept_allocator.word_descriptions
-    fi['pool_by_extent'] = {(b, lo, hi): word
-        for b, (row, extents) in enumerate(zip(fi['pool_word_host'], host_spans))
-        for word, (lo, hi) in zip(row, extents) if hi > lo}
     fi['pool_word_texts'] = [[next(iter(descriptions.get(word, {}).get('forms', ())), '')
-                             for word in row] for row in fi['pool_word_host']]
-    fi['pool_word_intervals'] = [[tuple(span) for span in row if span[1] > span[0]]
-                                  for row in units.tolist()]
+                             for word in row] for row in labels]
     return True

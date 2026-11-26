@@ -5999,15 +5999,21 @@ class SparseSigmaLDU(SparseLDULayer):
     chart undone (``atanh``), then :meth:`SparseLDULayer.back`.
     """
 
-    def forward(self, options, inputs, rows):
+    def forward(self, options, inputs, rows, *, stream_rows=False):
         """Each of ``rows``' value (``-1`` reads zero), ``[R, ...]``, from the
         options ``options`` ``[P, ..., 2]`` of rows ``inputs`` ``[P]`` (the
         Not's: a row's value and its not-value, the value's negation). A
         row not among ``inputs`` reads zero, and each row is read once, at
-        its first place."""
+        its first place. With stream_rows, rows[R,B] supplies each stream's
+        own output seats in the shared inventory."""
         device = options.device
         inputs = torch.as_tensor(inputs, dtype=torch.long, device=device).reshape(-1)
-        rows = torch.as_tensor(rows, dtype=torch.long, device=device).reshape(-1)
+        rows = torch.as_tensor(rows, dtype=torch.long, device=device)
+        if stream_rows:
+            if options.ndim < 3 or rows.ndim != 2 or rows.shape[1] != options.shape[1]:
+                raise ValueError('per-stream Sigma seats require rows[R,B] and options[P,B,...,2]')
+        else:
+            rows = rows.reshape(-1)
         shape = (len(rows), *options.shape[1:-1])
         if not self.nnz or not len(rows) or not len(inputs):
             return options.new_zeros(shape)
@@ -6022,9 +6028,12 @@ class SparseSigmaLDU(SparseLDULayer):
             0, torch.where(held, slot, S), value.index_select(0, by))
         y = self.up(x[:S])
         y = torch.cat((y, y.new_zeros(1, *y.shape[1:])))
-        at = self.output_slot.to(device).index_select(0, rows.clamp(0, self.nOutput - 1))
+        at = self.output_slot.to(device)[rows.clamp(0, self.nOutput - 1)]
         read = (rows >= 0) & (rows < self.nOutput) & (at >= 0)
-        return torch.tanh(y.index_select(0, torch.where(read, at, S)))
+        seats = torch.where(read, at, S)
+        if stream_rows:
+            return torch.tanh(y[seats, torch.arange(rows.shape[1], device=device)])
+        return torch.tanh(y.index_select(0, seats))
 
     def reverse(self, y, inputs):
         """The signed values of rows ``inputs`` ``[P, ...]`` from every
@@ -6832,7 +6841,7 @@ class ConceptualAttentionLayer(SparseLayer):
         part = next(x for (r, x) in recs if r == "part")
         return whole, part
 
-    def assign_row(self, key, capacity=None, base=0):
+    def assign_row(self, key, capacity=None, base=0, *, seat=None):
         """First-seen GLOBAL tensor row of ``key`` within the row region
         starting at ``base``; ``None`` when that region is full. ``capacity``
         bounds the region (defaults to the rows past ``base``). Namespaced
@@ -6843,12 +6852,17 @@ class ConceptualAttentionLayer(SparseLayer):
             b = int(base)
             cap = int(self.nOutput - b if capacity is None else capacity)
             nxt = int(self._row_next.get(b, 0))
-            while nxt < cap and b + nxt in self._tensor_row_keys:
-                nxt += 1
-            if nxt >= cap:
-                return None
-            r = b + nxt
-            self._row_next[b] = nxt + 1
+            if seat is None:
+                while nxt < cap and b + nxt in self._tensor_row_keys:
+                    nxt += 1
+                if nxt >= cap:
+                    return None
+                r = b + nxt
+            else:
+                r = int(seat)
+                if not b + nxt <= r < b + cap or r in self._tensor_row_keys:
+                    raise ValueError('nominated concept seat is unavailable')
+            self._row_next[b] = r - b + 1
             self._tensor_rows[k] = r
             self._tensor_row_keys[r] = k
         return int(r)

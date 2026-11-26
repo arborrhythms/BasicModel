@@ -69,7 +69,7 @@ class NumericPercepts:
                 owner.mtm.close(None, stream=batch, references=getattr(owner, '_field_activated_references', {}).get(batch, ()))
             promote_candidates(owner)
         # Readings: each axis place, then the bracket over the whole input.
-        nominated = [row for row in range(len(basic.index)) if bool(basic.promoted[row])]
+        nominated = sorted(basic.promoted_rows)
         presence = values.new_zeros(len(nominated), B, A + 1, 2)
         for index, row in enumerate(nominated):
             held = percepts == row

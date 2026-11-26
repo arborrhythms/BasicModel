@@ -173,8 +173,14 @@ def word_request(model, concepts, index):
     request = owner.similarity_codebook.W.new_zeros(V, len(index), 2)
     if not V or not concepts.shape[1]:
         return request
-    words = concepts.gather(1, index.clamp_min(0)[:, None]).flatten()
-    rows = owner._concept_allocator.layer(0).concept_rows(torch.where(index >= 0, words, -1))
+    source = index.clamp_min(0)[:, None]
+    staged = getattr(getattr(model, 'perceptualSpace', None), '_forward_input', None) or {}
+    seats = staged.get('pool_concept_rows')
+    words = concepts.gather(1, source).flatten()
+    if seats is None:
+        rows = owner._concept_allocator.layer(0).concept_rows(torch.where(index >= 0, words, -1))
+    else:
+        rows = torch.where((index >= 0) & (words >= 0), seats.gather(1, source).flatten(), -1)
     stream = torch.arange(len(index), device=request.device)
     request[rows.clamp_min(0), stream, 0] = (rows >= 0).to(request)
     return request

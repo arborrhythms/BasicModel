@@ -75,7 +75,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
                                     forced=program.interpret_forced)
     def number(name):
         return getattr(program, name) if numerics is None else numerics.closing_value(name)
-    orders = number('leaf_orders')
+    orders = program.leaf_orders if numerics is None else numerics.close_orders
     if numerics is None and program.reference_orders is not None:
         orders = (program.reference_orders if orders is None else
                   torch.where(program.reference_orders >= 0, program.reference_orders, orders))
@@ -119,8 +119,12 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
     # The grammar still consumes integral event flags. Read their existing
     # columns together. Live references and denoted order come directly
     # from the operator that just chose them.
-    events = (program.identity_actions, program.operation_relations,
-              number('operation_refs'), program.timeline_actions)
+    control = program if numerics is None else numerics.control
+    recorded_refs = control.operation_refs
+    if numerics is not None and recorded_refs is None:
+        recorded_refs = control.actions.new_full((len(control.actions), 2), -1)
+    events = (control.identity_actions, control.operation_relations,
+              recorded_refs, control.timeline_actions)
     recorded = [value for value in events if value is not None]
     if recorded:
         rows = torch.cat(recorded, 1).tolist()
@@ -135,8 +139,8 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         identity_actions, relation_actions, reference_actions, timeline_actions = columns
     else:
         identity_actions = relation_actions = reference_actions = timeline_actions = None
-    origins = (program.identity_origins[:, :2].tolist()
-               if identity_actions and program.identity_origins is not None else None)
+    origins = (control.identity_origins[:, :2].tolist()
+               if identity_actions and control.identity_origins is not None else None)
     stack, introductions = [], {}
     local_uses = set()
     if program.identity_actions is not None:
@@ -159,7 +163,7 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         return node['value']
     def input_evidence(words):
         # These are input identification poles, never the source's authority.
-        evidence = program.leaf_evidence
+        evidence = control.leaf_evidence
         if evidence is None:
             return (0., 0.)
         selected = evidence[list(words)]

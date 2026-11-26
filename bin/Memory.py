@@ -400,47 +400,52 @@ class ModelState(torch.nn.Module):
         # A tick names one durable head per stream. Signed names use the
         # same occurrence/relation convention as the sentence-close result.
         self.register_buffer('_heads', tick.new_empty(0, 1), persistent=False)
-        self._used_ticks = 0
-        self._last_written_tick = -1
 
-    def publish_heads(self, tick, heads):
-        """Record the kept native addresses. Repeated writes share the row for t."""
-        if not heads or all(head in (0, -1) for head in heads):
-            return
-        tick = int(tick)
+    @property
+    def _used_ticks(self):
+        # Host reservation/checkpoint metadata; tensor publication and lookup
+        # read the whole fixed-capacity index without asking for its count.
+        return int((self._heads[:, 0] >= 0).sum())
+
+    def reserve_heads(self, streams, additional):
+        """Reserve room before a captured publication, without assigning a tick."""
         used = self._used_ticks
-        pos = used
-        if used and tick == self._last_written_tick:
-            pos = used - 1
-        elif used and tick < self._last_written_tick:
-            pos = int(torch.searchsorted(self._heads[:used, 0].contiguous(), tick))
-        new = pos == used or (tick != self._last_written_tick and int(self._heads[pos, 0]) != tick)
-        width = max(self._heads.shape[1], len(heads) + 1)
-        if used + int(new) > self._heads.shape[0] or width != self._heads.shape[1]:
-            rows = max(16, 2 * used) if used + int(new) > self._heads.shape[0] else self._heads.shape[0]
-            grown = self._heads.new_full((rows, width), -1)
+        width = max(self._heads.shape[1], int(streams) + 1)
+        needed = used + int(additional)
+        if needed > len(self._heads) or width != self._heads.shape[1]:
+            capacity = max(16, 2 * used, needed) if needed > len(self._heads) else len(self._heads)
+            grown = self._heads.new_full((capacity, width), -1)
             grown[:used, :self._heads.shape[1]].copy_(self._heads[:used])
             self._heads = grown
-        if new:
-            if pos < used:
-                self._heads[pos + 1:used + 1].copy_(self._heads[pos:used].clone())
-            self._heads[pos].fill_(-1)
-            self._heads[pos, 0] = tick
-            self._used_ticks += 1
-            self._last_written_tick = max(tick, self._last_written_tick)
-        values = self._heads.new_tensor(heads)
-        current = self._heads[pos, 1:len(heads) + 1]
-        current.copy_(torch.where((values == -1) | (values == 0), current, values))
+
+    def publish_heads(self, tick, heads):
+        """Record each retained native address at its stream's tick in one merge.
+
+        The host close may pass its list of heads and reserve here. A captured
+        caller passes tensors into storage reserved at its opening boundary.
+        """
+        if not torch.is_tensor(heads):
+            if not heads or all(head in (0, -1) for head in heads):
+                return
+            additional = len(heads) if torch.is_tensor(tick) and tick.ndim else 1
+            self.reserve_heads(len(heads), additional)
+            heads = self._heads.new_tensor(heads)
+        if heads.ndim != 1:
+            raise ValueError('sentence heads require one name per stream')
+        from TemporalHeads import publish
+        tick = torch.as_tensor(tick, dtype=self._heads.dtype, device=self._heads.device)
+        self._heads.copy_(publish(self._heads, tick, heads.to(self._heads)))
 
     def root_at(self, stream, tick):
-        """Look up a batch of stream/tick coordinates. Missing roots have address -1."""
+        """Look up stream/tick coordinates; a missing root has address -1."""
         streams, ticks = torch.broadcast_tensors(torch.as_tensor(stream, device=self._heads.device),
                                                  torch.as_tensor(tick, device=self._heads.device))
-        rows = self._heads[:self._used_ticks]
-        if not len(rows):
+        rows = self._heads
+        if not len(rows) or rows.shape[1] == 1:
             return torch.full_like(ticks, -1, dtype=torch.long)
-        at = torch.searchsorted(rows[:, 0].contiguous(), ticks.contiguous()).clamp_max(len(rows) - 1)
-        valid = (rows[at, 0] == ticks) & (streams >= 0) & (streams < rows.shape[1] - 1)
+        keys = torch.where(rows[:, 0] >= 0, rows[:, 0], torch.iinfo(rows.dtype).max)
+        at = torch.searchsorted(keys, ticks.contiguous()).clamp_max(len(rows) - 1)
+        valid = (rows[at, 0] == ticks) & (ticks >= 0) & (streams >= 0) & (streams < rows.shape[1] - 1)
         value = rows[at, (streams + 1).clamp(1, rows.shape[1] - 1)]
         return torch.where(valid, value, -1)
 
@@ -454,9 +459,8 @@ class ModelState(torch.nn.Module):
         addresses = heads if relations else -heads - 2
         heads.masked_fill_(relevant & ~torch.isin(addresses, kept.to(heads)), -1)
         remaining = rows[(heads != -1).any(1)]
-        self._used_ticks = len(remaining)
+        self._heads.fill_(-1)
         self._heads[:len(remaining)].copy_(remaining)
-        self._last_written_tick = int(remaining[-1, 0]) if len(remaining) else -1
 
     def get_extra_state(self):
         return self._heads[:self._used_ticks].detach().clone()
@@ -467,8 +471,6 @@ class ModelState(torch.nn.Module):
                     or bool((rows[1:, 0] <= rows[:-1, 0]).any()) or bool((rows[:, 1:] == 0).any())))):
             raise ValueError('invalid per-stream sentence root index')
         self._heads = rows.detach().to(self.when_time.device, copy=True)
-        self._used_ticks = len(rows)
-        self._last_written_tick = int(rows[-1, 0]) if len(rows) else -1
 
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
         state.setdefault(prefix + '_extra_state', self._heads.new_empty(0, 1))
@@ -2696,17 +2698,25 @@ class LTM0(IdeaRows):
         write_time(self,row,present_stamp(self))
         self._write_name(row, name_row(self))
 
-    @torch.no_grad()
     def retain_ideas(self, source, rows, names, referents):
         """Copy STM rows as they stand, including their time and graded evidence."""
-        if not rows.numel():
+        self.retain_idea_batch([(source, rows, names, referents)])
+
+    @torch.no_grad()
+    def retain_idea_batch(self, selections):
+        """Publish one contiguous block for the retained occurrences of every stream."""
+        selections = [entry for entry in selections if entry[1].numel()]
+        if not selections:
             return
         first = len(self)
-        end = first + rows.numel()
+        end = first + sum(rows.numel() for _, rows, _, _ in selections)
         if end > self.capacity:
             raise OverflowError('LTM0 construction capacity exhausted')
+        names = torch.cat([names for _, _, names, _ in selections])
+        referents = torch.cat([refs for _, _, _, refs in selections])
         for column in ('slots', 'trust', 'activity', 'episodic_concepts', 'episodic_values'):
-            getattr(self, column)[first:end].copy_(getattr(source, column).index_select(0, rows))
+            values = [getattr(source, column).index_select(0, rows) for source, rows, _, _ in selections]
+            getattr(self, column)[first:end].copy_(torch.cat(values))
         self.referent[first:end].copy_(referents)
         self.row_names[first:end].copy_(names)
         self.names_issued.copy_(torch.maximum(self.names_issued, names.amax()))

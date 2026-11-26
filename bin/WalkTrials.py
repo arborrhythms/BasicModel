@@ -205,15 +205,15 @@ class ThoughtTrialState:
                 elif name in vars(owner):delattr(owner,name)
 
     @classmethod
-    def keep(cls, states, winners):
+    def keep(cls, states, winners, *, indices=None):
         """Restore the selected stream's effects without executing its episode."""
-        if bool((winners == winners[0]).all()):
-            states[int(winners[0])].restore()
+        indices = winners.tolist() if indices is None else indices
+        if len(set(indices)) == 1:
+            states[indices[0]].restore()
             return
         from copy import copy
         chosen = copy(states[0])
         batch = len(winners)
-        indices = winners.tolist()
         from SentenceCompose import select_streams
         def gather(values, batch_dim=0):
             return select_streams(values, winners, batch_dim=batch_dim)
@@ -229,9 +229,12 @@ class ThoughtTrialState:
                 # must remain beyond every selected history's frontier.
                 return max(values[index] for index in set(indices))
             if name == '_cs_field_concept_ids' and torch.is_tensor(first):
-                return first.new_tensor(sorted({int(cid)
-                    for row, index in enumerate(indices)
-                    for cid in (values[index] if values[index].ndim == 1 else values[index][:, row])}))
+                width = max(len(value) for value in values)
+                missing = torch.iinfo(first.dtype).min
+                banks = [value[None].expand(batch, -1) if value.ndim == 1 else value.T for value in values]
+                selected = gather([torch.nn.functional.pad(bank, (0, width - bank.shape[1]), value=missing)
+                                   for bank in banks])
+                return selected[selected != missing].unique(sorted=True)
             if name in ('_cs_field_where', '_cs_field_when', '_cs_field_wires') and torch.is_tensor(first):
                 width = max(value.shape[1] for value in values)
                 return gather([torch.nn.functional.pad(value,
@@ -289,7 +292,7 @@ class ThoughtTrialState:
             chosen.store_names = (chosen.store_names[0],
                 torch.stack([state.store_names[1] for state in states])[winners.to(chosen.store_names[1].device)].amax(0))
         from MemoryActivity import select
-        chosen.activity = select([state.activity for state in states], winners)
+        chosen.activity = select([state.activity for state in states], indices)
         chosen.saved = []
         for position, (owner, values, names) in enumerate(states[0].saved):
             alternatives = [state.saved[position][1] for state in states]
@@ -322,7 +325,7 @@ class ThoughtTrialState:
             fields = [field if field.concept_ids is not None else ConceptualField(
                 held[0].concept_ids[:0], held[0].evidence[:0], torch.zeros_like(held[0].where),
                 torch.zeros_like(held[0].when), None) for field in fields]
-            publish(chosen.model, select_fields(fields, winners))
+            publish(chosen.model, select_fields(fields, winners, indices=indices))
 
 
 

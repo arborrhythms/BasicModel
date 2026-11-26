@@ -7,6 +7,25 @@ from Definitions import form_key
 from Memory import NULL_CONCEPT
 
 
+def preferred_ids(ids, orders, rows, scores):
+    """Choose among each word's denotations for all streams' expectations."""
+    live = ids >= 0
+    valid = (rows >= 0) & (rows < scores.shape[1])
+    padded = torch.nn.functional.pad(scores, (0, 1))
+    values = padded[:, torch.where(valid, rows, scores.shape[1])]
+    positive = live & (values > 0)
+    eligible = live & (positive == positive.any(-1, keepdim=True))
+    highest = orders.masked_fill(~eligible, torch.iinfo(orders.dtype).min).amax(-1, keepdim=True)
+    eligible &= orders == highest
+    first = eligible.int().argmax(-1, keepdim=True)
+    usable = eligible & ~values.isnan()
+    best = values.masked_fill(~usable, -torch.inf).amax(-1, keepdim=True)
+    winner = ids.masked_fill(~(usable & (values == best)), torch.iinfo(ids.dtype).max).amin(-1)
+    # Match the ordinary comparison when the first contender's score is NaN.
+    first_id = ids.expand_as(values).gather(-1, first).squeeze(-1)
+    return torch.where(values.gather(-1, first).squeeze(-1).isnan(), first_id, winner)
+
+
 def positive_evidence(presence):
     """A native positive identification, before any conceptual pole operation."""
     return torch.stack((presence.clamp(0, 1), torch.zeros_like(presence)), -1)
@@ -256,15 +275,7 @@ class InterpretLayer(GrammarLayer):
         orders = ids.new_tensor([cs._concept_source_order(cid) for cid in candidates])
         rows = [cs._concept_row_of(cid) for cid in candidates]
         rows = ids.new_tensor([r if r is not None and 0 <= r < len(scores) else -1 for r in rows])
-        values = torch.where(rows >= 0, scores[rows.clamp_min(0)], 0.)
-        eligible = (values > 0) == (values > 0).any()
-        eligible = eligible & (orders == orders.masked_fill(~eligible, torch.iinfo(orders.dtype).min).amax())
-        first = eligible.int().argmax().reshape(1)
-        # The scalar maximum keeps its first contender if that score is NaN.
-        usable = eligible & ~values.isnan()
-        best = values.masked_fill(~usable, -torch.inf).amax()
-        winner = ids.masked_fill(~(usable & (values == best)), torch.iinfo(ids.dtype).max).amin()
-        return torch.where(values.gather(0, first)[0].isnan(), ids.gather(0, first)[0], winner)
+        return preferred_ids(ids[None], orders[None], rows[None], scores[None])[0, 0]
 
     def denoted_ids(self, ids, *, batch=0):
         """Resolve a field's word references in the current stream's expected context."""
@@ -381,7 +392,7 @@ class InterpretLayer(GrammarLayer):
         if inventory:
             self.owner._preflight_concept_row(0)
 
-    def lookup_word(self, parts, wholes, *, form=None, word_reading=False, reading=None, pool_word=None):
+    def lookup_word(self, parts, wholes, *, form=None, word_reading=False, reading=None):
         """Fuse and recognise before changing any identity or definition.
 
         A form that names no word yet becomes one only when MTM nominates its
@@ -418,9 +429,9 @@ class InterpretLayer(GrammarLayer):
         elif native is not None:
             parts = tuple(ps.fuse_parts(parts))
         form = form_key(form)
-        word = None if pool_word is not None else index.word(unit=parts, form=form, identity=identity_key)
+        word = index.word(unit=parts, form=form, identity=identity_key)
         objectless = self.objectless()
-        for cid, value in (() if pool_word is not None else objectless.items()):
+        for cid, value in objectless.items():
             if parts in value['parts'] or (form is not None and form in value['forms']):
                 word = cid
                 break
@@ -466,8 +477,24 @@ class InterpretLayer(GrammarLayer):
                 self._description_revision += 1
                 index.add(row)
             return word
-        if pool_word is None and not cs.nominates(('form', form) if form is not None else ('parts', parts), reading):
+        if not cs.nominates(('form', form) if form is not None else ('parts', parts), reading):
             return None
+        return self._install_word(parts, wholes, form, identity_key, word_reading=word_reading)
+
+    def install_nomination(self, word, seat, form_row, raw, wholes, initial):
+        """Publish the native records for a symbol already selected by MTM."""
+        cs = self.owner
+        identity = cs._model.perceptualSpace.percept_store.identity
+        parts = identity.admit(raw, form_row=form_row)
+        self._sync_identity(identity)
+        return self._install_word(parts, tuple(wholes), form_key(raw), identity.definition_key(raw),
+                                  word_reading=True, pool_word=word, seat=seat, initial=initial)
+
+    def _install_word(self, parts, wholes, form, identity_key, *, word_reading, pool_word=None, seat=None, initial=None):
+        from Spaces import _concept_alloc_of
+        cs = self.owner
+        alloc, index = _concept_alloc_of(cs), cs.definitions
+        ps = getattr(getattr(cs, '_model', None), 'perceptualSpace', None)
         # In the discovering field, interpretation names the case it admits.
         # It never allocates a competing concept row for the same unit.
         discovering = word_reading and cs._promotion_enabled and cs._sparse_active()
@@ -491,31 +518,14 @@ class InterpretLayer(GrammarLayer):
                 cs._preflight_concept_row(0, context='word admission')
             except RuntimeError:
                 return None
-            word = alloc.new_concept() if pool_word is None else alloc.claim_word_symbol(pool_word)
-            alloc.symbol_types.setdefault(word, set()).add('word')
-            for part in parts:
-                cs.add_part(word, part)
-            for whole in wholes:
-                cs.add_whole(word, whole)
-            alloc.singletons.add(word)
-            cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
-            cs._csw_concept_row(0, word)
-            alloc.word_descriptions[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
-            cs.similarity_codebook.trust.remember(word, cs.similarity_codebook.lookup_rows(cs._concept_row_of(word)))
-            self._description_revision += 1
-            if form is not None:
-                cs.bind_word_concept(form, word)
-            if obj is not None:
-                # The field's case is the word's object. Without one, the
-                # word's reading gives it its blank object.
-                self.define(word, obj)
-            return word
-        try:
-            self._preflight()
-        except RuntimeError:
-            if word_reading:
-                return None
-            raise
+        else:
+            obj = None
+            try:
+                self._preflight()
+            except RuntimeError:
+                if word_reading:
+                    return None
+                raise
         # The form owns a row before it has an object. A later witnessed
         # definition may supply one; interpretation cannot invent it.
         word = alloc.new_concept() if pool_word is None else alloc.claim_word_symbol(pool_word)
@@ -525,6 +535,8 @@ class InterpretLayer(GrammarLayer):
         for whole in wholes:
             cs.add_whole(word, whole)
         alloc.singletons.add(word)
+        if seat is not None:
+            cs._declare_concept_row(0, word, seat=seat, initial=initial)
         cs._populate_concept_weights(word, witness=(parts, wholes), word_reading=True)
         cs._csw_concept_row(0, word)
         alloc.word_descriptions[word] = dict(forms=() if form is None else (form,), parts=(parts,), wholes=wholes)
@@ -532,7 +544,9 @@ class InterpretLayer(GrammarLayer):
         self._description_revision += 1
         if form is not None:
             cs.bind_word_concept(form, word)
-        if identity_key is not None:
+        if obj is not None:
+            self.define(word, obj)
+        if not discovering and identity_key is not None:
             alloc.word_descriptions[word]['identity_key'] = identity_key
             self._description_revision += 1
         return word
@@ -769,9 +783,29 @@ class InterpretLayer(GrammarLayer):
         """Resolve all positive names on each page using its own expected objects."""
         from Meaning import require_sentence_tensor
         defined = self.owner.definitions
-        _, _, _, alternatives = defined.object_table(words.device)
-        resolved = (torch.stack([self.denoted_ids(row, batch=b) for b, row in enumerate(words)])
-                    if len(words) and alternatives else self.denoted_ids(words))
+        keys, objects, seats, alternatives = defined.object_table(words.device)
+        if alternatives:
+            _, all_objects = defined.word_objects(words.device)
+            ids = all_objects.index_select(0, seats)
+            width = ids.shape[1]
+            orders = words.new_tensor([[self.owner._concept_source_order(i) for i in group]
+                                       + [-1] * (width - len(group)) for group in alternatives])
+            rows = self.owner._concept_allocator.layer(0).concept_rows(ids)
+            expected = getattr(self.owner, '_expected_knowing', None)
+            if torch.is_tensor(expected) and expected.shape[1]:
+                scores = expected[:len(words), :, 0].detach().to(words.device)
+                scores = torch.nn.functional.pad(scores, (0, 0, 0, len(words) - len(scores)))
+            else:
+                scores = torch.zeros((len(words), 0), device=words.device)
+            chosen = preferred_ids(ids, orders, rows, scores)
+            table = objects.expand(len(words), -1).index_copy(1, seats, chosen)
+            at = torch.searchsorted(keys, words.contiguous()).clamp_max(len(keys) - 1)
+            resolved = torch.where(keys[at] == words, table.gather(1, at), words)
+        elif len(keys):
+            at = torch.searchsorted(keys, words.contiguous()).clamp_max(len(keys) - 1)
+            resolved = torch.where(keys[at] == words, objects[at], words)
+        else:
+            resolved = words
         # A word can retain its name after the live definition has expired.
         # Only those words need the fallback. A dormant ambiguous name has
         # no effect until this sentence actually reads it.

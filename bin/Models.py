@@ -11163,16 +11163,14 @@ class BasicModel(BaseModel):
             extents, observations = mixing_word_witnesses(self, raw, ids, spans, attention,
                 grammar_starts=offsets[:, :, 0] if disjoint else None)
         else:
-            extents, observations = BasicModel._legacy_word_witnesses(self, raw, ids, spans, attention)
+            extents, legacy = BasicModel._legacy_word_witnesses(self, raw, ids, spans, attention)
+            observations = ((*item, None) for item in legacy)
         grammar_words = []
-        for b, lo, hi, surface, parts, last, wholes in observations:
-            if 'pool_by_extent' in fi:
-                word = fi['pool_by_extent'].get((b, lo, hi), -1)
-                word = None if word < 0 else word
-            else:
+        for b, lo, hi, surface, parts, last, wholes, word in observations:
+            if word is None:
                 word = owner.interpret.lookup_word(parts, wholes, form=surface, word_reading=True,
                                                    reading=owner.reading(b))
-            if word is not None:
+            if word is not None and word >= 0:
                 object_id, object_row, object_order = owner.interpret.reading(word, batch=b)
                 grammar_words.append((b, lo, hi, surface.decode('latin1'), last, word,
                                       object_id, object_row, object_order))
@@ -11482,20 +11480,13 @@ class BasicModel(BaseModel):
             stage_word_properties(
                 word_texts, active, word_offsets=word_offsets,
                 surface=ps_fwd.get("sentence_bytes"), unit_spans=ps_fwd.get("unit_spans"))
-        pid_host = part_ids.detach().to("cpu").reshape(B, W, P).tolist()
-        mask_host = part_mask.detach().to("cpu").reshape(B, W, P).tolist()
+        pid_host = torch.where(part_mask.bool(), part_ids, -1).tolist()
+        pool_readings = ps_fwd.get('pool_readings')
         attention = getattr(self, "_attention_words", None)
         admitted = active if attention is None else active & attention.accepted
         active_host = admitted.detach().to("cpu").reshape(B, W).tolist()
-        row_host = [[-1] * W for _ in range(B)]
-        cid_host = [[-1] * W for _ in range(B)]
-        order_host = [[-1] * W for _ in range(B)]
-        object_row_host = [[-1] * W for _ in range(B)]
-        object_cid_host = [[-1] * W for _ in range(B)]
-        object_order_host = [[-1] * W for _ in range(B)]
-        slots = owner.REFERENCE_SLOTS
-        reference_codes = [[[-1] * slots for _ in range(W)] for _ in range(B)]
-        reference_roles = [[[-1] * slots for _ in range(W)] for _ in range(B)]
+        # Transfer the host inventory's six address columns as one sentence.
+        addresses = [[(-1,) * 6 for _ in range(W)] for _ in range(B)]
         pending = []
         # Perceptual passes change attention, not conceptual order. Native
         # word definitions are order 0; only symbolization raises an object.
@@ -11521,6 +11512,23 @@ class BasicModel(BaseModel):
 
         basic = owner.basic_percepts
         basic.bind(ws.subspace.what)
+        # Existing reads share one denotation table. Where a live presentation
+        # can mint a blank, preserve the original read/definition order.
+        from WordSurfaces import is_lexical_form
+        resolved_objects = None
+        if pool_readings is not None and owner.interpret.mandatory:
+            readable = [[word if active_host[b][p] and word in basic.words
+                         and is_lexical_form(word_texts[b][p]) else -1
+                         for p, (word, _, _) in enumerate(stream[:W])]
+                        for b, stream in enumerate(pool_readings)]
+            can_mint = (not getattr(owner, '_online_learning_frozen', False)
+                        and any(word >= 0 and not definitions.objects(word)
+                                and not alloc.named_identities.get(word)
+                                for word in {word for stream in readable for word in stream}))
+            if not can_mint:
+                names = part_ids.new_tensor([row + [-1] * (W - len(row)) for row in readable],
+                                            dtype=torch.long).reshape(B, W)
+                resolved_objects = owner.interpret.sentence_referents(names).tolist()
         basic_rows = [[-1]*W for _ in range(B)]
         for b in range(B):
             texts_b = word_texts[b] if b < len(word_texts) else ()
@@ -11531,23 +11539,20 @@ class BasicModel(BaseModel):
                 if value is None:
                     pending.append((b, p, None))
                     continue
-                from WordSurfaces import is_lexical_form
                 if not is_lexical_form(value):
                     continue
                 key = str(value)
-                pool_words = ps_fwd.get('pool_word_host')
-                word_id = definitions.word(form=key) if pool_words is None else pool_words[b][p]
-                if word_id is not None and word_id < 0:
-                    pending.append((b, p, key))
-                    continue
-                ordered_parts = [
-                    int(pid_host[b][p][j]) for j in range(P)
-                    if bool(mask_host[b][p][j])
-                    and int(pid_host[b][p][j]) >= 0
-                ]
+                if pool_readings is None:
+                    word_id = definitions.word(form=key)
+                    seat = None
+                    current_wholes = set(ws.property_rows_for_bytes(key))
+                else:
+                    word_id, seat, wholes = pool_readings[b][p]
+                    if word_id < 0:
+                        continue
+                    current_wholes = set(wholes)
+                ordered_parts = [part for part in pid_host[b][p] if part >= 0]
                 current_parts = set(self.perceptualSpace.fuse_parts(ordered_parts))
-                current_wholes = set(int(v) for v in
-                                     ws.property_rows_for_bytes(key))
                 if word_id is None:
                     # First sight is admitted here, at the same eager boundary
                     # that already owns radix admission and WS analysis. The
@@ -11570,9 +11575,13 @@ class BasicModel(BaseModel):
                 if basic_rows[b][p] < 0:
                     pending.append((b, p, key))
                     continue
-                object_id, object_row, object_order = owner.interpret.reading(A, batch=b)
+                if resolved_objects is None:
+                    object_id, object_row, object_order = owner.interpret.reading(A, batch=b)
+                else:
+                    object_id = resolved_objects[b][p]
+                    object_row = owner._concept_row_of(object_id)
+                    object_order = owner._concept_source_order(object_id)
                 stored_parts = _raw_int_refs(owner.concept_parts(A))
-                stored_wholes = _raw_int_refs(owner.concept_wholes(A))
                 # Surface identity alone is not enough: the active PS/WS
                 # support must already belong to the durable concept. A trie
                 # promotion or newly-discovered property therefore receives an
@@ -11580,14 +11589,13 @@ class BasicModel(BaseModel):
                 if not current_parts.issubset(set(self.perceptualSpace.fuse_parts(stored_parts))):
                     pending.append((b, p, key))
                     continue
-                row = owner._concept_row_of(A)
-                if row is None:
+                row = owner._concept_row_of(A) if seat is None else seat
+                if row is None or row < 0:
                     pending.append((b, p, key))
                     continue
                 if object_row is None:
                     pending.append((b, p, key))
                     continue
-                row_host[b][p] = int(row)
                 # Resolve lexical anchoring while the forward owns the word's
                 # segmented surface and exact WORD row.  A canonical OBJECT
                 # may be shared by converse forms, so it is not this key.
@@ -11597,38 +11605,24 @@ class BasicModel(BaseModel):
                     form = (anchors.get(value.casefold())
                             if isinstance(value, str) else None)
                     lexical_forms[int(row)] = form if isinstance(form, str) else None
-                # A word's evidence slots: its basic percept's run of parts
-                # and its wholes.
-                slots = ((0, basic_rows[b][p]), (1, basic_rows[b][p]))
-                for slot, (role, code) in enumerate(slots):
-                    reference_codes[b][p][slot] = code
-                    reference_roles[b][p][slot] = role
-                cid_host[b][p] = A
                 # One utility observation per resolved unit (contract 4):
                 # counted once per presentation at the boundary Reset.
                 if hasattr(owner, "propose_utility_observation"):
                     owner.propose_utility_observation(
                         A, sorted(current_parts) + [10_000_000 + w for w in sorted(current_wholes)])
                 owner.record_concept_fold_support(A, fold_support)
-                order_host[b][p] = owner._row_order(row)
-                object_row_host[b][p] = int(object_row)
-                object_cid_host[b][p] = object_id
-                object_order_host[b][p] = object_order
+                addresses[b][p] = (row, A, owner._row_order(row), object_row,
+                                   object_id, object_order)
 
-        isp._ar_basic_percept_ids = torch.tensor(basic_rows, dtype=torch.long, device=part_ids.device)
-        rows = torch.tensor(row_host, dtype=torch.long, device=part_ids.device)
-        object_rows = torch.tensor(
-            object_row_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_basic_percept_ids = part_ids.new_tensor(basic_rows, dtype=torch.long)
+        address_table = part_ids.new_tensor(addresses, dtype=torch.long).reshape(B, W, 6)
+        rows, ids, orders, object_rows, object_ids, object_orders = address_table.unbind(-1)
         isp._ar_word_concept_rows = rows
-        isp._ar_word_concept_ids = torch.tensor(
-            cid_host, dtype=torch.long, device=part_ids.device)
-        isp._ar_word_concept_orders = torch.tensor(
-            order_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_concept_ids = ids
+        isp._ar_word_concept_orders = orders
         isp._ar_word_object_rows = object_rows
-        isp._ar_word_object_ids = torch.tensor(
-            object_cid_host, dtype=torch.long, device=part_ids.device)
-        isp._ar_word_object_orders = torch.tensor(
-            object_order_host, dtype=torch.long, device=part_ids.device)
+        isp._ar_word_object_ids = object_ids
+        isp._ar_word_object_orders = object_orders
         registry = getattr(self, 'where_registry', None)
         if registry is not None:
             offsets = getattr(isp, '_ar_word_part_offsets', None)
@@ -11645,8 +11639,10 @@ class BasicModel(BaseModel):
             isp._ar_word_symbol_when = self.when_encoding.encode(positions)
             isp._ar_word_symbol_when = torch.where((rows >= 0)[..., None],
                                                     word_view(isp, 'symbol_when'), 0.)
-        codes = torch.tensor(reference_codes, dtype=torch.long, device=part_ids.device)
-        roles = torch.tensor(reference_roles, dtype=torch.long, device=part_ids.device)
+        slot = torch.arange(owner.REFERENCE_SLOTS, device=rows.device)
+        valid_slot = (rows >= 0)[..., None] & (slot < 2)
+        codes = torch.where(valid_slot, isp._ar_basic_percept_ids[..., None], -1)
+        roles = torch.where(valid_slot, slot, -1)
         isp._ar_percept_reference_codes = codes
         isp._ar_percept_reference_roles = roles
         part_codes = torch.where(roles == 0, codes, torch.zeros_like(codes))
@@ -11709,7 +11705,7 @@ class BasicModel(BaseModel):
                 # the stored higher-order object keeps no perceptual form.
                 end = object_start + int(object_rows.shape[1])
                 objects = owner.interpret.lexical_atoms(object_rows,
-                    lookup_atoms[:, object_start:end], word_ids=rows.new_tensor(cid_host))
+                    lookup_atoms[:, object_start:end], word_ids=ids)
                 lookup_atoms = torch.cat((lookup_atoms[:, :object_start], objects,
                                           lookup_atoms[:, end:]), 1)
                 isp._ar_concept_lookup_rows = bank_rows
@@ -13005,9 +13001,14 @@ class BasicModel(BaseModel):
         # On a retained walk the existing index already owns those records.
         need_index = kept_entries is None or any(entry is None for entry in kept_entries)
         if need_index:
-            host = torch.cat((header, actions.flatten(1)), 1).cpu()
-            host_actions = host[:, header.shape[1]:].reshape_as(actions)
-            metadata = host[:, :header.shape[1]].tolist()
+            records = [header, actions]
+            if parse_roots is not None:
+                records.extend((self._reconstruction_stack()._parse_pairs, parse_roots, structural_columns))
+            packed = torch.cat([value.flatten(1) for value in records], 1).cpu()
+            host_header, host_actions, *host_parse = [
+                part.reshape(value.shape) for value, part in zip(records,
+                    packed.split([value.flatten(1).shape[1] for value in records], dim=1))]
+            metadata = host_header.tolist()
         else:
             metadata = header.tolist()
         lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
@@ -13070,9 +13071,9 @@ class BasicModel(BaseModel):
                 action_index = kept.action_index
             elif parse_roots is not None:
                 from ParseForest import ParseForest
-                action_index = ParseForest(acts[:L], host_actions[b, :L].tolist(), pos,
-                    self._reconstruction_stack()._parse_pairs[b], parse_roots[b],
-                    structural_columns[b, :L], self.languageSpace)
+                pairs, roots, choices = host_parse
+                action_index = ParseForest(acts[:L], host_actions[b, :L].tolist(), source_positions[:n],
+                    pairs[b].tolist(), roots[b].tolist(), choices[b, :L].tolist(), self.languageSpace)
             else:
                 action_index = ReadingIndex(acts[:L], n, self.languageSpace,
                     records=host_actions[b, :L].tolist())
@@ -13749,15 +13750,17 @@ class BasicModel(BaseModel):
         from ModelAttention import stage_input, stage_expectation
         fi = getattr(self.perceptualSpace, '_forward_input', None)
         if isinstance(fi, dict) and 'word_texts' not in fi and torch.is_tensor(fi.get('sentence_bytes')):
-            # Attention's nomination and the aligned word rows look words up by
-            # spelling: the word-major stem's units are spelled here, after it.
+            # The word-major stem hands its forms to MTM inside the sentence.
             from WordConceptPool import stage as stage_word_pool
             if not stage_word_pool(self, fi):
                 from WordSurfaces import unit_texts
                 fi['word_texts'], fi['word_intervals'] = unit_texts(fi['sentence_bytes'], fi['unit_spans'])
             isp = self.inputSpace
-            intervals = fi.get('pool_word_intervals', fi.get('word_intervals', ()))
-            isp._valid_len_host = min(isp._valid_len_host, max(map(len, intervals), default=0))
+            if 'pool_width' in fi:
+                width = fi['pool_width']
+            else:
+                width = max(map(len, fi['word_intervals']), default=0)
+            isp._valid_len_host = min(isp._valid_len_host, width)
         stage_input(self)
         attention = self._attention_words
         self._attention_words = None
@@ -20606,7 +20609,7 @@ class BasicModel(BaseModel):
         # change the discrete identity choice that was scored.
         from SentenceField import select_fields
         from EpisodicMemory import stage
-        kept_field = select_fields([item['record'].understanding_field for item in observations], wins)
+        kept_field = select_fields([item['record'].understanding_field for item in observations], wins, indices=rows)
         admitted = view['entries']
         entries = []
         for b, source in enumerate(chosen):
@@ -21528,11 +21531,7 @@ class BasicModel(BaseModel):
                 interpretations = (None if not look_trials or look_trials[0] is None
                     or not look_trials[0].decisions else
                     torch.stack([decision['eligible'] for decision in look_trials[0].decisions],-1))
-                decisions = [plan['decisions'] for plan in observations[0].get('reference_plans', ())]
-                bind_rounds = present.new_zeros(B, max(map(len, decisions), default=0))
-                for b, menu in enumerate(decisions):
-                    for index, decision in enumerate(menu):
-                        bind_rounds[b, index] = len(decision['candidates']) > 1
+                bind_rounds = observations[0]['bind_decisions'][0]
                 from SentenceCredit import departure
                 output = complete_paths[0].output_trace
                 return departure(greedy_attention, eligible, active=present,
@@ -21595,10 +21594,8 @@ class BasicModel(BaseModel):
                 WordForecast.keep(forecast_paths, selected)
                 if speculative:
                     NativeReading.select(self, native_paths, selected)
-                    sub, sym = native_carries[0]
-                    for index, carry in enumerate(native_carries[1:], 1):
-                        if carry is not native_carries[0]:
-                            sub, sym = select_rows((sub, sym), carry, selected == index)
+                    from SentenceCompose import select_paths
+                    sub, sym = select_paths(native_carries, selected)
                 if growth:
                     GrowthTrial.keep_forecasts(self, growth, selected, winner_indices)
                 wins, costs = selected.ne(0), audit['costs']
@@ -21616,12 +21613,10 @@ class BasicModel(BaseModel):
                         plans = candidate.observation.get('reference_plans')
                         if plans and bool((draw['bind_round'] >= 0).any()):
                             from SentenceCredit import score_function
-                            probabilities = []
-                            for plan in plans:
-                                chosen_bind = next((d for d in plan['decisions'] if d['departed']), None)
-                                probabilities.append(plan['cost'].new_zeros(()) if chosen_bind is None else
-                                    chosen_bind['probabilities'][chosen_bind['selected']])
-                            policy, details = score_function(torch.stack(probabilities)[:, None],
+                            from ReferenceClose import departed_probability
+                            _, probabilities, departed = candidate.observation['bind_decisions']
+                            probability = departed_probability(probabilities, departed)
+                            policy, details = score_function(probability[:, None],
                                 (draw['walk_count'] * draw['walk_rounds'])[:, None],
                                 (draw['bind_round'] >= 0)[:, None], pair)
                             self._last_bind_score_function = details
@@ -21645,10 +21640,9 @@ class BasicModel(BaseModel):
                     self._sentence_reader_weights = weights
                     self._sentence_reader_updates += int(any(p.construction is not None or
                         p.registry.total(objective='output') is not None for p in complete_paths))
-                chosen, reconstruction = first, complete_paths[0].reconstruction
-                for index, candidate in enumerate(complete_paths[1:], 1):
-                    chosen = select_rows(chosen, candidate.state, selected == index)
-                    reconstruction = select_rows(reconstruction, candidate.reconstruction, selected == index)
+                from SentenceCompose import select_paths
+                chosen = select_paths([path.state for path in complete_paths], selected)
+                reconstruction = select_paths([path.reconstruction for path in complete_paths], selected)
             finally:
                 pending_steps.clear()
                 self._attention_meters = sentence_meters
@@ -21661,10 +21655,7 @@ class BasicModel(BaseModel):
                 self._sentence_read_order = None
                 self.inputSpace._ar_grammar_leaf_mask = source_leaf_mask
             def choose_tensors(values):
-                value = values[0]
-                for index, other in enumerate(values[1:], 1):
-                    value = select_rows(value, other, selected == index)
-                return value
+                return select_paths(values, selected)
             if greedy_attention is not None:
                 combined = choose_tensors(attention_trials)
                 kept = type(greedy_attention)(*combined)
@@ -21704,17 +21695,17 @@ class BasicModel(BaseModel):
             self._last_path_comparison = audit
             self.__dict__.setdefault('_path_comparisons', []).append(audit)
             from SentenceUnderstanding import SentenceUnderstanding
-            record = observations[0]['record']
-            for index, observation in enumerate(observations[1:], 1):
-                record = SentenceUnderstanding.select(record, observation['record'], selected == index, live=single)
+            records = [observation['record'] for observation in observations]
+            if len(records) == 2:
+                record = SentenceUnderstanding.select(*records, wins, live=single, indices=winner_indices)
+            else:
+                record = SentenceUnderstanding.select_records(records, selected, winner_indices, live=single)
             self._last_sentence_understanding = record
             self._sentence_understandings[sid] = record
             if self._sentence_reconstruction:
-                from SentenceField import selected as selected_reconstruction
-                retained = observations[0]['input_reconstruction']
-                for index, observation in enumerate(observations[1:], 1):
-                    retained = selected_reconstruction(retained, observation['input_reconstruction'], selected == index)
-                self._input_reconstructions[int(sid)] = retained
+                from SentenceField import select_reconstructions
+                self._input_reconstructions[int(sid)] = select_reconstructions(
+                    [observation['input_reconstruction'] for observation in observations], selected)
             self._sentence_trial = None
             self._sentence_trial_costs.append(costs)
             self._sentence_winners.append(wins)
@@ -21754,15 +21745,15 @@ class BasicModel(BaseModel):
             try:
                 from SentenceField import publish, select_fields
                 field = select_fields([observation['record'].understanding_field
-                                       for observation in observations], selected)
+                                       for observation in observations], selected, indices=winner_indices)
                 from WalkTrials import ThoughtTrialState
-                ThoughtTrialState.keep([path.effects for path in complete_paths], selected)
+                ThoughtTrialState.keep([path.effects for path in complete_paths], selected, indices=winner_indices)
                 self._sentence_order_zero_field = None
                 from WholePaths import keep_output, think_kept
                 if not self.inputSpace.data.has_supervised_outputs:
                     publish(self, field)
                     think_kept(self, complete_paths, selected, sid, present, active_winners=active_winners)
-                keep_output(self, complete_paths, winner_indices, sid)
+                keep_output(self, complete_paths, selected, sid, active_winners=active_winners)
                 from Omission import observe as observe_omission
                 for index, path in enumerate(complete_paths):
                     if 'order_zero_reverse' in path.observation:

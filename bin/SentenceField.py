@@ -271,14 +271,15 @@ def selected_field(first, second, wins):
     return select_fields((first, second), wins.long())
 
 
-def select_fields(fields, winners):
+def select_fields(fields, winners, *, indices=None):
     """Align candidate identities once, then gather all retained streams."""
     from SentenceCompose import select_streams
     if not torch.is_tensor(winners):
         winners = torch.as_tensor(winners, device=fields[0].evidence.device, dtype=torch.long)
     # These two host schema choices preserve the compact public field shape.
     # All numerical retention below is independent of the number of streams.
-    indices = winners.tolist()
+    if indices is None:
+        indices = winners.tolist()
     width = max(fields[index].evidence.shape[2] for index in indices)
     placed = all(fields[index].wires is not None for index in indices)
     wire_width = next(field.wires.shape[-1] for field in fields if field.wires is not None) if placed else 0
@@ -484,6 +485,22 @@ def completed(model):
     return InputReconstruction(torch.stack([v.ideas for v in values]).sum(0), event,
         torch.stack([v.idea_cost for v in values]).sum(0), torch.stack([v.byte_cost for v in values]).sum(0),
         torch.stack([v.truncated for v in values]).any(0), torch.stack([v.sentence_costs for v in values]).sum(0), percepts)
+
+
+def select_reconstructions(readings, winners):
+    """Gather all retained reconstructions, padding their public byte extents."""
+    from dataclasses import fields
+    from SentenceCompose import select_padded
+    values = {}
+    for item in fields(readings[0]):
+        columns = [getattr(reading, item.name) for reading in readings]
+        if all(column is None for column in columns):
+            values[item.name] = None
+            continue
+        if any(column is None for column in columns):
+            raise ValueError('sentence reconstructions must share their tensor fields')
+        values[item.name] = select_padded(columns, winners)
+    return InputReconstruction(**values)
 
 
 def selected(first, second, wins):

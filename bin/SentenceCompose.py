@@ -132,6 +132,34 @@ def select_streams(values, winners, *, batch_dim=0):
     return selected.movedim(0, batch_dim)
 
 
+def select_padded(values, winners, *, fill=0):
+    """Align feature extents once per path and gather the selected streams."""
+    shape = tuple(max(sizes) for sizes in zip(*(value.shape for value in values), strict=True))
+    aligned = []
+    for value in values:
+        padding = [n for d in reversed(range(1, value.ndim)) for n in (0, shape[d] - value.shape[d])]
+        aligned.append(torch.nn.functional.pad(value, padding, value=fill) if any(padding) else value)
+    return select_streams(aligned, winners)
+
+
+def select_paths(paths, winners):
+    """Gather a complete nested tensor carry once per field, across all paths."""
+    first = paths[0]
+    if len(paths) == 1:
+        return first
+    if torch.is_tensor(first):
+        if first.ndim == 0:
+            raise ValueError('sentence state must retain its row dimension')
+        return select_streams(paths, winners)
+    if isinstance(first, tuple):
+        return tuple(select_paths(values, winners) for values in zip(*paths, strict=True))
+    if isinstance(first, dict):
+        if any(path.keys() != first.keys() for path in paths[1:]):
+            raise ValueError('sentence paths must have the same carry fields')
+        return {name: select_paths([path[name] for path in paths], winners) for name in first}
+    raise TypeError(f'unsupported sentence scratch state: {type(first).__name__}')
+
+
 def select_rows(exploit, explore, wins):
     """Swap scratch tensor rows; no blended path and no model snapshot."""
     if torch.is_tensor(exploit):

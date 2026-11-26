@@ -98,11 +98,10 @@ def test_sentence_uses_mtm_name_across_a_change_of_visible_cover(monkeypatch, te
     from test_mm_xor import _fresh_model, _PROJECT
     model = _fresh_model(str(Path(_PROJECT) / 'data/XOR_grammar.xml'))[0]
     owner = model._concept_owner()
-    original = owner.interpret.lookup_word
+    original = owner.interpret.install_nomination
     nominations = []
 
     def admitted(*args, **kwargs):
-        assert kwargs.get('pool_word') is not None, 'sentence used spelling nomination'
         result = original(*args, **kwargs)
         nominations.append(result)
         return result
@@ -110,7 +109,8 @@ def test_sentence_uses_mtm_name_across_a_change_of_visible_cover(monkeypatch, te
     with torch.no_grad():
         for reading in range(2):
             with monkeypatch.context() as patch:
-                patch.setattr(owner.interpret, 'lookup_word', admitted)
+                patch.setattr(owner.interpret, 'lookup_word', lambda *a, **kw: pytest.fail('sentence used spelling lookup'))
+                patch.setattr(owner.interpret, 'install_nomination', admitted)
                 model.understand(model.inputSpace.prepInput([text] * 4))
             fi = model.perceptualSpace._forward_input
             if not reading:
@@ -168,3 +168,87 @@ def test_no_free_concept_row_leaves_a_nomination_pending(device):
     words, arrivals = pool.read(forms, available=forms.new_ones(()))
     assert words.tolist() == [[51, -1]]
     assert arrivals.tolist() == [[[4, 51], [-1, -1]]]
+
+
+def test_word_poles_read_pool_names_and_all_denotations_without_host_lookup(device):
+    from ModelAttention import word_object_poles
+    objects = {31: (42, 45), 32: (43,), 34: ()}
+    names = torch.tensor([31, 32, 34], device=device)
+    values = torch.tensor([[42, 45], [43, -1], [-1, -1], [-1, -1]], device=device)
+    operations = []
+    def backend(graph, inputs):
+        operations.append(sum(node.op == 'call_function' for node in graph.graph.nodes))
+        return graph.forward
+    for batch in (4, 16):
+        native = torch.tensor([31, 42, 45, 43, -1, 34], device=device)[:, None].expand(-1, batch).clone()
+        native[1, ::2] = -1
+        words = torch.tensor([31, 32, 34, 88, -1], device=device)[None].expand(batch, -1)
+        field = torch.rand(6, batch, 5, 2, device=device)
+        captured = torch.compile(word_object_poles, backend=backend, fullgraph=True, dynamic=False)
+        actual = captured(native, field, words, names, values)
+        expected = torch.zeros_like(actual)
+        for b in range(batch):
+            for w, word in enumerate(words[b].tolist()):
+                if word < 0:
+                    continue
+                wanted = {word, *objects.get(word, ())}
+                seats = [i for i, name in enumerate(native[:, b].tolist()) if name in wanted]
+                if seats:
+                    expected[b, w] = field[seats, b, w].amax(0)
+        assert torch.equal(actual, expected)
+    assert operations[0] == operations[1]
+    # An empty denotation index still reads the word's own concept.
+    assert torch.equal(word_object_poles(native, field, words, names[:0], values[-1:])[:, 2],
+                       field[5, :, 2])
+
+
+def test_seated_reads_share_physical_capacity_across_captured_calls(device):
+    names = torch.tensor([31, 32, 33], device=device)
+    pool = WordConceptPool(12, names, threshold=1)
+    pool.free_rows = names.new_tensor([5, 9])
+    read = torch.compile(pool.read_seated, backend='eager', fullgraph=True)
+    for forms, learn, expected in [
+            ([3, 3], True, [5, 5]), ([4, 3], False, [-1, 5]),
+            ([4, 5], True, [9, -1]), ([5, 3], True, [-1, 5])]:
+        _, seats, _ = read(names.new_tensor([forms]), learn=learn)
+        assert seats.tolist() == [expected]
+    assert pool.used.item() == 2
+
+
+def test_native_field_reads_only_complete_visible_pool_occurrences(device):
+    from types import SimpleNamespace
+    from ReadingMemory import covered_units, named_extents
+    units = torch.tensor([[[0, 3], [3, 6], [6, 8], [8, 9], [9, 10]]], device=device)
+    spans = torch.tensor([[[0, 1], [0, 0], [1, 3], [3, 4], [5, 6],
+                           [6, 8], [8, 9], [9, 10]]], device=device)
+    ids = torch.tensor([[1, -1, 2, 3, 4, 5, 6, 7]], device=device)
+    covered = torch.compile(covered_units, backend='eager', fullgraph=True)
+    assert covered(ids, spans, units).tolist() == [[True, False, True, True, True]]
+    fi = dict(unit_spans=units, pool_visible=ids.new_tensor([[1, 1, 0, 1, 1]]).bool(),
+              pool_word_ids=ids.new_tensor([[71, 72, -1, -1, 73]]))
+    model = SimpleNamespace(perceptualSpace=SimpleNamespace(_forward_input=fi), _concept_owner=lambda: None)
+    extents, names = named_extents(model, (ids, spans))
+    assert extents.tolist() == [[[0, 3], [8, 9], [9, 10]]]
+    assert names.tolist() == [[71, -1, 73]]
+
+
+def test_reserved_places_match_the_scalar_allocator_and_leave_rng_untouched(device):
+    from ConceptPlacement import reserved_seeds, seed
+    for width in (7, 128, 375):
+        like = torch.empty(width, device=device)
+        symbols = [17, 2003, 2027]
+        state = torch.get_rng_state()
+        assert torch.equal(reserved_seeds(symbols, like), torch.stack([seed(i, like) for i in symbols]))
+        assert torch.equal(torch.get_rng_state(), state)
+
+
+def test_sentence_denotations_use_each_streams_expected_order_and_score(device):
+    from Interpret import preferred_ids
+    ids = torch.tensor([[11, 20, 30], [9, 3, -1]], device=device)
+    orders = ids.new_tensor([[0, 2, 2], [1, 1, -1]])
+    rows = ids.new_tensor([[0, 1, 2], [3, -1, -1]])
+    scores = torch.tensor([[.9, 0., 0., 0.], [0., .5, .6, .3],
+                           [0., float('nan'), 0., -1.]], device=device)
+    read = torch.compile(preferred_ids, backend='eager', fullgraph=True)
+    assert read(ids, orders, rows, scores).tolist() == [[11, 3], [30, 9], [20, 3]]
+    assert read(ids, orders, rows, scores[:, :0]).tolist() == [[20, 3]] * 3

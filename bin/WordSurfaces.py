@@ -299,6 +299,21 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
         same = (spans_at[..., 0] == units[..., 0]) & (spans_at[..., 1] == units[..., 1])
         same = same & (prefix.gather(1, hi) == prefix.gather(1, lo))
         units = torch.cat((units, torch.where(same, columns, -1)[..., None]), dim=-1)
+    # Resolve a mixing witness by the pool occurrence at these exact byte
+    # endpoints. A partial overlap or an unadmitted word carries no name.
+    fi = model.perceptualSpace._forward_input
+    words = fi.get('pool_word_ids')
+    if words is not None:
+        limits = fi['pool_spans']
+        if limits.shape[1]:
+            lo, hi = limits.unbind(-1)
+            column = witnessed_columns(units, lo, hi > lo, surface.shape[1])
+            at = column.clamp_min(0)
+            exact = (column >= 0) & (hi.gather(1, at) == units[..., 1])
+            names = torch.where(exact, words.gather(1, at), -1)
+        else:
+            names = torch.full_like(units[..., 0], -1)
+        units = torch.cat((units, names[..., None]), -1)
     fields = (units.flatten(1), events.flatten(1), surface)
     records = torch.cat(fields, 1).tolist()
     stride = units.shape[-1]
@@ -322,7 +337,8 @@ def mixing_word_witnesses(model, raw, ids, spans, attention, *, grammar_starts=N
                 members = grouped[seat]
                 wholes = tuple(row for row in range(min(int(model.wholeSpace.nVectors), 63)) if bits & (1 << row))
                 column = members[-1][0] if grammar_starts is None else record[offset + 4]
-                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], column, wholes))
+                name = None if words is None else record[offset + stride - 1]
+                observations.append((b, lo, hi, data[lo:hi], [part for _, part in members], column, wholes, name))
         extents.append(located)
     return extents, observations
 

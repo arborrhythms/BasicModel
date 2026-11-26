@@ -3,10 +3,23 @@ import torch
 from torch.nn.functional import normalize
 
 
-def seed(identity, like):
+def _draw(identity, shape):
     generator = torch.Generator(device='cpu').manual_seed(int(identity))
-    drawn = torch.randn(like.shape, generator=generator, device='cpu')
-    return normalize(drawn.abs().to(like), dim=-1)
+    return torch.randn(shape, generator=generator, device='cpu')
+
+
+def seed(identity, like):
+    return normalize(_draw(identity, like.shape).abs().to(like), dim=-1)
+
+
+def reserved_seeds(identities, like):
+    """Take the ordinary identity-seeded draws to the device in one transfer."""
+    if not len(identities):
+        return like.new_empty((0, *like.shape))
+    draws = torch.stack([_draw(identity, like.shape) for identity in identities])
+    # Metal uses a different reduction for a matrix norm. Keep the scalar
+    # allocator's reduction shape so reserved and ordinary rows are identical.
+    return torch.stack([normalize(row, dim=-1) for row in draws.abs().to(like).unbind()])
 
 
 def positions(owner):
@@ -16,10 +29,10 @@ def positions(owner):
 
 
 @torch.no_grad()
-def initialize(owner, identity, row):
+def initialize(owner, identity, row, *, initial=None):
     """Seat a new identity without borrowing the geometry of its members."""
     table = positions(owner)
-    table[row].copy_(seed(identity, table[row]))
+    table[row].copy_(seed(identity, table[row]) if initial is None else initial)
     derived = getattr(owner.similarity_codebook, 'mereology', None)
     if derived is not None:
         derived.placement_dirty[row] = True

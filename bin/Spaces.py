@@ -14641,7 +14641,8 @@ class ConceptualSpace(Space):
         ``[len(rows), B, E, 2]``, each concept's signed value on two lanes."""
         from Layers import signed_lanes
         sigma = self.install_order_zero()
-        return signed_lanes(sigma(self.order_zero_not(lanes), inputs, rows), dim=-1)
+        stream_rows = torch.is_tensor(rows) and rows.ndim == 2
+        return signed_lanes(sigma(self.order_zero_not(lanes), inputs, rows, stream_rows=stream_rows), dim=-1)
 
     def add_concept_feature(self, row, tower, feature, weight=0.0, *, negated=False):
         """Concept literals address basic percepts; native selectors collect them."""
@@ -14934,7 +14935,7 @@ class ConceptualSpace(Space):
         ``extents``, held on the device (:class:`BasicPercepts.PerceptBank`)."""
         self._refresh_basic_selectors()
         basic = self.basic_percepts
-        rows = [row for row, promoted in enumerate(basic.promoted[:len(basic.index)].tolist()) if promoted]
+        rows = sorted(basic.promoted_rows)
         model = self._model
         # Synthetic or externally supplied banks own their own geometry.
         if getattr(model, '_staged_concepts_in', None) is percepts[3]:
@@ -15003,15 +15004,18 @@ class ConceptualSpace(Space):
                 [row for row, _, _ in members], dtype=torch.long))
         values = perception.values
         inputs = [key[1] for key in perception.keys]
-        B = values.shape[1]
         n0 = self._field_caps()[0] if publish else self._order_caps()[0]
         addresses = (self._field_inventory_rows() if publish else
                      torch.arange(self.nVectors, device=values.device))
-        fields = []
-        for b in range(B):
-            rows = addresses[:, b] if addresses.ndim == 2 else addresses
-            fields.append(self.order_zero_field(values[:, b:b+1], inputs, rows[:n0]))
-        field = torch.cat(fields, 1)
+        rows = addresses[:n0]
+        if torch.is_grad_enabled() and values.shape[1] > 1:
+            # The shared LDU weights accumulate gradients in stream order.
+            # A single batched reduction changes optimizer momentum by roundoff.
+            field = torch.cat([self.order_zero_field(values[:, b:b+1], inputs,
+                               rows[:, b] if rows.ndim == 2 else rows)
+                               for b in range(values.shape[1])], 1)
+        else:
+            field = self.order_zero_field(values, inputs, rows)
         if publish:
             object.__setattr__(self, '_cs_order0_raw', field.detach())
         return field
@@ -15596,7 +15600,7 @@ class ConceptualSpace(Space):
             raise ValueError('concept row requested at a foreign order')
         return self._declare_concept_row(order, concept_id)
 
-    def _declare_concept_row(self, order, concept_id):
+    def _declare_concept_row(self, order, concept_id, *, seat=None, initial=None):
         """Persistent definition address for a concept id, independent of attention.
 
         Every seat belongs to one fixed order block, including grammar
@@ -15617,7 +15621,7 @@ class ConceptualSpace(Space):
         if row is None:
             self._preflight_concept_row(order, context='concept seating')
             alloc.touch(concept_id)
-            row = ly.assign_row(('concept', int(concept_id)), capacity=end-base, base=base)
+            row = ly.assign_row(('concept', int(concept_id)), capacity=end-base, base=base, seat=seat)
         if row is None:
             raise ConceptRowCapacityError(f'concept order {order} capacity exhausted')
         if not base <= row < end:
@@ -15635,7 +15639,7 @@ class ConceptualSpace(Space):
                 ensure_active(int(row) + 1)
         if row is not None and len(ly._tensor_row_keys) != previous_rows:
             from ConceptPlacement import initialize
-            initialize(self, concept_id, row)
+            initialize(self, concept_id, row, initial=initial)
             self.similarity_codebook.trust.capture(row)
             self._priming_edge_revision = None
             derived = getattr(self.similarity_codebook, 'mereology', None)

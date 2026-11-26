@@ -11081,6 +11081,8 @@ class LanguageSpace(nn.Module):
             self, "_compose_unary_rules", snapshot_compose_rules(unary_ids, 1))
         object.__setattr__(
             self, "_compose_binary_rules", snapshot_compose_rules(binary_ids, 2))
+        from ParseForest import validate_catalog
+        self._parse_interfaces = validate_catalog(self._compose_binary_rules, self._compose_unary_rules)
         from ClauseScope import ClauseScope
         self.clause_scope = ClauseScope(self._compose_binary_rules, self._compose_unary_rules)
         from ChunkJournal import ChunkJournal

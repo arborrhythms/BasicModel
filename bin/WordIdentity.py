@@ -168,6 +168,8 @@ class WordIdentity(nn.Module):
 
     def _table_row(self, raw):
         raw = bytes(raw)
+        if len(raw) == 1:
+            return raw[0]  # FormLinks seats every byte at its integer value.
         if raw not in self._table_rows:
             table = self.forms_table
             data = table.left.new_tensor([list(raw)])
@@ -179,9 +181,12 @@ class WordIdentity(nn.Module):
         return self._table_rows[raw]
 
     def _table_code(self, raw):
+        return self._table_codes(self._table_row(raw))
+
+    def _table_codes(self, rows):
         table = self.forms_table
         half = min(self.width, table.code.shape[-1] // 2)
-        code = table.code[self._table_row(raw), :half]
+        code = table.code[rows, :half]
         return torch.nn.functional.pad(code, (0, self.width - half))
 
     def _wholes_table(self):
@@ -464,16 +469,20 @@ class WordIdentity(nn.Module):
                 for atom in members:
                     self._atom(atom)
                 continue
-            codes = torch.stack([self.atom_code(atom) for atom in members]).to(basis.W)
-            codes = torch.nn.functional.pad(codes, (0, self.property_width))
             addresses = torch.tensor(rows, device=basis.W.device, dtype=torch.long)
+            forms = None
+            if getattr(self, 'forms_table', None) is not None:
+                forms = addresses.new_tensor([self._table_row(bytes_of(atom[1])) for atom in members])
+                codes = self._table_codes(forms).to(basis.W)
+            else:
+                codes = torch.stack([self.atom_code(atom) for atom in members]).to(basis.W)
+            codes = torch.nn.functional.pad(codes, (0, self.property_width))
             basis.fixed_row_mask.index_fill_(0, addresses, True)
             basis.fixed_row_codes.index_copy_(0, addresses, codes)
             basis.W.index_copy_(0, addresses, codes)
             self._fixed_bytes.update((row, bytes_of(atom[1])) for row, atom in zip(rows, members))
-            if hasattr(basis, 'fixed_form_rows'):
-                forms = [self._table_row(bytes_of(atom[1])) for atom in members]
-                basis.fixed_form_rows.index_copy_(0, addresses, addresses.new_tensor(forms))
+            if forms is not None:
+                basis.fixed_form_rows.index_copy_(0, addresses, forms)
 
     def form(self, raw):
         """A form's live table point, or the legacy fold in an isolated store."""
@@ -495,14 +504,18 @@ class WordIdentity(nn.Module):
             return
         basis = self.store._basis
         rows = torch.tensor([self.word_rows[word] for word in words], device=basis.W.device)
-        value = torch.stack([self.form(word) for word in words]).to(basis.W)
+        forms = None
+        if getattr(self, 'forms_table', None) is not None:
+            forms = rows.new_tensor([self._table_row(word) for word in words])
+            value = self._table_codes(forms).to(basis.W)
+        else:
+            value = torch.stack([self.form(word) for word in words]).to(basis.W)
         value = torch.nn.functional.pad(value, (0, self.property_width))
         basis.fixed_row_mask[rows] = True
         basis.fixed_row_codes[rows] = value
         basis.W[rows] = value
-        if hasattr(basis, 'fixed_form_rows'):
-            forms = [self._table_row(word) for word in words]
-            basis.fixed_form_rows.index_copy_(0, rows, rows.new_tensor(forms))
+        if forms is not None:
+            basis.fixed_form_rows.index_copy_(0, rows, forms)
 
     def _add_part(self, run):
         self.added[run] = None
@@ -517,10 +530,16 @@ class WordIdentity(nn.Module):
         atoms = set(atoms)
         return [word for word, parts in self.words.items() if atoms.intersection(parts)]
 
-    def admit(self, raw):
+    def admit(self, raw, *, form_row=None):
         raw = bytes(raw)
         if not raw:
             raise ValueError('a word identity requires nonempty bytes')
+        if form_row is not None:
+            table = self.forms_table
+            if not 0 <= form_row < table.capacity:
+                raise IndexError('word nomination is outside the table of forms')
+            if self._table_rows.setdefault(raw, form_row) != form_row:
+                raise ValueError('word nomination disagrees with its stored form row')
         if raw not in self.words:
             # A stored form of several characters is a part of its own,
             # carried by itself and by every stored form that holds it as a

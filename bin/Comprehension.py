@@ -125,11 +125,42 @@ class Value:
     when: object = None
 
 
+def close_controls(programs):
+    """Transfer the operator addresses and their observed evidence to CPU together."""
+    from types import SimpleNamespace
+    names = ('actions', 'concept_ids', 'word_ids', 'reference_relations', 'identity_leaves',
+             'leaf_orders', 'reference_orders', 'staged_object_rows', 'staged_object_ids',
+             'held_refresh', 'held_bind', 'held_writes', 'operation_resolved', 'operation_refs',
+             'operation_orders', 'identity_actions', 'operation_relations', 'timeline_actions',
+             'identity_origins', 'leaf_evidence')
+    controls = [None if program is None else SimpleNamespace(**dict.fromkeys(names))
+                for program in programs]
+    columns = [(control, name, value)
+               for control, program in zip(controls, programs) if program is not None
+               for name in names if (value := getattr(program, name, None)) is not None]
+    if columns:
+        # A packed byte view preserves the recorded dtype, including unsigned
+        # evidence and full-width names. Largest elements first keeps every
+        # segment aligned for the CPU view of its original type.
+        columns.sort(key=lambda entry: entry[2].element_size(), reverse=True)
+        def octets(value):
+            flat = value.detach().reshape(-1)
+            if flat.stride(0) != 1:
+                flat = flat.clone(memory_format=torch.contiguous_format)
+            return flat.view(torch.uint8)
+        host = torch.cat([octets(value) for _, _, value in columns]).cpu()
+        for (control, name, value), data in zip(columns, host.split(
+                [value.numel() * value.element_size() for _, _, value in columns])):
+            setattr(control, name, data.view(value.dtype).reshape(value.shape))
+    return controls
+
+
 class Evaluation:
-    def __init__(self, model, program, stream, *, trust=1., store=None):
+    def __init__(self, model, program, stream, *, trust=1., store=None, control=None):
         self.model, self.program, self.stream = model, program, stream
         self.trust = float(trust)
         self.owner, self.language = model._concept_owner(), model.languageSpace
+        self.control = close_controls([program])[0] if control is None else control
         self.stack = []
         from ParseForest import native
         self.parse = native(program)
@@ -143,10 +174,14 @@ class Evaluation:
         self.orders = (torch.full_like(self.ids, -1) if program.leaf_orders is None
                        else program.leaf_orders.clone())
         from ClauseJournal import word_columns
-        self.word_columns = word_columns(program, self.native_ids, self.orders)
+        orders = self.control.leaf_orders
+        if orders is None:
+            orders = torch.full_like(self.control.concept_ids, -1)
+        self.close_orders = orders.clone()
+        self.word_columns = word_columns(self.control, self.control.concept_ids, orders)
         self._frames = (torch.zeros_like(program.operation_values) if store is None
                         else store.operation_rows(program.operation_values))
-        self.operand_seats = self._operand_seats(program)
+        self.operand_seats = self._operand_seats(self.control)
         self.refs = (program.actions.new_full((len(program.actions), 2), -1)
                      if program.operation_refs is None else program.operation_refs.clone())
         self.case_values = None if program.case_values is None else torch.zeros_like(program.case_values)
@@ -188,6 +223,10 @@ class Evaluation:
             columns.append(program.held_writes.flatten(1))
         return torch.cat(columns, 1).tolist()
 
+    def recorded_ref(self, action, role):
+        refs = self.control.operation_refs
+        return -1 if refs is None else int(refs[action, role])
+
     def _cases(self, identity):
         bank = self.program.case_bank
         return None if bank is None else bank.view(self.ids.new_tensor([identity]))
@@ -224,6 +263,7 @@ class Evaluation:
             # its MTM handle is not an allocated concept whose order can be read.
             order = owner._row_order(row)
             self.orders[word] = order
+            self.close_orders[word] = order
         else:
             order = orders[word]
         self.leaves[word] = value
@@ -272,7 +312,7 @@ class Evaluation:
             point = (self.program.operation_values[at, role] if selected else
                      child.point)
             if seat >= 0:
-                point = self.held.read(self.program.held_refresh[at, role], seat=seat)
+                point = self.held.read(self.control.held_refresh[at, role].tolist(), seat=seat)
             # Occurrence coordinates were read before the reference choice:
             # choose_operation reads relative time, then STMChunks.refresh can
             # take an off-stack value (whose occurrence band may be empty).
@@ -283,13 +323,13 @@ class Evaluation:
                 low = max(0, start-4)
                 point = torch.cat((point[:low], self.program.operation_values[at, role, low:start+4],
                                    point[start+4:]))
-            identity = int(self.refs[at, role]) if selected else child.reference
+            identity = self.recorded_ref(at, role) if selected else child.reference
             if selected:
                 if self.program.operation_orders is None:
                     raise ValueError('a selected comprehension operand has no recorded order')
                 # Pending MTM identities have no allocated concept row. Their
                 # typed reference choice already recorded the operand's order.
-                order = int(self.program.operation_orders[at, role])
+                order = int(self.control.operation_orders[at, role])
             else:
                 order = child.order
             operands.append(point[None]); refs.append(identity); orders.append(order)
@@ -297,9 +337,9 @@ class Evaluation:
             self.refs[at, role] = identity
         if rule.method_name == 'bind':
             bound = (None if seats[2] < 0 else
-                     self.held.read(self.program.held_bind[at], seat=seats[2], relative=True))
+                     self.held.read(self.control.held_bind[at].tolist(), seat=seats[2], relative=True))
             operands.append(self.program.operation_values[at, 1:2] if bound is None else bound[None])
-            refs.append(int(self.refs[at, 1]))
+            refs.append(self.recorded_ref(at, 1))
         head = 2 if getattr(rule, 'clause_form', None) == 'S' else getattr(rule, 'head_role', 0)
         case = cases[min(head-1, len(cases)-1)] if head else None
         selected_cases = None

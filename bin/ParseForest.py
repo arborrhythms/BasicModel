@@ -7,20 +7,31 @@ shift/reduce stack is replayed to discover a parse.
 from Memory import OCCURRENCE, SYMBOL, RELATION
 
 
+def validate_catalog(binary, unary):
+    """Validate immutable execution interfaces when the catalogs are attached."""
+    from PartsOfSpeech import operation_name
+    interfaces = set()
+    for rules in (binary, unary):
+        for rule in rules:
+            key = operation_name(rule), rule.canonical, rule.kernel_index
+            if key in interfaces:
+                raise ValueError('the operator seat has no unique declared execution interface')
+            interfaces.add(key)
+    return binary, unary
+
+
 class ParseForest:
     def __init__(self, actions, records, words, pairs, roots, columns, language):
         from PartsOfSpeech import operation_name
         self.actions = actions
         self.steps = [tuple(row) for row in records]
-        self.columns = columns.tolist()
+        self.columns = columns
         self.word_actions = {word: at for at, (kind, _, word) in enumerate(self.steps) if kind == 0}
         self.operands = [()] * len(self.steps)
         self.parents = [None] * len(self.steps)
         self.visits = tuple(at for at, (kind, _, _) in enumerate(self.steps) if kind in (0, 1, 2))
-        source_words = words.tolist()
-        records = pairs.tolist()
-        sites = {(OCCURRENCE, source_words[word]): at for word, at in self.word_actions.items()}
-        if len(self.word_actions) != len(source_words):
+        sites = {(OCCURRENCE, words[word]): at for word, at in self.word_actions.items()}
+        if len(self.word_actions) != len(words):
             raise ValueError('a parse must contain every read occurrence exactly once')
         catalogs = {1: language._compose_binary_rules, 2: language._compose_unary_rules}
         for at in self.visits:
@@ -28,17 +39,17 @@ class ParseForest:
             if kind == 0:
                 continue
             column = self.columns[at]
-            parent = records[2 * column + 1]
+            parent = pairs[2 * column + 1]
             expected = language.parts_of_speech.seats[operation_name(catalogs[kind][local])].concept
             if tuple(parent[0]) != (SYMBOL, expected):
                 raise ValueError('parse operator does not match its numerical journal')
             operand = parent[1]
-            children = records[2 * column] if tuple(operand) == (RELATION, 2 * column) else [operand]
+            children = pairs[2 * column] if tuple(operand) == (RELATION, 2 * column) else [operand]
             self.operands[at] = tuple(sites[tuple(child)] for child in children)
             for child in self.operands[at]:
                 self.parents[child] = at
             sites[RELATION, 2 * column + 1] = at
-        self.roots = tuple(sites[tuple(root)] for root in roots.tolist() if root[0])
+        self.roots = tuple(sites[tuple(root)] for root in roots if root[0])
 
     @property
     def forest(self):
@@ -50,10 +61,14 @@ class ParseForest:
         return tuple(nodes[at] for at in self.roots)
 
     def validate_interfaces(self, language):
-        # Kept until the catalog owner validates every attached interface.
-        # This checks execution metadata, without constructing topology.
-        from ReadingIndex import ReadingIndex
-        ReadingIndex.validate_interfaces(self, language)
+        catalogs = language._compose_binary_rules, language._compose_unary_rules
+        checked = getattr(language, '_parse_interfaces', None)
+        if checked is None or any(a is not b for a, b in zip(checked, catalogs)):
+            # Small independent fixtures can attach their own catalogs.
+            validate_catalog(*catalogs)
+        for kind, local, _ in self.steps:
+            if kind == 3 and len(catalogs[0][local].lhs.split(',')) != 2:
+                raise ValueError('an unconsumed operator must be a declared transposition')
 
 
 def native(program):

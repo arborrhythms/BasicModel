@@ -39,6 +39,7 @@ class DefinitionIndex:
     def rebuild(self):
         self._forms, self._units, self._objects, self._words, self._rows = {}, {}, {}, {}, {}
         self._object_table = None
+        self._word_objects = None
         self._descriptions = {}
         self._identities = {}
         store = self._store()
@@ -95,6 +96,7 @@ class DefinitionIndex:
             if (word, obj) in self._rows and self._rows[word, obj] != row:
                 raise ValueError('duplicate word DEF object row')
             self._object_table = None
+            self._word_objects = None
             self._rows[word, obj] = row
             self._objects[word] = tuple(sorted(set(self._objects.get(word, ())) | {obj}))
             self._words[obj] = tuple(sorted(set(self._words.get(obj, ())) | {word}))
@@ -120,6 +122,25 @@ class DefinitionIndex:
             seats = columns.new_tensor([i for i, _ in alternatives])
             self._object_table = (*columns.unbind(), seats, tuple(group for _, group in alternatives))
         return self._object_table
+
+    def word_objects(self, device):
+        """The complete denotation table, padded once for a batched word read.
+
+        Its keys are native symbol names. Missing words read the sentinel
+        row; a newly nominated word therefore needs no host dictionary entry
+        in order to read its own concept.
+        """
+        self._ensure()
+        cached = getattr(self, '_word_objects', None)
+        if cached is None or cached[0].device != device:
+            words = sorted(self._objects)
+            width = max(1, max(map(len, self._objects.values()), default=0))
+            names = torch.tensor(words, device=device, dtype=torch.long)
+            rows = [list(self._objects[word]) + [-1] * (width - len(self._objects[word]))
+                    for word in words]
+            values = names.new_tensor(rows + [[-1] * width])
+            self._word_objects = names, values
+        return self._word_objects
 
     def bound_words(self):
         self._ensure()

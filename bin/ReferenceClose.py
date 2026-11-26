@@ -45,6 +45,37 @@ def constituents(clause):
     return result
 
 
+def decision_tensors(plans, like):
+    """The host operator pass returns one padded menu of binding decisions.
+
+    Retain the live selected probabilities. Later departure draws and credit
+    gather these tensors without re-walking the clause records.
+    """
+    batch = len(like)
+    menus = [plan['decisions'] for plan in plans]
+    if menus and len(menus) != batch:
+        raise ValueError('one reference plan is required per sentence stream')
+    if not menus:
+        menus = [[] for _ in range(batch)]
+    width = max(map(len, menus), default=0)
+    eligible = torch.tensor([[len(d['candidates']) > 1 for d in menu] + [False] * (width-len(menu))
+                             for menu in menus], device=like.device, dtype=torch.bool).reshape(batch, width)
+    departed = torch.tensor([[d['departed'] for d in menu] + [False] * (width-len(menu))
+                             for menu in menus], device=like.device, dtype=torch.bool).reshape(batch, width)
+    zero = like.new_zeros(())
+    probabilities = torch.stack([torch.stack([d['probabilities'][d['selected']] for d in menu]
+        + [zero] * (width-len(menu))) for menu in menus]) if width else like.new_zeros(batch, 0)
+    return eligible, probabilities, departed
+
+
+def departed_probability(probabilities, departed):
+    """One departure per stream, with zero for an unused binding menu."""
+    if not probabilities.shape[1]:
+        return probabilities.new_zeros(len(probabilities))
+    at = departed.long().argmax(-1)
+    return torch.where(departed.any(-1), probabilities.gather(1, at[:, None]).flatten(), 0.)
+
+
 class ReferenceClose(nn.Module):
     def __init__(self, components):
         super().__init__()

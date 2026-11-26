@@ -94,7 +94,7 @@ def select(states, winners):
     if all(state is None for state in states):
         return None
     selected = {}
-    choices = winners.tolist()
+    choices = winners.tolist() if torch.is_tensor(winners) else winners
     for stream, choice in enumerate(choices):
         state = states[choice] or {}
         if stream in state:

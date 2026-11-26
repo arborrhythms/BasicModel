@@ -359,3 +359,23 @@ def test_the_symbols_pi_is_a_sparse_ldu_with_a_way_back():
     error = float((back - lanes[:N]).abs().max())
     print(dict(symbols=N, entries=table.pi.nnz, chain=table.pi.longest_chain, way_back_error=error))
     assert error < 1e-10
+
+
+@pytest.mark.parametrize('device', ['cpu', 'mps'])
+def test_sigma_reads_each_streams_own_output_rows(device):
+    from Layers import SparseSigmaLDU
+    if device == 'mps' and not torch.backends.mps.is_available():
+        pytest.skip('requires Metal')
+    sigma = SparseSigmaLDU(4, 5, 16).to(device)
+    for row, source, weight in [(0, 0, 1.), (2, 2, .5), (2, 0, .25)]:
+        sigma.add(row, source, weight)
+    inputs = torch.tensor([0, 2, 0], device=device)
+    rows = torch.tensor([[2, 0, -1], [4, 2, 8]], device=device)
+    options = torch.linspace(-.5, .5, 36, device=device).reshape(3, 3, 2, 2).requires_grad_()
+    expected = torch.stack([sigma(options[:, b], inputs, rows[:, b]) for b in range(3)], 1)
+    read = torch.compile(sigma, backend='eager', fullgraph=True)
+    actual = read(options, inputs, rows, stream_rows=True)
+    torch.testing.assert_close(actual, expected)
+    for got, want in zip(torch.autograd.grad(actual.sum(), (options, sigma.value)),
+                         torch.autograd.grad(expected.sum(), (options, sigma.value)), strict=True):
+        torch.testing.assert_close(got, want)

@@ -368,13 +368,14 @@ def with_extensions(clause, roots=None):
 
 
 def understand(model, record, programs, *, trust=1.):
-    from Comprehension import Evaluation
+    from Comprehension import Evaluation, close_controls
     forest, meanings = [], []
+    controls = close_controls(programs)
     for row, program in enumerate(programs):
         if program is None:
             forest.append(()); meanings.append(None)
             continue
-        evaluation = Evaluation(model, program, row, trust=trust)
+        evaluation = Evaluation(model, program, row, trust=trust, control=controls[row])
         forest.append(reading(model, program, record.open_field, row,
             model._sentence_leaf_positions(record,row), evaluation=evaluation))
         meanings.append(evaluation.result)

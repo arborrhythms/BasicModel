@@ -211,48 +211,47 @@ class SentenceUnderstanding:
                             else getattr(self, f.name) for f in fields(self)})
 
     @classmethod
-    def select(cls, greedy, explore, wins, *, live=False, replay=None):
+    def select_records(cls, paths, winners, indices, *, live):
+        """Gather the winning sentence tensors and keep each stream's own tree."""
+        from SentenceCompose import select_streams
+        from SentenceField import select_fields
+        first = paths[0]
+        if len(paths) == 1:
+            return first
+        if any(path.open_field is not first.open_field or path.primed is not first.primed for path in paths):
+            raise RuntimeError('sentence trials must share their opening field and priming')
+        used = sorted(set(indices))
+        if len(used) <= 1:
+            result = paths[used[0]] if used else first
+            return result if live else result.detached()
+        # Exclude unused paths from the backward graph, as with a uniform
+        # winner. The close has already published the tree owners for all rows.
+        choices = [paths[i] for i in used]
+        ranks = {original: new for new, original in enumerate(used)}
+        owners = [ranks[i] for i in indices]
+        selection = winners.new_tensor([ranks.get(i, 0) for i in range(len(paths))])[winners]
+        values = {}
+        with torch.set_grad_enabled(live and torch.is_grad_enabled()):
+            for field in fields(cls):
+                columns = [getattr(path, field.name) for path in choices]
+                value = columns[0]
+                if field.name == 'extension' and value:
+                    value = tuple(columns[i][row] for row, i in enumerate(owners))
+                elif field.name == 'understanding_field' and value is not None:
+                    value = select_fields(columns, selection, indices=owners)
+                elif torch.is_tensor(value) and value.ndim:
+                    value = select_streams(columns, selection)
+                values[field.name] = value
+        return cls(**values)
+
+    @classmethod
+    def select(cls, greedy, explore, wins, *, live=False, replay=None, indices=None):
         """Keep a complete record. A live mixed record comes from one replay."""
-        if greedy.open_field is not explore.open_field:
-            raise RuntimeError('sentence trials must share their open conceptual field')
-        if greedy.primed is not explore.primed:
-            raise RuntimeError('sentence trials must share their priming snapshot')
-        if bool(wins.all()) or not bool(wins.any()):
-            selected = explore if bool(wins.all()) else greedy
-            return selected if live else selected.detached()
-        # A live selection with retained graphs needs only the live gather.
-        # The detached selection is used solely for a detached result or to
-        # check an explicit replay.
-        if live and replay is None:
-            values = {}
-            for field in fields(cls):
-                left, right = getattr(greedy, field.name), getattr(explore, field.name)
-                if field.name == 'extension':
-                    values[field.name] = tuple(right[b] if bool(win) else left[b] for b,win in enumerate(wins)) if left else ()
-                elif field.name == 'understanding_field' and left is not None:
-                    from SentenceField import selected_field
-                    values[field.name] = selected_field(left,right,wins)
-                else:
-                    values[field.name] = (torch.where(wins.reshape((-1,) + (1,) * (left.ndim-1)), right, left)
-                        if torch.is_tensor(left) and left.ndim else left)
-            return cls(**values)
-        with torch.no_grad():
-            values = {}
-            for field in fields(cls):
-                left, right = getattr(greedy, field.name), getattr(explore, field.name)
-                if field.name == 'extension':
-                    values[field.name] = tuple(right[b] if bool(win) else left[b] for b,win in enumerate(wins)) if left else ()
-                elif field.name == 'understanding_field' and left is not None:
-                    from SentenceField import selected_field
-                    values[field.name] = selected_field(left,right,wins)
-                elif not torch.is_tensor(left) or left.ndim == 0:
-                    values[field.name] = left
-                else:
-                    gate = wins.reshape((-1,) + (1,) * (left.ndim-1))
-                    values[field.name] = torch.where(gate, right, left)
-            expected = cls(**values)
-        if not live:
-            return expected
+        winners = wins.long()
+        indices = winners.tolist() if indices is None else indices
+        if replay is None or not live or len(set(indices)) <= 1:
+            return cls.select_records((greedy, explore), winners, indices, live=live)
+        expected = cls.select_records((greedy, explore), winners, indices, live=False)
         selected = replay()
         if selected.primed is not expected.primed:
             raise RuntimeError('kept sentence replay changed its priming snapshot')

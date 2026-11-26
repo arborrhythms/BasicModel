@@ -116,6 +116,19 @@ def canonical_native_events(model, ids, positions, brackets):
     return result, spans
 
 
+def word_object_poles(native, field, words, object_names, object_values):
+    """Read each word and all its denotations from the native field together."""
+    seats = torch.searchsorted(object_names, words.contiguous())
+    names = F.pad(object_names, (0, 1), value=-1)
+    seats = torch.where((words >= 0) & (names[seats] == words), seats, len(object_names))
+    wanted = torch.cat((words[..., None], object_values[seats]), -1)
+    if native.ndim == 1:
+        native = native[:, None].expand(-1, words.shape[0])
+    matches = (native.T[:, :, None, None] == wanted[:, None]).any(-1)
+    matches &= (native.T >= 0)[:, :, None]
+    return torch.where(matches[..., None], field.permute(1, 0, 2, 3), 0.).amax(1).detach()
+
+
 def native_word_poles(model, spans, forms, known):
     """Read the current native definition at each word's own extent.
 
@@ -153,28 +166,32 @@ def native_word_poles(model, spans, forms, known):
         both = owner.order_zero_both_field(perception)
         field = torch.maximum(field, both[..., None].to(field))
     native = owner._cs_field_concept_ids[:field.shape[0]]
-    native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
-    pool_words = fi.get('pool_word_host')
-    word_rows = (pool_words if pool_words is not None else
-                 [[owner.interpret.word_for_form(form) for form in row] for row in forms])
-    objects = [[tuple(dict.fromkeys((word, *owner.definitions.objects(word))))
-                if word is not None and word >= 0 else ()
-                for word in row[:width]] for row in word_rows]
-    alternatives = max(1, max((len(values) for row in objects for values in row), default=0))
-    wanted = native.new_tensor([[list(values)+[-1]*(alternatives-len(values)) for values in row]
-                               for row in objects])
-    matches = (native.T[:, :, None, None] == wanted[:, None]).any(-1)
-    matches = matches & (native.T >= 0)[:, :, None]
-    result = torch.where(matches[..., None], field.permute(1, 0, 2, 3), 0.).amax(1).detach()
+    pool_words = fi.get('pool_word_ids')
+    if pool_words is not None:
+        names, objects = owner.definitions.word_objects(native.device)
+        result = word_object_poles(native, field, pool_words[:, :width], names, objects)
+    else:
+        # Non-word-major callers retain their existing text interface.
+        word_rows = [[owner.interpret.word_for_form(form) for form in row] for row in forms]
+        objects = [[tuple(dict.fromkeys((word, *owner.definitions.objects(word))))
+                    if word is not None and word >= 0 else ()
+                    for word in row[:width]] for row in word_rows]
+        alternatives = max(1, max((len(values) for row in objects for values in row), default=0))
+        wanted = native.new_tensor([[list(values)+[-1]*(alternatives-len(values)) for values in row]
+                                   for row in objects])
+        native = native[:, None].expand(-1, len(forms)) if native.ndim == 1 else native
+        matches = (native.T[:, :, None, None] == wanted[:, None]).any(-1)
+        matches &= (native.T >= 0)[:, :, None]
+        result = torch.where(matches[..., None], field.permute(1, 0, 2, 3), 0.).amax(1).detach()
     return F.pad(result, (0, 0, 0, known.shape[1]-width))
 
 
 def stage_input(model):
     """Prepare the bracket; its sentence, or a non-sentence read, owns admission.
 
-    The native word dictionary is only consulted here. The tensor body sees
-    identities as equality keys, never as numerical features. Repeated novel
-    surfaces share one descent witness and one subsequent native definition.
+    The word-major path reads MTM's nominated names directly. Identities are
+    equality keys, never numerical features. The text adapter below serves
+    callers without a table-of-forms reading.
     """
     isp=model.inputSpace
     slab=getattr(isp,'_ar_embedded_N',None)
@@ -211,10 +228,10 @@ def stage_input(model):
     if W == 0:return
     fi=getattr(model.perceptualSpace,'_forward_input',None) or {}
     texts=fi.get('pool_word_texts', fi.get('word_texts')) or ()
-    if not any(row for row in texts) and not any(
+    pool_words = fi.get('pool_word_ids')
+    if pool_words is None and not any(row for row in texts) and not any(
             value is not None for value in (getattr(isp, '_scalar_values', None) or ())):
         return  # An absent text/scalar field has no bracket to examine.
-    intervals=fi.get('pool_word_intervals', fi.get('word_intervals')) or ()
     owner=model._concept_owner()
     from WordSurfaces import is_lexical_form
     native_ids=fi.get('native_indices',fi.get('indices'))
@@ -229,73 +246,81 @@ def stage_input(model):
         byte_surface, units = fi['sentence_bytes'], fi['unit_spans']
         trimmed = trimmed_spans(byte_surface, units)
         spans, ids = reading_forms(byte_surface, units, active, trimmed=trimmed)
-    native_rows = property_bits = None
-
-    def found(b, w, form, lo, hi):
-        """The word of a form, counting this reading of it first: the first
-        reader of a form in a reading is where MTM nominates it (rule 20),
-        so that attention reads it as known in that reading."""
-        pool_words = fi.get('pool_word_host')
-        if pool_words is not None:
-            word = pool_words[b][w]
-            return None if word < 0 else word
-        word=owner.interpret.word_for_form(form)
-        if (word is not None or not reads_words or not is_lexical_form(form) or whole_space is None
-                or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):
-            return word
-        nonlocal native_rows, property_bits
-        if native_rows is None:
-            native_rows = torch.cat((native_ids[..., None], native_spans.to(native_ids)), -1).tolist()
-        parts = [pid for pid, start, stop in native_rows[b] if pid >= 0 and lo <= start < stop <= hi]
-        if not parts:
-            return None
-        if native_spans_available:
-            if property_bits is None:
-                from Spaces import _analysis_property_signature
-                from WordSurfaces import reading_property_signatures
-                lut, discard = _analysis_property_signature(whole_space, device=units.device)
-                property_bits = reading_property_signatures(byte_surface, trimmed, lut, discard).tolist()
-            bits = property_bits[b][w]
-            wholes = [row for row in range(min(int(whole_space.nVectors), 63)) if bits & (1 << row)]
-        else:
-            wholes = sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form)))
-        return owner.interpret.lookup_word(parts, wholes, form=form, word_reading=True, reading=owner.reading(b))
-    extents=[];known=[];identities=[];forms=[];concepts=[]
-    for b in range(B):
-        row=[];seen=[];row_ids=[];names=[];words=[]
-        vocabulary = {} if not native_spans_available else None
-        for w in range(W):
-            text=str(texts[b][w]) if b<len(texts) and w<len(texts[b]) else ''
-            raw=text.encode('latin1','replace')
-            leading=len(raw)-len(raw.lstrip());surface=raw.strip()
-            if raw:
-                start, stop = intervals[b][w]
-                lo=int(start)+leading
-                hi=int(stop)-(len(raw)-len(raw.rstrip()))
-            else:
-                lo=hi=0
-            form=surface.decode('latin1')
-            if not native_spans_available:
-                row.append((lo,hi) if surface else (0,0))
-            word=found(b,w,form,lo,hi) if surface else None
-            seen.append(word is not None);words.append(-1 if word is None else int(word))
-            if not native_spans_available:
-                if form and form not in vocabulary:
-                    vocabulary[form] = w
-                row_ids.append(vocabulary.get(form, -1))
-            names.append(form)
+    if pool_words is not None:
         if not native_spans_available:
-            extents.append(row)
-            identities.append(row_ids)
-        known.append(seen);forms.append(names);concepts.append(words)
-    if not native_spans_available:
-        spans = torch.tensor(extents, device=slab.device, dtype=torch.long)
-        ids = torch.tensor(identities, device=slab.device, dtype=torch.long)
+            raise ValueError('MTM word names require their native occurrence spans')
+        concepts = pool_words
+        known = concepts >= 0
+        # Labels are only for supplied lesson walks and reports. They neither
+        # recognize a word nor decide whether attention must descend.
+        forms = texts
+    else:
+        intervals = fi.get('word_intervals') or ()
+        native_rows = property_bits = None
+
+        def found(b, w, form, lo, hi):
+            """The word of a form, counting this reading of it first: the first
+            reader of a form in a reading is where MTM nominates it (rule 20),
+            so that attention reads it as known in that reading."""
+            word=owner.interpret.word_for_form(form)
+            if (word is not None or not reads_words or not is_lexical_form(form) or whole_space is None
+                    or not torch.is_tensor(native_ids) or not torch.is_tensor(native_spans)):
+                return word
+            nonlocal native_rows, property_bits
+            if native_rows is None:
+                native_rows = torch.cat((native_ids[..., None], native_spans.to(native_ids)), -1).tolist()
+            parts = [pid for pid, start, stop in native_rows[b] if pid >= 0 and lo <= start < stop <= hi]
+            if not parts:
+                return None
+            if native_spans_available:
+                if property_bits is None:
+                    from Spaces import _analysis_property_signature
+                    from WordSurfaces import reading_property_signatures
+                    lut, discard = _analysis_property_signature(whole_space, device=units.device)
+                    property_bits = reading_property_signatures(byte_surface, trimmed, lut, discard).tolist()
+                bits = property_bits[b][w]
+                wholes = [row for row in range(min(int(whole_space.nVectors), 63)) if bits & (1 << row)]
+            else:
+                wholes = sorted(set(int(v) for v in whole_space.property_rows_for_bytes(form)))
+            return owner.interpret.lookup_word(parts, wholes, form=form, word_reading=True, reading=owner.reading(b))
+        extents=[];known=[];identities=[];forms=[];concepts=[]
+        for b in range(B):
+            row=[];seen=[];row_ids=[];names=[];words=[]
+            vocabulary = {} if not native_spans_available else None
+            for w in range(W):
+                text=str(texts[b][w]) if b<len(texts) and w<len(texts[b]) else ''
+                raw=text.encode('latin1','replace')
+                leading=len(raw)-len(raw.lstrip());surface=raw.strip()
+                if raw:
+                    start, stop = intervals[b][w]
+                    lo=int(start)+leading
+                    hi=int(stop)-(len(raw)-len(raw.rstrip()))
+                else:
+                    lo=hi=0
+                form=surface.decode('latin1')
+                if not native_spans_available:
+                    row.append((lo,hi) if surface else (0,0))
+                word=found(b,w,form,lo,hi) if surface else None
+                seen.append(word is not None);words.append(-1 if word is None else int(word))
+                if not native_spans_available:
+                    if form and form not in vocabulary:
+                        vocabulary[form] = w
+                    row_ids.append(vocabulary.get(form, -1))
+                names.append(form)
+            if not native_spans_available:
+                extents.append(row)
+                identities.append(row_ids)
+            known.append(seen);forms.append(names);concepts.append(words)
+        if not native_spans_available:
+            spans = torch.tensor(extents, device=slab.device, dtype=torch.long)
+            ids = torch.tensor(identities, device=slab.device, dtype=torch.long)
+        known=torch.tensor(known,device=slab.device,dtype=torch.bool)
+        concepts=torch.tensor(concepts,device=slab.device,dtype=torch.long)
     live=active & (spans[...,1]>spans[...,0])
     spans=torch.where(live[...,None],spans,0)
     model._attention_spans=spans
     if model.attention_budget == 0:return
-    known=torch.tensor(known,device=slab.device,dtype=torch.bool)&live
+    known = known & live
     chooser=model._stm_reducer()
     dim=int(chooser.d_model)
     model._attention_pole_representation=(dim == 2 and any(
@@ -309,7 +334,6 @@ def stage_input(model):
         poles=native_word_poles(model,spans,forms,known)
         model._attention_native_poles=poles
     live_width = max(1, int(occupied_width(live)))
-    concepts=torch.tensor(concepts,device=slab.device,dtype=torch.long)
     model._attention_word_concepts=torch.where(known,concepts,-1)
     from Memory import ShortTermMemory
     stm = getattr(model.conceptualSpace, 'stm', model.conceptualSpace)

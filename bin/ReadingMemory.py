@@ -3,12 +3,40 @@ import torch
 from Memory import OCCURRENCE, SYMBOL, RELATION
 
 
+def covered_units(ids, spans, units):
+    """Find complete contiguous native covers of the delivered word intervals."""
+    if not ids.shape[1]:
+        return torch.zeros_like(units[..., 0], dtype=torch.bool)
+    lo, hi = spans.unbind(-1)
+    start, stop = units.unbind(-1)
+    members = ((ids >= 0) & (lo < hi))[:, None] & (start[..., None] <= lo[:, None]) & (hi[:, None] <= stop[..., None])
+    # A padding gap in the native row bank is legal. Compare each member
+    # with the end of its preceding selected member in native order.
+    locations = torch.arange(ids.shape[1], device=ids.device) + 1
+    last = torch.where(members, locations, 0).cummax(-1).values
+    previous = torch.nn.functional.pad(last[..., :-1], (1, 0))
+    ends = torch.nn.functional.pad(hi, (1, 0))[:, None].expand(-1, units.shape[1], -1)
+    required = torch.where(previous > 0, ends.gather(-1, previous), start[..., None])
+    return ((stop > start) & (ends.gather(-1, last[..., -1:]).squeeze(-1) == stop)
+            & (~members | (lo[:, None] == required)).all(-1) & members.any(-1))
+
+
 def named_extents(model, percepts):
     """Annotate complete, visible native forms with their MTM names."""
     from WordSurfaces import is_lexical_form
     ps, owner = model.perceptualSpace, model._concept_owner()
     ids, spans = percepts[:2]
     units = ps._forward_input.get('unit_spans')
+    pool_words = ps._forward_input.get('pool_word_ids')
+    if pool_words is not None:
+        # Preserve the field's compact extent axis, including unnamed visible
+        # readings. The MTM decision is final for this occurrence.
+        live = covered_units(ids, spans, units) & ps._forward_input['pool_visible']
+        width = int(live.sum(1).amax()) if len(ids) else 0
+        columns = (~live).long().argsort(dim=1, stable=True)[:, :width]
+        keep = live.gather(1, columns)
+        selected = units.gather(1, columns[..., None].expand(-1, -1, 2))
+        return torch.where(keep[..., None], selected, 0), torch.where(keep, pool_words.gather(1, columns), -1)
     words = []
     # The existing nomination interface consumes native row names. Bring
     # the whole bank (and the word-major stem's unit extents) to this boundary in one read.
@@ -127,7 +155,7 @@ def _reserve_symbols(blocked, values):
 
 
 def translate_pairs(handles, endpoints, head, refs, tags, blocked, next_id, *, sequential,
-                    reserve_symbols=True):
+                    reserve_symbols=True, active=None):
     """Intern the incoming topology into private copies of the LTM address arrays.
 
     Existing pairs keep their handles, including pairs encountered on a prior
@@ -138,36 +166,87 @@ def translate_pairs(handles, endpoints, head, refs, tags, blocked, next_id, *, s
     n = handles.shape[0]
     seats = torch.arange(refs.shape[0], device=refs.device)
     names = handles.new_zeros(n + 1)
-    translated = torch.empty_like(endpoints)
+    translated = torch.zeros_like(endpoints)
+    active = torch.ones(n, device=handles.device, dtype=torch.bool) if active is None else active
     fresh = handles.new_zeros(n, dtype=torch.bool)
     ok = handles.new_ones((), dtype=torch.bool)
+    if not n:
+        return names[:0], translated, fresh, head.clone(), next_id.clone(), ok
     local = _name_lookup(handles, endpoints[..., 1], n)
     root_at = _name_lookup(handles, head[1:2], n)
-    for i in range(n):
-        kinds, original = endpoints[i].unbind(-1)
-        values = torch.where((kinds == RELATION) & (local[i] < n), names[local[i]], original)
-        matches = (tags == kinds).all(1) & (refs == values).all(1)
+    def step(i, names, translated, fresh, current_refs, current_tags, occupied, next_id, ok):
+        at = i.reshape(1)
+        enabled = active.index_select(0, at)[0]
+        kinds, original = endpoints.index_select(0, at)[0].unbind(-1)
+        children = local.index_select(0, at)[0]
+        values = torch.where((kinds == RELATION) & (children < n), names[children], original)
+        matches = (current_tags == kinds).all(1) & (current_refs == values).all(1)
         found = matches.any()
-        if sequential:
-            free = next_id
-        else:
-            free = torch.where(~blocked, seats, len(seats)).amin()
-        available = tags[free.clamp(0, len(seats)-1).reshape(1), 0][0] == 0
-        can_allocate = torch.logical_and((free > 0) & (free < len(seats)), available)
-        ok = torch.logical_and(ok, torch.logical_or(found, can_allocate))
-        name = torch.where(found, matches.long().argmax(), torch.where(can_allocate, free, 0))
+        free = next_id if sequential else torch.where(~occupied, seats, len(seats)).amin()
+        available = current_tags.index_select(0, free.clamp(0, len(seats)-1).reshape(1))[0, 0] == 0
+        can_allocate = (free > 0) & (free < len(seats)) & available
+        ok = ok & (~enabled | found | can_allocate)
+        name = torch.where(enabled, torch.where(found, matches.long().argmax(), torch.where(can_allocate, free, 0)), 0)
         index = name.reshape(1)
-        refs.index_copy_(0, index, values[None])
-        tags.index_copy_(0, index, kinds[None].to(tags.dtype))
-        blocked.index_fill_(0, index, True)
+        current_refs = current_refs.index_copy(0, index,
+            torch.where(enabled, values[None], current_refs.index_select(0, index)))
+        current_tags = current_tags.index_copy(0, index,
+            torch.where(enabled, kinds[None].to(current_tags.dtype), current_tags.index_select(0, index)))
+        occupied = occupied.index_fill(0, index, True)
         if not sequential and reserve_symbols:
-            _reserve_symbols(blocked, torch.where(kinds == SYMBOL, values, 0))
-        names[i] = name
-        translated[i] = torch.stack((kinds, values), -1)
-        fresh[i] = ~found
-        next_id = next_id + (~found).long()
+            symbols = torch.where(kinds == SYMBOL, values, 0)
+            legal = enabled & (symbols > 0) & (symbols < len(occupied))
+            occupied = occupied.index_fill(0, torch.where(legal, symbols, 0), True)
+        names = names.index_copy(0, at, name.reshape(1))
+        translated = translated.index_copy(0, at, torch.where(enabled, torch.stack((kinds, values), -1)[None], 0))
+        created = enabled & ~found
+        fresh = fresh.index_copy(0, at, created.reshape(1))
+        return i + 1, names, translated, fresh, current_refs, current_tags, occupied, next_id + created.long(), ok
+
+    initial = (handles.new_zeros(()), names, translated, fresh, refs.clone(), tags.clone(),
+               blocked.clone(), next_id, ok)
+    if torch.compiler.is_compiling():
+        def condition(i, names, translated, fresh, refs, tags, blocked, next_id, ok):
+            return i < n
+        result = torch.while_loop(condition, step, initial)
+    else:
+        result = initial
+        for _ in range(n):
+            result = step(*result)
+    _, names, translated, fresh, written_refs, written_tags, occupied, next_id, ok = result
+    refs.copy_(written_refs)
+    tags.copy_(written_tags)
+    blocked.copy_(occupied)
     root_value = torch.where((head[0] == RELATION) & (root_at[0] < n), names[root_at][0], head[1])
     return names[:n], translated, fresh, torch.stack((head[0], root_value)), next_id, ok
+
+
+def translate_batch(handles, endpoints, heads, active, refs, tags, blocked, next_id, *, sequential):
+    """Intern all streams in row order, with a private namespace for each trial.
+
+    Equal temporary handles from different streams never alias. Once their
+    children have durable names, equal pairs share the ordinary LTM handle.
+    A captured loop keeps sequential allocation order without unrolling a
+    larger graph when the batch grows.
+    """
+    batch, width = handles.shape
+    if not width:
+        return handles.clone(), endpoints.clone(), active.clone(), heads.clone(), next_id, blocked.new_ones(())
+    keys, order = torch.where(active, handles, torch.iinfo(handles.dtype).max).sort(dim=1, stable=True)
+    references = torch.cat((endpoints.reshape(batch, -1, 2), heads[:, None]), 1)
+    kinds, values = references.unbind(-1)
+    places = torch.searchsorted(keys, values.contiguous())
+    found = (places < width) & (keys.gather(1, places.clamp_max(width-1)) == values)
+    local = order.gather(1, places.clamp_max(width-1))
+    local = local + torch.arange(batch, device=handles.device)[:, None] * width
+    own = (kinds == RELATION) & found
+    translated = torch.stack((kinds, torch.where(own, -local-1, values)), -1)
+    temporary = -torch.arange(batch*width, device=handles.device)-1
+    names, pairs, fresh, _, next_id, ok = translate_pairs(temporary,
+        translated[:, :-1].reshape(-1, 2, 2), heads.new_zeros(2), refs, tags, blocked, next_id,
+        sequential=sequential, active=active.flatten())
+    roots = torch.stack((heads[:, 0], torch.where(own[:, -1], names[local[:, -1]], heads[:, 1])), -1)
+    return names.reshape_as(handles), pairs.reshape_as(endpoints), fresh.reshape_as(active), roots, next_id, ok
 
 
 def _bind_allocated_handles(parts, plans):
@@ -197,6 +276,47 @@ def _bind_allocated_handles(parts, plans):
                  for name, ka, a, kb, b, fresh in links]
         result.append((links, (kind, endpoint(kind, root))))
     return result
+
+
+@torch.no_grad()
+def _publish_sequential_pairs(parts, allocator, refs, tags, next_id, names, fresh, evidence):
+    """Write the translated topology and graded observations of the whole batch."""
+    from Memory import NULL_CONCEPT
+    from MemoryActivity import accessed
+    first, stop = allocator.next_id, int(next_id)
+    if not bool((evidence.isfinite() & (evidence >= 0) & (evidence <= 1)).all()):
+        raise ValueError('invalid retained relation evidence or activity')
+    if bool(((tags[first:stop] == SYMBOL) & (refs[first:stop] == NULL_CONCEPT)).any()):
+        raise ValueError('a null-concept cannot be a relation endpoint')
+    # Relation handles in this protocol are global concept names. Translation
+    # has reserved one contiguous range, in stream and dependency order.
+    # Existing pairs can be encountered repeatedly, including earlier streams'
+    # writes. Retain the maximum observation on each independent trust lane.
+    right_symbol = tags[names, 1] == SYMBOL
+    classes = tuple(getattr(parts, '_class_rows', ()))
+    symbolic = tags[names, 0] == SYMBOL
+    if classes:
+        symbolic |= torch.isin(refs[names, 1], names.new_tensor(classes))
+    changed = fresh | (parts.truth_plus[names] < evidence[:, 0]) | (parts.truth_minus[names] < evidence[:, 1])
+    invalidate = bool((right_symbol & symbolic & changed).any())
+    if first != stop:
+        parts._sort()
+        start = len(parts)
+        for _ in range(first, stop):
+            allocator.new_concept()
+        parts.refs[first:stop].copy_(refs[first:stop])
+        parts.ref_kinds[first:stop].copy_(tags[first:stop])
+        seats = torch.arange(first, stop, device=names.device)
+        parts.relation_order[start:start + len(seats)].copy_(seats)
+        parts.activity[first:stop].copy_(evidence[fresh, 2])
+        parts._write_count(start + len(seats))
+        parts._order_revision = parts._topology_revision
+    parts.truth_plus.scatter_reduce_(0, names, evidence[:, 0], reduce='amax')
+    parts.truth_minus.scatter_reduce_(0, names, evidence[:, 1], reduce='amax')
+    parts._symbol_epoch += int(invalidate)
+    # Preserve each repeated access in the current trial's activity journal.
+    for name in names[~fresh].tolist():
+        accessed(parts, name)
 
 
 def commit(stores, heads, durable):
@@ -231,39 +351,59 @@ def commit(stores, heads, durable):
                 blocked |= blocked.new_tensor([parts.handle_reserved(row) for row in range(parts.capacity)])
         next_id = refs.new_tensor(allocator.next_id if sequential else 0)
         valid = blocked.new_ones(())
-    for store, plan in zip(stores, plans, strict=True):
-        if plan is None:
-            planned.append(None)
-            continue
-        rows, names, referents, handles, endpoints, root = plan
-        links = []
-        if n_pairs and parts.allocate is None:
-            _reserve_symbols(blocked, store.episodic_concepts[rows])
-        if len(handles):
-            assigned, endpoints, fresh, root, next_id, ok = translate_pairs(
-                handles, endpoints, root, refs, tags, blocked, next_id, sequential=sequential,
-                reserve_symbols=parts.allocate is None)
-            valid = valid & ok
-            links = torch.cat((assigned[:, None], endpoints.flatten(1), fresh[:, None]), 1).tolist()
-        planned.append((links, tuple(root.tolist())))
+    if n_pairs and sequential:
+        from torch.nn.functional import pad
+        width = max(0 if plan is None else len(plan[3]) for plan in plans)
+        counts = refs.new_tensor([0 if plan is None else len(plan[3]) for plan in plans])
+        handles = torch.stack([refs.new_full((width,), -1) if plan is None else
+            pad(plan[3], (0, width-len(plan[3])), value=-1) for plan in plans])
+        endpoints = torch.stack([refs.new_zeros(width, 2, 2) if plan is None else
+            pad(plan[4], (0, 0, 0, 0, 0, width-len(plan[3]))) for plan in plans])
+        heads = torch.stack([refs.new_zeros(2) if plan is None else plan[5] for plan in plans])
+        live = torch.arange(width, device=refs.device)[None] < counts[:, None]
+        assigned, endpoints, fresh, roots, next_id, valid = translate_batch(
+            handles, endpoints, heads, live, refs, tags, blocked, next_id, sequential=True)
+        if not bool(valid):
+            raise OverflowError('reading exceeds remaining long-term relation capacity')
+        evidence = torch.cat([torch.stack((store.parts.truth_plus[plan[3]],
+            store.parts.truth_minus[plan[3]], store.parts.activity[plan[3]]), 1)
+            for store, plan in zip(stores, plans) if plan is not None])
+        _publish_sequential_pairs(parts, allocator, refs, tags, next_id,
+                                  assigned[live], fresh[live], evidence)
+        durable.retain_idea_batch([(store, *plan[:3]) for store, plan in zip(stores, plans) if plan is not None])
+        return tuple(None if plan is None else tuple(root) for plan, root in zip(plans, roots.tolist()))
+    else:
+        for store, plan in zip(stores, plans, strict=True):
+            if plan is None:
+                planned.append(None)
+                continue
+            rows, names, referents, handles, endpoints, root = plan
+            links = []
+            if n_pairs and parts.allocate is None:
+                _reserve_symbols(blocked, store.episodic_concepts[rows])
+            if len(handles):
+                assigned, endpoints, fresh, root, next_id, ok = translate_pairs(
+                    handles, endpoints, root, refs, tags, blocked, next_id, sequential=sequential,
+                    reserve_symbols=parts.allocate is None)
+                valid = valid & ok
+                links = torch.cat((assigned[:, None], endpoints.flatten(1), fresh[:, None]), 1).tolist()
+            planned.append((links, tuple(root.tolist())))
     if n_pairs and not bool(valid):
         raise OverflowError('reading exceeds remaining long-term relation capacity')
     if n_pairs and parts.allocate is not None and not sequential:
         planned = _bind_allocated_handles(parts, planned)
 
+    durable.retain_idea_batch([(store, *plan[:3]) for store, plan in zip(stores, plans) if plan is not None])
     committed = []
     for store, plan, allocation in zip(stores, plans, planned, strict=True):
         if allocation is None:
             committed.append(None)
             continue
-        rows, names, referents, handles = plan[:4]
-        durable.retain_ideas(store, rows, names, referents)
+        handles = plan[3]
         links, root = allocation
         evidence = torch.stack((store.parts.truth_plus[handles], store.parts.truth_minus[handles],
                                 store.parts.activity[handles]), 1).tolist()
         for (name, ka, a, kb, b, fresh), (positive, negative, activity) in zip(links, evidence, strict=True):
-            if fresh and sequential and parts.allocate() != name:
-                raise RuntimeError('the relation allocator changed during the reading close')
             parts.add((ka, a), (kb, b), symbol=name, truth_plus=positive, truth_minus=negative,
                       surprise=activity)
         committed.append(root)

@@ -475,6 +475,7 @@ class BasicPercepts(nn.Module):
         # whole's code may change after the row is promoted, so no copy is
         # kept.
         self.register_buffer('promoted', torch.zeros(self.capacity, dtype=torch.bool))
+        self.promoted_rows = set()
         self.register_buffer('count', torch.zeros((), dtype=torch.long))
         # A reserved address can read its occurrence's own parts/wholes before
         # recurrence promotes it. Only declare/promote writes a durable row.
@@ -1087,7 +1088,7 @@ class BasicPercepts(nn.Module):
             if rows.intersection(members):
                 rows.add(whole)
                 rows.update(members)
-        rows = [row for row in sorted(rows) if bool(self.promoted[row])]
+        rows = [row for row in sorted(rows) if row in self.promoted_rows]
         if rows or extended:
             self.revision += 1
         if extended:
@@ -1119,7 +1120,7 @@ class BasicPercepts(nn.Module):
         # A conjunction over this percept is a strict whole of it like any
         # other (rule 53): what its other members add tells against it.
         holders = [members for whole, members in self.conjunctions.items()
-                   if int(row) in members and bool(self.promoted[whole])]
+                   if int(row) in members and whole in self.promoted_rows]
         if holders:
             added = torch.stack([self.code(member)[:self.identity_width] for members in holders
                                  for member in members if member != int(row)]).amax(0)
@@ -1131,7 +1132,7 @@ class BasicPercepts(nn.Module):
         """``rows``, whose holders may have changed: their against lanes are
         read again at the next read (:meth:`against`). Returns the promoted
         ones."""
-        changed = [row for row in map(int, rows) if bool(self.promoted[row])]
+        changed = [row for row in map(int, rows) if row in self.promoted_rows]
         if changed:
             self.revision += 1
         return changed
@@ -1194,9 +1195,9 @@ class BasicPercepts(nn.Module):
     @torch.no_grad()
     def promote(self, row, *, promoted=None):
         row = int(row)
-        exists = self.promoted[row] if promoted is None else row in promoted
-        if not exists:
+        if row not in self.promoted_rows:
             self.promoted[row] = True
+            self.promoted_rows.add(row)
             self.count += 1
             self.revision += 1
             if promoted is not None:
@@ -1814,3 +1815,4 @@ class BasicPercepts(nn.Module):
         state.setdefault(prefix+'value_count', torch.zeros_like(self.value_count))
         state.setdefault(prefix+'places', torch.full_like(self.places, -1))
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
+        self.promoted_rows = set(self.promoted.nonzero().flatten().tolist())

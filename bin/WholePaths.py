@@ -261,6 +261,10 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
             registry._terms = {name: dict(term) for name, term in base.registry._terms.items()
                 if term.get('objective') != 'output' and not name.startswith('output.')}
             expectation = base.parts[:, 1]
+        if reading:
+            from ReferenceClose import decision_tensors
+            observation['bind_decisions'] = decision_tensors(
+                observation.get('reference_plans', ()), observation['record'].root)
         observation['incoming_trust'] = float(trust)
         # Reconstruction has its own operated field. Questions and the
         # answer reader start from what this sentence understood.
@@ -446,30 +450,39 @@ def think_kept(model, paths, selected, sid, active, *, active_winners=None):
             model._path_thinking = None
 
 
-def keep_output(model, paths, selected, sid):
+def keep_output(model, paths, selected, sid, *, active_winners=None):
     """Retain the already realized per-stream output for the public handoff."""
     from SentenceBoundary import detached
     from Output import AnswerConstruction
-    indices = selected.tolist() if torch.is_tensor(selected) else selected
-    rows = [paths[index].construction for index in indices]
+    from SentenceCompose import select_padded
     previous = getattr(model, '_kept_path_output', None)
-    active = None
-    if previous is not None and sid is not None:
-        active = model.inputSpace._packed_sentence_slot_mask[:, int(sid)].tolist()
-        rows = [value if active[row] else previous for row, value in enumerate(rows)]
+    if active_winners is None:
+        indices = selected.tolist() if torch.is_tensor(selected) else list(selected)
+        if previous is not None and sid is not None:
+            present = model.inputSpace._packed_sentence_slot_mask[:, int(sid)].tolist()
+            indices = [index if here else -1 for index, here in zip(indices, present)]
+    else:
+        indices = active_winners
+    choices = [len(paths) if previous is not None and index < 0 else max(0, index) for index in indices]
+    outputs = [path.construction for path in paths] + [previous]
+    used = sorted(set(choices))
+    rows = [outputs[i] for i in choices]
     if not rows or all(row is None for row in rows):
         model._kept_path_output = None
         return
     if any(row is None for row in rows):
         raise RuntimeError('one output modality must serve every stream of a sentence')
+    if torch.is_tensor(selected):
+        owners = selected
+        if previous is not None and sid is not None:
+            mask = model.inputSpace._packed_sentence_slot_mask[:, int(sid)].to(device=owners.device, dtype=torch.bool)
+            owners = torch.where(mask, owners, len(paths))
+    else:
+        owners = rows[0].actual.new_tensor(choices, dtype=torch.long)
+    ranks = {index: rank for rank, index in enumerate(used)}
+    owners = owners.new_tensor([ranks.get(index, 0) for index in range(len(outputs))])[owners]
     def stack(name):
-        values = [getattr(value, name)[row:row+1] for row, value in enumerate(rows)]
-        shape = tuple(max(value.shape[axis] for value in values) for axis in range(1, values[0].ndim))
-        padded = []
-        for value in values:
-            pads = tuple(n for axis in reversed(range(1, value.ndim)) for n in (0, shape[axis-1]-value.shape[axis]))
-            padded.append(torch.nn.functional.pad(value, pads))
-        return torch.cat(padded, 0)
+        return select_padded([getattr(outputs[i], name) for i in used], owners)
     derivation = rows[0].derivation
     if derivation is not None:
         derivations = [value.derivation for value in rows]
@@ -482,12 +495,7 @@ def keep_output(model, paths, selected, sid):
         for name in ('conceptual_answer', 'conditioning_context', 'answer_symbol'):
             values = [getattr(item, name) for item in derivations]
             if all(torch.is_tensor(value) for value in values):
-                rows_to_keep = [value[row:row+1] for row, value in enumerate(values)]
-                if name == 'conceptual_answer':
-                    slots = max(value.shape[1] for value in rows_to_keep)
-                    rows_to_keep = [torch.nn.functional.pad(value, (0, 0, 0, slots - value.shape[1]))
-                                    for value in rows_to_keep]
-                fields[name] = torch.cat(rows_to_keep, 0)
+                fields[name] = select_padded([getattr(outputs[i].derivation, name) for i in used], owners)
         derivation = replace(derivation, **fields, selected_thoughts=thoughts)
     result = AnswerConstruction(actual=stack('actual'), derivation=derivation,
         concepts=stack('concepts'), percepts=stack('percepts'), surface=stack('surface'),
@@ -495,13 +503,9 @@ def keep_output(model, paths, selected, sid):
         trace=rows[0].trace, texts=tuple(value.texts[row] for row, value in enumerate(rows)))
     model._kept_path_output = detached(result)
     old_actions = getattr(model, '_kept_path_output_actions', None)
-    actions = [old_actions[row] if active is not None and not active[row]
-               else paths[index].output_trace[0][row]
-               for row, index in enumerate(indices)]
-    width = max(value.shape[0] for value in actions)
-    model._kept_path_output_actions = torch.stack([
-        torch.nn.functional.pad(value, (0, width - value.shape[0]), value=-1)
-        for value in actions]).detach()
+    actions = [old_actions if i == len(paths) else paths[i].output_trace[0] for i in used]
+    model._kept_path_output_actions = select_padded(actions, owners, fill=-1).detach()
+
 
 
 @trial_activity(commit=True)
