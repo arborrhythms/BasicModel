@@ -58,6 +58,58 @@ def definition_keys(plus, minus, what):
             for row in torch.cat(columns, -1).tolist()]
 
 
+def _meet_tensor(owner, basic, c, has, what):
+    """Compiled fullgraph tensor update of pre-allocated place-cone buffers."""
+    B, K, width = c.shape
+    iw = int(basic.identity_width)
+    c = c.detach().float()
+    N = B * K
+    live = has.reshape(N)
+    qkeys = torch.round(c * 1e6).to(torch.int64).reshape(N, width)
+    keys_buf = basic._place_cone_keys
+    M = keys_buf.shape[0]
+    used = basic._place_cone_used
+    used_mask = torch.arange(M, device=c.device) < used
+    matches_existing = (
+        (qkeys[:, None, :] == keys_buf[None, :, :]).all(-1) & used_mask[None, :] & live[:, None])
+    has_existing = matches_existing.any(-1)
+    existing_row = matches_existing.long().argmax(-1)
+    tri = torch.tril(torch.ones(N, N, dtype=torch.bool, device=c.device), diagonal=-1)
+    matches_prev = (qkeys[:, None, :] == qkeys[None, :, :]).all(-1) & tri & (live[:, None] & live[None, :])
+    has_prev = matches_prev.any(-1)
+    novel = live & ~has_existing & ~has_prev
+    novel_seat = used + novel.long().cumsum(0) - 1
+    first_idx = torch.where(matches_prev, torch.arange(N, device=c.device)[None, :], N).amin(-1)
+    first_novel_seat = novel_seat.gather(0, first_idx.clamp(0, max(0, N - 1)))
+    seat = torch.where(has_existing, existing_row, torch.where(has_prev, first_novel_seat, novel_seat))
+    valid_seat = live & (seat < M)
+    safe_seat = seat.clamp(0, M - 1)
+    obs = torch.cat((c, 1 - c, what.detach().float()), -1).reshape(N, -1)
+    split = 2 * width + iw
+    storage = basic._place_cone_bits.view(torch.float32)
+    cur_parts = storage[:, :split].clone()
+    cur_wholes = storage[:, split:].clone()
+    is_new_seat = valid_seat & ~has_existing
+    ones = torch.ones_like(cur_parts)
+    init_parts = torch.where(
+        (torch.arange(M, device=c.device) < used)[:, None], cur_parts, ones)
+    zeros = torch.zeros_like(cur_wholes)
+    init_wholes = torch.where(
+        (torch.arange(M, device=c.device) < used)[:, None], cur_wholes, zeros)
+    obs_parts = torch.where(valid_seat[:, None], obs[:, :split], 1.0)
+    obs_wholes = torch.where(valid_seat[:, None], obs[:, split:], 0.0)
+    new_parts = init_parts.scatter_reduce(0, safe_seat[:, None].expand(-1, split), obs_parts, reduce='amin', include_self=True)
+    new_wholes = init_wholes.scatter_reduce(
+        0, safe_seat[:, None].expand(-1, obs.shape[1] - split), obs_wholes, reduce='amax', include_self=True)
+    updated = torch.cat((new_parts, new_wholes), -1)
+    storage.copy_(updated)
+    keys_buf.scatter_(0, safe_seat[:, None].expand(-1, width),
+                      torch.where(novel[:, None] & (novel_seat[:, None] < M), qkeys, keys_buf.index_select(0, safe_seat)))
+    basic._place_cone_counts.scatter_add_(0, safe_seat, valid_seat.long())
+    basic._place_cone_used.add_(novel.long().sum().clamp_max((M - used).clamp_min(0)))
+    return []
+
+
 def meet(owner, bank, *, promoted=None):
     """Count the occurrences of a sentence's bank at their places and
     nominate a place's row on the count that nominates a form."""
@@ -65,6 +117,8 @@ def meet(owner, bank, *, promoted=None):
     if basic is None or bank.registry is None or not bank.token.shape[1]:
         return []
     c, has, what = readings(bank)
+    if torch.compiler.is_compiling():
+        return _meet_tensor(owner, basic, c, has, what)
     iw = bank.identity_width
     c = c.detach().float()
     width, readings_per_page = c.shape[-1], c.shape[1]
@@ -99,6 +153,11 @@ def meet(owner, bank, *, promoted=None):
         if key not in registry:
             registry[key] = len(registry)
     storage = basic.place_cone_storage(len(registry))
+    if registry:
+        row_ids = list(registry.values())
+        key_rows = torch.tensor([[round(v * 1e6) for v in k] for k in registry], dtype=torch.int64, device=c.device)
+        basic._place_cone_keys.index_copy_(0, key_rows.new_tensor(row_ids), key_rows)
+        basic._place_cone_used.fill_(len(registry))
     observations = torch.cat((c, 1 - c, what.detach().float()), -1).flatten(0, 1)
     seats = torch.tensor(positions, dtype=torch.long, device=c.device)
     points = observations.index_select(0, seats)

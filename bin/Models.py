@@ -8467,6 +8467,8 @@ class BasicModel(BaseModel):
     @_sentence_query_mask
     def forward(self, inputData, *, incoming_trust=None):
         """Read through the common sentence driver; raw calls never optimize."""
+        if getattr(self, '_forward_host_prepared', False):
+            return self._forward_per_stage(inputData, incoming_trust=incoming_trust)
         self.begin_reading()
         if not getattr(self, '_sentence_run_active', False) and hasattr(self, 'inputSpace'):
             from Occurrence import stage_sources
@@ -8683,12 +8685,48 @@ class BasicModel(BaseModel):
         self._stage_host_surface()
         own_forward = (executor is None or executor == self.forward
                        or executor is getattr(self, '_active_compiled_step', None))
+        def _invoke():
+            if (own_forward and not torch.compiler.is_compiling()
+                    and getattr(self, '_staged_in_sub', None) is None):
+                self._query_sentence_depth += 1
+                try:
+                    self.begin_reading()
+                    if not getattr(self, '_sentence_run_active', False) and hasattr(self, 'inputSpace'):
+                        from Occurrence import stage_sources
+                        source = getattr(input_data, '_sentence_source', None)
+                        split, prepared = source if source is not None else ('train', None)
+                        stage_sources(self, split, prepared, input_data)
+                        if not self._composes_sentences():
+                            self._advance_when_time()
+                            from Occurrence import stage_position
+                            stage_position(self, 0, len(input_data), device=input_data.device)
+                    self._snapshot_sentence_codes()
+                    own_context = self.word_brackets and not getattr(self, '_sentence_run_active', False)
+                    context = self._sentence_run(training=False) if own_context else nullcontext()
+                    with context:
+                        external_start = bool(getattr(self, '_spaces_started_for_forward', False))
+                        if not external_start:
+                            self._start_spaces_for_forward()
+                        self._staged_in_sub = self._lex_embed_stem(input_data)
+                        self._forward_host_prepared = True
+                        try:
+                            return self._execute_input_sentence(input_data, executor)
+                        finally:
+                            self._forward_host_prepared = False
+                            self._staged_in_sub = None
+                            if not external_start:
+                                self._spaces_started_for_forward = False
+                            if own_context or not getattr(self, '_sentence_run_active', False):
+                                self._sentence_codes_snapshotted = False
+                finally:
+                    self._query_sentence_depth -= 1
+            return self._execute_input_sentence(input_data, executor)
         if own_forward and getattr(self, 'word_brackets', False) and isinstance(self.inputSpace, InputSpace):
             owner = self._concept_owner()
             if owner is not None:
                 with owner._concept_allocator.parts.sentence_handles():
-                    return self._execute_input_sentence(input_data, executor)
-        return self._execute_input_sentence(input_data, executor)
+                    return _invoke()
+        return _invoke()
 
     def understand(self, input_data, *, executor=None):
         """One bottom-up analysis pass returning its ``Understanding``."""

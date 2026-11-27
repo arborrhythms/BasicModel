@@ -587,8 +587,13 @@ class BasicPercepts(nn.Module):
         self._place_cone_rows = {}
         # Store binary32 observations even when a model casts its parameters
         # to a lower precision. These live counts and cones expire on restore.
-        self.register_buffer('_place_cone_bits', torch.zeros(0, 2 * WHERE_WIRES + self.width,
+        place_cap = max(16, self.capacity)
+        self.register_buffer('_place_cone_bits', torch.zeros(place_cap, 2 * WHERE_WIRES + self.width,
                              dtype=torch.int32), persistent=False)
+        self.register_buffer('_place_cone_keys', torch.zeros(place_cap, WHERE_WIRES, dtype=torch.int64),
+                             persistent=False)
+        self.register_buffer('_place_cone_counts', torch.zeros(place_cap, dtype=torch.int64), persistent=False)
+        self.register_buffer('_place_cone_used', torch.zeros((), dtype=torch.int64), persistent=False)
         # Each row's kept value and weight on the where wires and on the when
         # wires of an attended percept. They are learned, so the module that
         # learns them registers them (``PartSpace.place_entries``); the
@@ -1011,9 +1016,18 @@ class BasicPercepts(nn.Module):
     def place_cone_storage(self, needed):
         if needed > len(self._place_cone_bits):
             old = self._place_cone_bits
-            grown = old.new_zeros((max(needed, 16, 2 * len(old)), old.shape[1]))
+            cap = max(needed, 16, 2 * len(old))
+            grown = old.new_zeros((cap, old.shape[1]))
             grown[:len(old)].copy_(old)
             self._place_cone_bits = grown
+            old_keys = self._place_cone_keys
+            grown_keys = old_keys.new_zeros((cap, old_keys.shape[1]))
+            grown_keys[:len(old_keys)].copy_(old_keys)
+            self._place_cone_keys = grown_keys
+            old_counts = self._place_cone_counts
+            grown_counts = old_counts.new_zeros((cap,))
+            grown_counts[:len(old_counts)].copy_(old_counts)
+            self._place_cone_counts = grown_counts
         return self._place_cone_bits.view(torch.float32)
 
     def reserve_place(self, plus, minus, what=None, *, key=None):
@@ -2440,6 +2454,9 @@ class BasicPercepts(nn.Module):
         self.place_rows.seats.clear()
         self._place_cone_rows = {}
         self._place_cone_bits.zero_()
+        self._place_cone_keys.zero_()
+        self._place_cone_counts.zero_()
+        self._place_cone_used.zero_()
         learned = self.where_entries.detach().clone()
         for row, (parts, wholes) in enumerate(state['occurrences']):
             if row in place_rows:
