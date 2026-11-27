@@ -33,7 +33,10 @@ def test_default_pinned_banks_use_the_declared_word_bound(default_model):
     linked = sum(value.numel()*value.element_size()
                  for bank in (*strata.idea_stores, *strata.recent_stores)
                  for value in bank.parts.buffers())
-    assert declared + linked < .25 * 2**30
+    # The bound was a quarter GiB until items 1.5 and 1.6 were combined: each
+    # fit alone and together they hold 0.252 GiB. Raised at Alec's word
+    # (2026-11-27: "Raise it").
+    assert declared + linked < .3 * 2**30
     receipt('bank-bound', dict(words=strata.words, streams=strata.streams,
         banks=len(strata._traces), trace_action_bound=strata.words+strata.operators,
         stream_columns=0, declared_bytes=declared, declared_gib=declared/2**30,

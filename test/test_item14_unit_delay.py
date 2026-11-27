@@ -305,6 +305,72 @@ def test_an_entry_on_a_concept_one_step_back_is_learned_by_the_sigma(monkeypatch
     assert learned['reads']['gained'] == max(learned['reads'].values())
 
 
+def test_a_kind_on_a_concept_one_step_back_is_seated_from_what_was_active_then(monkeypatch):
+    """Alec, 2026-11-27: "What is active now includes the delayed symbolic
+    activation if it is based on symbols." ``lost`` has an entry on ``x``
+    one step back and a Not entry on ``x`` now. Two openings, each read the
+    way a sentence's opening is (the order-zero concepts of the percepts
+    found, the closure that seats the field, then the forward that
+    publishes): ``x`` then ``y``, and ``y`` then ``y``. With ``x`` now,
+    ``lost`` is seated through its entry on ``x`` and reads nothing. At the
+    opening after ``x``, nothing active now reaches it: it is seated from
+    what was active at the opening before and reads above nothing, as
+    ``x`` one step back. With ``x`` at neither opening it is never seated."""
+    import Spaces
+    from basic_fixtures import feature, with_own_codes
+    from order_fixtures import force_order
+    from test_cs_sparse_weights import _cs
+    _keyed(monkeypatch)
+    cs = with_own_codes(_cs(nS=64, order=2), (100, 101))
+    concepts, rows = {}, {}
+    for name, order, code in (('x', 0, 100), ('y', 0, 101), ('lost', 1, None)):
+        cid = cs.new_concept()
+        force_order(cs, cid, order)
+        concepts[name], rows[name] = cid, cs._csw_concept_row(order, cid)
+        if code is not None:
+            feature(cs, rows[name], 'ps', code, 1.)
+    cs.link_delayed_concept(rows['lost'], rows['x'], weight=1.)
+    cs.add_concept_edge(rows['lost'], rows['x'], weight=1., negated=True)
+    extent = torch.tensor([[[0, 1]]])
+
+    def opening(code):
+        a0 = cs.cs_read_memberships((torch.tensor([[code]]), extent, None, torch.tensor([[65]]), extent), extent)
+        field = cs.cs_forward_content(a0, publish=True)
+        seat = (cs._cs_field_concept_ids == concepts['lost']).nonzero().flatten().tolist()
+        return dict(seated=bool(seat), lost=round(float(field[seat[0], 0, 0, 0].detach()), 4) if seat else None,
+                    x_back=round(float(cs._concept_delay_previous[rows['x'], 0, 0]), 4))
+    measured = {}
+    for case, codes in (('x then y', (100, 101)), ('y then y', (101, 101))):
+        cs.clear_delay()
+        measured[case] = [opening(code) for code in codes]
+    print(dict(rows=rows, measured=measured))
+    first, second = measured['x then y']
+    assert first['seated'] and first['lost'] <= 0.
+    assert second['seated'] and second['x_back'] > 0 and second['lost'] > 0
+    assert second['lost'] == pytest.approx(math.tanh(second['x_back']), abs=1e-3)
+    assert [step['seated'] for step in measured['y then y']] == [False, False]
+    assert all(step['x_back'] == 0. for step in measured['y then y'])
+    # The plan a forward compiled whole reads, staged on the host, holds the
+    # entry; from ``x`` at the last opening it reaches ``lost`` with ``y`` now.
+    from FieldProjection import reachable_rows
+    cs.clear_delay()
+    opening(100)
+    cs._prepare_closure_plan_host(torch.device('cpu'))
+    standing, sources, targets, rounds, back = Spaces._concept_alloc_of(cs).layer().__dict__['_closure_plan']
+    S, now = int(Spaces._concept_alloc_of(cs).layer().nOutput), torch.tensor([[False, True]]).T
+    members = torch.tensor([rows['x'], rows['y']])
+    with pytest.MonkeyPatch.context() as compiling:
+        # The plan is padded with row S, which only the compiled closure has.
+        compiling.setattr(torch.compiler, 'is_compiling', lambda: True)
+        staged = dict(entries=[t.tolist() for t in back],
+                      reached=[bool(reachable_rows(now, members, standing, sources, targets, rounds, S,
+                                                   delayed=delayed)[rows['lost'], 0])
+                               for delayed in (None, cs._reached_one_step_back(*back, 1, torch.device('cpu'), True))])
+    print(staged)
+    assert rows['x'] in staged['entries'][0] and rows['lost'] in staged['entries'][1]
+    assert staged['reached'] == [False, True]
+
+
 def test_a_hard_reset_clears_what_is_one_step_back(tmp_path, monkeypatch):
     """Alec, 2026-11-27: "make sure that the delayed conceptual state is
     cleared on a reset()". After a step that found a pixel, a hard reset of

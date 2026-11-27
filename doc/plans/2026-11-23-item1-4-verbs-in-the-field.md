@@ -864,6 +864,86 @@ in place of its `memory` input.
   with no look that finds nothing, so that the looks are as many as the
   words. Not yet confirmed by Alec.
 
+### 9.8 Alec's answers to the restated questions (2026-11-27)
+
+*Who writes a link for a kind on a concept one step back, and the Pi's
+weights.* His words, which hold for every link and not only this one:
+
+> Pi creates equivalence classes over conceptual space one order down.
+> Sigma creates equivalence classes over percepts and all symbols. But
+> sigma raises the order, and pi does not. So these things are learned
+> implicitly using dense pi and sigma networks inside of MTM where links
+> are added easily and forgotten often, or explicitly as type relations "x
+> is similar to existing percept/symbol y" "x is a concept y". If we can
+> leverage the actual pi and sigma for these with a small actively managed
+> pool, things will go faster, but we can leave that as a future
+> integration.
+
+And of the symbols' Pi being at one for every member: "we need to rewrite
+this to use some small set of actively managed connections. But each
+connection from one concept or percept to another is just a way to talk
+about the sparsity of the weight matrix of a sigma or pi with respect to
+some input." So a link is an entry of a sparse Pi or Sigma, and nothing
+more. Links are made in two ways: implicitly, in MTM's candidate pools,
+where they are added easily and forgotten often; and explicitly, by a
+stated relation of type (similar to, for the Pi; is a, for the Sigma). The
+entry of a kind on a concept one step back is made the same two ways, and
+no rule of its own writes it. (Where the ones are, for the record: in the
+symbol table's Pi, `SymbolTable._append`, not in MTM's pools. Giving that
+Pi graded entries from a small managed pool is the rewrite he names; it is
+left as the future integration.)
+
+*Seating.* "What is active now includes the delayed symbolic activation if
+it is based on symbols, so let's do that." Activity one step back counts
+toward what is reached at a look, so a kind whose entries are on concepts
+one step back is computed, and "lost" can be read in a model.
+
+*The pinned banks:* "Raise it." The bound is 0.3 GiB.
+
+*The meta-concept's class.* Both get a parent above the greater of their
+orders; "but if one was a superset of the other, then it is lowered with
+respect to its element when they are both placed into the same class."
+
+*Intensity as input and as output.* "This is a 1.4 requirement. We need
+two kinds of input, and two kinds of output, and parameters on the model
+to specify which to enable." Text and intensity, each as an input and as
+an output, each enabled by a key.
+
+*The looks.* "Regarding one look per sentence, that is not what we want.
+We want one look at the whole sentence, one look at every attend() call,
+and attend() should be called multiple times during the thought process."
+This is the loop as built: the opening is the one look at the whole
+sentence, each pass of the loop is one `attend` and one look, and the
+passes are the several calls. So `hardwireReading` 0 (one pass a sentence)
+is no target, and the seven certificates that fail there measure nothing
+that is wanted. What remains of the first two requirements for submission
+is that each `attend` is informed by the parse (built, §9.7, and to be
+trained) and that the walk ends with the thinking loop and not at a budget.
+
+### 9.9 Two things to rework (Alec, 2026-11-27)
+
+*The symbols' Pi.* "the symbol table should not get a 1 to denote its
+inclusion in the PI that reads it: the spares PI matrix that operates on
+the symbols at every turn should have its weight matrix adjusted so that
+its weights are not sparse for that input." So membership is not a one
+written in a table of the symbol's own. A symbol is an input of the sparse
+Pi that reads the symbols at every turn, and being read by a row is an
+entry of that Pi's weight matrix made present for that input, with a
+weight that is learned. The symbol table's own Pi at one
+(`SymbolTable._append`) is to go.
+
+*One loop.* Told that `attend` is called once a word in a reading loop and
+that thinking has an attention of its own: "This is unfortunate: I am
+intending that attend() is one of thoughts operations, as is output, and it
+can decide to read as many words as it likes. We should not have a reading
+loop independent of the thinking loop. I guess this will take some
+re-work." So there is one loop, the thinking loop. `attend` is one of its
+operations, as `output` is, and each call is one look that reads one word.
+How many words are read is thought's decision, and the walk of §9.6,
+answer 2, ends with that loop because it is that loop. The loop of
+`Looks.run`, `attentionBudget` and `hardwireReading` are what the rework
+removes. This is the form of the first two requirements for submission.
+
 ## 10. Added from item 1.6: evidence at order zero is positive, and the Not is an exchange of lanes (Alec, 2026-11-24)
 
 *Alec, while item 1.6 was being built: "Please add this work to 1.4. I am

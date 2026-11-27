@@ -137,6 +137,18 @@ Standing rules:
      of a sentence (the output or the thought) as an input at the next sentence. This is not
      the wire of (1): that one updates at every shift within a sentence, and LTM updates only at
      a sentence's end.
+   - Also required before 1.4 is submitted (Alec, 2026-11-27; plan §9.8): (4) two kinds of
+     input and two kinds of output, text and intensity, "and parameters on the model to specify
+     which to enable". Today an intensity is an output only on the numeric stem (XOR), and the
+     text model refuses one as an answer. (5) Activity one step back counts toward what is
+     reached at a look, so a kind over concepts one step back is computed. The looks are as
+     wanted: one look at the whole sentence (the opening), then one look for each `attend`,
+     called several times; `hardwireReading` 0 is no target.
+     (6) One loop (plan §9.9): "attend() is one of thoughts operations, as is output, and it can
+     decide to read as many words as it likes. We should not have a reading loop independent of
+     the thinking loop." The loop of `Looks.run`, `attentionBudget` and `hardwireReading` go; this
+     is the form (1) and (2) take. (7) The symbols' Pi (plan §9.9): no one in the symbol table;
+     the sparse Pi that reads the symbols has an entry for that input, with a learned weight.
    - Open for Alec: the map's two rates; whether to keep the Sigma links between neighbouring
      intensity levels; `OrderZero.read_word` still reads a signed match;
      `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`

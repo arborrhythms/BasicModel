@@ -5,12 +5,21 @@ from ConceptualMatch import match
 from Understanding import ConceptualField
 
 
-def reachable_rows(active, rows, standing, sources, targets, rounds, size):
-    """Propagate each stream's occupied rows through its definition edges."""
+def reachable_rows(active, rows, standing, sources, targets, rounds, size, delayed=None):
+    """Propagate each stream's occupied rows through its definition edges.
+
+    ``delayed`` (the unit delay, item 1.4) is ``(targets, back)``: the rows
+    holding the entries on concepts one step back ``[D]``, and whether each
+    entry's concept was active one step back in each stream ``[D, B]``. A
+    row holding such an entry on a concept that was active is reached, as
+    a row is reached from what is active now, and the rounds carry on from
+    it."""
     compiling = torch.compiler.is_compiling()
     counts = torch.zeros(size + (1 if compiling else 0), active.shape[1], dtype=torch.int32, device=active.device)
     reached = counts.index_add(0, rows, active.int()).gt(0)
     reached = reached.index_fill(0, standing, True)
+    if delayed is not None:
+        reached = reached | counts.index_add(0, delayed[0], delayed[1].int()).gt(0)
     for _ in range(rounds):
         parents = counts.index_add(0, targets, reached.index_select(0, sources).int())
         reached = reached | parents.gt(0)

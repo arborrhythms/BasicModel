@@ -15285,9 +15285,15 @@ class ConceptualSpace(Space):
         S = int(store.nOutput)
         bias = parent.bias_column()
         targets, sources, standing = [], [], []
+        back_targets, back_sources = [], []
+        behind = self._behind_of(parent)
         for row, column in zip(parent._rows, parent._cols):
             if column == bias:
                 standing.append(row)
+                continue
+            if behind is not None and behind(column) is not None:
+                back_targets.append(row)
+                back_sources.append(behind(column))
                 continue
             for source in parent.column_rows(column):
                 targets.append(row)
@@ -15297,21 +15303,64 @@ class ConceptualSpace(Space):
         while len(sources) < 2:
             sources.append(S)
             targets.append(S)
+        delayed = None
+        if behind is not None:
+            # The entries on concepts one step back, padded as the others
+            # are: a padded entry reads row S, which is never active.
+            while len(back_sources) < 2:
+                back_sources.append(S)
+                back_targets.append(S)
+            delayed = tuple(torch.tensor(held, dtype=torch.long, device=device)
+                            for held in (back_sources, back_targets))
         standing_t = torch.tensor(standing, dtype=torch.long, device=device)
         sources_t = torch.tensor(sources, dtype=torch.long, device=device)
         targets_t = torch.tensor(targets, dtype=torch.long, device=device)
-        for t in (standing_t, sources_t, targets_t):
+        for t in (standing_t, sources_t, targets_t, *(delayed or ())):
             torch._dynamo.mark_dynamic(t, 0)
         rounds = max(0, len(self._order_caps()) - 1)
-        store.__dict__['_closure_plan'] = (standing_t, sources_t, targets_t, rounds)
+        store.__dict__['_closure_plan'] = (standing_t, sources_t, targets_t, rounds, delayed)
 
-    def _bind_attended_concepts(self, required, rows_t):
+    def _behind_of(self, store):
+        """The store's :meth:`delayed_of_column` where the unit delay is on
+        and the store has columns one step back, else ``None``."""
+        if not self.percept_delay or not store.__dict__.get('_delayed_columns'):
+            return None
+        return store.delayed_of_column
+
+    def _reached_one_step_back(self, sources, targets, B, device, opening):
+        """``(targets, back)`` for :func:`FieldProjection.reachable_rows`:
+        whether the concept of each row ``sources`` ``[D]`` was active one
+        step back in each of ``B`` streams, ``[D, B]``, on either lane, as
+        a concept is active now. One step back is what the rung's entries
+        on concepts one step back will read: at an opening the field kept
+        at the last opening (:meth:`_step_concepts_at_opening` sets it so
+        after this read), at a look the look before. Nothing is one step
+        back where none was kept for ``B`` streams. A source past the
+        kept rows (a padded entry) is never active."""
+        state = self._delay_state('concept')
+        held = None if state is None else (self._concept_delay_opening if opening else state[1])
+        if held is None or held.shape[1] != B:
+            return None
+        N = held.shape[0]
+        sources = sources.to(device)
+        back = held.to(device).index_select(0, sources.clamp(0, N - 1)).amax(-1) > 0
+        return targets.to(device), back & (sources < N)[:, None]
+
+    def _bind_attended_concepts(self, required, rows_t, *, opening=True):
         """Gather every definition reachable from active native percept poles.
 
         ``required[k]`` is the reading of the order-zero member whose concept
         is ``rows_t[k]`` (:class:`ConceptMembers`). A kind is reached through
         the concepts its symbols hold. Their physical blocks determine the
         field width and seat ordering on each page.
+
+        With the unit delay (item 1.4) what is active now includes what was
+        active one step back: a kind is reached as well through an entry on
+        a concept one step back where that concept was active then, at an
+        ``opening`` the field kept at the last opening and at a look the
+        look before (:meth:`_reached_one_step_back`). The closure reads the
+        entries' structure and not their weights, so an entry at zero
+        reaches its kind as any other entry does.
         """
         from CandidateGrowth import read_streams, visible_store
         store = _concept_alloc_of(self).layer()
@@ -15325,14 +15374,22 @@ class ConceptualSpace(Space):
         def closure():
             from FieldProjection import reachable_rows
             if torch.compiler.is_compiling() and '_closure_plan' in store.__dict__:
-                standing_t, sources_t, targets_t, rounds = store.__dict__['_closure_plan']
-                return reachable_rows(active, rows_t, standing_t, sources_t, targets_t, rounds, S)
+                standing_t, sources_t, targets_t, rounds, back = store.__dict__['_closure_plan']
+                delayed = None if back is None else self._reached_one_step_back(*back, B, device, opening)
+                return reachable_rows(active, rows_t, standing_t, sources_t, targets_t, rounds, S,
+                                      delayed=delayed)
             targets, sources, standing = [], [], []
+            back_targets, back_sources = [], []
             parent = visible_store(store)
             bias = parent.bias_column()
+            behind = self._behind_of(parent)
             for row, column in zip(parent._rows, parent._cols):
                 if column == bias:
                     standing.append(row)
+                    continue
+                if behind is not None and behind(column) is not None:
+                    back_targets.append(row)
+                    back_sources.append(behind(column))
                     continue
                 for source in parent.column_rows(column):
                     targets.append(row)
@@ -15346,8 +15403,13 @@ class ConceptualSpace(Space):
                 orders = {row: self._row_order(row) for row in parents.union(sources)}
                 if all(orders[source] < orders[target] for source, target in zip(sources, targets)):
                     rounds = levels
+            delayed = None
+            if back_sources:
+                delayed = self._reached_one_step_back(rows_t.new_tensor(back_sources),
+                                                      rows_t.new_tensor(back_targets), B, device, opening)
             return reachable_rows(active, rows_t, rows_t.new_tensor(standing),
-                                  rows_t.new_tensor(sources), rows_t.new_tensor(targets), rounds, S)
+                                  rows_t.new_tensor(sources), rows_t.new_tensor(targets), rounds, S,
+                                  delayed=delayed)
 
         reached = read_streams(self, closure, axis=1)
         orders = max(2, int(self._symbolic_order)) + 1
@@ -15479,7 +15541,7 @@ class ConceptualSpace(Space):
             negated = torch.tensor([n for _, _, n in members], device=membership.device, dtype=torch.bool)
             required = torch.where(negated[:, None, None, None], membership.flip(-1), membership)
             self._bind_attended_concepts(required, torch.tensor(
-                [row for row, _, _ in members], dtype=torch.long))
+                [row for row, _, _ in members], dtype=torch.long), opening=keep)
         values = perception.values
         inputs = [key[1] for key in perception.keys]
         if self.percept_delay:
