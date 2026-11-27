@@ -2407,7 +2407,7 @@ class BasicPercepts(nn.Module):
         minimum = values.masked_fill(~held.unsqueeze(-3), torch.inf).amin(-1)
         return torch.where(held.any(-1).unsqueeze(-2), minimum, neutral)
 
-    def word_weights(self, counts, word_rows):
+    def word_weights(self, counts, word_rows, *, candidates=None):
         # The declared word slab supplies one code seat per location in each
         # stream. Repeated words keep separate seats: deduplicating them would
         # give a compiled input an axis whose width changes between batches.
@@ -2417,7 +2417,7 @@ class BasicPercepts(nn.Module):
         # word; the property witness stays live through the native reader.
         presence = self.property_presence(counts.unsqueeze(-2), rows).squeeze(-2).squeeze(-1)
         weights = presence * valid
-        return weights, self.lookup_rows(word_rows, valid=valid)
+        return weights, self.lookup_rows(word_rows, valid=valid, candidates=candidates)
 
     def get_extra_state(self):
         from IndependentComponents import _pack_state

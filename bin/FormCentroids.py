@@ -303,6 +303,29 @@ def prepare_inverse(bank):
     return PreparedCandidateWholes(bank, bank.read_presence(bank.forms))
 
 
+def prepare_host(owner, device):
+    """Pre-compute conceptual row -> basic_percepts word index table on host."""
+    if owner is None or not hasattr(owner, 'basic_percepts'):
+        return
+    basic = owner.basic_percepts
+    n_vec = int(owner.nVectors)
+    row_map = torch.full((n_vec,), -1, dtype=torch.long, device=device)
+    cand = set()
+    if getattr(basic, 'words', None):
+        for row in range(n_vec):
+            identity = owner.concept_id_at_row(row)
+            if identity is None:
+                continue
+            if owner._row_order(row) > 0:
+                words = owner.definitions.words(identity)
+                identity = words[0] if len(words) == 1 else None
+            bp = basic.words.get(identity, -1)
+            if bp >= 0:
+                row_map[row] = bp
+                cand.add(int(bp))
+    owner._form_percept_row_map = (row_map, tuple(sorted(cand)))
+
+
 def candidates(whole_space, bank, *, owner=None):
     """Snapshot the same native properties for the free dictionary search."""
     basis = getattr(getattr(whole_space, 'subspace', None), 'what', None)
@@ -315,17 +338,25 @@ def candidates(whole_space, bank, *, owner=None):
         support = primitive_support(bank.bytes, bank.byte_valid)
     if owner is not None:
         basic = owner.basic_percepts
-        def percept(row):
-            if row < 0:
-                return -1
-            identity = owner.concept_id_at_row(row)
-            if owner._row_order(row) > 0:
-                words = owner.definitions.words(identity) if identity is not None else ()
-                identity = words[0] if len(words) == 1 else None
-            return basic.words.get(identity, -1)
-        rows = bank.rows.new_tensor([[percept(int(row))
-            for row in stream] for stream in bank.rows.cpu().tolist()])
-        weights, codes = basic.word_weights(support.to(bank.codes), rows)
+        cand_rows = None
+        if torch.compiler.is_compiling() and hasattr(owner, '_form_percept_row_map'):
+            row_map, cand_rows = owner._form_percept_row_map
+            row_map = row_map.to(bank.rows.device)
+            cap = max(int(row_map.shape[0]) - 1, 0)
+            valid_row = (bank.rows >= 0) & (bank.rows < row_map.shape[0])
+            rows = torch.where(valid_row, row_map[bank.rows.clamp(0, cap)], -1)
+        else:
+            def percept(row):
+                if row < 0:
+                    return -1
+                identity = owner.concept_id_at_row(row)
+                if owner._row_order(row) > 0:
+                    words = owner.definitions.words(identity) if identity is not None else ()
+                    identity = words[0] if len(words) == 1 else None
+                return basic.words.get(identity, -1)
+            rows = bank.rows.new_tensor([[percept(int(row))
+                for row in stream] for stream in bank.rows.cpu().tolist()])
+        weights, codes = basic.word_weights(support.to(bank.codes), rows, candidates=cand_rows)
         return BasicCandidateWholes(bank.codes[..., :bank.meaning_start].detach(),
             weights.detach(), bank.terminal_valid, codes.detach())
     return CandidateWholes(bank.codes[..., :bank.meaning_start].detach(), support,

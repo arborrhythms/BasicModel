@@ -8710,6 +8710,12 @@ class BasicModel(BaseModel):
                         self._staged_in_sub = self._lex_embed_stem(input_data)
                         from PrependedSymbols import prepare_host_stage
                         prepare_host_stage(self, len(input_data))
+                        from DefinitionFold import prepare_host as prepare_definition_fold_host
+                        prepare_definition_fold_host(self._concept_owner(), input_data.device)
+                        from FormCentroids import prepare_host as prepare_form_centroids_host
+                        prepare_form_centroids_host(self._concept_owner(), input_data.device)
+                        from ModelAttention import prepare_symbol_bank_host
+                        prepare_symbol_bank_host(self._concept_owner(), input_data.device)
                         self._forward_host_prepared = True
                         try:
                             return self._execute_input_sentence(input_data, executor)

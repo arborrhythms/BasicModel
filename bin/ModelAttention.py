@@ -449,9 +449,33 @@ def stage_expectation(model, *, prefix=None):
     model._word_expectation_mask=accepted
 
 
+def prepare_symbol_bank_host(space, device):
+    """Snapshot native CSW symbol indices, ids, and source orders on host."""
+    if space is None:
+        return
+    rows = sorted({int(row): int(identity) for (_, identity), row in space._csw_rows.items()}.items())
+    if not rows:
+        space._staged_symbol_bank_host = None
+        return
+    ids = torch.tensor([identity for _, identity in rows], device=device)
+    indices = ids.new_tensor([row for row, _ in rows])
+    orders = ids.new_tensor([space._concept_source_order(identity) for _, identity in rows])
+    space._staged_symbol_bank_host = (indices, ids, orders)
+
+
 def stage_symbol_bank(model, owner):
     """Snapshot the native shared index, including every represented order."""
     space = model._concept_owner()
+    if torch.compiler.is_compiling() and hasattr(space, '_staged_symbol_bank_host'):
+        staged = space._staged_symbol_bank_host
+        if staged is None:
+            return
+        indices, ids, orders = staged
+        basis = space.similarity_codebook
+        keys = basis.lookup_rows(indices.to(basis.W.device)).detach()
+        owner.set_symbol_bank(keys, identities=ids.to(keys.device), orders=orders.to(keys.device),
+                              addresses=indices.to(keys.device))
+        return
     rows = sorted({int(row): int(identity) for (_, identity), row in space._csw_rows.items()}.items())
     if not rows:
         return
