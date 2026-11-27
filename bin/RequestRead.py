@@ -88,7 +88,7 @@ def place_axes(bank):
         # end coordinates distinguish extents without rewarding the position twice.
         start = spans[..., 0]
         index = torch.where(live, start, 0)[..., None]
-        count = last.new_zeros(len(spans), max(1, bank.registry.slices['text'][1]), 1)
+        count = last.new_zeros(len(spans), max(1, bank.registry._ranges['text'][1]), 1)
         count = count.scatter_add(1, index, live[..., None].to(count))
         index = index.expand_as(last)
         total = torch.zeros_like(count.expand(-1, -1, last.shape[-1])).scatter_add(
