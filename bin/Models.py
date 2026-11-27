@@ -23286,10 +23286,21 @@ class BasicModel(BaseModel):
                         f_count = f_count + eligible_f.long()
                         # Draws every round inside the static graph; RNG replay parity holds within a mode.
                         rank_f = (torch.rand_like(f_count, dtype=torch.float32) * f_count).long()
-                        rank_f = torch.where(f_count <= len(f_res), f_count - 1, rank_f)
-                        places_f = torch.arange(len(f_res), device=rank_f.device)
-                        take_f = eligible_f[:, None] & (rank_f[:, None] == places_f)
-                        snap_st = snapshot(fork_state(
+                        if len(f_res) == 1:
+                            take_f = (eligible_f & ((f_count <= 1) | (rank_f == 0)))[:, None]
+                        else:
+                            rank_f = torch.where(f_count <= len(f_res), f_count - 1, rank_f)
+                            places_f = torch.arange(len(f_res), device=rank_f.device)
+                            take_f = eligible_f[:, None] & (rank_f[:, None] == places_f)
+                        def _detach_tree(obj):
+                            if torch.is_tensor(obj):
+                                return obj if fork.live else obj.detach()
+                            if isinstance(obj, tuple):
+                                return tuple(_detach_tree(x) for x in obj)
+                            if isinstance(obj, dict):
+                                return {k: _detach_tree(v) for k, v in obj.items()}
+                            return obj
+                        snap_st = _detach_tree(fork_state(
                             working_cs_lang, working_stm, working_active, working_wholes,
                             working_chunk_slab, working_chunk_count, working_trace_state,
                             working_left_rows, working_right_rows, working_position_slab,
@@ -23298,8 +23309,8 @@ class BasicModel(BaseModel):
                             working_reference_relations, working_unary_history,
                             working_explorable_slab, working_log_probability_slab,
                             working_post_op, working_unary_op, working_post_valid,
-                            working_unary_valid, working_occupation_words, working_case_state), live=fork.live)
-                        snap_la = snapshot(tuple(fork.current_latches), live=fork.live)
+                            working_unary_valid, working_occupation_words, working_case_state))
+                        snap_la = _detach_tree(tuple(fork.current_latches))
                         new_w = torch.zeros_like(fork.word) + index
                         new_sl = torch.zeros_like(fork.slot) + slot
                         new_ac = choice.action
@@ -23362,9 +23373,8 @@ class BasicModel(BaseModel):
                 working_stm, parse_pairs, parse_order = STMParse.apply(before_stm, working_stm, choice, slot,
                     working_cs_lang[26], working_cs_lang[28], language.parts_of_speech._operation_symbols,
                     language._parse_binary_operators, language._parse_unary_operators)
-                working_cs_lang = (*working_cs_lang[:26], parse_pairs, working_cs_lang[27], parse_order, *working_cs_lang[29:])
                 parse_depths = STMChunks.write(working_cs_lang[30], slot.expand(B), working_stm[STMChunks.DEPTH], choice.applied)
-                working_cs_lang = (*working_cs_lang[:30], parse_depths, *working_cs_lang[31:])
+                working_cs_lang = (*working_cs_lang[:26], parse_pairs, working_cs_lang[27], parse_order, working_cs_lang[29], parse_depths, *working_cs_lang[31:])
                 (working_trace_state, working_position_slab, working_action_slab, working_attempted_slab) = self._tensor_record_operation(
                     working_trace_state, working_position_slab, working_action_slab, working_attempted_slab, slot,
                     choice, binary_map, unary_map)

@@ -265,14 +265,15 @@ class ActivationPredictor(nn.Module):
             key_orders = torch.zeros(keys.shape[1], device=keys.device, dtype=torch.long)
         key_orders = key_orders.to(device=keys.device, dtype=torch.long)
         same = torch.arange(count, device=keys.device)[:, None] == key_orders[None]
+        same_f = same.to(keys)
         # Each order's share of each key's lanes, then one product with the
         # keys: a three-operand einsum may hold [B, orders, keys, lanes, D]
         # at once (4.2 GB for the production bank).
-        mix = (activation / norm[..., None])[:, None] * same.to(keys)[None, :, :, None]
+        mix = (activation / norm[..., None])[:, None] * same_f[None, :, :, None]
         field = torch.einsum('bonl,bnd->bold', mix, keys)
         field = torch.cat((field[..., :span.start], field[..., span] + torch.einsum(
             'bonl,bnk->bolk', mix, key_age - stamp), field[..., span.stop:]), -1)
-        mass = torch.einsum('bnl,on->bol', activation, same.to(keys))
+        mass = torch.einsum('bnl,on->bol', activation, same_f)
         field = field / mass.clamp_min(1.)[..., None]
         now = self._empty_now.to(context).expand(keys.shape[0], -1) if now is None else now.detach().to(context)
         if now.ndim == 2:
