@@ -15002,16 +15002,17 @@ class ConceptualSpace(Space):
             for source in parent.column_rows(column):
                 targets.append(row)
                 sources.append(source)
-        while len(standing) < 2:
-            standing.append(S)
-        while len(sources) < 2:
-            sources.append(S)
-            targets.append(S)
+        cap_s = max(16, int(self.nVectors))
+        if len(standing) < cap_s:
+            standing.extend([S] * (cap_s - len(standing)))
+        cap_e = max(32, 1 << (max(len(sources), 1) - 1).bit_length())
+        if len(sources) < cap_e:
+            pad_e = cap_e - len(sources)
+            sources.extend([S] * pad_e)
+            targets.extend([S] * pad_e)
         standing_t = torch.tensor(standing, dtype=torch.long, device=device)
         sources_t = torch.tensor(sources, dtype=torch.long, device=device)
         targets_t = torch.tensor(targets, dtype=torch.long, device=device)
-        for t in (standing_t, sources_t, targets_t):
-            torch._dynamo.mark_dynamic(t, 0)
         rounds = max(0, len(self._order_caps()) - 1)
         store.__dict__['_closure_plan'] = (standing_t, sources_t, targets_t, rounds)
 

@@ -819,27 +819,31 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
     activity = active if trial is not None else None
     pool = getattr(owner.mtm, '_candidate_pairs', None)
     withheld = withheld_names(owner, omission, extent)
+    has_withheld = withheld is not None and (torch.compiler.is_compiling() or bool((withheld >= 0).any()))
     if torch.compiler.is_compiling():
         limit = pool.binding_width if pool is not None else 64
         observed = _compiled_readings(owner, field, activity, binding, withheld, limit)
     else:
-        if withheld is not None:
-            if bool((withheld >= 0).any()):
-                if pool is not None:
-                    observed = omitted_field_readings(field, withheld, activity, pool.binding_width)
-                if observed is None:
-                    held = withheld_words(model, extent)
+        if has_withheld:
+            if pool is not None:
+                observed = omitted_field_readings(field, withheld, activity, pool.binding_width)
+            if observed is None:
+                held = withheld_words(model, extent)
         elif extent is not None and omission is not None and 'word_bytes' in omission:
             held = withheld_words(model, extent)
         if observed is None:
             readings = (field_readings(owner, field, activity, binding)
                         if pool is not None and not any(held or ()) else None)
-            live = None
-            if readings is None:
-                readings = presences(field)
-                live = activity.tolist() if activity is not None else None
-            observed = [(b, present, {**present, **held[b]} if held and held[b] else present)
-                        for b, present in enumerate(readings) if live is None or live[b]]
+            if (readings is None and pool is not None and not has_withheld
+                    and not any(held or ()) and field.concept_ids.shape[0] <= pool.binding_width):
+                observed = _compiled_readings(owner, field, activity, binding, None, pool.binding_width)
+            else:
+                live = None
+                if readings is None:
+                    readings = presences(field)
+                    live = activity.tolist() if activity is not None else None
+                observed = [(b, present, {**present, **held[b]} if held and held[b] else present)
+                            for b, present in enumerate(readings) if live is None or live[b]]
     pending = [] if trial is not None else None
     held_pi = matrices(owner)['pi']
     prepared_offers = retained_pair_offers(
