@@ -13035,6 +13035,7 @@ class ConceptualSpace(Space):
                 for key, value in module.state_dict().items():
                     state_dict[module_prefix + key] = value
                     state_dict[alias_prefix + key] = value
+        self._load_delay(state_dict, prefix)
         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict,
                                      missing_keys, unexpected_keys, error_msgs)
 
@@ -14768,10 +14769,12 @@ class ConceptualSpace(Space):
 
     #: The registered buffers that keep the unit delay: each one's
     #: activations now and one step back, ``[rows, B, 2]``, and the tick of
-    #: the model's clock at which the percepts' present step began. They
-    #: are not saved; a forward compiled whole reads and writes them in
-    #: place, so they are made, for the number of streams, before it
-    #: (:meth:`prepare_delay`).
+    #: the model's clock at which the percepts' present step began. A
+    #: forward compiled whole reads and writes them in place, so they are
+    #: made, for the number of streams, before it (:meth:`prepare_delay`).
+    #: They are conceptual state and are saved with the model's state
+    #: (:meth:`_save_to_state_dict`), for the room of streams the space was
+    #: built with.
     _DELAY_BUFFERS = dict(percept=('_percept_delay_current', '_percept_delay_previous'),
                           concept=('_concept_delay_current', '_concept_delay_previous'))
 
@@ -14841,6 +14844,76 @@ class ConceptualSpace(Space):
                     rows = torch.as_tensor(batch, device=held.device)
                     rows = rows[:held.shape[1]] if rows.dtype == torch.bool else rows
                     held[:, rows] = 0
+
+    #: The keys under which the unit delay is saved: the basic percepts'
+    #: two stores ``[2, R, S, 2]``, the concepts' two with the field at the
+    #: last opening and the trace ``[4, V, S, 2]``, each padded to the
+    #: space's room of streams ``S`` (``nStreams``) so that its shape is
+    #: the construction's; the number of streams each was made for ``[2]``
+    #: (none: zero); and the tick at which the percepts' step began.
+    _DELAY_SAVED = ('unit_delay_percepts', 'unit_delay_concepts', 'unit_delay_streams', 'unit_delay_tick')
+
+    def _delay_rows(self):
+        basic = getattr(self, 'basic_percepts', None)
+        return dict(percept=0 if basic is None else int(basic.capacity), concept=int(self.nVectors))
+
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        """The unit delay is saved beside the space's own state where it is
+        on (``architecture.perceptDelay``). A store made for more streams
+        than the space's room, or for another number of rows than the
+        construction's, is saved as none made."""
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        if not self.percept_delay:
+            return
+        width, rows = int(self.nStreams), self._delay_rows()
+        saved = dict(percept=torch.zeros(2, rows['percept'], width, 2),
+                     concept=torch.zeros(2 + len(self._DELAY_KEPT), rows['concept'], width, 2))
+        streams = torch.zeros(2, dtype=torch.long)
+        for index, kind in enumerate(('percept', 'concept')):
+            state = self._delay_state(kind)
+            if state is None:
+                continue
+            held = (*state, *(getattr(self, name) for name in self._DELAY_KEPT)) if kind == 'concept' else state
+            B = int(held[0].shape[1])
+            if B > width or int(held[0].shape[0]) != rows[kind]:
+                continue
+            for slot, value in enumerate(held):
+                saved[kind][slot, :, :B] = value.detach().to('cpu', torch.float32)
+            streams[index] = B
+        tick = getattr(self, '_percept_delay_tick', None)
+        destination[prefix + 'unit_delay_percepts'] = saved['percept']
+        destination[prefix + 'unit_delay_concepts'] = saved['concept']
+        destination[prefix + 'unit_delay_streams'] = streams
+        destination[prefix + 'unit_delay_tick'] = torch.tensor(-1 if tick is None else int(tick), dtype=torch.long)
+
+    @torch.no_grad()
+    def _load_delay(self, state_dict, prefix):
+        """The unit delay as it was saved: each store is made for the number
+        of streams it was saved at and filled. A checkpoint saved before
+        the delay was saved, or one in which a store was not made, starts
+        that store empty. A store later made for another number of streams
+        starts empty (:meth:`_make_delay`)."""
+        saved = {name: state_dict.pop(prefix + name, None) for name in self._DELAY_SAVED}
+        if not self.percept_delay:
+            return
+        self.clear_delay()
+        if saved['unit_delay_streams'] is None:
+            return
+        streams, rows = saved['unit_delay_streams'].tolist(), self._delay_rows()
+        held = self._delay_state('concept') or self._delay_state('percept')
+        device = held[0].device if held is not None else self.similarity_codebook.W.device
+        for B, kind, values in zip(streams, ('percept', 'concept'),
+                                   (saved['unit_delay_percepts'], saved['unit_delay_concepts'])):
+            B = int(B)
+            if not B or values is None or int(values.shape[1]) != rows[kind] or B > int(values.shape[2]):
+                continue
+            state, _ = self._make_delay(kind, rows[kind], B, device)
+            targets = (*state, *(getattr(self, name) for name in self._DELAY_KEPT)) if kind == 'concept' else state
+            for slot, target in enumerate(targets):
+                target.copy_(values[slot, :, :B].to(target))
+        tick = getattr(self, '_percept_delay_tick', None)
+        if tick is not None and saved['unit_delay_tick'] is not None:
+            tick.fill_(int(saved['unit_delay_tick']))
 
     def delayed_input(self, percept):
         """The order-zero Sigma's input for basic percept ``percept`` one step back."""

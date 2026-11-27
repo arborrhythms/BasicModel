@@ -22056,7 +22056,9 @@ class BasicModel(BaseModel):
                     looks = Looks(self,reading_walk,sid,present,
                         prior=None if exploit is None else look_trials[0],
                         draw=None if exploit is None else draw,kept=kept)
-                    reading = looks.run(arrival)
+                    # Each path reads its own parse: the STM its trial restored
+                    # and its own words have shifted and reduced since.
+                    reading = looks.run(arrival, stack=lambda: current_stm)
                     if exploit is None:
                         greedy_attention = reading
                         self._attention_greedy = reading

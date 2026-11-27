@@ -796,6 +796,74 @@ To build: the step at the look in place of the tick; the opening's kept
 field apart from the looks'; the request of `attend` reading the kept field
 in place of its `memory` input.
 
+### 9.6 Alec's answers to the open questions (2026-11-27)
+
+1. *What `attend` gets from the parse:* "just pass the whole stack."
+2. *What ends the walk:* "the walk over operators is already ended when the
+   thinking loop ends."
+3. *Verbs and the other parts of speech.* "verbs will generalize an
+   operation, presumably into 24 verb classes or so, and be capable of
+   transforming their noun. So the word is placed on the stack, but the
+   operation specified by the verb is performed (the verb can be in
+   principle similar to the current form, but the training of it will come
+   from the corpus)." On whether verbs have an extension: "Sort of. Each
+   verb acts on a class of noun phrases; only things with legs can run. So
+   the extension of running is the map of running() to the extension of
+   'things that run'."
+4. *The delay on symbols.* "We propagate percepts to concepts to symbols
+   and so on all the way up and then down again. Those links are created
+   by STM." (Claude's two questions there were unclear; restated below.)
+5. *How many percepts an episodic entry holds:* the existing key,
+   `episodicConcepts` (4).
+6. *How replay works:* "when a concept is stimulated by an input stimulus
+   that it generalizes, it will select an output() (which is an action just
+   like attention). That action will produce a change in the environment,
+   so it will get stored in STM (or perhaps the output will just be a
+   concept before it is even enacted, so it will show up in the temporal
+   differences and condition a next action)."
+7. *What a sentence leaves for the next:* "I think we write to LTM and
+   clear STM."
+8. *The meta-concept's link:* "the meta concept is a result of identity,
+   when a implies b and b implies a (where that implication is a link)."
+   So the link of §15.1 is an implication, a relation (M1).
+9. *An intensity as an answer:* "we have intensity output in XOR already".
+   (It is the text model of the testpoint that refuses one; the output is
+   to be made available there.)
+10. *The class:* "the concept isn't lowered per se; both just get a parent
+    at an greater then the maximum over both their orders." This replaces
+    §15's "the concept is lowered to a symbol".
+11. *The pinned banks:* the question was unclear; restated below.
+12. *What is saved:* "Delayed conceptual state should be preserved ...
+    because it is still conceptual state." So the delay's buffers are saved
+    with a checkpoint, as is LTM's state (the marks of the transitions
+    with it).
+13. *The decay:* "we should have a look at psych literature, and also
+    decide if we want a two-parameter gamma memory." Open.
+
+### 9.7 Built after §9.6 (Claude, 2026-11-27)
+
+- *`attend` reads the whole STM stack* (answer 1). `RequestRead.units`
+  reads every entry, top first (its value, whether the place is held, its
+  order and grammar order, its two references' kinds) and the depth,
+  through a weight that starts at zero; each path reads its own STM.
+  `test/test_item14_attend_reads_the_stack.py`.
+- *The delay and the marks of the transitions are saved with a checkpoint*
+  (answer 12). A checkpoint restores the delay at the batch size it was
+  saved at; at another, the delay starts empty.
+- *The Pi carried at one, not built.* A symbol's Pi weighs each member at
+  one by construction (`SymbolTable._append`), saves only the members, and
+  is learned by nothing, so the spread's ones pass it on faithfully. Graded
+  weights would have to be given to the symbols' Pi first, learned or
+  written by MTM: for Alec.
+- *What "a word identified with a single look" measures.* With
+  `hardwireReading` 0 a sentence has one look, taken before anything is on
+  the stack, so the stack reads nothing there and its weight learns
+  nothing; the seven certificates that fail at 0 fail because a sentence of
+  several words cannot be read in one word. Claude proposes as the measure
+  instead: each look of a sentence lands on the next word the parse needs,
+  with no look that finds nothing, so that the looks are as many as the
+  words. Not yet confirmed by Alec.
+
 ## 10. Added from item 1.6: evidence at order zero is positive, and the Not is an exchange of lanes (Alec, 2026-11-24)
 
 *Alec, while item 1.6 was being built: "Please add this work to 1.4. I am

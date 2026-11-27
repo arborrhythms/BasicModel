@@ -957,6 +957,16 @@ Each path of a sentence keeps its own, and the winning path's is kept at the
 sentence's end. A hard reset clears what is kept, the opening's field and the
 trace, so nothing is one step back across a document's boundary. On by
 default (Alec, 2026-11-27).
+The request of `attend` also reads the state of the parse, the whole STM
+stack (plan §9.6, 1: "just pass the whole stack"), as the last look's shift
+and reduces left it, and at a sentence's first look as the sentence begins.
+Each of the `stmCapacity` stack positions, the top first, gives its entry's
+value (the conceptual width), its occupancy, its order and grammar order (each
+plus one), its activation and the kinds of its two references; the depth
+closes it (`STMChunks.request_view`). It is read through its own weight
+(`RequestRead.stack_weight`), which starts at zero, so that at the start the
+request is what it is without the stack; a checkpoint without the weight
+loads it at zero. Each path of a sentence reads its own STM.
 `architecture.ideaTransitions` (false) records the sequence links of item 1.4
 (Alec, 2026-11-27: "the idea store has a graph of transitions which is not
 yet mined"): true, each idea kept in the idea store (`LTM0`) at a sentence's

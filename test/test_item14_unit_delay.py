@@ -674,3 +674,84 @@ def test_a_hard_reset_clears_the_opening_and_the_trace(tmp_path, monkeypatch):
     assert before.get('_concept_delay_opening', 0) > 0 and before.get('_concept_trace', 0) > 0
     assert soft == before
     assert len(hard) == 6 and all(value == 0. for value in hard.values())
+
+
+def _delay_held(owner):
+    """Each store of the unit delay, by name, as it is kept now (``None``
+    where it is not made), and the tick of the percepts' step."""
+    names = [*(name for kind in owner._DELAY_BUFFERS for name in owner._DELAY_BUFFERS[kind]),
+             *owner._DELAY_KEPT, '_percept_delay_tick']
+    return {name: None if getattr(owner, name, None) is None else getattr(owner, name).detach().clone()
+            for name in names}
+
+
+def test_the_delay_is_saved_and_restored_with_a_checkpoint(tmp_path, monkeypatch):
+    """Alec, 2026-11-27: "Delayed conceptual state should be preserved ...
+    because it is still conceptual state." After a step that found a pixel
+    the model's state is saved and loaded into a fresh model at the same
+    number of streams: what is one step back, of the basic percepts and of
+    the concepts, the present step's, the field at the last opening, the
+    trace and the tick are each equal. A store later made for another
+    number of streams starts empty. A checkpoint saved without the delay
+    starts it empty."""
+    from test_item16_naming import naming_model
+    from test_item16_scene_field import known, present
+    from reading_fixtures import use_eager_reading
+    import Models
+    load = Models.BaseModel.load_weights  # the construction stubs the autoload
+    model = naming_model(_made(tmp_path / 'source'), monkeypatch)
+    use_eager_reading(monkeypatch)
+    owner = model._concept_owner()
+    path = tmp_path / 'delay.ckpt'
+    try:
+        assert owner.percept_delay
+        known(model, [dict(text='', scene=[PIXEL])])
+        present(model, [dict(text='', scene=[PIXEL])], train=False)
+        saved = _delay_held(owner)
+        model.save_weights(path)
+    finally:
+        model.End()
+    fresh = naming_model(_made(tmp_path / 'target'), monkeypatch)
+    target = fresh._concept_owner()
+    try:
+        empty = _delay_held(target)
+        assert load(fresh, path, require_match=True)
+        restored = _delay_held(target)
+        assert all(value is not None for value in restored.values()), {k: v is None for k, v in restored.items()}
+        old = torch.load(path, map_location='cpu', weights_only=False)
+        for key in [key for key in old['state_dict'] if key.rsplit('.', 1)[-1].startswith('unit_delay_')]:
+            del old['state_dict'][key]
+        old_path = tmp_path / 'before.ckpt'
+        torch.save(old, old_path)
+        # Over the restored delay: a checkpoint without it leaves it empty.
+        assert load(fresh, old_path)
+        before = _delay_held(target)
+        assert load(fresh, path, require_match=True)
+        B = int(restored['_concept_delay_current'].shape[1])
+        device = restored['_concept_delay_current'].device
+        target.prepare_delay(B + 1, device)
+        other = _delay_held(target)
+    finally:
+        fresh.End()
+
+    def sums(held):
+        return {name: None if value is None else (tuple(value.shape), float(value.abs().sum()))
+                for name, value in held.items()}
+    print(dict(saved=sums(saved), empty=sums(empty), restored=sums(restored), other=sums(other),
+               before=sums(before)))
+    assert all(value is not None for value in saved.values())
+    assert sum(float(value.abs().sum()) for name, value in saved.items() if name != '_percept_delay_tick') > 0
+    for name, value in saved.items():
+        assert restored[name] is not None and restored[name].shape == value.shape, name
+        assert torch.equal(restored[name].cpu(), value.cpu()), name
+    for name, value in other.items():
+        if name != '_percept_delay_tick':
+            assert value.shape[1] == B + 1 and float(value.abs().sum()) == 0., name
+    for name, value in before.items():
+        if value is not None and name != '_percept_delay_tick':
+            assert float(value.abs().sum()) == 0., name
+
+
+def _made(path):
+    path.mkdir(parents=True, exist_ok=True)
+    return path

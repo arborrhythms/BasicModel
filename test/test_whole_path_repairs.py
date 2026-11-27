@@ -358,10 +358,10 @@ def test_sentence_inverts_the_live_open_field_once_before_its_looks(tmp_path, mo
             events.append('inverse')
             return surface
 
-        def observed(path, arrive):
+        def observed(path, arrive, **kwargs):
             assert path.model._sentence_open_fields[path.sid] is opened[0]
             events.append('look')
-            return look(path, arrive)
+            return look(path, arrive, **kwargs)
 
         def measured(paths, parts, active, draws, **kwargs):
             costs, weights = objectives(paths, parts, active, draws, **kwargs)

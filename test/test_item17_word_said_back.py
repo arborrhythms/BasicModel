@@ -16,13 +16,13 @@ def test_space_is_a_native_percept(tmp_path, monkeypatch, eager_reading):
     spaces = []
     run = Looks.run
 
-    def observed(path, arrive):
+    def observed(path, arrive, **kwargs):
         field = model.perceptualSpace._forward_input
         ids, spans = field['native_indices'][0], field['native_part_spans'][0]
         store = field['percept_store']
         spaces.append([(lo, hi) for pid, (lo, hi) in zip(ids.tolist(), spans.tolist(), strict=True)
                        if pid >= 0 and store.bytes_for(pid) == b' '])
-        return run(path, arrive)
+        return run(path, arrive, **kwargs)
 
     monkeypatch.setattr(Looks, 'run', observed)
     try:

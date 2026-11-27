@@ -210,3 +210,70 @@ def test_a_forgotten_idea_takes_its_links_with_it(tmp_path, monkeypatch):
         model.End()
     assert remaining == [] and protected == set()
     assert final == [(third, fourth)]
+
+
+def test_the_marks_are_saved_and_restored_with_a_checkpoint(tmp_path, monkeypatch):
+    """Alec, 2026-11-27: what is saved is LTM's state, the marks of the
+    transitions with it. After a save and a reload into a fresh model, the
+    links are still marked and are still read as neither parts nor kinds.
+    A checkpoint saved without the marks loads, and marks none."""
+    import Models
+    load = Models.BaseModel.load_weights  # the construction stubs the autoload
+    import Memory
+    O = Memory.OCCURRENCE
+    model = _model(_made(tmp_path / 'source'), monkeypatch, True)
+    path = tmp_path / 'marks.ckpt'
+    try:
+        parts = model.symbolSpace.ltm_store.parts
+        _present_three(model)
+        marked = sorted(parts.transition_rows())
+        pairs = _occurrence_pairs(parts)
+        model.save_weights(path)
+    finally:
+        model.End()
+    fresh = _model(_made(tmp_path / 'target'), monkeypatch, True)
+    try:
+        assert load(fresh, path, require_match=True)
+        parts = fresh.symbolSpace.ltm_store.parts
+        restored = sorted(parts.transition_rows())
+        read = {name: (parts.parts((O, name)), parts.wholes((O, name))) for pair in pairs for name in pair}
+        handles = {row: (parts.parts(row), parts.wholes(row)) for row in restored}
+        reloaded_pairs = _occurrence_pairs(parts)
+        old = torch.load(path, map_location='cpu', weights_only=False)
+        removed = []
+
+        def unmark(held, where=''):
+            # Every saved LTM1, in the weights or in the structural record.
+            if isinstance(held, dict):
+                for key in list(held):
+                    if isinstance(key, str) and (key == 'transitions' or key.endswith('.transitions')) \
+                            and torch.is_tensor(held[key]) and held[key].dtype == torch.bool:
+                        removed.append(where + key)
+                        del held[key]
+                    else:
+                        unmark(held[key], where + str(key) + '/')
+            elif isinstance(held, (list, tuple)):
+                for index, value in enumerate(held):
+                    unmark(value, where + str(index) + '/')
+        unmark(old)
+        old_path = tmp_path / 'before.ckpt'
+        torch.save(old, old_path)
+        assert load(fresh, old_path)
+        unmarked = sorted(fresh.symbolSpace.ltm_store.parts.transition_rows())
+    finally:
+        fresh.End()
+    print(dict(marked=marked, restored=restored, pairs=pairs, reloaded=reloaded_pairs, read=read,
+               handles=handles, removed=removed, unmarked=unmarked))
+    assert len(marked) == 2 and restored == marked
+    assert reloaded_pairs == pairs
+    for name, (held_parts, held_wholes) in read.items():
+        for earlier, later in pairs:
+            assert not (later == name and (O, earlier) in held_parts)
+            assert not (earlier == name and (O, later) in held_wholes)
+    assert all(value == ((), ()) for value in handles.values())
+    assert unmarked == []
+
+
+def _made(path):
+    path.mkdir(parents=True, exist_ok=True)
+    return path

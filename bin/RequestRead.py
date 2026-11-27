@@ -1,19 +1,29 @@
-"""Attention requests concepts from the open field and the preceding look.
+"""Attention requests concepts from the open field, the preceding look and
+the state of the parse.
 
 With the unit delay (``architecture.perceptDelay``) the preceding look is
 read from the trace, what the cycle of each look leaves (:func:`prime`;
-plan §9.5)."""
+plan §9.5). The state of the parse is the whole STM stack, as it stands
+after the last look's shift and reduces (plan §9.6, 1)."""
 import torch
 from torch import nn
 from torch.nn import functional as F
 
 
 class RequestRead(nn.Module):
-    """Shared request and stopping reads over two fields and one availability flag."""
+    """Shared request and stopping reads over two fields, one availability
+    flag, the last look's place and the STM stack.
 
-    def __init__(self, rows, width, device=None):
+    ``stack`` is ``(capacity, width)``, the STM's entries and the width of
+    an entry's value; the stack is read through ``stack_weight``
+    (:meth:`Memory.STMChunks.request_view`), which starts at zero, so that
+    at the start the request is what it is without the stack."""
+
+    def __init__(self, rows, width, device=None, stack=(0, 0)):
         super().__init__()
+        from Memory import STMChunks
         self.rows = int(rows)
+        self.stack = (int(stack[0]), int(stack[1]))
         given = 4 * self.rows + 1
         self.first = nn.Linear(given, int(width), device=device)
         self.ask = nn.Linear(int(width), self.rows, device=device)
@@ -21,6 +31,8 @@ class RequestRead(nn.Module):
         from BasicPercepts import WHERE_WIRES, WHEN_WIRES
         # Two native place codes and the present.
         self.state_weight = nn.Parameter(self.first.weight.new_zeros(int(width), 2 * WHERE_WIRES + WHEN_WIRES))
+        # The whole STM stack: each entry's value and scalars, and the depth.
+        self.stack_weight = nn.Parameter(self.first.weight.new_zeros(int(width), STMChunks.request_width(*self.stack)))
         self.where = nn.Linear(int(width), WHERE_WIRES, device=device)
         self.where_end = nn.Linear(int(width), WHERE_WIRES, device=device)
         for top in (self.ask, self.stop, self.where, self.where_end):
@@ -30,10 +42,22 @@ class RequestRead(nn.Module):
     def given(self, opened, memory, found):
         return torch.cat((opened.flatten(1), memory.flatten(1), found[:, None].to(opened)), -1)
 
-    def units(self, x, state=None):
+    def _load_from_state_dict(self, state_dict, prefix, *args, **kwargs):
+        # A checkpoint made before the read took the stack has no
+        # ``stack_weight``: it is read at zero, as it starts.
+        state_dict.setdefault(prefix + 'stack_weight', torch.zeros_like(self.stack_weight))
+        super()._load_from_state_dict(state_dict, prefix, *args, **kwargs)
+
+    def units(self, x, state=None, stack=None):
+        """The read's units from ``x`` (:meth:`given`), the last look's place
+        ``state`` and the STM ``stack``, a state tuple
+        (:class:`Memory.STMChunks`) as the parse holds it."""
         hidden = self.first(x)
         if state is not None:
             hidden = hidden + F.linear(state.to(hidden), self.state_weight)
+        if stack is not None and self.stack_weight.shape[1]:
+            from Memory import STMChunks
+            hidden = hidden + F.linear(STMChunks.request_view(stack).to(hidden), self.stack_weight)
         return F.relu(hidden)
 
     def request(self, h):
@@ -66,8 +90,10 @@ def install(model):
     device = owner.similarity_codebook.W.device
     # The read's start is drawn from its own fork, so that installing it
     # moves no other draw of the model.
+    stm = model.conceptualSpace.stm
     with torch.random.fork_rng(devices=[]):
-        model.request_read = RequestRead(int(owner.nVectors), width, device='cpu').to(device)
+        model.request_read = RequestRead(int(owner.nVectors), width, device='cpu',
+                                         stack=(stm.capacity, stm.concept_dim)).to(device)
     with torch.no_grad():
         model.request_read.ask.bias.fill_(float(TheXMLConfig.get('architecture.requestReadStart')))
 

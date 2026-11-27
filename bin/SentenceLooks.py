@@ -414,7 +414,12 @@ class Looks:
             memory = trace
         return choice, interpreted, own, memory, primed, fragment_leaf
 
-    def run(self, arrive):
+    def run(self, arrive, stack=None):
+        """The path's looks. ``arrive(word, rows)`` hands a word taken to the
+        grammar, which shifts it on the STM stack and reduces; ``stack()``
+        is this path's STM as it stands, which each look's request reads:
+        at the first look as the sentence begins, after it as the last
+        look's reduces left it."""
         model, state = self.model, self.walk
         owner = model._concept_owner()
         opened = model._sentence_open_fields[self.sid]
@@ -483,7 +488,8 @@ class Looks:
             # Whether anything is left to find (the toy's "found": nothing
             # left is what the stop is read from).
             x = read.given(held, memory, left)
-            units = read.units(x, observation.request_state(model.where_registry))
+            units = read.units(x, observation.request_state(model.where_registry),
+                               None if stack is None else stack())
             stop = read.stopping(units)
             self.stops.append(stop.detach())
             # The walk ends where nothing is left, or where the read stops it.

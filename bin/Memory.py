@@ -128,6 +128,36 @@ class STMChunks:
 
 
     @staticmethod
+    def request_width(capacity, width):
+        """The width of :meth:`request_view` for a stack of ``capacity``
+        entries of ``width`` values: each entry's value and six scalars, and
+        the depth."""
+        return int(capacity) * (int(width) + 6) + 1 if int(capacity) else 0
+
+    @staticmethod
+    def request_view(state):
+        """The whole stack as ``attend`` reads it, ``[B, capacity * (width +
+        6) + 1]``, detached. Entries are taken newest first by stack
+        position; for each, its value (BUFFER), its occupancy (one where an
+        entry is at that position), its order and grammar order (each plus
+        one, so that none is zero), its activation and the kinds of its two
+        references (REFS); a position with no entry is all zeros. The
+        depth closes it."""
+        state = tuple(value.detach() for value in state)
+        view = STMChunks.stack_view(state)
+        indices = STMChunks.stack_indices(state)
+        present = indices >= 0
+        kinds = STMChunks.gather(state[STMChunks.REFS][..., 0], indices.clamp_min(0))      # [B, C, 2]
+        kinds = torch.where(present[..., None], kinds, 0)
+        buffer = view[STMChunks.BUFFER]
+        scalars = torch.stack((present.to(buffer), (view[STMChunks.ORDERS] + 1).to(buffer),
+                               (view[STMChunks.GRAMMAR] + 1).to(buffer), view[STMChunks.ACTIVATIONS].to(buffer),
+                               *kinds.to(buffer).unbind(-1)), -1)
+        entries = torch.cat((buffer, scalars), -1).flatten(1)
+        return torch.cat((entries, view[STMChunks.DEPTH].to(buffer)[:, None]), -1)
+
+
+    @staticmethod
     def write(value, indices, member, gate):
         positions = torch.arange(value.shape[1], device=value.device)[None]
         mask = gate.reshape(-1, 1) & (indices[:, None] >= 0) & (positions == indices[:, None])
@@ -3299,12 +3329,27 @@ class LTM1(_CountedRows, nn.Module):
         self._index()
         self._sort()
 
+    def _save_to_state_dict(self, destination, prefix, keep_vars):
+        """The relations' state, and the marks of the transitions
+        (:meth:`add_transition`), ``transitions`` ``[capacity]``: true at
+        each relation row that is a transition."""
+        super()._save_to_state_dict(destination, prefix, keep_vars)
+        marks = torch.zeros(self.capacity, dtype=torch.bool)
+        rows = sorted(self.__dict__.get('_transition_rows', ()))
+        if rows:
+            marks[torch.tensor(rows, dtype=torch.long)] = True
+        destination[prefix + 'transitions'] = marks
+
     def _load_from_state_dict(self, state, prefix, *args, **kwargs):
         import warnings
         version = state.get(prefix+'layout_version')
         if version is None or int(version) not in (5, VERSION):
             raise ValueError('unsupported LTM1 checkpoint layout')
-        # The marks of transitions are not kept in a checkpoint.
+        # The marks of transitions are restored with the relations they
+        # mark; a checkpoint saved without them marks none.
+        marks = state.pop(prefix+'transitions', None)
+        if marks is not None and tuple(marks.shape) != (self.capacity,):
+            raise ValueError('transition marks differ from construction')
         self.__dict__.pop('_transition_rows', None)
         allowed = {*self.columns, 'count', 'layout_version'}
         for key in tuple(state):
@@ -3342,6 +3387,11 @@ class LTM1(_CountedRows, nn.Module):
             values = state[prefix+name]
             if not bool(torch.isfinite(values).all() & (values >= 0).all() & (values <= 1).all()):
                 raise ValueError('invalid restored relation '+name)
+        if marks is not None:
+            # A transition is indexed as neither a part nor a kind.
+            marked = (marks.to(device=occupied.device, dtype=torch.bool) & occupied).nonzero().flatten().tolist()
+            if marked:
+                self.__dict__['_transition_rows'] = set(marked)
         super()._load_from_state_dict(state, prefix, *args, **kwargs)
         self.clear_caches()
         self._symbol_epoch += 1
