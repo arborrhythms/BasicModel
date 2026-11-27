@@ -157,11 +157,16 @@ def test_parallel_input_without_composed_sentences_books_only_field_reconstructi
         nominated_forms(model, ('0', '1'))
         understanding = model.understand(inputs)
         errors = Error()
+        # The decode is a draw among equals (FieldReverse.drawn), and a
+        # reading that holds both forms equally is one: the two routes are
+        # compared on the same draw.
+        torch.manual_seed(0)
         decoded, cost = model.reverseReconstruct(understanding, target=inputs, registry=errors)
         assert torch.isfinite(cost)
         assert set(errors._terms) == {'reconstruction_reverse.' + band
             for band in ('what', 'where', 'when')}
         field = understanding.reconstruction_carriers['field']
+        torch.manual_seed(0)
         again = model.reverse(model.conceptualSpace.subspace.carrier_like(), field=field)
         assert torch.equal(decoded, again.materialize())
         assert field.percepts is None

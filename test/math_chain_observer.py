@@ -91,8 +91,9 @@ class Observer:
             if len(self.credit_sample) < 100:
                 self.credit_sample.append(dict(self.context, **item))
 
-        def path_credited(model, first, path, active):
-            result = credit(model, first, path, active)
+        def path_credited(model, first, path, active, **kwargs):
+            # Item 1.5 passes the gathered round schedule to the path credit.
+            result = credit(model, first, path, active, **kwargs)
             term = path.registry._terms.get('output.thought_score_function')
             if term is not None:
                 values = path.registry._value(term)

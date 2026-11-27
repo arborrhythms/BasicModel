@@ -21,7 +21,9 @@ def test_different_positions_in_one_extent_supply_the_two_symbols():
     # property holds at 49 and not at 48.
     field, basic = cs._percept_field, cs.basic_percepts
     raw = torch.tensor([49, 48, 49, 49])
-    at = {49: torch.tensor([1., 0.]), 48: torch.tensor([0., 1.])}
+    # Item 1.4, §10.2: where the property does not hold (at 48) its row
+    # reads nothing; nothing is read against.
+    at = {49: torch.tensor([1., 0.]), 48: torch.tensor([0., 0.])}
     for reading, (start, end), both in ((0, (0, 2), 1.), (1, (2, 4), 0.)):
         for part in (48, 49):
             slot = field.keys.index(('bp', basic.index[((part,), (0,))]))

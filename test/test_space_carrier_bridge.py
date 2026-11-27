@@ -211,9 +211,11 @@ def test_legacy_duplicate_checkpoint_keys_migrate_to_single_owners(tmp_path):
             assert actual == expected
     for key, value in original.state_dict().items():
         actual = restored_state[key]
-        if key.endswith('._extra_state'):
+        if key.endswith('._extra_state') and value.dtype == torch.uint8:
             # Serialized metadata may memoize equal strings differently after
             # owner rebinding; all decoded values must still agree exactly.
+            # The sentence root index saves its rows as they are (951a4771ac),
+            # and is compared as any other tensor.
             actual, value = _unpack_state(actual), _unpack_state(value)
         compare(actual, value)
 

@@ -64,6 +64,16 @@ act on evidence lanes.
 
 ### Evidence lanes
 
+**Where each kind of evidence lives (item 1.4, 2026-11-26).** Evidence
+against exists, and it is a concept's. A percept has positive evidence
+alone: it is found, to a degree, or it is not found, and not found is no
+evidence. Nothing is perceived to be absent. A concept is one signed value
+on two lanes, and it is told against by what is present: another percept at
+the same place, on which the concept's Sigma holds an entry below zero. So
+the two lanes below are the lanes of concepts, fields and ideas; the rows of
+the first Pi have one, and the complement of a property (`1 - x`) is not
+read anywhere as evidence.
+
 Evidence in the grammar's fields and ideas is kept in two lanes,
 $(c^+, c^-)$, for and against. Their four corners are the tetralemma's (for, against, both,
 neither), and the lanes are never netted into one signed scalar: *both*
@@ -120,8 +130,8 @@ sure that what we are doing is interpretable in those terms").
   requires every member. On percepts it is Boole's $xy$.
 - **Or** is a Sigma: a weighted sum of signed values squashed by tanh, its
   weights at zero or above, any one term being enough.
-- **Not** is the Not between the Pi and the Sigma, the only place a sign is
-  changed ("that would give it the ability to change sign,
+- **Not** is the Not between the Pi and the Sigma of every order above zero
+  (order zero has none, item 1.4), the only place a concept is denied ("that would give it the ability to change sign,
   which should be restricted to not"). It is a layer of options: from each
   row's two unsigned values it offers two signed values, the value, for less
   against, and the not-value, the pair exchanged, "so that concepts can
@@ -130,8 +140,8 @@ sure that what we are doing is interpretable in those terms").
   concept's entry that reads the not-value; the size of an entry is the
   Sigma's weight and the choice of option is the Not's. On percepts the opposite of one is zero, not minus one
   ("Omission teaches not: yes, for percepts, the opposite
-  of 1 is 0, not -1, as in Boole"): a Not entry at the basic level records
-  that something expected is absent. It is made implicitly by the gradient,
+  of 1 is 0, not -1, as in Boole"): an entry below zero at the basic level records
+  that one percept, where it is found, tells against the concept. It is made implicitly by the gradient,
   where teaching carries an entry through zero, which is how an omission
   teaches it, and explicitly by a declared Not member. Above it, a Not entry
   reads a symbol's not-value.
@@ -146,6 +156,14 @@ answer, and Not carries all negation ("the removal of the
 NOT is exactly what is necessary to speak only of the good in Augustine's
 sense"). With no Not entry read, a mind speaks only of what is
 ([Philosophy](Philosophy.md)).
+A denial needs something present and a place (Alec, 2026-11-26: "we cannot
+negate that which does not exist unless we know exactly where it does not
+exist"). The Not exchanges two lanes, and a concept with nothing on either
+is unchanged by it, so absence alone is never made into "not this" at any
+order. What tells against a concept is another percept found at the same
+place, by a weight below zero in the concept's Sigma; only then has a Not
+above it something to exchange
+([Philosophy](Philosophy.md#negation-needs-a-place-alec-2026-11-26)).
 The operator `not` of a sentence or a thought is separate: it swaps the lanes
 of what it is put on (`FieldLogic.reduce`), can be put on any symbol, and
 needs no omission to teach it.

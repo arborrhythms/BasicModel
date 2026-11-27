@@ -71,7 +71,11 @@ def test_58_the_sparse_sigma_is_the_full_one_on_the_lessons_readings():
         pytest.fail('the lesson read no reading with two nominated rows')
     S, T, M, start, protected, rows, concepts = made
     print(f'\nlesson: {len(concepts)} concepts on {len(rows)} rows, {S.shape[0]} readings')
+    # A mark is a word (2e73d15cbe), so the lesson's readings hold more rows
+    # together: its missing entries need more than the sixteen places the
+    # table had (20 as read today), and a table that drops what it needs
+    # does not follow the full matrix. The trial's table is sized for them.
     for lam in (.001, .01, .1):
         full, sparse = run(S, T, M, concepts=len(concepts), start=start, protected=protected,
-                           lam=lam, lr=LR, steps=300, table=16)
+                           lam=lam, lr=LR, steps=300, table=32)
         _certify('lesson', compare(full, sparse, S, small=SMALL, effect=EFFECT), lam)

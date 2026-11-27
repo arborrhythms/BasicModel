@@ -288,7 +288,11 @@ def test_fixating_a_repeated_letter_keeps_its_own_content_and_extent(tmp_path, m
                 place = bank.registry.encode('text', bank.span[..., 0]).detach()
                 direction = place[0, index] - place.mean(1)
                 query = request.clone()
-                query[model.request_read.rows:, :, 0] = direction.T
+                # The spatial request is a position half and an extent half
+                # (4d74726ce8); the letter is asked for by position alone.
+                rows, width = model.request_read.rows, direction.shape[-1]
+                query[rows:, :, 0] = 0.
+                query[rows:rows + width, :, 0] = direction.T
                 scores, activity = real_request(model, bank, query, own, eligible)
                 assert torch.isfinite(scores[0, index])
                 selected.append(index)

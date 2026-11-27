@@ -2424,7 +2424,7 @@ class Codebook(Tensor):
             return self.lookup_rows(slice(None))
         if hasattr(self, '_property_identity_width'):
             return self.W
-        if hasattr(self, 'fixed_form_rows'):
+        if hasattr(self, 'fixed_form_rows') and getattr(self, 'form_codes_live', True):
             rows = _unorm_ste(self.W) if getattr(self, 'is_percept_store', False) else self.W
             return torch.where((self.fixed_form_rows >= 0)[:, None], self._form_codes(self.fixed_form_rows), rows)
         if hasattr(self, 'fixed_row_mask'):
@@ -2471,7 +2471,7 @@ class Codebook(Tensor):
             rows = self.W[idx]
         if hasattr(self, '_property_identity_width'):
             return rows
-        if hasattr(self, 'fixed_form_rows'):
+        if hasattr(self, 'fixed_form_rows') and getattr(self, 'form_codes_live', True):
             if getattr(self, 'is_percept_store', False):
                 rows = _unorm_ste(rows)
             form = self.fixed_form_rows[idx]
@@ -13762,7 +13762,8 @@ class ConceptualSpace(Space):
             self.chunk_row_table(cached.device)
 
     def reserve_candidate_trials(self):
-        model = self._model
+        # A space made alone (no model around it) reserves nothing.
+        model = getattr(self, '_model', None)
         if model is not None and getattr(model, 'explore_paths', 0):
             self.mtm.reserve_relation_trials(self.nStreams, 2 + model.explore_paths,
                                              self.similarity_codebook.W.device)
@@ -14724,15 +14725,15 @@ class ConceptualSpace(Space):
     INTUIT_ROW_START = 2
 
     def install_order_zero(self):
-        """Order zero after its Pi: the Not (``order_zero_not``), each basic
-        percept's two options (its value and its not-value), and the Sigma
-        (``order_zero``), sparse, over those options by the order-zero
-        concepts. It reads no code and no place."""
+        """Order zero after its Pi: the Sigma (``order_zero``), sparse, over
+        the basic percepts' values by the order-zero concepts. There is no
+        Not between them (item 1.4, §10.2): a row is read for, and what
+        tells against a concept is an entry below zero on another row. It
+        reads no code and no place."""
         if getattr(self, 'order_zero', None) is not None:
             return self.order_zero
-        from Layers import NotLayer3, SparseSigmaLDU
+        from Layers import SparseSigmaLDU
         rows, concepts = int(self.basic_percepts.capacity), int(self._order_caps()[0])
-        self.order_zero_not = NotLayer3(rows)
         sigma = SparseSigmaLDU(rows, concepts, self.ORDER_ZERO_ENTRIES * (rows + concepts))
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
@@ -14752,12 +14753,13 @@ class ConceptualSpace(Space):
     def order_zero_field(self, lanes, inputs, rows):
         """The order-zero concepts of ``rows`` (``-1`` reads nothing) from
         the values ``lanes`` ``[P, B, E, 2]`` of the basic percepts
-        ``inputs`` (``[P]``), each on its two lanes: the Not, then the Sigma.
+        ``inputs`` (``[P]``): the Sigma over each row's value, its for lane
+        (nothing is read against a row; the second lane is empty).
         ``[len(rows), B, E, 2]``, each concept's signed value on two lanes."""
-        from Layers import signed_lanes
+        from Layers import NotLayer3, signed_lanes
         sigma = self.install_order_zero()
         stream_rows = torch.is_tensor(rows) and rows.ndim == 2
-        return signed_lanes(sigma(self.order_zero_not(lanes), inputs, rows, stream_rows=stream_rows), dim=-1)
+        return signed_lanes(sigma(NotLayer3.options(lanes), inputs, rows, stream_rows=stream_rows), dim=-1)
 
     def add_concept_feature(self, row, tower, feature, weight=0.0, *, negated=False):
         """Concept literals address basic percepts; native selectors collect them."""
@@ -14795,10 +14797,10 @@ class ConceptualSpace(Space):
     def _start_order_zero_entry(self, row, percept, sign):
         """A member joins the concept: its entry on the member's row is
         written at one (at zero for a candidate, ``sign`` zero), or added
-        to; a Not member is made a Not entry by the Not (the concept reads
-        the row's not-value). A concept has one entry on a row, reading one
-        of the two options: where it already has a weighted entry on the
-        row, a member of the other option leaves it as it is."""
+        to; a member declared to tell against the concept is an entry below
+        zero. A concept has one entry on a row: where it already has a
+        weighted entry on the row, a member of the other sign leaves it as
+        it is."""
         sigma = self.install_order_zero()
         if row >= sigma.nOutput:
             raise ValueError('an order-zero concept lies outside the order-zero Sigma')
@@ -14806,13 +14808,13 @@ class ConceptualSpace(Space):
         entry = sigma.find(row, percept)
         if entry is None:
             if sign < 0:
-                self.order_zero_not.make(sigma, row, percept, weight=1.)
+                sigma.add(row, percept, 1., negated=True)
             else:
                 sigma.add(row, percept, abs(float(sign)))
         elif sign > 0 and float(sigma.w()[entry]) >= 0:
             sigma.add(row, percept, 1.)
         elif sign < 0 and float(sigma.w()[entry]) == 0:
-            self.order_zero_not.make(sigma, row, percept, weight=1.)
+            sigma.set_w(entry, -1.)
 
     def concept_of_basic_percept(self, percept):
         """The order-zero concept a nominated row brought, or ``None``, as
@@ -14824,9 +14826,38 @@ class ConceptualSpace(Space):
     def bring_concept(self, percept, row):
         """Record that the nomination of basic percept ``percept`` brought the
         order-zero concept ``row``, and start the concept on the row at one.
-        A row brings one concept, the first recorded."""
+        A row brings one concept, the first recorded. The row's holders and
+        what it holds are linked with it (:meth:`link_holders`)."""
         _concept_alloc_of(self).brought.setdefault(int(percept), int(row))
-        return self.add_concept_feature(row, 'bp', percept, 1.)
+        added = self.add_concept_feature(row, 'bp', percept, 1.)
+        self.link_holders(percept)
+        return added
+
+    @torch.no_grad()
+    def link_holders(self, percept):
+        """MTM's link between a row and its holders (item 1.4, §12.1): where
+        row ``h`` holds row ``p`` (a conjunction over it, or a stored form
+        nearest to holding its form), the concept ``p`` brought is given an
+        entry on ``h`` at zero. Nothing is read by it until its value is
+        learned; where ``h`` is found, ``p`` is found too, so it is the entry
+        by which finding the holder can come to tell against the held. Both
+        ways from ``percept``: the rows it holds and the rows that hold it.
+        Returns the entries written."""
+        basic, sigma = self.basic_percepts, self.install_order_zero()
+        brought = _concept_alloc_of(self).brought
+        percept = int(percept)
+        pairs = [(held, percept) for held in basic.held_rows(percept)]
+        pairs += [(percept, holder) for holder in basic.holder_rows(percept)]
+        written = []
+        for held, holder in pairs:
+            concept = brought.get(held)
+            if (concept is None or holder not in basic.promoted_rows or concept >= sigma.nOutput
+                    or sigma.find(concept, holder) is not None):
+                continue
+            if getattr(self, '_frozen_concepts', None) and concept in self._frozen_rows():
+                continue
+            written.append(sigma.add(concept, holder, 0.))
+        return written
 
     def concept_fit(self, members, order):
         """The fit of a concept: a concept of ``order`` already made (by the
@@ -15210,25 +15241,98 @@ class ConceptualSpace(Space):
 
     @torch.no_grad()
     def refinement_field(self, perception):
-        """The field the mereology's refinement reads, ``[S, B, E, 2]``.
+        """The field the mereology's refinement reads, ``[S, B, E, 2]``: how
+        far each concept is read both, on each lane.
 
-        Each order-zero slot holds its concept's both (:meth:`order_zero_both`)
-        on each lane. The orders above compose it as they compose the
-        concepts' field, read as a value on the for lane (a concept is one
-        signed value, never both, so both is carried up as a measure and
-        not as two lanes), and hold what they read on each lane. The
-        selections of the concepts' own field are left as they were.
+        Both is a concept's and never a percept's (item 1.4; Alec,
+        2026-11-26: "that is a conceptual thing, it is not a perceptual
+        thing, so you can move the test up an order"). A concept of order
+        zero is both across its entries on basic percepts' rows, where one
+        above zero and one below zero are found together
+        (:meth:`order_zero_both`); that measure is carried up as the orders
+        compose it. A concept above order zero is, besides, both across the
+        concepts it reads: where one is read for and another against
+        (:meth:`both_above`). The greater of the two is kept. A concept is
+        one signed value, never both, so both is a measure and not two
+        lanes. The selections of the concepts' own field are left as they
+        were.
         """
         both = self.order_zero_both_field(perception)
-        a_0 = torch.stack((both, torch.zeros_like(both)), -1).to(self.similarity_codebook.W.dtype)
+        dtype = self.similarity_codebook.W.dtype
+        a_0 = torch.stack((both, torch.zeros_like(both)), -1).to(dtype)
+        raw = self.__dict__.get('_cs_order0_raw')
         kept = {name: self.__dict__.get(name) for name in
                 ('_cs_level_act_tensor', '_cs_level_rows', '_cs_wave_qe')}
         try:
-            field = self.cs_forward_content(a_0)
+            measure = self.cs_forward_content(a_0)[..., 0]
+            if torch.is_tensor(raw) and raw.shape == a_0.shape:
+                measure = torch.maximum(measure, self.both_above(
+                    self.cs_forward_content(raw.detach().to(dtype))).to(measure))
         finally:
             for name, value in kept.items():
                 object.__setattr__(self, name, value)
-        return torch.stack((field[..., 0], field[..., 0]), -1).detach()
+        return torch.stack((measure, measure), -1).detach()
+
+    @torch.no_grad()
+    def both_above(self, lanes):
+        """How far each concept above order zero is read both across the
+        concepts it reads, ``[S, B, E]``, from the field's lanes ``lanes``
+        ``[S, B, E, 2]``: the least of what its entries give for and what
+        they give against, each joined by the union. An entry above zero
+        gives the concept it reads as it stands; an entry below zero (a Not
+        entry) the two lanes exchanged; an entry at zero nothing. Nothing
+        for a concept of order zero, whose both is across basic percepts."""
+        from CandidateGrowth import visible_store
+        from ConceptEvidence import both_on_rows
+        alloc = getattr(self, '_concept_allocator', None)
+        store = visible_store(None if alloc is None else alloc._layers.get(0))
+        S, B = lanes.shape[:2]
+        result = lanes.new_zeros(lanes.shape[:-1])
+        if store is None or store.values is None or not len(store._index):
+            return result
+        # The entries by row are gathered once for a store as it stands, and
+        # kept on the field's device.
+        device = lanes.device
+        stamp = (id(store), len(store._index), len(store._tensor_rows), store.symbol_table.revision, device)
+        cached = self.__dict__.get('_both_above_entries')
+        if cached is None or cached[0] != stamp:
+            targets, sources, positions = [], [], []
+            for (row, column), position in store._index.items():
+                for source in store.thing_rows(store.thing_of_column(column)):
+                    targets.append(int(row)), sources.append(int(source)), positions.append(int(position))
+            cached = (stamp, torch.tensor(targets, dtype=torch.long, device=device),
+                      torch.tensor(sources, dtype=torch.long, device=device),
+                      torch.tensor(positions, dtype=torch.long, device=store.values.device))
+            object.__setattr__(self, '_both_above_entries', cached)
+        _stamp, targets, sources, positions = cached
+        if not len(targets):
+            return result
+        weights = store.values.detach()[positions].to(device)
+        addresses = self._field_inventory_rows(device)
+        slots = torch.arange(S, device=device)
+        paged = addresses.ndim == 2
+        bound = (addresses[:, :B] if paged else addresses[:, None])[:S]
+        # Each concept row's slot in the field on each page, -1 where it has none.
+        seat = bound.new_full((int(self.nVectors) + 1, bound.shape[1]), -1)
+        seat.scatter_(0, torch.where(bound >= 0, bound, int(self.nVectors)),
+                      slots[:len(bound), None].expand(-1, bound.shape[1]))
+        seat[-1] = -1
+        at, of = seat[targets], seat[sources]
+        held = (at >= 0) & (of >= 0)
+        # The entries bound on some page, with one read of how many they are;
+        # after it every page keeps one shape and nothing more is read back.
+        kept = held.any(1).nonzero().flatten()
+        if not len(kept):
+            return result
+        at, of, held, weights = at[kept], of[kept], held[kept], weights[kept]
+        for page in range(bound.shape[1]):
+            pages = slice(page, page + 1) if paged else slice(None)
+            # An entry not bound on this page reads nothing there: its
+            # weight is nothing and it joins the spare row.
+            here = held[:, page]
+            result[:, pages] = both_on_rows(lanes[:, pages].detach(), slots, torch.where(here, at[:, page], S),
+                                            of[:, page].clamp_min(0), weights * here, slots, n_inputs=S, n_rows=S)
+        return result
 
     def concept_weights(self, row, *, negated=False):
         """What concept ``row`` reads by the option ``negated`` (its Not
@@ -19008,6 +19112,8 @@ def _analysis_property_signature(space, device="cpu"):
     given_by = getattr(primitives, 'given_by', None)
     given_key = tuple(sorted(given_by.items())) if isinstance(given_by, dict) and given_by else ()
     if torch.compiler.is_compiling():
+        # The revision observes tensor versions on the host. Under capture
+        # there is no host cache: the graph reads the live coefficients.
         rev = None
     else:
         try:
@@ -19456,12 +19562,17 @@ class WholeSpace(Space):
     def _device_unit_tiling(self, idx, *, padded, pin=True):
         """Apply the learned begins, ends and atom predicates at every byte."""
         from Meronomy import pin_word_table, span_table
-        props = self.subspace.what.primitive_properties.coefficients().detach().t() > .5
-        props = props[idx] & (idx != 0)[..., None]
+        # The properties each byte value holds, ``[values, properties]``; the
+        # padding byte holds none. Read by byte value and by pair of byte
+        # values, never gathered over the bytes of the input: with many
+        # properties a table over every byte, ``[B, bytes, properties]``, is
+        # gigabytes (a 20M model's 65,536 properties over 4,096 bytes).
+        table = self.subspace.what.primitive_properties.coefficients().detach().t() > .5
+        table = table & (torch.arange(table.shape[0], device=table.device) != 0)[:, None]
         begins, ends, atoms = (w.detach().sigmoid() > .5 for w in
                                (self.begins_weight, self.ends_weight, self.atom_level))
         cold = ~torch.cat((begins, ends, atoms)).any()
-        atomic = torch.where(cold, True, atoms[idx].logical_or((props & atoms[256:]).any(-1)))
+        atomic = torch.where(cold, True, atoms[idx].logical_or((table & atoms[256:]).any(-1)[idx]))
         live = idx != 0
         if not self.whitespace_units:
             for lo, hi in _CHAR_CLASS_RANGES[int(_CLS_WHITESPACE)]:
@@ -19469,12 +19580,16 @@ class WholeSpace(Space):
         if not idx.shape[1]:
             return span_table(live, live, padded=padded)
         # A cut between two bytes belongs to the run on both sides.
-        left, right = props[:, :-1], props[:, 1:]
         changed = idx[:, :-1] != idx[:, 1:]
         cut = changed.logical_and(begins[idx[:, 1:]].logical_or(ends[idx[:, :-1]]))
-        started = right.logical_and(left.logical_not()).logical_and(begins[256:])
-        ended = left.logical_and(right.logical_not()).logical_and(ends[256:])
-        cut = cut.logical_or(started.logical_or(ended).any(-1))
+        # A property that begins units starts one where the right byte holds
+        # it and the left does not; one that ends units ends one where the
+        # left holds it and the right does not. Each is a table over pairs
+        # of byte values, ``[left value, right value]``.
+        held, lacked = table.to(self.begins_weight.dtype), (~table).to(self.begins_weight.dtype)
+        started = ((lacked * begins[256:].to(held)) @ held.t()) > 0
+        ended = ((held * ends[256:].to(held)) @ lacked.t()) > 0
+        cut = cut.logical_or(started.logical_or(ended)[idx[:, :-1], idx[:, 1:]])
         cut = cut.logical_or(atomic[:, 1:]).logical_or(atomic[:, :-1]).logical_or(live[:, 1:] != live[:, :-1])
         edge = torch.ones_like(live[:, :1])
         spans = span_table(live & torch.cat((edge, cut), 1), live & torch.cat((cut, edge), 1), padded=True)

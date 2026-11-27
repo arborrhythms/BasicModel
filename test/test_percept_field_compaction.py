@@ -48,9 +48,9 @@ def test_padding_reads_nothing_and_teaches_no_property():
     # The run (7,) is held by its own event and by the whole; not at [1, 2].
     for span, value in (((0, 1), 1.), ((0, 2), 1.), ((1, 2), 0.)):
         assert compact.events[0, :, at[span], 0].eq(value).all()
-    # The row of 7 in the whole: at its own byte the whole is held .3 for
-    # and .7 against.
-    torch.testing.assert_close(compact.events[1, :, at[0, 1]].detach(), torch.tensor([[.3, .7], [.3, .7]]))
+    # The row of 7 in the whole: at its own byte the whole is held .3 for,
+    # and nothing is read against (item 1.4, §10.2).
+    torch.testing.assert_close(compact.events[1, :, at[0, 1]].detach(), torch.tensor([[.3, 0.], [.3, 0.]]))
     # The read takes the memberships' gradient: declared classes are not
     # fixed.
     assert compact.values.requires_grad

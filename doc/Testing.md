@@ -13,10 +13,30 @@ make test TEST_ARGS='test/test_query_registry.py -k declaration'
 Run the complete default suite in the background before a commit:
 
 ```sh
-DEVELOPER_DIR=/Library/Developer/CommandLineTools .venv/bin/python test/test_report.py
+make test
 ```
 
-`make test` uses the same runner. `make test_all` additionally enables the existing
+**Tests run through `make test`, and the branch is pushed through `make push` (Alec,
+2026-11-27).** A complete `make test` (no `TEST_ARGS`) writes the log
+`output/tests/latest.json` when it ends: where its receipt is, a digest of the source it
+tested, and every case that failed. A run of selected files writes its receipt but not this
+log. `make push` is the integration. It pushes the current branch only if all of these hold,
+and says which does not:
+
+- the log is there;
+- the logged run ended (every selected case completed; a timeout, a killed worker or changed
+  source does not count);
+- the source is the source that was tested (`bin`, `test`, `data`, `Makefile`, `pytest.ini`,
+  `requirements.txt`, `README.md`; documents may change);
+- every case that failed has a written ok in `test/failures_ok.txt`, one line each,
+  `test case | Name, date: reason`. Only Alec writes an ok, and a line is removed when its
+  test passes again;
+- nothing is uncommitted.
+
+`make push_check` reports the same without pushing. A failing test is left failing and
+answered there; it is not marked xfail to make the suite read green.
+
+`make test` uses the bounded runner. `make test_all` additionally enables the existing
 `RUN_SLOW=1` tests. Slow selection never changes the device: cases default to CPU,
 and only an explicit `device` marker or `BASICMODEL_DEVICE` requests another device.
 
@@ -132,6 +152,10 @@ retired without a record of what it did. A rule that a learned mechanism may
 replace is retired only when the lesson that teaches the replacement passes
 without it ([Training, identity from data](Training.md#the-generated-supervised-curriculum-in-order)).
 
+**Superseded for standing failures (Alec, 2026-11-27): "Don't mark them xfail."** A test
+that fails on every run stays failing and needs a written ok at `make push` (above). The rule
+below is kept as it was recorded.
+
 **Strict xfail for an unresolved deviation (Alec, 2026-11-01).** "You can
 implement everything and xfail what tests you need to, let's lock down what is
 working going forward." A standing test or certificate that fails on a
@@ -141,6 +165,14 @@ deviation, and the work proceeds. Only a source-hash mismatch or a numerical
 divergence stops it; both stay fail-loud. `make test` remains the criterion: a
 strict xfail that starts passing fails the suite, and is removed together with
 the deviation it named.
+
+**Intermittent failures (Alec, 2026-11-27).** A test that fails only on some runs cannot be a
+strict xfail, since its pass would fail the suite. It is marked
+`pytest.mark.intermittent(reason=...)`, which the central collection hook (`test/slow_tests.py`)
+turns into `xfail(strict=False)`: it is reported as an expected failure when it fails and as an
+unexpected pass when it passes, and neither fails the suite. The reason names the cause, and the
+mark is removed with the cause. It hides a real defect from the pass count, so each one stays
+listed where its item is tracked.
 
 **Proportion.** A change is measured only where it can change a result. While a
 change is built, only fast checks run: its direct before-and-after cases (red on

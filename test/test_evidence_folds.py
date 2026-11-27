@@ -28,12 +28,13 @@ def test_seam_never_invents_counterevidence_from_an_absent_property():
     basic_feature(cs, 0, 'ws', 1, -1., parts=(48, 49))
     raw = torch.tensor([[48]])
     read = cs.cs_read_memberships((raw, spans, primitive, raw, spans), spans)
-    # The counterevidence is observed, at the basic percepts' rows: property
-    # 0's row reads against (its part present, its whole seen false), and
-    # the Not member's row reads for.
+    # Item 1.4, §10.2: nothing is read against a row. Property 0's row
+    # reads nothing (its part present, its whole not held); the row of the
+    # member declared against the concept reads for, and that is what tells
+    # against it: counterevidence is something present.
     basic, field = cs.basic_percepts, cs._percept_field
     slot = lambda prop: field.keys.index(('bp', basic.index[((48,), (prop,))]))
-    torch.testing.assert_close(field.values[slot(0), 0, 0], torch.tensor([0., 1.]))
+    torch.testing.assert_close(field.values[slot(0), 0, 0], torch.tensor([0., 0.]))
     torch.testing.assert_close(field.values[slot(1), 0, 0], torch.tensor([1., 0.]))
     # The concept is one signed number read by its column, for less against.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))

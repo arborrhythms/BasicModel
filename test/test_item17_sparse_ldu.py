@@ -6,7 +6,7 @@ import time
 import pytest
 import torch
 
-from Layers import InvertibleLinearLayer
+from Layers import InvertibleLinearLayer, NotLayer3
 from sparse_ldu import unit_apply, unit_solve, longest_chain, ldu_up, ldu_back, dense_w
 
 
@@ -132,7 +132,9 @@ def test_d_the_lessons_sigma_reads_its_entries_and_returns_its_rows(lesson):
     a least-squares way back through each row's own entries is exact only
     when every concept reading a row is asked with it."""
     from Layers import SparseSigmaLDU
-    sigma, not_ = lesson.order_zero, lesson.order_zero_not
+    # Item 1.4: no Not stands between the first Pi and the Sigma of order
+    # zero; the Sigma reads each row's value.
+    sigma, not_ = lesson.order_zero, NotLayer3.options
     assert isinstance(sigma, SparseSigmaLDU)
     g = _start()
     n = sigma.nnz
@@ -316,7 +318,7 @@ def test_the_first_pis_way_back_is_the_percept_each_row_keeps(lesson):
     # then the where and the when wires.
     table = torch.cat((read_codes.transpose(1, 2), where, when), 1)[None]            # [1, R, columns, 2]
     bank = SimpleNamespace(codes=read_codes, identity_width=basic.identity_width, width=width)
-    part, whole, _added = held_at(bank, table)
+    part, whole = held_at(bank, table)
     place = field_factor(table[..., width:width + WHERE_WIRES, :], where) * \
         field_factor(table[..., width + WHERE_WIRES:, :], when)
     own = (part * whole * place)[torch.arange(R), 0, torch.arange(R)]

@@ -348,13 +348,15 @@ def test_incomplete_stream_keeps_a_scoring_journal_but_cannot_admit_a_reading():
     program = (torch.zeros(B, W, dtype=torch.long), torch.tensor([[[0, -1, 0]]] * B),
                torch.zeros(B, W, dtype=torch.long), torch.full((B, W), -1))
     clock_reads = []
+    # The capture reads the chooser's parse program (42ce85fcf3), which has
+    # the positions, actions, targets and columns the derivation's had.
     host = SimpleNamespace(_open_sentence_slot=0, _tensor_pushed_ideas=words,
         _concept_owner=lambda: SimpleNamespace(mtm=SimpleNamespace(entries={})),
         inputSpace=inp, symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(names_issued=torch.tensor(7))),
         languageSpace=SimpleNamespace(resolve_lexical_references=resolve),
         _word_symbol_rows=lambda: rows, _word_symbol_concept_ids=lambda: rows,
         _answer_leaf_slab=lambda _: words, _word_lexical_forms=lambda *args: [(), ()],
-        _derivation_program=lambda _, *, padded: program, _reconstruction_stack=lambda: trace,
+        _parse_program=lambda _: program, _reconstruction_stack=lambda: trace,
         _tensor_sentence_roots_live=torch.ones(B, 1, 3 * D), _tensor_sentence_roots_depth=torch.tensor([[1], [-1]]),
         conceptualSpace=SimpleNamespace(stm=SimpleNamespace(
             strata=SimpleNamespace(capture=lambda *args, after: clock_reads.append(after)))))

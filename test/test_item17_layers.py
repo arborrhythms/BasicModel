@@ -55,8 +55,12 @@ def test_the_old_classes_have_the_same_source(before):
     old = _class_sources(text)
     new = _class_sources((ROOT/'bin/Layers.py').read_text())
     assert set(old) == set(OLD_CLASSES)
+    # One line differs by design: no rate is written in the source since
+    # `cf27ac04e3`, so the self-test of an old class reads its rate from
+    # data/model.xml where it had 0.01.
+    rate = 'lr=float(TheXMLConfig.training("learningRate"))'
     for name in OLD_CLASSES:
-        assert new[name] == old[name], name
+        assert new[name].replace(rate, 'lr=0.01') == old[name], name
 
 
 @pytest.mark.parametrize('name, build, domain', [

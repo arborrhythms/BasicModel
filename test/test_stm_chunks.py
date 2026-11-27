@@ -116,7 +116,9 @@ def test_identity_pool_is_fixed_releases_at_promotion_and_rejects_old_layout():
     restored = MediumTermMemory(2, n_vectors=90)
     restored.restore(state)
     assert restored.token_of(90) == third
-    with pytest.raises(ValueError, match='version 8'):
+    # The refusal no longer lists the versions it reads (80150fc8da); the
+    # layout before version 8 is still refused.
+    with pytest.raises(ValueError, match='unsupported MTM transient pool version'):
         restored.restore(dict(state, version=7))
     restored.forget(third)
     assert not restored.transient_used.any()
@@ -206,8 +208,12 @@ def test_metadata_prefix_writes_preserve_the_constructed_stream_extent():
     from Memory import ShortTermMemory
     from ChunkJournal import empty_scope
     memory = ShortTermMemory(batch=4,capacity=8,concept_dim=4)
-    shapes = {name:value.shape for name,value in memory.__dict__.items()
-              if name.startswith('_live_') and torch.is_tensor(value)}
+    # The deepest depth is a scalar read on the host only when asked for
+    # (bed4be1fee): a tensor until then, and no stream's extent.
+    def extents():
+        return {name:value.shape for name,value in memory.__dict__.items()
+                if name.startswith('_live_') and torch.is_tensor(value) and name != '_live_max_depth_host'}
+    shapes = extents()
     memory._clause_state = empty_scope(memory._buffer)+7
     memory._wholes = torch.full((4,8,5),9,dtype=torch.long)
     memory._last_unary = torch.full((4,8),11,dtype=torch.long)
@@ -225,7 +231,6 @@ def test_metadata_prefix_writes_preserve_the_constructed_stream_extent():
     memory.begin_forward(4)
     assert memory.ensure_clause_state().shape == (4,8,2)
     assert memory.ensure_whole_state().shape == (4,8,3)
-    assert shapes == {name:value.shape for name,value in memory.__dict__.items()
-                      if name.startswith('_live_') and torch.is_tensor(value)}
+    assert shapes == extents()
     with pytest.raises(ValueError,match='provenance width'):
         memory._clause_state = torch.zeros(4,8,15,dtype=torch.long)

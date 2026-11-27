@@ -87,7 +87,10 @@ def test_chooser_heads_match_replay_for_unequal_partial_and_transposed_rows(devi
     for row, steps in enumerate(READINGS):
         words = sum(kind == 0 for kind, _, _ in steps)
         index = ReadingIndex(torch.tensor(steps), words, language)
-        result = STMParse.copy_pairs(pairs[row], heads[row], torch.arange(words),
+        # The copy is one host transfer of its tensors together (7919cec8d5),
+        # so the word positions are on the device of the pairs, as the
+        # sentence trace holds them.
+        result = STMParse.copy_pairs(pairs[row], heads[row], torch.arange(words, device=device),
                                     range(100, 100 + words), order[row])
         assert result == reference(index, [71, 72, 73])
         assert int((order[row] >= 0).sum()) == sum(kind > 0 for kind, _, _ in steps)

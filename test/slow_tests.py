@@ -166,6 +166,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         'markers','slow: long training/quality/compilation check; opt in with RUN_SLOW=1')
     config.addinivalue_line('markers', 'device(name): explicitly select a bounded worker device')
+    config.addinivalue_line(
+        'markers', 'intermittent(reason): fails on some runs for the named cause; reported as an '
+        'expected failure when it fails and as passed when it passes')
     config.addinivalue_line('markers', 'learning_certificate: default-tier learning gate regardless of runtime')
     config.addinivalue_line(
         'markers', 'shared_training(name): keep selected consumers of a module fixture in one worker')
@@ -181,6 +184,14 @@ def pytest_collection_modifyitems(items):
     enabled=os.environ.get('RUN_SLOW')=='1'
     skipped=pytest.mark.skip(reason='slow -- set RUN_SLOW=1')
     for item in items:
+        for mark in item.iter_markers('intermittent'):
+            # pytest.ini makes xfail strict. A test that fails only on some
+            # runs cannot be strict: its pass is no news, and its named cause
+            # stays in the report until the cause is removed with the mark.
+            reason = mark.kwargs.get('reason') or (mark.args[0] if mark.args else '')
+            if not reason:
+                raise ValueError(f'an intermittent test names its cause: {item.nodeid}')
+            item.add_marker(pytest.mark.xfail(strict=False, reason='intermittent: ' + reason))
         if item.nodeid in PHASE_CERTIFICATES:
             from phase_artifacts import certificate_phase
             if certificate_phase(item) != PHASE_CERTIFICATES[item.nodeid]:

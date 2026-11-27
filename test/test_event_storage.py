@@ -104,11 +104,15 @@ def test_staged_action_outcome_survives_restore_and_expires_with_its_participant
 def test_active_mtm_idea_moves_to_ltm0_once_at_its_original_address_and_time():
     from Memory import LTM0, MediumTermMemory
     from RowTime import encoder
+    from architecture import WHERE_WIRES, WHEN_WIRES
     pool = MediumTermMemory()
-    durable = LTM0(12, capacity=3)
+    # Item 1.6 gave the place three axes; a native idea is at least its
+    # place and its time wide.
+    width = WHERE_WIRES + WHEN_WIRES
+    durable = LTM0(width, capacity=3)
     durable._model_present = lambda: 9
     staged = pool.staging_store(durable)
-    point = torch.linspace(0, 1, 12)
+    point = torch.linspace(0, 1, width)
     working_row = staged.append_idea(point, evidence=(.8, 0.), surprise=1.)
     name = staged.occurrence_of(working_row)
     expected = staged.slots[working_row].clone()

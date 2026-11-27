@@ -60,6 +60,8 @@ def test_85_infer_keeps_the_old_three_rule_supports():
                firings=result.evidence['firings'], field=field.tolist()))
 
 
+@pytest.mark.intermittent(reason='failed once in a full sweep on 2026-11-26 (intuition read five times '
+                          'where once is certified); not reproduced alone')
 def test_84_intuit_reads_once_at_observation_and_no_relation_row(tmp_path, monkeypatch):
     from test_item18_expect import lesson, read
     from Queries import ThoughtLTMCapability

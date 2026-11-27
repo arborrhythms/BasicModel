@@ -302,6 +302,9 @@ def test_aligned_serial_sentence_has_no_space_identity_and_a_mark_is_a_word(monk
         space.subspace = SimpleNamespace(what=SimpleNamespace(lookup_rows=lambda rows: torch.zeros(*rows.shape, 8)))
     model = SimpleNamespace(inputSpace=isp, wholeSpace=ws, perceptualSpace=ps,
         conceptualSpaces=[owner], _aligned_serial_word_mode=lambda: True)
+    # The older text interface is its own method on the model since the
+    # sentence-wide reference resolution (0cd9b82890); the stand-in carries it.
+    model._legacy_serial_word_rows = BasicModel._legacy_serial_word_rows.__get__(model)
     owner.install_order_zero()
     # A form is a word from the reading in which MTM nominates it.
     for _ in range(owner.concept_mint_count):

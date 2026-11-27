@@ -176,8 +176,10 @@ def _finish_clause(language, program, *, meaning=None, depth=1, registry=None, n
         # unwitnessed; only this field schema coerces its absent order to 0.
         order = 0 if orders is None else max(0, int(orders[list(words)].max()))
         return dict(order=order, evidence=input_evidence(words))
-    from ParseForest import native, visits
-    parse = native(program)
+    # The local ``native`` above tests a reference; the forest reader keeps
+    # its own name so that the operand loop below still reaches that test.
+    from ParseForest import native as native_parse, visits
+    parse = native_parse(program)
     nodes = {}
     # Each node owns the chooser's ordered operand references.
     for action, (kind, local, word) in visits(program):

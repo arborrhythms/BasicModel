@@ -21,7 +21,8 @@ def hand_bank(codes, what, readings_of_events, identity_width, presence=None):
     from BasicPercepts import WHERE_WIRES, WHEN_WIRES
     codes, what = torch.as_tensor(codes, dtype=torch.float32), torch.as_tensor(what, dtype=torch.float32)
     iw = identity_width
-    against = lambda c: torch.cat((torch.zeros_like(c[..., :iw]), 1 - c[..., iw:]), -1)
+    # Item 1.4: a code and an occurrence's what have nothing on the second lane.
+    against = torch.zeros_like
     P, K = len(readings_of_events), max(readings_of_events) + 1
     wires = torch.zeros(P, WHERE_WIRES + WHEN_WIRES)
     table = torch.cat((torch.stack((what, against(what)), -1), torch.stack((wires, 1 - wires), -1)), -2)[None]
@@ -176,8 +177,8 @@ def test_56d_a_not_entry_gives_its_share_to_the_rows_against_lane():
 
 def test_56e_the_pi_analyses_by_wholes_as_it_synthesizes_by_parts():
     """(e) A row of a part and two properties reads the least of the two
-    properties' degrees, the meeting of the two classes, and against one
-    less; the map gives its reading's share, through the Not, to the
+    properties' degrees, the meeting of the two classes, and nothing
+    against (item 1.4); the map gives its reading's share, through the Not, to the
     occurrence where it is read."""
     # One wire of parts (a), two of wholes: red cuts the first, round the
     # second. At the first occurrence a is present, red held .8 and round
@@ -186,7 +187,7 @@ def test_56e_the_pi_analyses_by_wholes_as_it_synthesizes_by_parts():
     bank = hand_bank([[1., 0., 0.]],
                      [[1., .2, .4], [0., 0., 1.], [0., 1., 0.]], [0, 0, 0], 1)
     read = row_values(bank)
-    assert read.values[0, 0, 0].tolist() == pytest.approx([.6, .4])
+    assert read.values[0, 0, 0].tolist() == pytest.approx([.6, 0.])
     # Ported (eighth pass): by the transposes the share went through the Not,
     # the for lane less the against, [.2, 0, 0]. By the first Pi's way back a
     # row asked for lights each occurrence by its read's for lane, [.6, 0, 0];
@@ -773,50 +774,92 @@ def test_31c_printed_parts_present_by_degree_two_ways():
         print(dict(degrees=degrees, row=[round(float(for_), 4), round(float(against), 4)],
                    way_back=[round(float(e), 4) for e in events], plain_gradient=round(float(plain[0, 0, 0]), 4)))
         assert float(for_) == pytest.approx(run * min(red, round_))
-        assert float(against) == pytest.approx(run * (1 - min(red, round_)))
+        # Item 1.4: nothing is read against at order zero.
+        assert float(against) == 0.
         # The read is of the occurrence's whole percept, at full presence.
         assert float(events[0]) == pytest.approx(min(red, round_))
-        assert float(events[1]) == pytest.approx(1 - min(red, round_))
+        assert float(events[1]) == 0.
 
 
 def test_32_a_known_word_is_not_read_inside_a_longer_known_word(tmp_path, monkeypatch):
-    """A word's concept reads nothing at the token of a longer known word
-    that holds its letters, ``is`` at ``This``, ``here`` at ``There``, ``the``
-    at ``there``, and reads at its own token; the look that asks for it
-    returns it there and not the longer word: the request reaches a row's
-    reading through the Not, for less against, so the inner word's row at
-    the longer token (read for and against alike) takes nothing."""
+    """A word's concept and a longer known word that holds its letters,
+    ``is`` at ``This``, ``here`` at ``There``, ``the`` at ``there``. Nothing
+    is read against a row (item 1.4, §12.1), so with every occurrence
+    present the word's concept reads its row inside the longer word as at
+    its own token, tanh(1), until the link is learned: the entry MTM wrote
+    at zero from the word's concept to the longer word's row
+    (``ConceptualSpace.link_holders``). With that entry at minus one the
+    longer word found tells against it, and the concept reads nothing at
+    the longer token and tanh(1) at its own. The look that asks for the
+    word returns it at its own token and not the longer word."""
     import SentenceLooks
+    from Attention import occurrence_probabilities, select_occurrence
+    from Spaces import _concept_alloc_of
     from test_item18_expect import read
     model = nominated_lesson(tmp_path, monkeypatch, texts=('This is here', 'There is the', 'the is there'))
     try:
         banks = held_banks(monkeypatch)
+        one = float(torch.tanh(torch.tensor(1.)))
         found = {}
         for text, word, at, longer in (('This is here', 'is', 1, 0), ('There is here', 'here', 2, 0),
                                        ('there is the', 'the', 2, 0)):
             read(model, text)
             owner, bank = model._concept_owner(), banks[-1]
             model._sentence_bank = bank
-            perception = owner.basic_percepts.read_bank(bank)
+            basic, sigma = owner.basic_percepts, owner.install_order_zero()
+            perception = basic.read_bank(bank)
             count = len(text.split())
             concepts = model._attention_word_concepts[:, :count]
-            request = SentenceLooks.word_request(model, concepts, torch.tensor([at]))
-            field, activity = SentenceLooks.look(model, bank, request, bank.activity)
-            ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, 0]
-            own = (ids == concepts[0, at]).nonzero().flatten()
-            signed = field.evidence[own[0], 0, :count]
-            inner = (signed[:, 0] - signed[:, 1]).tolist()
-            extent = SentenceLooks.extent_of(bank, activity, count)
-            value = SentenceLooks.word_activity(field, concepts, torch.ones(1, count, dtype=torch.bool),
-                                                extent, bank.activity, bank)
-            from Attention import occurrence_probabilities, select_occurrence
-            probabilities = occurrence_probabilities(value)
-            index = select_occurrence(probabilities, sample=False)
-            found[(text, word)] = dict(inner_concept_by_reading=[round(v, 4) for v in inner],
+            # The link, as MTM wrote it: the word's concept on its holder's row.
+            brought = _concept_alloc_of(owner).brought
+            held, = [row for row in basic.form_rows[word.encode()] if row in brought]
+            holder, = [row for row in basic.form_rows[text.split()[longer].encode()] if row in brought]
+            assert holder in basic.holder_rows(held) and held in basic.held_rows(holder)
+            concept = brought[held]
+            entry = sigma.find(concept, holder)
+            assert entry is not None and float(sigma.w()[entry].detach()) == 0.
+
+            def whole():
+                """The word's concept by reading, every occurrence present."""
+                inputs = [key[1] for key in perception.keys]
+                field = owner.order_zero_field(perception.values.detach(), inputs, [concept])
+                return (field[0, 0, :count, 0] - field[0, 0, :count, 1]).tolist()
+
+            def looked():
+                request = SentenceLooks.word_request(model, concepts, torch.tensor([at]))
+                field, activity = SentenceLooks.look(model, bank, request, bank.activity)
+                ids = field.concept_ids if field.concept_ids.ndim == 1 else field.concept_ids[:, 0]
+                own = (ids == concepts[0, at]).nonzero().flatten()
+                signed = field.evidence[own[0], 0, :count].detach()
+                extent = SentenceLooks.extent_of(bank, activity, count)
+                value = SentenceLooks.word_activity(field, concepts, torch.ones(1, count, dtype=torch.bool),
+                                                    extent, bank.activity, bank).detach()
+                probabilities = occurrence_probabilities(value)
+                return (signed[:, 0] - signed[:, 1]).tolist(), value, probabilities, \
+                    select_occurrence(probabilities, sample=False)
+
+            # Item 1.4: with the link at zero the row is read for inside the
+            # longer word too, by the whole read and by the look.
+            before = whole()
+            assert before[longer] == pytest.approx(one, abs=1e-6) and before[at] == pytest.approx(one, abs=1e-6)
+            inner, value, _, _ = looked()
+            assert inner[longer] > 0 and inner[at] > 0 and torch.isfinite(value[0, at])
+            # Learned to minus one, the longer word found tells against it.
+            sigma.set_w(entry, -1.)
+            after = whole()
+            assert after[longer] == pytest.approx(0., abs=1e-6) and after[at] == pytest.approx(one, abs=1e-6)
+            inner, value, probabilities, index = looked()
+            found[(text, word)] = dict(concept_by_reading_link_at_zero=[round(v, 4) for v in before],
+                                       concept_by_reading_link_learned=[round(v, 4) for v in after],
+                                       look_inner_concept_by_reading=[round(v, 4) for v in inner],
                                        returned=[round(float(v), 4) for v in value[0]],
                                        taken=int(index[0]), probabilities=probabilities[0].tolist())
-            assert abs(inner[longer]) < 1e-6 and inner[at] > 0, found[(text, word)]
             assert torch.isfinite(value[0, at])
+            # Open under item 1.4, and failing at ``the`` in ``there``: the
+            # word's row reads for at the occurrence of a longer word that
+            # begins with it, the look lights that occurrence, and the longer
+            # word's concept, which the link does not lower, is returned
+            # above the word at its own token.
             assert not torch.isfinite(value[0, longer]) or float(value[0, longer]) < float(value[0, at]), \
                 found[(text, word)]
             assert int(index[0]) == at and (probabilities[0] == probabilities[0, at]).sum() == 1, found[(text, word)]

@@ -261,7 +261,11 @@ def test_e7_put_back_on_the_numeric_stem():
     for (x, y), v in thing.items():
         expected[0, y, x] = centroid[v]
     assert torch.equal(alone, expected)
-    assert torch.equal(both, image)
+    # The levels of intensity are linear and fixed (item 1.4, §14.6): a value
+    # is put back at the level it falls to, within half a step.
+    at_levels = torch.where(image > 0, basic.levels[basic.fall(image)].to(image), torch.zeros_like(image))
+    assert torch.equal(both, at_levels)
+    assert float((both - image).abs().max()) <= .5 / (len(basic.levels) - 1) + 1e-7
 
 
 def test_e7_put_back_with_a_sentence(tmp_path, monkeypatch):

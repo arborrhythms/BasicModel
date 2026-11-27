@@ -210,12 +210,15 @@ def test_every_serial_word_runs_interpret_before_composition(tmp_path, monkeypat
             converting.pop()
     monkeypatch.setattr(Evaluation, 'leaf', converted)
     for space in model.conceptualSpaces:
-        reading = space.interpret.reading
-        def identified(word, _reading=reading, **kwargs):
-            result = _reading(word, **kwargs)
-            readings.append((word,result))
+        # The lexical reading is one resolution of the whole sentence since
+        # 0cd9b82890; the per-word reading only gives a new word its blank object.
+        sentence = space.interpret.sentence_objects
+        def identified(words, _sentence=sentence):
+            result = _sentence(words)
+            read = words >= 0
+            readings.extend(zip(words[read].tolist(), result[0][read].tolist()))
             return result
-        monkeypatch.setattr(space.interpret, 'reading', identified)
+        monkeypatch.setattr(space.interpret, 'sentence_objects', identified)
         forward = space.interpret.forward
         def observed(word, _forward=forward, **kwargs):
             result = _forward(word, **kwargs)

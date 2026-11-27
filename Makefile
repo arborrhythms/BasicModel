@@ -111,8 +111,21 @@ compare : $(VENV_STAMP)
 # sets RUN_SLOW=1 to also run them.
 # Repeated slow workloads default to half work. RUN_SLOW_FRACTION=1 restores
 # their historical budgets; test selection and assertion thresholds are unchanged.
+# Run with no TEST_ARGS it is the complete suite, and writes the log that
+# `make push` reads (output/tests/latest.json).
 test : $(VENV_STAMP)
 	BASICMODEL_DEVICE=cpu PYTHONPATH=bin $(VENV_PYTHON) test/test_report.py $(TEST_ARGS)
+
+# The integration. It pushes the current branch only if the last complete
+# `make test` is logged, ended, and tested this source, and every case that
+# failed has Alec's written ok in test/failures_ok.txt. `make push_check`
+# reports the same without pushing.
+.PHONY: push push_check
+push : $(VENV_STAMP)
+	PYTHONPATH=bin:test $(VENV_PYTHON) test/push_gate.py push $(PUSH_ARGS)
+
+push_check : $(VENV_STAMP)
+	PYTHONPATH=bin:test $(VENV_PYTHON) test/push_gate.py
 
 # Fast local iteration is intentionally not a bounded receipt. The complete
 # `make test` path retains process limits and durable source-matched evidence.

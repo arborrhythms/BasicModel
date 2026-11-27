@@ -84,13 +84,22 @@ def test_reverse_is_grammar_free_and_missing_field_raises():
 def leaf_model(radix, raw, nWhat, extent):
     """The parts the leaf-by-leaf reverse reads, for one concept (id 41)
     whose order-zero row recreates one basic percept spelling ``raw``: an
-    identity Sigma, the percept's kept ``.what``, and the grid."""
+    identity Sigma, the percept's kept ``.what``, and the grid. The reverse
+    resolves a field's concept names to rows through the order-zero
+    allocator in one tensor read (item 1.5, commit b81a0c3040), so the
+    owner carries that read beside the scalar one. The percept codebook is
+    kept per store revision and device and asks a row for its stored root
+    before its bytes (item 1.5, commit 99c970b1af); this percept is a plain
+    form with no learned parts."""
     from WhereRegistry import WhereRegistry
     sigma = NS(nOutput=1, reverse=lambda y, rows: y[:len(rows)])
     basic = NS(index={0: 0}, revision=0, place_rows={}, conjunctions={}, is_value=lambda _row: False,
-               form_of=lambda _row: raw, runs={},
+               form_of=lambda _row: raw, runs={}, form_root=lambda _row: None,
+               native=NS(), value_codes=torch.empty(0),
                kept_percept=lambda rows: (torch.ones(len(rows), 2, 2), None, None))
+    order_zero = NS(concept_rows=lambda ids: torch.where(ids == 41, 0, -1))
     cs = NS(install_order_zero=lambda: sigma, _concept_row_of=lambda cid: 0 if cid == 41 else None,
+            _concept_allocator=NS(layer=lambda order: order_zero if order == 0 else None),
             basic_percepts=basic)
     ps = NS(percept_store=radix, subspace=NS(nWhat=nWhat, nWhere=0, nWhen=0), _radix_where_indices=[])
     registry = WhereRegistry((('text', extent),))

@@ -1642,15 +1642,19 @@ See [Thought-operator contracts](QueryContracts.md).
 
 ## Sigma and Pi Layers
 
-The model has one structure at every order: a Pi, then a Not, then a Sigma, order zero among them. A Pi makes rows that need all
-their members, each row with two values, for and against; the Not joins each
-row's two values into one signed value; a Sigma weighs those signed values
-into concepts. Values in perception are kept on two lanes, each within 0 to 1: evidence for and evidence against.
-A "negative number" in perception is evidence against, held as a positive
-value on the against lane ("we are on a positive unit
-hypercube with two lanes; evidence for and evidence against"); zero on both
-lanes is no evidence. On percepts the opposite of 1 is 0, not -1, as in
-Boole. Intersection and union, the least and the greatest of graded values,
+The model has one structure above order zero: a Pi, then a Not, then a Sigma. A Pi makes rows that need all
+their members; the Not exchanges a concept's two lanes; a Sigma weighs what it
+reads into concepts. Order zero has the Pi and the Sigma and no Not between
+them (item 1.4, 2026-11-26). **Evidence in perception is positive**: a basic
+percept is read for, to a degree within 0 to 1, and nothing is read against
+it. Perceptual space is the positive unit hypercube. On percepts the opposite
+of 1 is 0, not -1, as in Boole, and that 0 is no evidence, never evidence
+against. **Evidence against is a concept's**: a concept is one signed value
+on two lanes, for and against, and what tells against it is another percept
+found at the same place, by an entry below zero in the concept's Sigma
+("positive evidence for one object may count as negative evidence for
+another"). Zero on both of a concept's lanes is no evidence. The second lane
+of a percept's value is kept in the tensors and is empty. Intersection and union, the least and the greatest of graded values,
 are operations of the basic level, below symbols; conjunction and
 disjunction are the symbolic level's, a row of a Pi, which needs all of its
 members, and a concept of a Sigma, which any member may be enough for ("I like the intersection/union operations as subsymbolic (basic
@@ -1815,26 +1819,27 @@ words, such as noun, collects those symbols. A basic percept's constituents
 are coordinates of perceptual space, and its row is a cone over the
 coordinates its occurrences share ("Above order zero" below).
 
-The first Pi selects for and against ("Pi should select both
-strong for and strong against"). A row's *for entries* are its parts and
-wholes, joined by the product: every one must be present. Its *against
-entries* are the parts that the stored forms nearest to holding it add (the
-`y` of `archery` for `archer`), joined by the union, since any one present is
-enough. In a row the run of parts is the percept's presence, read wherever it
-lies in the extent and the same on both lanes, since a run of parts has no
-against of its own. The wholes are read on their own lanes where the run
-lies, so a space elsewhere in a sentence is not evidence against a word. A
-row's against lane is the union of its wholes' against lanes and of its
-against entries found present, read from the set of parts found in the span
-and never from a code. So the row of `archer` reads for 1 and against 0 on
-`archer`, and for 1 and against 1 on `archery`; the character `7` under the
-property "capital" reads for 0, against 1. A single row is for or against;
-"both" stands across the rows of a reading, one row carrying a property for
-and another against. The Pi of order zero holds only these entries of the
-mereology; no concept writes into it, and it stays full rank.
+The first Pi reads for alone (item 1.4, 2026-11-26; before it, a row also
+read against, by the parts its nearest holders add, by its wholes' against
+lanes and by a conjunction over it). A row's entries are its parts and
+wholes, joined by the product: every one must be present. The run of parts
+is the percept's presence, read wherever it lies in the extent; the wholes
+are read where the run lies. So the row of `archer` reads for 1 on `archer`
+and for 1 on `archery`, and the character `7` under the property "capital"
+reads nothing: it is not perceived to be "not a capital". What tells
+`archer` from `archery` is the row of `archery`, found at the same place:
+when a row is nominated MTM links it with the rows it holds and the rows
+that hold it (a conjunction over it, a stored form nearest to holding its
+form), by an entry of the held row's concept on the holder's row, written at
+zero (`ConceptualSpace.link_holders`); the Sigma learns its value, and
+below zero it is the holder telling against the held. "Both" is therefore a
+concept's and never a row's: a concept is read both where one of its entries
+above zero and one below zero are found together
+([Philosophy](Philosophy.md#negation-needs-a-place-alec-2026-11-26)). The
+Pi of order zero holds only the entries of the mereology; no concept writes
+into it, and it stays full rank.
 
-**The percept's code** is 64 coordinates for parts and 64 for wholes, each on
-the two lanes. Parts build bottom up from all zeros, wholes top down from all
+**The percept's code** is 64 coordinates for parts and 64 for wholes. Parts build bottom up from all zeros, wholes top down from all
 ones; each half bounds the percept on both sides; a form's code is the set of
 its parts, and a whole's code is the OR of the codes of the characters that belong
 to it or the AND of other wholes. The code and its measurements are in
@@ -1847,25 +1852,26 @@ the hypercube, and the only thing touching that is the pi. This applies to
 both .what and .where"): the where enters at the Pi, as a look's match of
 place, and no concept has a weight on a where wire.
 
-**The Not of order zero** (`NotLayer3`, `ConceptualSpace.order_zero_not`)
-takes each basic percept's row, its two values, and offers two signed
-values, the value, for less against, and the not-value. It has no weights: a
-concept's entry chooses the value or the not-value of that row.
+**There is no Not of order zero** (removed in item 1.4; `NotLayer3` stands
+between the Pi and the Sigma of every order above). Nothing stands between
+the first Pi and the Sigma of order zero.
 
-**The concepts of order zero** (`SparseSigmaLayer3`,
-`ConceptualSpace.order_zero`) are the Sigma above on those signed values
-("The order zero signal should be built as: Pi Not
-Sigma"). Order zero is n:n on basic percepts: each nominated row brings one
+**The concepts of order zero** (`SparseSigmaLDU`,
+`ConceptualSpace.order_zero`) are the Sigma on the rows' values. Order zero
+is n:n on basic percepts: each nominated row brings one
 concept, which starts reading only its own row, at one; that is how a row
 starts and not a limit, and a concept may come to read any number of rows.
+An entry below zero at order zero is one percept, present at a place,
+telling against the concept at that place; it is never the denial of a
+concept, which needs the Not above.
 A concept reads no
 percept's code, no place and no time, so the concept of a word reads one
 where its row is present and nothing where it is not, whatever letters the
 reading shares with it; where a form's holder stands in its place (`archer`
-in `archery`) its row reads for and against alike, the Not gives nothing, and
-the concept reads nothing. A concept
+in `archery`) its row reads for, and the concept reads it until its link to
+the holder's row is learned below zero. A concept
 answers only to the rows it is given. A member that joins later writes an
-entry at one on its row, a Not member a Not entry. The Sigma of order zero
+entry at one on its row, a member declared against it an entry below zero. The Sigma of order zero
 is not penalized. The 12 frozen thought predicates are concepts with no
 entry, read by thought as references and never by perception.
 
@@ -1874,8 +1880,10 @@ contraction become the same operation on scalars"). The catalog is 64 bins of
 the value, in order, and there is one table of values for every place: the
 same value at two places is one percept, and its places are told by their
 wires. A bin has one coordinate and shares none. The parts half is the bins at or below the value (`BasicPercepts.value_code`), the wholes half is
-one at the group of the level the value falls to (`BasicPercepts.value_whole`), and its
-against lane is what the wholes half cuts away.
+one at the group of the level the value falls to (`BasicPercepts.value_whole`); a
+value above a level is not read against it. The levels are a line over 0 to
+1 with its ends fixed at 0 and 1, and a level's row is linked to the rows of
+the levels beside it.
 The way back reads the exact value from the table of values. A collection of
 values is read by its bounds, 0 or 1, and not through the Sigma:
 collections at 1, 1 and 2 read for, for and against at an input of 1, and a
@@ -2878,12 +2886,11 @@ Each configured primitive has one concept seat, declared at construction with it
 
 Parts and wholes meet in perception's `BasicPercepts`. A row's code is the
 greatest of its parts' codes in the parts half and the least of its wholes'
-codes in the wholes half, each on the two lanes (`BasicPercepts.subspace_bounds`,
-`against`), and the row is read through the first Pi, whose for entries are
-its parts and wholes and whose against entries are what its nearest holders
-add ([Sigma and Pi Layers](#sigma-and-pi-layers)). The gradient of a read
+codes in the wholes half (`BasicPercepts.subspace_bounds`), and the row is
+read through the first Pi, whose entries are its parts and wholes
+([Sigma and Pi Layers](#sigma-and-pi-layers)). The gradient of a read
 reaches `PrimitiveProperties.members`. A concept of order zero reads the
-signed values the Not gives for the basic percepts' rows, through its entries
+values of the basic percepts' rows, through its entries
 in the sparse Sigma; it reads no code. Symbols have no direct two-tower mereological
 read.
 

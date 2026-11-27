@@ -242,7 +242,7 @@ def test_54c_where_a_forms_holder_stands_in_its_place_the_concept_reads_zero():
     words = (b'archer', b'archery', b'is', b'this', b'reach')
     identity, basic, book, rows = coded(words)
     not_ = NotLayer3(basic.capacity)
-    sigma = SparseSigmaLDU(basic.capacity, len(words), 2 * len(words))
+    sigma = SparseSigmaLDU(basic.capacity, len(words), 3 * len(words))
     concept = {w: k for k, w in enumerate(words)}
     for w in words:
         sigma.add(concept[w], rows[w])
@@ -257,8 +257,20 @@ def test_54c_where_a_forms_holder_stands_in_its_place_the_concept_reads_zero():
     one = float(torch.tanh(torch.tensor(1.)))
     assert table['archer on archer'] == pytest.approx(one, abs=1e-6)
     assert table['is on is'] == pytest.approx(one, abs=1e-6)
-    assert table['archer on archery'] == 0. and table['is on this'] == 0.
     assert table['archer on reach'] == 0.
+    # Item 1.4, §12.1: nothing is read against at the first Pi, so until a
+    # link is learned a word's concept reads its row inside its holder too.
+    assert table['archer on archery'] == pytest.approx(one, abs=1e-6)
+    assert table['is on this'] == pytest.approx(one, abs=1e-6)
+    # The link MTM writes is the concept's entry on its holder's row, at
+    # zero; learned to minus one, the holder found tells against the held.
+    for held, holder in ((b'archer', b'archery'), (b'is', b'this')):
+        entry = sigma.add(concept[held], rows[holder], 0.)
+        assert reads(held, holder) == pytest.approx(one, abs=1e-6)
+        not_.make(sigma, concept[held], rows[holder], weight=1.)
+        assert float(sigma.w()[entry]) == -1.
+        assert reads(held, holder) == pytest.approx(0., abs=1e-6)
+        assert reads(held, held) == pytest.approx(one, abs=1e-6)
 
 
 def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_apart(tmp_path, monkeypatch):
@@ -269,7 +281,8 @@ def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_
     ``alpha`` reads zero on "beta delta"). (d) With the second word omitted,
     what arrives at a look, which the concepts' stage of expectation is
     compared with (``ConceptSpread.look_cost``), gives the words of the
-    sentence read and zero to the words of the other."""
+    sentence read, to the degree of the look's request, and zero to the
+    words of the other."""
     import ConceptSpread
     from Spaces import ConceptualSpace
     from test_item18_expect import lesson, read, omit_second
@@ -324,7 +337,12 @@ def test_54bd_a_words_concept_reads_its_row_and_the_teacher_tells_the_sentences_
         for k, text in enumerate(examples):
             values = torch.tensor(taught[text]).amax(0).tolist()
             mine, other = (values[:2], values[2:]) if k == 0 else (values[2:], values[:2])
-            assert max(mine) > .5 and max(other) == 0.
+            # The request of a look is the read of one shared network
+            # (RequestRead, ae4cb97486), not the word's concept at one, so
+            # what arrives is above nothing by the degree of an untaught
+            # request and no longer above a half; the other sentence's
+            # words still take exactly nothing.
+            assert max(mine) > 0. and max(other) == 0.
     finally:
         model.End(); model.symbolSpace.soft_reset()
 

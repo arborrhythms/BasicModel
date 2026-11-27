@@ -927,8 +927,12 @@ its wires, through a place's row that is nominated when occurrences recur at
 it. Zero is no presence. Reverse returns at each place the centroid of the
 percept a concept of the field reads for there, so an input is put back once
 its regions and places are known. `architecture.intensityPartCardinality` (256) is the number of levels
-of the alphabet of intensity, a codebook over one pixel's value learned by
-vector quantization. `architecture.intensityPartSigma` is the width in places
+of the alphabet of intensity, a codebook over one pixel's value.
+`architecture.intensityLevelsFixed` (true) keeps the levels linear and
+fixed, level k of n at k / (n - 1) on 0 to 1, so that a remembered value
+does not drift over a long run and a run compiled in bfloat16 reads the
+same alphabet; false lets them learn as a linear self-organizing map, very
+slowly, with its ends fixed at 0 and 1. `architecture.intensityPartSigma` is the width in places
 of the Gaussian aperture of a part of intensity (0, the default, no limit);
 the XOR configurations set it to 1, so that a part is one place and no
 concept is pooled across places at the output.

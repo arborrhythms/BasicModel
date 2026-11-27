@@ -63,6 +63,10 @@ def _model(name):
     path = os.path.join(_DATA, name)
     init_config(path=path, defaults_path=os.path.join(_DATA, "model.xml"))
     Language.TheGrammar._configured = False
+    # The data is one object for the process: an image corpus loaded by an
+    # earlier test leaves its own input length on it, and the text range of
+    # the where wires is sized from that. Build from the declared default.
+    vars(Models.TheData).pop('inputLength', None)
     model, _cfg = Models.BasicModel.from_config(path)
     return model
 

@@ -17,7 +17,10 @@ def observe_score_function(result):
     methods = {(cls, name): getattr(cls, name)
         for cls in (MLPTransformChooser,)
         for name in ('score_binary', 'score_unary')}
-    attend = OperationSelectionLayer.attend
+    # Item 1.7 round 6d (ae4cb97486) removed OperationSelectionLayer.attend:
+    # attention's request is read by RequestRead, with no narrowing logits to
+    # re-score. The narrowing walk is observed only where a layer has one.
+    attend = getattr(OperationSelectionLayer, 'attend', None)
     forward = OperationSelectionLayer.forward
     surrogate = BasicModel._compose_score_function_loss
     train = BasicModel._sentence_train_step
@@ -186,7 +189,8 @@ def observe_score_function(result):
     with ExitStack() as stack:
         for cls, name in methods: stack.enter_context(patch.object(cls, name, scorer(cls, name)))
         stack.enter_context(patch.object(OperationSelectionLayer, 'forward', operation))
-        stack.enter_context(patch.object(OperationSelectionLayer, 'attend', attention))
+        if attend is not None:
+            stack.enter_context(patch.object(OperationSelectionLayer, 'attend', attention))
         stack.enter_context(patch.object(BasicModel, '_compose_score_function_loss', compared))
         stack.enter_context(patch.object(BasicModel, '_sentence_train_step', stepped))
         yield

@@ -44,10 +44,14 @@ def test_inverse_exclusion_is_local_and_leaves_other_unaries_eligible(monkeypatc
 
 def test_serial_window_excludes_the_inverse_at_the_same_physical_slot(monkeypatch):
     from Language import LanguageSpace
+    from ChunkJournal import ChunkJournal
     layer = _prefer_unary(monkeypatch)
+    # A rule's head role is read from the chunk journal's rule tables (item
+    # 1.5, commit 573f1a5ca1), so the owner carries a journal of no rules.
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=layer),
                             _structural_context=lambda **kwargs: None,
-                            _compose_binary_rules=(), _compose_unary_rules=())
+                            _compose_binary_rules=(), _compose_unary_rules=(),
+                            chunk_journal=ChunkJournal((), ()))
     owner._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
         _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     buffer = torch.tensor([[[.2, .4], [.7, .3], [0., 0.]]])

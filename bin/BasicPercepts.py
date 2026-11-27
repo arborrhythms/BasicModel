@@ -62,10 +62,10 @@ class PerceptBank:
     two lanes, the where wires and the when wires, each wire ``c`` on the
     lanes ``c`` and ``1 - c``), with its span, the reading that holds it and
     its time; and the code of each row of the first Pi the lookup names, on
-    two lanes (``codes``: for, then against). A look reads a table of at
+    two lanes (``codes``: for, and nothing against). A look reads a table of at
     most ``attendedPercepts`` of them (:func:`attended`)."""
     rows: tuple
-    codes: torch.Tensor             # [rows, 2, width] each row's code: for, then against
+    codes: torch.Tensor             # [rows, 2, width] each row's code: for, and nothing against
     span: torch.Tensor              # [B, occurrences, 2]
     token: torch.Tensor             # [B, occurrences] the reading that holds it, or -1
     time: torch.Tensor              # [B, occurrences] the time of that reading
@@ -77,10 +77,6 @@ class PerceptBank:
     identity_width: int = 0         # the parts half of the what columns
     when_band: torch.Tensor = None       # [B, readings, 4]
     registry: object = None              # the where wires (``WhereRegistry``)
-    # [B, occurrences] whether an occurrence can tell against a row it
-    # holds: a part's event, a stored form, or a run of a row's parts.
-    # ``None``: every occurrence can.
-    holder: torch.Tensor = None
     surface_width: int = 0          # byte grid used to locate the observations
     # Of an image's bank, for each stream, each thing's occurrence and its
     # pixels' occurrences at their places within its box,
@@ -95,7 +91,7 @@ class PerceptBank:
     # Derived from this table’s spans. Replacing its geometry starts a fresh scope.
     scope: torch.Tensor = field(default=None, init=False, repr=False, compare=False)
     # Request-independent Pi reads, scoped to this sentence's opening:
-    # part, whole, added, outside, live location factor, stored location factor.
+    # part, whole, live location factor, stored location factor.
     # replace(bank, ...) deliberately drops these: another table is another read.
     read_basis: tuple = field(default=None, init=False, repr=False, compare=False)
     place_axes: tuple = field(default=None, init=False, repr=False, compare=False)
@@ -397,23 +393,21 @@ def occurrence_parts(raw, spans, spellings, part_codes, catalog, *, escaped_elem
 
 def held_at(bank, table, codes=None):
     """Each row of ``bank`` at each attended percept of ``table`` ``[B, A,
-    columns, 2]``, read from the graded what columns by the least and the
-    greatest (each ``[rows, B, A]``): ``part``, the least of the percept's
-    parts wires over the row's parts; ``whole``, the least, over the wires
-    the row's wholes cut, of one less the percept's wholes wire; ``added``,
-    the greatest of the percept's parts wires over the parts the row's
-    against lane names (a part its nearer holders add). A row's own code
-    is graded too: ``max(wire, 1 - code)`` stands for a part it holds to the
-    degree ``code``. At codes of 0 and 1 these are the read of
-    :meth:`BasicPercepts.read_points`."""
+    columns, 2]``, read from the graded what columns by the least (each
+    ``[rows, B, A]``): ``part``, the least of the percept's parts wires over
+    the row's parts; ``whole``, the least, over the wires the row's wholes
+    cut, of one less the percept's wholes wire. A row's own code is graded
+    too: ``max(wire, 1 - code)`` stands for a part it holds to the degree
+    ``code``. At codes of 0 and 1 these are the read of
+    :meth:`BasicPercepts.read_points`. Nothing is read against a row (item
+    1.4, §10.2)."""
     codes = bank.codes if codes is None else codes
     iw, width = bank.identity_width, bank.width
     point = table[..., :width, 0].to(codes)
-    row, against = codes[:, 0].detach(), codes[:, 1].detach()
+    row = codes[:, 0].detach()
     part = least_of_greater(point[..., :iw], 1 - row[:, :iw])
     whole = least_of_greater(1 - point[..., iw:], row[:, iw:])
-    added = 1 - least_of_greater(1 - point[..., :iw], 1 - against[:, :iw])
-    return part, whole, added
+    return part, whole
 
 
 def fold_boundaries(table, addresses, rows, lengths, *, whole):
@@ -532,12 +526,22 @@ class BasicPercepts(nn.Module):
         self.register_buffer('value_count', torch.zeros((), dtype=torch.long))
         from util import TheXMLConfig
         # The alphabet of intensity: ``intensityPartCardinality`` levels on
-        # the sorted line of values, learned by vector quantization
-        # (:meth:`learn`), evenly on 0..1 before any learning. Each level's
+        # the sorted line of values, evenly on 0..1. ``intensityLevelsFixed``
+        # (the default) keeps them so; without it they are moved very slowly
+        # by what falls to them (:meth:`learn`). Each level's
         # count of the intensities that fell to it, and the reference of its
         # seat in the table of values (0 until it is first met).
         cardinality = int(TheXMLConfig.get('architecture.intensityPartCardinality'))
-        self.register_buffer('levels', torch.linspace(0, 1, cardinality))
+        # Level ``k`` of ``n`` is ``k / (n - 1)`` exactly as a division gives it,
+        # so that a pixel's step over its greatest step is its own level to
+        # the last bit and is put back unchanged.
+        self.register_buffer('levels', torch.arange(cardinality, dtype=torch.get_default_dtype())
+                             / max(1, cardinality - 1))
+        # Kept linear and fixed (``intensityLevelsFixed``): level ``k`` of ``n``
+        # is ``k / (n - 1)`` for the life of the model, whatever falls to it,
+        # so that a compiled run in bfloat16, which cannot hold a level's slow
+        # drift, reads the same alphabet over 0..1 as an eager one.
+        self.levels_fixed = bool(TheXMLConfig.get('architecture.intensityLevelsFixed', True))
         self.register_buffer('level_meets', torch.zeros(cardinality, dtype=torch.long))
         self.register_buffer('level_seats', torch.zeros(cardinality, dtype=torch.long))
         # The levels are the leaves of the whole space of values, as the
@@ -812,23 +816,46 @@ class BasicPercepts(nn.Module):
         values = torch.as_tensor(values, device=self.levels.device).to(self.levels)
         return torch.bucketize(values, (self.levels[1:] + self.levels[:-1]) / 2)
 
+    #: How far one hit moves the level it falls to, as a share of the way to
+    #: it: small, so that the alphabet changes very slowly (Alec, 2026-11-26)
+    #: and what fell to a level goes on falling to it while its row is
+    #: nominated and read.
+    LEVEL_RATE = 1e-4
+    #: How far a hit moves the levels beside the one it falls to, as a share
+    #: of how far it moves its own.
+    NEIGHBOUR_SHARE = .5
+
     @torch.no_grad()
     def learn(self, level, value, count=1):
-        """Vector quantization of the alphabet: ``count`` intensities of mean
-        ``value`` fell to ``level``, which moves to the mean of every
-        intensity that has fallen to it. A level lies within its own cell and
-        so does the mean of what falls to it, and the cells are in order, so
-        the levels stay in order. Its seat in the table of values, where it
-        has one, moves with it."""
+        """The alphabet as a linear self-organizing map over 0 to 1 (Alec,
+        2026-11-26: "each hit both moves its own vector and, to a lesser
+        degree, those of its neighbors. And linked at fixed 0 and 1
+        endpoints"; "they should change very slowly"), unless
+        ``intensityLevelsFixed`` keeps it as it was made: ``count``
+        intensities of mean ``value`` fell to ``level``. Each hit moves the
+        level ``LEVEL_RATE`` of the way to it, and the level on each side
+        ``NEIGHBOUR_SHARE`` of that. The first level stays at 0 and the last
+        at 1, whatever falls to them or beside them. A neighbour moves no
+        farther than the level hit, so the levels stay in order. A level's
+        seat in the table of values, where it has one, moves with it."""
         if not count:
             return
-        total = self.level_meets[level] + int(count)
-        self.levels[level] = torch.lerp(self.levels[level], torch.as_tensor(value).to(self.levels),
-                                        int(count) / float(total))
-        self.level_meets[level] = total
-        reference = int(self.level_seats[level])
-        if reference:
-            self.value_codes[-reference - self.identity_width - 1] = self.levels[level]
+        self.level_meets[level] += int(count)
+        if self.levels_fixed:
+            # The alphabet is linear and fixed: a hit is counted and moves nothing.
+            return
+        last = len(self.levels) - 1
+        rate = 1 - (1 - self.LEVEL_RATE) ** int(count)
+        target = torch.as_tensor(value).to(self.levels)
+        for at, share in ((level, 1.), (level - 1, self.NEIGHBOUR_SHARE), (level + 1, self.NEIGHBOUR_SHARE)):
+            if 0 < at < last:
+                self.levels[at] = torch.lerp(self.levels[at], target, share * rate)
+        # Hits taken together (:meth:`perceive_intensities`) fell before any
+        # level moved; keep the order they were told apart by.
+        self.levels.copy_(torch.cummax(self.levels, 0).values.clamp(0, 1))
+        for at in (level - 1, level, level + 1):
+            if 0 <= at <= last and int(self.level_seats[at]):
+                self.value_codes[-int(self.level_seats[at]) - self.identity_width - 1] = self.levels[at]
 
     def level_seat(self, level):
         """The reference of ``level``'s seat in the table of values, holding
@@ -985,7 +1012,7 @@ class BasicPercepts(nn.Module):
                 if thing is not None:
                     self.things[row] = tuple(thing)
                 self.form_root(row)
-            if self.pi.append(self.member_keys(row), against=self.against_keys(row)) != row:
+            if self.pi.append(self.member_keys(row)) != row:
                 raise RuntimeError('the first Pi disagrees with the basic percept rows')
             if self.value_pi.append(self.value_keys(row)) != row:
                 raise RuntimeError('the Pi of the value space disagrees with the basic percept rows')
@@ -1101,14 +1128,14 @@ class BasicPercepts(nn.Module):
         """Each row of an image's bank at each of its occurrences on two
         lanes, ``[rows, B, O, 2]``, read as a form is (:func:`held_at`): for
         where the occurrence holds the row's part and lies under its whole,
-        against where it holds the part and lies above the whole, nothing
-        where it lies below the part or where nothing is; times the row's
+        nothing where it lies below the part, above the whole or where
+        nothing is, and nothing against (item 1.4, §10.2); times the row's
         entries on the wires for its place (:meth:`parthood`). A value's row
         and an occurrence are compared by their values, the occurrence's the
         level it falls to (:meth:`levels_of`), by less-than-or-equal; their
         codes are the coarser image of it. A thing's row is read at a thing's
         occurrence alone, and any other row at a pixel's (:meth:`thing_events`)."""
-        part, whole, _added = held_at(bank, bank.table)
+        part, whole = held_at(bank, bank.table)
         rows = [int(row) for row in bank.rows]
         value = [n for n, row in enumerate(rows) if self.is_value(row)]
         if value:
@@ -1121,7 +1148,7 @@ class BasicPercepts(nn.Module):
             part[value] = (level[None] >= lower[:, None, None]).to(part)
             whole[value] = (level[None] <= upper[:, None, None]).to(part)
         at = bank.activity[None, ..., 0].to(part) * self.parthood(bank)
-        return self.thing_events(bank, torch.stack((part * whole * at, part * (1 - whole) * at), -1), at)
+        return self.thing_events(bank, torch.stack((part * whole * at, torch.zeros_like(at)), -1), at)
 
     def levels_of(self, bank):
         """The value of each occurrence of an image's bank ``[B, O]``: the
@@ -1430,7 +1457,7 @@ class BasicPercepts(nn.Module):
         """What follows a change of stored forms' codes (rule 61). Each row
         of a changed form takes the parts its form gained, in its occurrence
         and in the first Pi. Every promoted row of a changed form, of a form
-        that a changed or ``new`` form holds as a run (its against lane reads
+        that a changed or ``new`` form holds as a run (its holders are among
         its nearest holders), and of a conjunction over one of them, has its
         code read again, as every code is read (:meth:`lanes`). Returns
         those promoted rows."""
@@ -1463,67 +1490,71 @@ class BasicPercepts(nn.Module):
             self._refresh_pi()
         return rows
 
-    def against(self, row, *, code=None):
-        """A percept's against lane, as wide as its code.
-
-        Parts half: the parts that the form's nearest holders add, the
-        stored forms nearest to holding it as a run (rule 51), where the for
-        lane leaves room, ``min(a, 1 - for)``; a conjunction has none there.
-        Wholes half: what its upper bound cuts away, one less its for lane
-        (rule 52); for a value, every group but its level's (rule 55)."""
-        if not 0 <= int(row) < len(self.index):
-            raise ValueError('unavailable basic percept reference')
-        if int(row) in self.place_rows:
-            return self.value_codes.new_zeros(self.width)
-        code = self.code(row) if code is None else code
-        parts, _wholes = self.occurrences[int(row)]
-        held = code.new_zeros(self.identity_width)
-        identity = getattr(self.native, 'identity', None)
-        raw = None if int(row) in self.conjunctions else self.form_of(row)
-        if identity is not None and raw is not None:
-            atoms = identity.against_atoms(raw)
-            if atoms:
-                bits = torch.stack([identity.atom_code(atom) for atom in atoms]).amax(0)
-                held = torch.minimum(bits.to(code), 1 - code[:self.identity_width].detach().clamp(0, 1))
-        # A conjunction over this percept is a strict whole of it like any
-        # other (rule 53): what its other members add tells against it.
-        holders = [members for whole, members in self.conjunctions.items()
-                   if int(row) in members and whole in self.promoted_rows]
-        if holders:
-            added = torch.stack([self.code(member)[:self.identity_width] for members in holders
-                                 for member in members if member != int(row)]).amax(0)
-            held = torch.maximum(held, torch.minimum(added.to(code),
-                1 - code[:self.identity_width].detach().clamp(0, 1)))
-        return torch.cat((held, 1 - code[self.identity_width:].clamp(0, 1)))
-
-    def follow(self, rows):
-        """``rows``, whose holders may have changed: their against lanes are
-        read again at the next read (:meth:`against`). Returns the promoted
-        ones."""
-        changed = [row for row in map(int, rows) if row in self.promoted_rows]
-        if changed:
-            self.revision += 1
-        return changed
-
-    def against_keys(self, row):
-        """A row's against entries in the first Pi: the parts that its
-        nearest holders add, each as a run of one part (rule 53)."""
-        if int(row) in self.conjunctions or int(row) in self.place_rows:
+    def level_neighbours(self, row):
+        """The rows of the levels beside a value's level. The alphabet of
+        intensities is a linear map over 0 to 1: its levels stay in order
+        (:meth:`learn`), so a level has at most two neighbours, the next
+        below and the next above. Nothing for a row that is no level's."""
+        row = int(row)
+        if (row in self.place_rows or row in self.conjunctions or self.occurrences[row] is None
+                or not self.is_value(row)):
             return []
-        parts, _wholes = self.occurrences[int(row)]
-        identity = getattr(self.native, 'identity', None)
-        if identity is None or min(parts) < -self.identity_width:
+        level = (self.level_seats == int(self.occurrences[row][0][0])).nonzero().flatten()
+        if not len(level):
             return []
-        raw = self.form_of(row)
-        if raw is None:
-            return []
-        return [('ps', (identity.atoms[atom],)) for atom in identity.against_atoms(raw)
-                if atom in identity.atoms]
+        found = []
+        for beside in (int(level[0]) - 1, int(level[0]) + 1):
+            if 0 <= beside < len(self.levels) and int(self.level_seats[beside]):
+                reference = int(self.level_seats[beside])
+                other = self.index.get(((reference,), (reference,) if self.property_width else ()))
+                if other is not None and other != row:
+                    found.append(int(other))
+        return found
+
+    def _root_forms(self):
+        """Every row's form resolved, so that ``form_rows`` names them all."""
+        for row in range(len(self.index)):
+            if row not in self._form_roots and self.occurrences[row] is not None and row not in self.place_rows:
+                self.form_root(row)
+
+    def holder_rows(self, row):
+        """The promoted rows whose finding can tell against ``row``'s
+        concept (item 1.4, §12.1): the conjunctions over it (rule 53), the
+        rows of the stored forms nearest to holding its form as a run (rule
+        51), and, for a value, the levels beside its own
+        (:meth:`level_neighbours`)."""
+        row = int(row)
+        found = [whole for whole, members in self.conjunctions.items() if row in members]
+        found.extend(self.level_neighbours(row))
+        self._root_forms()
+        identity = self._identity()
+        raw = None if row in self.conjunctions or row in self.place_rows or self.is_value(row) else self.form_of(row)
+        if identity is not None and isinstance(raw, bytes):
+            for holder in identity.nearest_holders(raw):
+                found.extend(r for r in self.form_rows.get(bytes(holder), ()) if r != row)
+        return [r for r in dict.fromkeys(found) if r in self.promoted_rows]
+
+    def held_rows(self, row):
+        """The promoted rows that ``row`` holds: its members where it is a
+        conjunction, and the rows of the forms it is a nearest holder of."""
+        row = int(row)
+        if row in self.conjunctions:
+            return [m for m in self.conjunctions[row] if m in self.promoted_rows]
+        # Levels beside one another tell against each other, both ways.
+        found = self.level_neighbours(row)
+        self._root_forms()
+        identity = self._identity()
+        raw = None if row in self.place_rows or found else self.form_of(row)
+        if identity is None or not isinstance(raw, bytes):
+            return [r for r in found if r in self.promoted_rows]
+        for inside in identity.inside.get(raw, ()):
+            if raw in identity.nearest_holders(inside):
+                found.extend(r for r in self.form_rows.get(bytes(inside), ()) if r != row)
+        return [r for r in dict.fromkeys(found) if r in self.promoted_rows]
 
     def _refresh_pi(self):
-        """Write the first Pi again where a row's against entries changed: a
-        form admitted later can be a nearer holder, a part added later a new
-        thing it adds."""
+        """Write the first Pi again where a row's members changed: a form
+        that gained a part has it in its row (:meth:`follow_forms`)."""
         if torch.compiler.is_compiling():
             return
         identity = getattr(self.native, 'identity', None)
@@ -1532,14 +1563,13 @@ class BasicPercepts(nn.Module):
         stamp = (len(identity.words), len(identity.added), identity.revision, len(self.index))
         if getattr(self, '_pi_stamp', None) == stamp:
             return
-        self.pi.refresh_members([(self.member_keys(row), self.against_keys(row))
-                                 for row in range(len(self.index))])
+        self.pi.refresh_members([self.member_keys(row) for row in range(len(self.index))])
         self._pi_stamp = stamp
 
     def lanes(self, row):
-        """A percept's two lanes, ``[2, width]``: for, then against."""
+        """A percept's two lanes, ``[2, width]``: for, and nothing against."""
         code = self.code(row)
-        return torch.stack((code, self.against(row, code=code)))
+        return torch.stack((code, torch.zeros_like(code)))
 
     def code(self, row):
         if not 0 <= int(row) < len(self.index):
@@ -1667,7 +1697,6 @@ class BasicPercepts(nn.Module):
         real = spans[..., 1] > spans[..., 0]
         codes = self.value_codes.new_zeros(B, O, self.width)
         held = codes.new_ones(B, O, self.property_width)
-        outside = codes.new_zeros(B, O, self.property_width)
         identity = getattr(self.native, 'identity', None)
         bank = identity.occurrence_bank(device) if identity is not None and O else None
         if bank is not None:
@@ -1730,19 +1759,12 @@ class BasicPercepts(nn.Module):
             rows = torch.tensor(wholes, device=device)
             evidence = primitive.evidence_on_counts(counts, rows=rows)
             complete = real & (counts.sum(-1) == spans[..., 1] - spans[..., 0])
-            degree, away = (evidence * complete[..., None, None]).to(codes).unbind(-1)
+            degree = (evidence * complete[..., None, None]).to(codes)[..., 0]
             whole_codes = self.whole.lookup_rows(rows)[..., self.identity_width:self.width].to(codes)
             bound = least_of_greater(1 - degree, whole_codes.T).permute(1, 2, 0)             # [B, O, pw]
             held = torch.minimum(held, bound)
-            # A whole witnessed outside to the degree ``g`` over every byte
-            # spanned bounds the against lane of each wire it cuts by ``g``:
-            # a wire holds the least over the wholes that cut it, so that a
-            # whole's own wires do not take another whole's degree.
-            # A wire is cut by a whole wherever its code is below one.
-            uncut = (whole_codes >= 1).to(codes)                                            # [W, pw]
-            outside = least_of_greater(away, uncut.T).permute(1, 2, 0) * (1 - uncut).amax(0)
         codes[..., self.identity_width:] = held
-        return codes * real[..., None], outside * real[..., None]
+        return codes * real[..., None]
 
     def bank_codes(self, rows):
         """Each row's code on two lanes ``[rows, 2, width]``, read from the
@@ -1761,7 +1783,7 @@ class BasicPercepts(nn.Module):
                     result[n, 0] = what.to(result)
             elif row not in self.conjunctions:
                 code = next(kept)
-                result[n] = torch.stack((code, self.against(row, code=code))).detach().to(result)
+                result[n, 0] = code.detach().to(result)
         return result.clamp(0., 1.)
 
     def _run_extents(self, part_ids, part_spans, keys):
@@ -1866,7 +1888,7 @@ class BasicPercepts(nn.Module):
             known, width = None, text.shape[1]
         own = torch.cat((parts, runs, spelled), 1)
         context = torch.cat((whole_spans.to(device), brackets, learned), 1)
-        spans, holder, counts = merge_occurrences(own, context)
+        spans, _own, counts = merge_occurrences(own, context)
         # The precise live width preserves attention's draw among equal
         # nominations, including the RNG consumed when the table is over capacity
         # (replay parity holds within a mode: compiled traces use full width).
@@ -1878,14 +1900,7 @@ class BasicPercepts(nn.Module):
                 seats, limit = torch.stack((counts.max(), ends.max())).tolist()
         else:
             seats = limit = 0
-        spans, holder = spans[:, :seats], holder[:, :seats]
-        if known is not None and known.shape[1]:
-            # Native inspection accepts Python slice bounds on external intervals.
-            bounds = torch.where(spans < 0, text.shape[1] + spans, spans).clamp(0, text.shape[1])
-            lo, hi = bounds.unbind(-1)
-            key = lo * (width + 1) + hi
-            at = torch.searchsorted(known, key.contiguous()).clamp_max(known.shape[1] - 1)
-            holder = holder | ((hi > lo) & (hi <= width) & (known.gather(1, at) == key))
+        spans = spans[:, :seats]
         real = spans[..., 1] > spans[..., 0]
         holds, containing = extent_members(spans, brackets)
         token = (torch.where(holds.any(1), holds.int().argmax(1), -1) if holds.shape[1]
@@ -1901,13 +1916,12 @@ class BasicPercepts(nn.Module):
         # intervals. Preserve legacy negative slice semantics for unusual
         # external intervals, and leave the original source geometry intact.
         surface = raw[..., :limit]
-        what, outside = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans),
-                                              spans, wholes)
+        what = self._occurrence_what((part_ids, part_spans, _primitive, surface, whole_spans),
+                                     spans, wholes)
         dtype = options.get('dtype') or what.dtype
-        # The against lane: nothing on the parts half; on the wholes half, the
-        # degree to which each whole is witnessed outside over the occurrence.
-        what = torch.stack((what, torch.cat((torch.zeros_like(what[..., :self.identity_width]),
-                                             outside), -1)), -1)
+        # Nothing is perceived against (item 1.4, §10.2): the second lane of
+        # an occurrence's what is empty.
+        what = torch.stack((what, torch.zeros_like(what)), -1)
         registry, when_encoding = options.get('registry'), options.get('when_encoding')
         place = torch.where(real, spans[..., 0], -1)
         wires = (registry.encode('text', place).detach().to(what) if registry is not None
@@ -1926,7 +1940,7 @@ class BasicPercepts(nn.Module):
         when_band = None if when_encoding is None else when_encoding.encode(when[..., 0])
         bank = PerceptBank(rows, self.bank_codes(rows).to(device), spans, token, time, table.to(dtype),
                            activity, brackets.clone(), when.clone(), self.width, self.identity_width,
-                           when_band, registry, holder, surface_width=surface.shape[-1])
+                           when_band, registry, surface_width=surface.shape[-1])
         object.__setattr__(bank, 'scope', holds | containing)
         return bank
 
@@ -1944,9 +1958,7 @@ class BasicPercepts(nn.Module):
             # reads the stored ones. Share each graph only with its own readers.
             live = (stored if bank.registry is None else self.place_factor(
                 attended(bank, capacity=bank.token.shape[1]).table, bank.rows))
-            basis = (*held_at(bank, bank.table),
-                     self.outside(bank.table, bank.rows, bank.width),
-                     live, stored)
+            basis = (*held_at(bank, bank.table), live, stored)
             object.__setattr__(bank, 'read_basis', basis)
         return bank
 
@@ -1965,9 +1977,9 @@ class BasicPercepts(nn.Module):
 
         A row's value at an attended percept is the product of its entries
         there: on the what, for where the percept holds the row's parts and
-        the row's wholes hold the percept, against where it holds the parts
-        and lies outside a whole or holds a part that a nearer holder adds
-        (:func:`held_at`); on the where and the when, :meth:`place_factor`.
+        the row's wholes hold the percept (:func:`held_at`), and nothing
+        against (item 1.4, §10.2: evidence at order zero is for); on the
+        where and the when, :meth:`place_factor`.
         A conjunction is the first Pi over its members' rows. A reading's
         value is the greatest over the attended percepts it holds."""
         from PerceptField import PerceptField
@@ -2008,29 +2020,26 @@ class BasicPercepts(nn.Module):
         B, A = presence.shape
         if rows:
             if basis is None:
-                part, whole, added = held_at(bank, look.table)
-                outside = self.outside(look.table, rows, bank.width)
+                part, whole = held_at(bank, look.table)
                 factor = self.place_factor(look.table, rows)
             else:
-                part, whole, added, outside, factor = (
-                    value.gather(2, look.index[None].expand(len(rows), -1, -1)) for value in basis[:5])
+                part, whole, factor = (
+                    value.gather(2, look.index[None].expand(len(rows), -1, -1)) for value in basis[:3])
             at = presence[None] * factor
-            # Only an occurrence of its own tells against what it holds by
-            # what it lacks; any occurrence that holds a row's parts tells
-            # against it to the degree its wholes are witnessed outside there.
-            told = (at if bank.holder is None
-                    else at * (bank.holder.gather(1, look.index) & look.filled).to(at)[None])
-            unheld = torch.maximum((1 - whole) * told, outside * at)
-            lanes = list(torch.stack((part * whole * at, part * torch.maximum(unheld, added * told)), -1))
+            # Evidence at order zero is for (item 1.4, §10.2): a row is read
+            # where its parts are found under its wholes, and nothing is read
+            # against it. What tells against a concept is another row found
+            # at the place, by a weight its Sigma learns.
+            lanes = list(torch.stack((part * whole * at, torch.zeros_like(at)), -1))
             # Members come before the conjunctions over them.
             members = [('bp', r) for r in rows]
             for n, row in enumerate(rows):
                 if row in self.conjunctions:
                     lanes[n] = self.pi(torch.stack(lanes), (row,), members)[0]
-            events = self.held(torch.stack(lanes), rows)
+            events = torch.stack(lanes)
             values = by_reading(events)
             boundaries = torch.stack((by_reading(torch.stack((part * at, torch.zeros_like(at)), -1)),
-                                      by_reading(torch.stack((part * whole * at, part * unheld), -1))))
+                                      by_reading(torch.stack((part * whole * at, torch.zeros_like(at)), -1))))
         else:
             events = look.table.new_zeros(0, B, A, 2)
             values = look.table.new_zeros(0, B, K, 2)
@@ -2064,7 +2073,7 @@ class BasicPercepts(nn.Module):
         activity = real[..., None].expand(-1, -1, 2).to(what)
         return PerceptBank((), what.new_zeros(0, 2, self.width), span, token, time, table, activity,
                            where, torch.full_like(where, int(time.amax()) if time.numel() else 0),
-                           self.width, self.identity_width, None, registry, None,
+                           self.width, self.identity_width, None, registry,
                            values=values.to(self.value_codes) * real)
 
     def aperture(self, run):
@@ -2277,58 +2286,7 @@ class BasicPercepts(nn.Module):
         for n, row in enumerate(rows):
             if row in self.conjunctions:
                 lanes[n] = self.pi(torch.stack(lanes), (row,), members)[0]
-        return self.held(torch.stack(lanes), rows)
-
-    def outside(self, table, rows, width):
-        """How far each row's own wholes are witnessed outside over each
-        attended percept of ``table``, ``[rows, B, A]``: for each whole, the
-        greatest over the wires it cuts of the percept's wholes wire on the
-        against lane (each wire the least over the wholes that cut it); for a
-        row, the greatest over its wholes. Nothing for a row with no whole of
-        its own (a place, a conjunction)."""
-        B, A = table.shape[:2]
-        named = [() if row in self.place_rows or row in self.conjunctions or self.occurrences[row] is None
-                 else tuple(w for w in self.occurrences[row][1] if w >= -self.identity_width) for row in rows]
-        wholes = sorted({w for ws in named for w in ws})
-        out = table.new_zeros(len(rows), B, A)
-        if not wholes or not self.property_width:
-            return out
-        kept = (self.whole_codes(wholes).detach() >= 1).to(table)                     # [W, pw]
-        away = table[..., self.identity_width:width, 1]                                # [B, A, pw]
-        degree = 1 - least_of_greater(1 - away, kept)                                  # [W, B, A]
-        position = {w: n for n, w in enumerate(wholes)}
-        for r, ws in enumerate(named):
-            if ws:
-                out[r] = degree[[position[w] for w in ws]].amax(0)
-        return out
-
-    def held(self, lanes, rows):
-        """Each row's lanes ``[K, ..., 2]`` with what its conjunctions add:
-        a conjunction over a row is one of its holders (rule 53), so where
-        the conjunction's other members are all found, what tells against
-        the row is found, and the row is read both (its holder stands in
-        its place). Joined by the union, as the first Pi's against entries."""
-        rows = [int(row) for row in rows]
-        position = {row: index for index, row in enumerate(rows)}
-        holders = {row: [(whole, members) for whole, members in self.conjunctions.items()
-                         if row in members and all(m in position for m in members)] for row in rows}
-        if not any(holders.values()):
-            return lanes
-        result = list(lanes)
-        for row, found in holders.items():
-            if not found:
-                continue
-            index = position[row]
-            wholes, members = zip(*found)
-            promoted = self.promoted[list(wholes)].to(device=lanes[index].device)
-            others = torch.stack([torch.stack([lanes[position[m]][..., 0] for m in group if m != row]).amin(0)
-                                  for group in members])
-            active = promoted.reshape(-1, *((1,) * (others.ndim - 1)))
-            added = 1 - (1 - torch.where(active, others.clamp(0, 1), 0.)).prod(0)
-            against = 1 - (1 - lanes[index][..., 1]) * (1 - lanes[index][..., 0] * added)
-            against = torch.where(promoted.any(), against, lanes[index][..., 1])
-            result[index] = torch.stack((lanes[index][..., 0], against), -1)
-        return torch.stack(result)
+        return torch.stack(lanes)
 
     def lookup_rows(self, rows, *, valid=None, candidates=None):
         from Meaning import require_sentence_tensor

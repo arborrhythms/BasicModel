@@ -221,6 +221,8 @@ def test_reconstruction_extends_only_with_agreeing_proper_occurrences():
     identity = SimpleNamespace(nested={name: children}, revision=0)
     basic = SimpleNamespace(index=[0], native=SimpleNamespace(identity=identity), revision=0,
                             value_codes=torch.zeros(1), form_of=lambda _: name,
+                            # No native root: the spelling is read by the form's name.
+                            form_root=lambda _: None,
                             place_rows={}, conjunctions={}, is_value=lambda _: False)
     rows, table = codebook(basic)
     assert rows == [0] and bytes(table[0].tolist()) == spelling(basic, 0) == b'hello'

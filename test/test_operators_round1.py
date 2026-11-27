@@ -32,7 +32,10 @@ def test_attention_score_function_has_greedy_baseline_and_uniform_counts(advanta
 def test_attend_gives_a_request_over_concepts_on_two_lanes():
     """``attend``'s request is the read of the conceptual field
     (``RequestRead.request``, rule 80): for each concept row and stream, how
-    far it is asked for, in 0 to 1, and asked against by nothing."""
+    far it is asked for, in 0 to 1, and asked against by nothing. Under the
+    concept rows the request names a place as a start half and an extent
+    half, each ``WHERE_WIRES`` wide (item 1.5, commit 4d74726ce8, gave the
+    spatial request its extent, ``RequestRead.where_end``)."""
     from RequestRead import RequestRead
     from SentenceLooks import attend
     rows, streams = 3, 2
@@ -42,7 +45,7 @@ def test_attend_gives_a_request_over_concepts_on_two_lanes():
                    torch.ones(streams))
     request = attend(model, read.units(x))
     from BasicPercepts import WHERE_WIRES
-    assert request.shape == (rows + WHERE_WIRES, streams, 2)
+    assert request.shape == (rows + 2 * WHERE_WIRES, streams, 2)
     assert not request[rows:].any()
     # The tops start at nothing: every concept is asked for by one half.
     torch.testing.assert_close(request[:rows, :, 0], torch.full_like(request[:rows, :, 0], .5))
@@ -55,7 +58,8 @@ def test_attend_gives_a_request_over_concepts_on_two_lanes():
     units = read.units(x)
     request = attend(model, units)
     torch.testing.assert_close(request[:rows, :, 0], torch.sigmoid(read.ask(units)).transpose(0, 1))
-    torch.testing.assert_close(request[rows:, :, 0], read.where(units).T)
+    torch.testing.assert_close(request[rows:rows + WHERE_WIRES, :, 0], read.where(units).T)
+    torch.testing.assert_close(request[rows + WHERE_WIRES:, :, 0], read.where_end(units).T)
     assert not request[..., 1].any()
     request[..., 0].sum().backward()
     assert bool(read.ask.weight.grad.abs().sum() > 0)

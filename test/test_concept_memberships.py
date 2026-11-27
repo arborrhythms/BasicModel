@@ -32,7 +32,9 @@ def test_one_property_has_the_four_extent_corners():
     # property 0 holds at 49 and not at 48; property 1 the reverse.
     raw = torch.tensor([[49, 49], [48, 48], [48, 49], [49, 48]])
     basic, field = cs.basic_percepts, cs._percept_field
-    at = {(0, 49): [1., 0.], (0, 48): [0., 1.], (1, 49): [0., 1.], (1, 48): [1., 0.]}
+    # Item 1.4, §10.2: where a property does not hold its row reads nothing,
+    # and nothing is read against.
+    at = {(0, 49): [1., 0.], (0, 48): [0., 0.], (1, 49): [0., 0.], (1, 48): [1., 0.]}
     for prop in (0, 1):
         for part in (48, 49):
             index = field.keys.index(('bp', basic.index[((part,), (prop,))]))
@@ -82,7 +84,7 @@ def test_a_located_part_need_not_pervade_but_the_whole_property_must():
     # positions. A missing property adds no counterevidence to the present part.
     # Inspect this occurrence before the extent readout union.
     torch.testing.assert_close(cs._percept_field.event_evidence([('bp', cs.basic_percepts.index[((part,), (0,))]) for part in (7, 8)]).amax(0)[:, 0, -1].cpu(),
-                               torch.tensor([[1., 0.], [0., 0.], [0., 1.]]))
+                               torch.tensor([[1., 0.], [0., 0.], [0., 0.]]))  # item 1.4: nothing against
     # A missing byte supplies neither pole, including a missing complement.
     raw[2, 1] = 0
     cs.cs_read_memberships((part_ids, parts, primitive, raw, whole), whole)
@@ -151,7 +153,7 @@ def test_fractional_feature_weights_use_per_pole_min_and_max_extent_union():
     # percepts that carry it: the part present, times the property's lanes.
     field = cs._percept_field
     rows = [field.keys.index(('bp', cs.basic_percepts.index[((65,), (prop,))])) for prop in (0, 1)]
-    torch.testing.assert_close(field.values[rows, 0, 0].detach(), torch.tensor([[.25, .75], [.36, .64]]))
+    torch.testing.assert_close(field.values[rows, 0, 0].detach(), torch.tensor([[.25, 0.], [.36, 0.]]))  # item 1.4: for alone
     # The concept is one signed number, for less against, read by its column.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))
     torch.testing.assert_close(read[0, 0, 0], lanes.to(read), atol=1e-5, rtol=1e-5)
@@ -228,11 +230,25 @@ def test_definition_boundary_preserves_gradient_owned_codes(tmp_path):
     codes = cs.similarity_codebook.getW().detach().clone()
     cs.Reset(hard=True)
     torch.testing.assert_close(cs.similarity_codebook.getW(), codes, rtol=0, atol=0)
+    # A row is nominated on recurrence and brings a concept, which changes
+    # the field for a reason that is not the codes: present the input until
+    # what it nominates is nominated, so that the two reads compared differ
+    # in the codes alone.
+    rows, steady = -1, 0
+    for _ in range(16 * cs.concept_mint_count):
+        model.forward(x)
+        model.End()
+        steady = steady + 1 if len(cs.basic_percepts.index) == rows else 0
+        rows = len(cs.basic_percepts.index)
+        if steady > cs.concept_mint_count:
+            break
+    assert steady > cs.concept_mint_count
     model.forward(x)
     before = cs._cs_last_a0.clone()
     with torch.no_grad():
         cs.similarity_codebook.getW().normal_()
     model.End()
     model.forward(x)
+    assert len(cs.basic_percepts.index) == rows
     torch.testing.assert_close(cs._cs_last_a0, before, atol=0, rtol=0)
     model.End()

@@ -1,17 +1,18 @@
 """The first layer: basic percepts as rows of a Pi, concepts as a sparse Sigma.
 
-A basic percept is one row of the first Pi over its parts and wholes, on two
-lanes. Its value for a reading is the product of its members' memberships,
-each to the power of its weight, on that lane alone. A row is admitted only
-when MTM nominates it, and it brings a concept, which starts with one entry,
-on that row, at one. The Pi alone reads the percepts' codes.
+A basic percept is one row of the first Pi over its parts and wholes. Its
+value for a reading is the product of its members' memberships, each to the
+power of its weight. Evidence at order zero is positive (item 1.4): a row is
+read for, to a degree, and nothing is read against it; the second lane of a
+row's value is kept and is empty. A row is admitted only when MTM nominates
+it, and it brings a concept, which starts with one entry, on that row, at
+one. The Pi alone reads the percepts' codes.
 
-After the Pi, the Not (``NotLayer3``) offers two options for each row: its
-value, for less against, and its not-value, against less for. The concepts
-of order zero are a ``SparseSigmaLDU`` over those options: a concept
-reads each row it has an entry on by one of the two, with a weight at zero
-or above, so a concept of presence reads a row's value and a concept of
-absence its not-value. Any number of concepts may read one row.
+The concepts of order zero are a ``SparseSigmaLDU`` over the rows' values.
+There is no Not between the first Pi and this Sigma. What tells against a
+concept is another row found at the same place, by an entry below zero that
+the Sigma learns on a link MTM writes at zero when that row is nominated
+(``ConceptualSpace.link_holders``). Any number of concepts may read one row.
 """
 import torch
 from torch import nn
@@ -26,9 +27,7 @@ class SparsePiLayer3(nn.Module):
 
     Row ``r`` is a basic percept and its members are keys of the percept
     tower (a part run or a whole). Its entries are its members, addressed by a member id that names one
-    key. Its for entries are joined by the product; its against entries
-    (the parts that the stored forms nearest to holding it add) are joined
-    by the union, any one present being enough. Every row also has its own reading on the diagonal; a basic
+    key, joined by the product. Every row also has its own reading on the diagonal; a basic
     percept is read only through its members, so its own reading is one and
     adds nothing to the product. The bias is zero. The storage is allocated
     at construction (``rows`` rows and ``entries`` entries) and grows into
@@ -45,7 +44,6 @@ class SparsePiLayer3(nn.Module):
         self.register_buffer('crow', torch.zeros(rows + 1, dtype=torch.long), persistent=False)
         self.register_buffer('col', torch.full((entries,), -1, dtype=torch.long), persistent=False)
         self.register_buffer('value', torch.zeros(2, entries), persistent=False)
-        self.register_buffer('against', torch.zeros(entries, dtype=torch.bool), persistent=False)
         self.register_buffer('ccol', torch.zeros(0, dtype=torch.long), persistent=False)
         self.register_buffer('crow_of', torch.zeros(0, dtype=torch.long), persistent=False)
         self.n_rows = 0
@@ -66,29 +64,25 @@ class SparsePiLayer3(nn.Module):
         return found
 
     @staticmethod
-    def _row_ids(member, keys, against):
-        positive = dict.fromkeys(map(member, keys))
-        negative = dict.fromkeys(map(member, against))
-        return list(positive), [i for i in negative if i not in positive]
+    def _row_ids(member, keys):
+        return list(dict.fromkeys(map(member, keys)))
 
-    def append(self, keys, weight=1.0, against=(), weights=None):
+    def append(self, keys, weight=1.0, weights=None):
         """Write the next row over its members at ``weight`` on both lanes
-        (or each at its own of ``weights``), then its against entries."""
-        ids, opposed = self._row_ids(self.member, keys, against)
+        (or each at its own of ``weights``)."""
+        ids = self._row_ids(self.member, keys)
         row, start = self.n_rows, self.nnz
         if row + 1 >= len(self.crow):
             raise OverflowError('the first Pi has no room for another row')
-        if start + len(ids) + len(opposed) > len(self.col):
+        if start + len(ids) > len(self.col):
             raise OverflowError('the first Pi has no room for another entry')
-        end = start + len(ids) + len(opposed)
+        end = start + len(ids)
         if end > start:
-            self.col[start:end] = torch.tensor(ids + opposed, dtype=torch.long, device=self.col.device)
+            self.col[start:end] = torch.tensor(ids, dtype=torch.long, device=self.col.device)
             self.value[:, start:end] = float(weight)
             if weights is not None:
-                self.value[:, start:start + len(ids)] = torch.tensor(
+                self.value[:, start:end] = torch.tensor(
                     [float(w) for w in weights][:len(ids)], dtype=self.value.dtype, device=self.value.device)
-            self.against[start:end] = False
-            self.against[start + len(ids):end] = True
         self.crow[row + 1] = end
         self.n_rows = row + 1
         self._nnz = end
@@ -97,59 +91,42 @@ class SparsePiLayer3(nn.Module):
         return row
 
     def refresh_members(self, rows):
-        """Refresh an entire changed membership topology in the existing CSR storage."""
-        # Compare one snapshot. An unchanged topology keeps its current
-        # weights, including when a holder enumerates the same against keys
-        # in a different order.
+        """Refresh an entire changed membership topology in the existing CSR
+        storage: ``rows`` is each row's member keys."""
+        # Compare one snapshot. An unchanged topology keeps its current weights.
         count = self.n_rows
-        signed = torch.where(self.against[:self.nnz], ~self.col[:self.nnz], self.col[:self.nnz])
-        snapshot = torch.cat((self.crow[:count + 1], signed)).tolist()
+        snapshot = torch.cat((self.crow[:count + 1], self.col[:self.nnz])).tolist()
         ends, entries = snapshot[:count + 1], snapshot[count + 1:]
         if len(rows) == count:
-            for row, (positive, negative) in enumerate(rows):
-                old = entries[ends[row]:ends[row + 1]]
-                if ([self.keys[i] for i in old if i >= 0] != positive or
-                        sorted(self.keys[~i] for i in old if i < 0) != sorted(negative)):
+            for row, keys in enumerate(rows):
+                if [self.keys[i] for i in entries[ends[row]:ends[row + 1]]] != list(dict.fromkeys(keys)):
                     break
             else:
                 return
 
-        # Use the same encounter order as append: a row's for keys first,
-        # then its against keys. A repeated key has one entry on a row.
-        members, columns, against, ends = {}, [], [], [0]
+        # Use the same encounter order as append. A repeated key has one
+        # entry on a row.
+        members, columns, ends = {}, [], [0]
         def member(key):
             return members.setdefault(key, len(members))
-        for positive, negative in rows:
-            first, extra = self._row_ids(member, positive, negative)
-            columns.extend(first)
-            columns.extend(extra)
-            against.extend([False] * len(first))
-            against.extend([True] * len(extra))
+        for keys in rows:
+            columns.extend(self._row_ids(member, keys))
             ends.append(len(columns))
         if len(ends) > len(self.crow) or len(columns) > len(self.col):
             raise OverflowError('the first Pi has no room for the refreshed topology')
         topology = self.col.new_tensor(ends + columns)
-        polarity = self.against.new_tensor(against)
         self.clear()
         self.members, self.keys = members, list(members)
         self.n_rows, self._nnz = len(rows), len(columns)
         self.crow[:len(ends)].copy_(topology[:len(ends)])
         self.col[:self.nnz].copy_(topology[len(ends):])
-        self.against[:self.nnz].copy_(polarity)
         self.value[:, :self.nnz].fill_(1.)
         self._columns_stale = True
 
     def row_members(self, row):
-        """A row's for entries."""
+        """A row's entries."""
         start, end = int(self.crow[row]), int(self.crow[row + 1])
-        return [self.keys[int(member)] for member, opposed in
-                zip(self.col[start:end].tolist(), self.against[start:end].tolist()) if not opposed]
-
-    def row_against(self, row):
-        """A row's against entries."""
-        start, end = int(self.crow[row]), int(self.crow[row + 1])
-        return [self.keys[int(member)] for member, opposed in
-                zip(self.col[start:end].tolist(), self.against[start:end].tolist()) if opposed]
+        return [self.keys[int(member)] for member in self.col[start:end].tolist()]
 
     def rows_reading(self, key):
         """The rows that have ``key`` as an entry, by the column index."""
@@ -186,7 +163,7 @@ class SparsePiLayer3(nn.Module):
         missing = set()
         for slot, row in enumerate(rows):
             start, end = int(self.crow[row]), int(self.crow[row + 1])
-            entries = [e for e in range(start, end) if not bool(self.against[e])]
+            entries = list(range(start, end))
             if not entries:
                 missing.add(slot)
             for entry in entries:
@@ -217,30 +194,10 @@ class SparsePiLayer3(nn.Module):
             value = value * keep.reshape(-1, *([1] * (value.ndim - 1)))
         return value
 
-    def opposed(self, memberships, rows, keys):
-        """Each of ``rows``' against entries joined by the union on the for
-        lane of their memberships, ``1 - prod (1 - m)``: any one present
-        tells against the row. A row with none, or whose entries are not
-        among ``keys``, reads zero. ``[len(rows), ...]``."""
-        position = {key: index for index, key in enumerate(keys)}
-        result = []
-        for row in rows:
-            found = [position[key] for key in self.row_against(row) if key in position]
-            if not found:
-                result.append(memberships.new_zeros(memberships.shape[1:-1]))
-                continue
-            index = torch.tensor(found, dtype=torch.long, device=memberships.device)
-            present = memberships.index_select(0, index)[..., 0].clamp(0, 1)
-            result.append(1 - (1 - present).prod(0))
-        if not result:
-            return memberships.new_zeros(0, *memberships.shape[1:-1])
-        return torch.stack(result)
-
     def clear(self):
         self.crow.zero_()
         self.col.fill_(-1)
         self.value.zero_()
-        self.against.zero_()
         self.n_rows, self.members, self.keys = 0, {}, []
         self._nnz = 0
         self._index_columns()

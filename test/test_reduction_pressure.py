@@ -25,10 +25,14 @@ def unary_first():
 def test_online_deadline_uses_full_depth_behind_the_two_slot_window():
     from Models import BasicModel
     from Spaces import ConceptualSpace
+    from ChunkJournal import ChunkJournal
     step = unary_first()
     owner = SimpleNamespace(language_layer=SimpleNamespace(operation_layer=step),
                             _compose_binary_rules=(), _compose_unary_rules=(),
-                            _structural_context=lambda **kwargs: None)
+                            _structural_context=lambda **kwargs: None,
+                            # The chosen rule's head role is read from the chunk
+                            # journal's rule tables (573f1a5ca1).
+                            chunk_journal=ChunkJournal((), ()))
     owner._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
         _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
     # Before the word arrives there are K-1 terms. After its deposit, d=K.

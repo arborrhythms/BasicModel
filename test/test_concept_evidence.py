@@ -41,11 +41,13 @@ def test_membership_read_keeps_both_until_symbol_readout():
     # The property is present at the first event.
     torch.testing.assert_close(field.event_evidence([field.keys[i] for i in carrying]).amax(0)[0, 0, 0],
                                torch.tensor([1., 0.]))
-    # Seen true and false in the extent, it is both across the rows of the
-    # basic percepts that carry it: the row of 49 reads for where it lies,
-    # the row of 48 against.
+    # Item 1.4, §10.2: the row of 49 reads for where it lies; the row of 48
+    # under this property, whose part is found outside it, reads nothing,
+    # and nothing is read against. The concept is both all the same, by
+    # what is present: 48 is found under the other property, a row read
+    # for, on which the concept has an entry below zero.
     basic = cs.basic_percepts
-    for part, expected in ((49, [1., 0.]), (48, [0., 1.])):
+    for part, expected in ((49, [1., 0.]), (48, [0., 0.])):
         index = field.keys.index(('bp', basic.index[((part,), (0,))]))
         torch.testing.assert_close(field.values[index, 0, 0].detach().cpu(), torch.tensor(expected))
     torch.testing.assert_close(cs.order_zero_both(field, [0]), torch.ones(1, 1, 1))

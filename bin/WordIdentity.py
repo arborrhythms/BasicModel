@@ -150,9 +150,24 @@ class WordIdentity(nn.Module):
             basis.register_buffer('fixed_row_mask', torch.zeros(store._capacity, dtype=torch.bool, device=basis.W.device))
             basis.register_buffer('fixed_row_codes', torch.zeros_like(basis.W, requires_grad=False))
 
+    #: Whether the parts half of a code is read live from the table of forms
+    #: (item 1.5, ``53825210c5``). A table row is a point, placed between its
+    #: links and its holders, with every coordinate lit; the first Pi asks
+    #: whether a percept holds every part of a row, which is a question of
+    #: sets. Read through it, every row answered alike (on the lesson a word
+    #: read 0.77 at itself and 0.85 at another word), so the Pi reads a form
+    #: as the set of its parts again, the OR of its parts' codes, as the
+    #: wholes half is the OR of its groups. The table still names the forms,
+    #: their links and their holders, and keeps its points for nearness.
+    LIVE_TABLE_CODES = False
+
+    def _reads_table(self):
+        return self.LIVE_TABLE_CODES and getattr(self, 'forms_table', None) is not None
+
     def atom_code(self, atom):
-        """A part's live table point; isolated stores without a table keep their legacy codes."""
-        if getattr(self, 'forms_table', None) is not None:
+        """A part's fixed bits, drawn over every coordinate of the parts half
+        (its live table point where ``LIVE_TABLE_CODES``)."""
+        if self._reads_table():
             return self._table_code(bytes_of(atom[1]))
         if atom not in self._codes:
             result = torch.zeros(self.width, device='cpu')
@@ -168,6 +183,8 @@ class WordIdentity(nn.Module):
         self.__dict__.pop('_registered_roots', None)
         basis = self.store._basis
         object.__setattr__(basis, 'form_links', table)
+        # The codebook reads the table's points live only where the codes are the table's.
+        object.__setattr__(basis, 'form_codes_live', bool(self.LIVE_TABLE_CODES))
         basis.fixed_parts_width = self.width
         if not hasattr(basis, 'fixed_form_rows'):
             basis.register_buffer('fixed_form_rows', torch.full((self.store._capacity,), -1,
@@ -497,15 +514,6 @@ class WordIdentity(nn.Module):
         least = min(map(len, holders))
         return tuple(sorted(h for h in holders if len(h) == least))
 
-    def against_atoms(self, raw):
-        """The parts that a form's nearest holders add to it."""
-        own = set(self.words.get(bytes(raw), ()))
-        # A part whose run holds the form is found only where the characters
-        # its holder adds are found, so it adds nothing to them.
-        text = text_of(raw)
-        return tuple(sorted({atom for holder in self.nearest_holders(raw)
-                             for atom in self.words[holder] if atom not in own and text not in atom[1]}))
-
     def atoms_of(self, raw):
         """The parts of a form: its characters and the added parts inside it
         (a stored form being one), in the order the parts were added."""
@@ -584,6 +592,7 @@ class WordIdentity(nn.Module):
             forms = None
             if getattr(self, 'forms_table', None) is not None:
                 forms = addresses.new_tensor([self._table_row(bytes_of(atom[1])) for atom in members])
+            if self._reads_table():
                 codes = self._table_codes(forms).to(basis.W)
             else:
                 codes = torch.stack([self.atom_code(atom) for atom in members]).to(basis.W)
@@ -605,16 +614,23 @@ class WordIdentity(nn.Module):
         keys.append(self.WORD_PREFIX + raw)
         keys.extend(self.word_rows[holder] for holder in carriers)
         forms = self.forms_table.left.new_tensor([self._table_row(word) for word in spellings], dtype=torch.long)
-        codes = self._storage_code(self._table_codes(forms)).to(self.store._basis.W)
+        if self._reads_table():
+            points = self._table_codes(forms)
+        else:
+            # The set of parts: each atom's own bits, each form the OR of its parts'.
+            points = torch.stack([self.atom_code(atom) for atom in members]
+                                 + [self.form(word) for word in (raw, *carriers)])
+        codes = self._storage_code(points).to(self.store._basis.W)
         rows = self.store.write_fixed_forms(keys, forms, codes)
         self.atoms.update(zip(members, rows[:len(members)], strict=True))
         self._fixed_bytes.update(zip(rows, spellings, strict=True))
         return rows[len(members)]
 
     def form(self, raw):
-        """A form's live table point, or the legacy fold in an isolated store."""
+        """The fold of a form's parts' codes in the fixed width: the OR of
+        them (its live table point where ``LIVE_TABLE_CODES``)."""
         raw = bytes(raw)
-        if getattr(self, 'forms_table', None) is not None:
+        if self._reads_table():
             return self._table_code(raw)
         atoms = self.words.get(raw) or self.atoms_of(raw)
         return torch.stack([self.atom_code(a) for a in atoms]).amax(0)
@@ -634,6 +650,7 @@ class WordIdentity(nn.Module):
         forms = None
         if getattr(self, 'forms_table', None) is not None:
             forms = rows.new_tensor([self._table_row(word) for word in words])
+        if self._reads_table():
             value = self._table_codes(forms).to(basis.W)
         else:
             value = torch.stack([self.form(word) for word in words]).to(basis.W)

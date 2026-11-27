@@ -269,7 +269,10 @@ def restore_warmup(model, path, restore):
                     current[key].copy_(value)
     final=model.state_dict()
     for key,value in saved.items():
-        if key.endswith('._extra_state'):
+        # A store's per-stream sentence root index is saved as its own long
+        # tensor (item 1.5, commit 951a4771ac), and is retained exactly like
+        # any tensor below. Only a byte vector is packed metadata.
+        if key.endswith('._extra_state') and value.dtype==torch.uint8 and value.ndim==1:
             # torch.save's byte envelope is not a canonical metadata encoding.
             from IndependentComponents import _unpack_state
             actual,expected=_unpack_state(final[key]),_unpack_state(value)

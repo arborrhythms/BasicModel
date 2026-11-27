@@ -334,8 +334,11 @@ class TestPerceptStoreIntegration(unittest.TestCase):
             Models.TheData.load("xor")
         ps_space = m.perceptualSpace
         ps = ps_space.percept_store
-        self.assertEqual(len(ps), 0,
-                         "PerceptStore should start empty")
+        # The store starts with no word: only NUL's row, which pads the
+        # stem's part grid from the first sentence (item 1.5 stage 1,
+        # ea79693b8d).
+        self.assertEqual([ps.bytes_for(pid) for pid in range(len(ps))], [b"\x00"],
+                         "PerceptStore should start with NUL's pad row alone")
         # Build a fake upstream SubSpace with host tokens stamped on.
         # The _embed_radix path uses _host_tokens when present and
         # only touches what_buf to decide non-emptiness, so we just

@@ -186,21 +186,16 @@ def rows_read(basic, bank):
     if not bank.rows:
         return bank.table.new_zeros(0, *bank.token.shape, 2)
     if bank.read_basis is None:
-        part, whole, added = held_at(bank, bank.table)
+        part, whole = held_at(bank, bank.table)
         at = basic.place_factor(bank.table, bank.rows)
-        outside = basic.outside(bank.table, bank.rows, bank.width)
     else:
-        part, whole, added, outside, _, at = bank.read_basis
-    # As the way up reads it (:meth:`BasicPercepts.BasicPercepts.read_bank`),
-    # each occurrence wholly present: only an occurrence of its own tells
-    # against what it holds by what it lacks.
-    told = at if bank.holder is None else at * bank.holder.to(at)[None]
-    unheld = torch.maximum((1 - whole) * told, outside * at)
+        part, whole, _, at = bank.read_basis
+    # As the way up reads it (:meth:`BasicPercepts.BasicPercepts.read_bank`):
+    # for alone, nothing against (item 1.4, §10.2).
     conjunctions = getattr(basic, 'conjunctions', {})
     keep = torch.tensor([row not in conjunctions for row in bank.rows], device=at.device)
     keep = keep[:, None, None].to(at)
-    return torch.stack((part * whole * at * keep,
-                        part * torch.maximum(unheld, added * told) * keep), -1)
+    return torch.stack((part * whole * at * keep, torch.zeros_like(at)), -1)
 
 
 def through_the_not(read, token):

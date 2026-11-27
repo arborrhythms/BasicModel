@@ -59,20 +59,20 @@ def test_the_first_pi_is_stored_as_compressed_rows_in_capacity_allocated_beforeh
 
 def test_refreshed_pi_preserves_weights_until_a_row_changes():
     pi = SparsePiLayer3(3, 6)
-    pi.append(['a'], weight=.25, against=['b', 'c'])
-    pi.refresh_members([(['a'], ['c', 'b'])])
+    pi.append(['a', 'b', 'c'], weight=.25)
+    pi.refresh_members([['a', 'b', 'c']])
     assert pi.value[0, :3].tolist() == [.25] * 3
-    rows = [(['a', 'a', 'c'], ['a', 'd']), ([], ['e']), (['b'], [])]
+    rows = [['a', 'a', 'c', 'd'], [], ['b']]
     pi.refresh_members(rows)
     expected = SparsePiLayer3(3, 6)
-    for positive, negative in rows:
-        expected.append(positive, against=negative)
+    for keys in rows:
+        expected.append(keys)
     assert pi.keys == expected.keys
-    for name in ('crow', 'col', 'against', 'value'):
+    for name in ('crow', 'col', 'value'):
         assert torch.equal(getattr(pi, name), getattr(expected, name))
     assert pi.rows_reading('d') == expected.rows_reading('d')
     with pytest.raises(OverflowError):
-        pi.refresh_members(rows + [(['overflow'], [])])
+        pi.refresh_members(rows + [['overflow']])
     assert pi.keys == expected.keys
 
 
@@ -242,9 +242,10 @@ def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
     model, saved with it, with no penalty. It has no input but the rows' signed
     values: no code and no place (rule 62)."""
     owner, basic = lesson['owner'], lesson['basic']
-    sigma, not_ = owner.order_zero, owner.order_zero_not
-    assert isinstance(sigma, SparseSigmaLDU) and isinstance(not_, NotLayer3)
-    assert (not_.rows, sigma.nInput, sigma.nOutput) == (basic.capacity, basic.capacity, owner._order_caps()[0])
+    # Item 1.4: no Not stands between the first Pi and this Sigma.
+    sigma = owner.order_zero
+    assert isinstance(sigma, SparseSigmaLDU) and not hasattr(owner, 'order_zero_not')
+    assert (sigma.nInput, sigma.nOutput) == (basic.capacity, owner._order_caps()[0])
     assert any(p is sigma.value for p in owner.getParameters())
     keys = {key[key.index('order_zero.'):] for key in owner.state_dict() if 'order_zero.' in key}
     assert {'order_zero.value', 'order_zero.entry_row', 'order_zero.entry_input', 'order_zero.count'} <= keys
@@ -254,7 +255,7 @@ def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
     assert bool((sigma.weight >= 0).all())
     for concept in sorted(set(sigma.entry_row[:n].tolist()))[:20]:
         assert all(concept in sigma.rows_reading(i) for i, _, _ in sigma.entries(concept))
-    print(dict(entries=n, capacity=sigma.capacity, concepts=sigma.nOutput, rows=not_.rows,
+    print(dict(entries=n, capacity=sigma.capacity, concepts=sigma.nOutput, rows=sigma.nInput,
                not_entries=int(NotLayer3.entries(sigma).sum())))
 
 

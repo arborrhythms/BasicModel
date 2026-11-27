@@ -202,7 +202,7 @@ def _close(owner, rows, evidence, percepts=None):
     basic percepts' lanes are given (``percepts``, ``(lanes [P, B, E, 2],
     rows [P])``), a definition's entry on a basic percept's row
     (``store.percept_entries``) reads that row's value or not-value from the
-    Not of order zero (``owner.order_zero_not``) in the same Sigma."""
+    value (its for lane; nothing is read against it) in the same Sigma."""
     from Layers import NotLayer3, sigma_fold, signed_lanes
     from CandidateGrowth import visible_store
     store = visible_store(owner._concept_allocator.layer(0))
@@ -248,7 +248,7 @@ def _close(owner, rows, evidence, percepts=None):
                 if bound:
                     # A basic percept's row: its options from the Not of order zero.
                     lanes = percepts[0].index_select(0, torch.tensor([i for i, _ in bound], device=percepts[0].device))
-                    options = torch.cat((options, owner.order_zero_not(lanes.to(options))))
+                    options = torch.cat((options, NotLayer3.options(lanes.to(options))))
                     entry = torch.cat((entry, entry.new_tensor([float(w) for _, w in bound])))
                 read = sigma_fold(entry, torch.zeros(len(entry), dtype=torch.long, device=options.device),
                                               torch.arange(len(entry), device=options.device), options, 1)[0]
