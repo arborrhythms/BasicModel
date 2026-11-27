@@ -510,8 +510,11 @@ def forecast_percept(model, active, *, history=None):
     from Expectation import ActivationPredictor
     # The completed order-zero state belongs to stream slots. A previous
     # batch's carrier has its own batch extent and cannot be threaded here.
-    indices = torch.tensor(sorted(row for row in owner._row_to_concept()
-        if owner._row_order(row) == 0), device=active.device, dtype=torch.long)
+    if torch.compiler.is_compiling():
+        indices = torch.arange(owner._order_caps()[0], device=active.device, dtype=torch.long)
+    else:
+        indices = torch.tensor(sorted(row for row in owner._row_to_concept()
+            if owner._row_order(row) == 0), device=active.device, dtype=torch.long)
     weights = owner._observed_knowing[:len(active), indices].detach().amax(-1)
     codes = owner.similarity_codebook.lookup_rows(indices).detach()[..., :expectation.width]
     values = codes[None] * weights[..., None]

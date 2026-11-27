@@ -2320,6 +2320,8 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         """Rebuild after checkpoint restore, compaction, or external writes."""
         column = self.row_names
         cached = self.__dict__.get('_name_cache')
+        if torch.compiler.is_compiling() and cached is not None:
+            return cached
         n = len(self)
         if (not torch.compiler.is_compiling() and not column.is_inference() and cached is not None
                 and cached[0] is column and cached[1] == column._version and len(cached[2]) >= n):
@@ -2348,6 +2350,8 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
 
     def index_of_row(self, reference):
         seat = self._occupied_names()[3].get(int(reference))
+        if torch.compiler.is_compiling():
+            return seat
         return seat if seat is not None and seat < len(self) else None
 
     def clear_caches(self):

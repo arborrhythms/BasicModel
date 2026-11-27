@@ -7,20 +7,23 @@ from Understanding import ConceptualField
 
 def reachable_rows(active, rows, standing, sources, targets, rounds, size):
     """Propagate each stream's occupied rows through its definition edges."""
-    counts = torch.zeros(size, active.shape[1], dtype=torch.int32, device=active.device)
+    compiling = torch.compiler.is_compiling()
+    counts = torch.zeros(size + (1 if compiling else 0), active.shape[1], dtype=torch.int32, device=active.device)
     reached = counts.index_add(0, rows, active.int()).gt(0)
     reached = reached.index_fill(0, standing, True)
     for _ in range(rounds):
         parents = counts.index_add(0, targets, reached.index_select(0, sources).int())
         reached = reached | parents.gt(0)
-    return reached
+    return reached[:size] if compiling else reached
 
 
 def seated_names(allocator, size, like):
     """Concept name and retirement status at every physical field seat."""
+    cached = getattr(allocator, '_field_seated_names', None)
+    if torch.compiler.is_compiling() and cached is not None:
+        return cached[1:]
     stamp = (size, like.device, tuple((id(layer._tensor_row_keys), len(layer._tensor_row_keys))
                                      for layer in allocator._layers.values()), frozenset(allocator.retired))
-    cached = getattr(allocator, '_field_seated_names', None)
     if cached is None or cached[0] != stamp:
         # Later layers have precedence, as in concept_id_at_row.
         seats = {}

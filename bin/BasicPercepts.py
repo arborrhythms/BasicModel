@@ -165,8 +165,8 @@ def field_factor(lanes, entries):
     R = entries.shape[0]
     # Small forward-only reads can keep every row on device. The gradient
     # path below preserves the disconnected result when no row participates.
-    if R * lanes.numel() <= 1 << 20 and not (torch.is_grad_enabled() and
-                                               (lanes.requires_grad or entries.requires_grad)):
+    if torch.compiler.is_compiling() or (R * lanes.numel() <= 1 << 20 and not (
+            torch.is_grad_enabled() and (lanes.requires_grad or entries.requires_grad))):
         present = total > 0
         denominator = torch.where(present, total, 1.)[:, None, None]
         shared = lesser(lanes[None], entries[:, None, None]).sum((-1, -2))
@@ -1524,6 +1524,8 @@ class BasicPercepts(nn.Module):
         """Write the first Pi again where a row's against entries changed: a
         form admitted later can be a nearer holder, a part added later a new
         thing it adds."""
+        if torch.compiler.is_compiling():
+            return
         identity = getattr(self.native, 'identity', None)
         if identity is None:
             return
@@ -2390,7 +2392,8 @@ class BasicPercepts(nn.Module):
             return neutral
         refs = members[torch.where(known, rows, len(self.index))]
         held = refs != torch.iinfo(torch.long).min
-        if uses_wholes is None and torch.is_grad_enabled() and primitive.requires_grad:
+        if (not torch.compiler.is_compiling() and uses_wholes is None
+                and torch.is_grad_enabled() and primitive.requires_grad):
             # With no addressed member the scalar reader has no parameter in
             # its graph. Preserve absent gradients for the optimizer.
             if not bool(held.any()):

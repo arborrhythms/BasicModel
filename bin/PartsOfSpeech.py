@@ -121,6 +121,8 @@ class PartsOfSpeech(nn.Module):
     @torch.no_grad()
     def prepare_values(self):
         """Stage the arguments' extensions in the words' space."""
+        if torch.compiler.is_compiling() and getattr(self, '_value_arguments', None) is not None:
+            return
         if self._space is None or self._space() is None or not self.arguments:
             return
         owner = self.owner

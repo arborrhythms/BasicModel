@@ -108,7 +108,7 @@ def _store_edges(owner, V, device):
              visible_store(_concept_alloc_of(owner).layer(0)))
     edges = []
     T, height = 0, 0
-    if getattr(store, '_thing_columns', False) and store.values is not None and store.nnz:
+    if getattr(store, '_thing_columns', False) and store.values is not None and (store.values.numel() if torch.compiler.is_compiling() else store.nnz):
         T, symbol, member, positions, targets, sources = store.spread_indices(V, device)
         if T:
             edges.append((symbol, member, torch.ones(len(member), device=device),
@@ -146,12 +146,18 @@ def structure(owner, device=None):
     device = owner._expected_knowing.device if device is None else device
     T, edges, height = _store_edges(owner, V, device)
     R, P, keys = 0, 0, ()
-    if sigma is not None and sigma.nnz:
+    compiling = torch.compiler.is_compiling()
+    if sigma is not None and (sigma.value.numel() if compiling else sigma.nnz):
         R = int(sigma.nInput)
-        n = sigma.nnz
-        value = sigma.w()[:n].to(device)
+        value = (sigma.w() if compiling else sigma.w()[:sigma.nnz]).to(device)
+        n = len(value)
         rows = sigma.entry_row[:n].to(device)
         inputs = sigma.entry_input[:n].to(device)
+        if compiling:
+            live = (rows >= 0) & (rows < V) & (inputs >= 0) & (inputs < R)
+            value = torch.where(live, value, 0.)
+            rows = rows.clamp(0, max(0, V - 1))
+            inputs = inputs.clamp(0, max(0, R - 1))
         edges.append((rows, V + T + inputs, value.abs(), value < 0))
         basic = getattr(owner, 'basic_percepts', None)
         pi = getattr(basic, 'pi', None)

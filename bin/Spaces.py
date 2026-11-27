@@ -14954,6 +14954,36 @@ class ConceptualSpace(Space):
         return store.bind(rows)
 
     @torch.no_grad()
+    def _prepare_closure_plan_host(self, device):
+        alloc = _concept_alloc_of(self)
+        if alloc is None:
+            return
+        store = alloc.layer()
+        from CandidateGrowth import visible_store
+        parent = visible_store(store)
+        S = int(store.nOutput)
+        bias = parent.bias_column()
+        targets, sources, standing = [], [], []
+        for row, column in zip(parent._rows, parent._cols):
+            if column == bias:
+                standing.append(row)
+                continue
+            for source in parent.column_rows(column):
+                targets.append(row)
+                sources.append(source)
+        while len(standing) < 2:
+            standing.append(S)
+        while len(sources) < 2:
+            sources.append(S)
+            targets.append(S)
+        standing_t = torch.tensor(standing, dtype=torch.long, device=device)
+        sources_t = torch.tensor(sources, dtype=torch.long, device=device)
+        targets_t = torch.tensor(targets, dtype=torch.long, device=device)
+        for t in (standing_t, sources_t, targets_t):
+            torch._dynamo.mark_dynamic(t, 0)
+        rounds = max(0, len(self._order_caps()) - 1)
+        store.__dict__['_closure_plan'] = (standing_t, sources_t, targets_t, rounds)
+
     def _bind_attended_concepts(self, required, rows_t):
         """Gather every definition reachable from active native percept poles.
 
@@ -14973,6 +15003,9 @@ class ConceptualSpace(Space):
 
         def closure():
             from FieldProjection import reachable_rows
+            if torch.compiler.is_compiling() and '_closure_plan' in store.__dict__:
+                standing_t, sources_t, targets_t, rounds = store.__dict__['_closure_plan']
+                return reachable_rows(active, rows_t, standing_t, sources_t, targets_t, rounds, S)
             targets, sources, standing = [], [], []
             parent = visible_store(store)
             bias = parent.bias_column()
@@ -15383,6 +15416,8 @@ class ConceptualSpace(Space):
         from Layers import thing_lanes
         pair = symbols(field)
         S, B = pair.shape[:2]
+        if torch.compiler.is_compiling():
+            return pair.new_zeros(B, 0, 2), torch.full((B, 0), -1, dtype=torch.long, device=pair.device)
         addresses = self._field_inventory_rows(pair.device) if inventory_rows is None else inventory_rows
         addresses = torch.as_tensor(addresses, device=pair.device)
         if addresses.ndim == 1:
@@ -15443,7 +15478,7 @@ class ConceptualSpace(Space):
         store = visible_store(_concept_alloc_of(self).layer(0))
         if getattr(store, '_thing_columns', False):
             from FieldProjection import seated_rung
-            if not store.nnz or store.values is None:
+            if (store.values is None or not store.values.numel()) if torch.compiler.is_compiling() else (not store.nnz or store.values is None):
                 return field.new_zeros(end - start, *field.shape[1:])
             topology = store.inventory_indices(store.nOutput, field.device)
             staged = self.__dict__.get('_cs_rung_entries')
@@ -20631,8 +20666,13 @@ class OutputSpace(Space):
         evidence, ids = pooled_over_readings(field, owner), field.concept_ids
         if ids.ndim == 1:
             ids = ids[:,None].expand(-1, evidence.shape[1])
-        rows = torch.tensor([[owner._concept_row_of(int(cid)) if int(cid) > 0 and owner._concept_row_of(int(cid)) is not None else -1 for cid in stream]
-                             for stream in ids.T.tolist()], device=evidence.device)
+        if torch.compiler.is_compiling():
+            ids_t = ids.T.to(evidence.device)
+            rows = owner._concept_allocator.layer(0).concept_rows(ids_t)
+            rows = torch.where(ids_t > 0, rows, -1)
+        else:
+            rows = torch.tensor([[owner._concept_row_of(int(cid)) if int(cid) > 0 and owner._concept_row_of(int(cid)) is not None else -1 for cid in stream]
+                                 for stream in ids.T.tolist()], device=evidence.device)
         capacity = self.field_readout.in_features//2
         valid = (rows >= 0) & (rows < capacity)
         dense = evidence.new_zeros(evidence.shape[1], capacity, 2)

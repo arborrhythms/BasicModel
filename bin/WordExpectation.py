@@ -22,6 +22,48 @@ class ExpectedWords:
         return self.excess + self.omission
 
 
+def prepare_context_host(owner, B, device, dtype):
+    """Pre-read _inter_context on host into [B, M, ...] tensors with M>=2 dynamic."""
+    if owner is None:
+        return None
+    D = owner.word_dim
+    rows_v, rows_m, rows_p, rows_h = [], [], [], []
+    max_m = 2
+    for row in range(B):
+        chain, lane_history, identities, _ = (owner._read_context(row)
+            if row < len(owner._inter_context) else ((), (), (), ()))
+        if not chain:
+            rows_v.append(None)
+            rows_m.append(None)
+            rows_p.append(None)
+            rows_h.append(None)
+            continue
+        v = torch.stack([value.to(device=device, dtype=dtype) for _, value, _ in chain]).flatten(0, 1)
+        m = torch.stack([mask.to(device=device, dtype=torch.bool) for _, _, mask in chain]).flatten()
+        p = torch.stack([torch.tensor((1., 0.) if pair is None else pair, device=device, dtype=dtype).expand(3, 2)
+                         for pair in lane_history]).flatten(0, 1)
+        h = torch.stack([torch.full((3,), -1, device=device, dtype=torch.long)
+                         if ids is None else ids.to(device=device, dtype=torch.long) for ids in identities]).flatten()
+        rows_v.append(v); rows_m.append(m); rows_p.append(p); rows_h.append(h)
+        if v.shape[0] > max_m:
+            max_m = int(v.shape[0])
+    values = torch.zeros(B, max_m, D, device=device, dtype=dtype)
+    occupied = torch.zeros(B, max_m, device=device, dtype=torch.bool)
+    pairs = torch.zeros(B, max_m, 2, device=device, dtype=dtype)
+    handles = torch.full((B, max_m), -1, device=device, dtype=torch.long)
+    for b in range(B):
+        if rows_v[b] is not None:
+            k = rows_v[b].shape[0]
+            values[b, :k] = rows_v[b]
+            occupied[b, :k] = rows_m[b]
+            pairs[b, :k] = rows_p[b]
+            handles[b, :k] = rows_h[b]
+    for t in (values, occupied, pairs, handles):
+        torch._dynamo.mark_dynamic(t, 1)
+    owner._compiled_inter_context = (values, occupied, pairs, handles)
+    return owner._compiled_inter_context
+
+
 class WordArrivals:
     """One causal forecast state, opened once before any word arrives."""
     def __init__(self, owner, bank, valid, *, gain=1., epsilon=1e-6, saturation='clip'):
@@ -31,6 +73,29 @@ class WordArrivals:
             raise ValueError('word expectation needs a nonempty native-width bank')
         self.owner, self.bank, self.valid = owner, bank, valid
         self.gain, self.epsilon, self.saturation = gain, epsilon, saturation
+        if torch.compiler.is_compiling() and getattr(owner, '_compiled_inter_context', None) is not None:
+            values, occupied, pairs, handles = owner._compiled_inter_context
+            values = values.to(bank)
+            occupied = occupied.to(bank.device)
+            pairs = pairs.to(bank)
+            handles = handles.to(bank.device)
+            M = values.shape[1]
+            orders = torch.full_like(handles, -1)
+            if owner._bank_ids.numel():
+                bank_ids = owner._bank_ids.to(bank.device)
+                matches = (handles.unsqueeze(-1) == bank_ids[None, None]) & (handles.unsqueeze(-1) >= 0)
+                orders = torch.where(matches.any(-1), owner._bank_orders.to(bank.device)[matches.long().argmax(-1)], -1)
+            occupied = occupied & (orders == 0)
+            source = symbol_activations(bank, values, occupied, pairs,
+                key_orders=torch.zeros(C, device=bank.device, dtype=torch.long), value_orders=orders)
+            total = (values * occupied.unsqueeze(-1)).sum(1)
+            count = occupied.sum(1, keepdim=True).to(bank)
+            positions = torch.where(occupied, torch.arange(M, device=bank.device)[None] + 1, 0)
+            amax = positions.amax(1)
+            recent = torch.where((amax > 0).unsqueeze(-1),
+                values[torch.arange(B, device=bank.device), (amax - 1).clamp_min(0)], 0.)
+            self.source, self.total, self.count, self.recent = source, total, count, recent
+            return
         source = bank.new_zeros(B, C, 2)
         total, count, recent = bank.new_zeros(B, D), bank.new_zeros(B, 1), bank.new_zeros(B, D)
         # The word read begins with the already observed field/STM. Incoming

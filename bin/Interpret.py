@@ -330,31 +330,40 @@ class InterpretLayer(GrammarLayer):
 
     def spelling_seats(self, seats):
         """Follow each live object's emitting word. Direct word seats spell themselves."""
-        cs = self.owner
-        defined = cs.definitions
-        # Different words can denote one object. Percept collections can
-        # choose among them by their current ties, even without a new DEF.
-        # Only the compact list of defined objects needs such a decision.
-        pairs = []
-        words = cs._word_definition_ids()
-        for obj in defined.bound_objects():
-            if obj in words:
-                continue
-            row = cs._concept_row_of(obj)
-            if row is not None:
-                word = cs.word_concept_of_object(obj)
-                word_row = None if word is None else cs._concept_row_of(word)
-                pairs.append((row, -1 if word_row is None else word_row))
-        signature = tuple(sorted(pairs))
         cached = self.__dict__.get('_spelling_seats')
-        if cached is None or cached[0] != signature or cached[1].device != seats.device:
-            # An absent query uses the sentinel and retains its own address.
-            table = seats.new_tensor((*signature, (-1, -1)))
-            cached = signature, table[:, 0].contiguous(), table[:, 1].contiguous()
-            self.__dict__['_spelling_seats'] = cached
-        _, objects, words = cached
+        if torch.compiler.is_compiling() and cached is not None:
+            _, objects, words = cached
+            if objects.device != seats.device:
+                objects, words = objects.to(seats.device), words.to(seats.device)
+        else:
+            cs = self.owner
+            defined = cs.definitions
+            # Different words can denote one object. Percept collections can
+            # choose among them by their current ties, even without a new DEF.
+            # Only the compact list of defined objects needs such a decision.
+            pairs = []
+            words = cs._word_definition_ids()
+            for obj in defined.bound_objects():
+                if obj in words:
+                    continue
+                row = cs._concept_row_of(obj)
+                if row is not None:
+                    word = cs.word_concept_of_object(obj)
+                    word_row = None if word is None else cs._concept_row_of(word)
+                    pairs.append((row, -1 if word_row is None else word_row))
+            signature = tuple(sorted(pairs))
+            if cached is None or cached[0] != signature or cached[1].device != seats.device:
+                # Trailing sentinel absorbs absent queries; leading sentinel keeps shape >= 2.
+                table = seats.new_tensor(((-1, -1), *signature, (-1, -1)))
+                objects = table[:, 0].contiguous()
+                words = table[:, 1].contiguous()
+                torch._dynamo.mark_dynamic(objects, 0)
+                torch._dynamo.mark_dynamic(words, 0)
+                cached = signature, objects, words
+                self.__dict__['_spelling_seats'] = cached
+            _, objects, words = cached
         at = torch.searchsorted(objects[:-1], seats.contiguous())
-        return torch.where(objects[at] == seats, words[at], seats)
+        return torch.where((seats >= 0) & (objects[at] == seats), words[at], seats)
 
     def recognized_objects(self, field, *, batch=0, position=None):
         """Read a percept's fully present classes, without a word or code search."""

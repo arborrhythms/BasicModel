@@ -159,7 +159,7 @@ def rows_asked(sigma, rows, concepts):
     order-zero Sigma's way back of each lane of the concepts' request
     ``concepts`` ``[V, B, 2]``: a lane's result below nothing asks the row's
     other lane (the Not's). A row no concept reads is asked nothing."""
-    S = sigma.slots
+    S = sigma.slot_diagonal.numel() if torch.compiler.is_compiling() else sigma.slots
     R, B = len(rows), concepts.shape[1]
     if not S or not R:
         return concepts.new_zeros(R, B, 2)

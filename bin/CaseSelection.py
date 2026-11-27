@@ -169,9 +169,11 @@ def case_addresses(roots, parents, children, written, *, size, limit, rounds):
 
 def case_edges(store, device):
     """Structural edges from each definition to the seats held by its symbols."""
+    cached = store.__dict__.get('_case_edges')
+    if torch.compiler.is_compiling() and cached is not None:
+        return cached[2:]
     indices, _ = store._indices(device)
     stamp = (id(store.symbol_table), store.symbol_table.revision, id(store._tensor_rows), len(store._tensor_rows))
-    cached = store.__dict__.get('_case_edges')
     if cached is None or cached[0] is not indices or cached[1] != stamp:
         edges, complete = [], []
         for edge, (parent, column) in enumerate(zip(store._rows, store._cols, strict=True)):

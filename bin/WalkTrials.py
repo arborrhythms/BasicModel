@@ -125,11 +125,14 @@ class ThoughtTrialState:
         self.store_names = None if store is None else (store, store.names_issued.detach().clone())
         from Memory import STMChunks
         stm = getattr(getattr(model, 'conceptualSpace', None), 'stm', None)
-        owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
-                (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
-                        '_last_output_comparison', '_last_output_walk_trace',
-                        '_sentence_answer_cost', '_sentence_answer_predictions',
-                        '_sentence_answer_raw_cost'))]
+        if torch.compiler.is_compiling():
+            owners = []
+        else:
+            owners=[(memory,('_what_slots','_what_closure_pressure','_episode_live','_thought_next_id','_address_sources')),
+                    (model,('expectation_gain', '_answer_attention_obs', '_last_answer_construction',
+                            '_last_output_comparison', '_last_output_walk_trace',
+                            '_sentence_answer_cost', '_sentence_answer_predictions',
+                            '_sentence_answer_raw_cost'))]
         if stm is not None:
             if hasattr(stm, 'model_state'):
                 owners.append((stm.model_state, ('last_where',)))

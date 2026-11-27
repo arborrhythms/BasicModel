@@ -5547,7 +5547,8 @@ class SparseLDULayer(Layer):
     def _slot_d(self, value=None):
         """D over the slots: each slot's diagonal, one where it has none."""
         value = self.value if value is None else value
-        diagonal = self.slot_diagonal[:self._slots].to(value.device)
+        S = self.slot_diagonal.numel() if torch.compiler.is_compiling() else self._slots
+        diagonal = self.slot_diagonal[:S].to(value.device)
         return torch.where(diagonal >= 0, value.index_select(0, diagonal.clamp_min(0)), value.new_ones(()))
 
     def w(self, *, occupied_only=False):
@@ -5557,7 +5558,7 @@ class SparseLDULayer(Layer):
         U fall at other pairs (:meth:`up` has them)."""
         n = self._n if occupied_only else self.value.numel()
         value = self.value[:n]
-        if not self._n:
+        if not torch.compiler.is_compiling() and not self._n:
             return value * 0
         # Online admission writes into this preallocated parameter even when
         # it only appends new entries. Backward needs the earlier multipliers.
@@ -5565,7 +5566,7 @@ class SparseLDULayer(Layer):
             value = value.clone()
         d = torch.cat((self._slot_d(value), value.new_ones(1)))
         kind = self.entry_kind[:n].to(value.device)
-        S = self._slots
+        S = self.slot_diagonal.numel() if torch.compiler.is_compiling() else self._slots
         source = torch.where(self.entry_source[:n] >= 0, self.entry_source[:n], S).to(value.device)
         target = torch.where(self.entry_target[:n] >= 0, self.entry_target[:n], S).to(value.device)
         scale = torch.where(kind == self.UPPER, d.index_select(0, source),
@@ -5852,7 +5853,7 @@ class SparseLDULayer(Layer):
     def _factors(self, dtype, device):
         """L's and U's entries (every entry read, at nothing where it is of
         the other kind, so no size depends on the data) and D, over the slots."""
-        n = self._n
+        n = self.value.numel() if torch.compiler.is_compiling() else self._n
         value = self.value[:n].to(device=device, dtype=dtype)
         kind = self.entry_kind[:n].to(device)
         upper = torch.where(kind == self.UPPER, value, value.new_zeros(()))
@@ -5865,11 +5866,11 @@ class SparseLDULayer(Layer):
     def up(self, x):
         """``x @ L @ D @ U``, ``x`` ``[slots, ...]`` held by slot, by
         scatters and no division."""
-        if not self._n:
+        if not torch.compiler.is_compiling() and not self._n:
             return torch.zeros_like(x)
         source, target, lower, upper, d = self._factors(x.dtype, x.device)
         shape = (-1,) + (1,) * (x.ndim - 1)
-        z = unit_apply(x, source, target, lower) if self.lower_entries else x
+        z = unit_apply(x, source, target, lower) if (torch.compiler.is_compiling() or self.lower_entries) else x
         return unit_apply(z * d.reshape(shape), source, target, upper)
 
     def back(self, y):
@@ -5877,7 +5878,7 @@ class SparseLDULayer(Layer):
         longest chain of steps (``x <- y - x @ N``), D divided out (nothing
         where D is nothing, as the pseudoinverse has it), then L undone in
         its longest chain. A slot with no output is given at nothing."""
-        if not self._n:
+        if not torch.compiler.is_compiling() and not self._n:
             return torch.zeros_like(y)
         source, target, lower, upper, d = self._factors(y.dtype, y.device)
         shape = (-1,) + (1,) * (y.ndim - 1)
@@ -6030,9 +6031,9 @@ class SparseSigmaLDU(SparseLDULayer):
         else:
             rows = rows.reshape(-1)
         shape = (len(rows), *options.shape[1:-1])
-        if not self.nnz or not len(rows) or not len(inputs):
+        S = self.slot_diagonal.numel() if torch.compiler.is_compiling() else self._slots
+        if (not S if torch.compiler.is_compiling() else not self.nnz) or not len(rows) or not len(inputs):
             return options.new_zeros(shape)
-        S = self._slots
         value = options[..., 0]
         ordered, by = torch.sort(inputs, stable=True)
         first = torch.ones_like(ordered, dtype=torch.bool)
@@ -6056,10 +6057,10 @@ class SparseSigmaLDU(SparseLDULayer):
         padded D gives. Exact for every row of :meth:`returned`; a row no
         concept reads comes back at nothing. Nothing is refused."""
         inputs = torch.as_tensor(inputs, dtype=torch.long).reshape(-1)
-        S = self._slots
+        S = self.slot_diagonal.numel() if torch.compiler.is_compiling() else self._slots
         # The chart undone; a value at the bound still passes its derivative.
         a = bounded_atanh(y, EPS_LOG)
-        if not self.nnz:
+        if not S if torch.compiler.is_compiling() else not self.nnz:
             return a.new_zeros(len(inputs), *a.shape[1:])
         at = self.output_slot.to(a.device)
         x = a.new_zeros(S + 1, *a.shape[1:]).index_add(0, torch.where(at >= 0, at, S), a)
@@ -6601,26 +6602,30 @@ class ConceptualAttentionLayer(SparseLayer):
 
     def inventory_indices(self, size, device):
         """Structural addresses of the complete bound inventory, without its weights."""
+        held = self.__dict__.get('_inventory_indices')
+        if torch.compiler.is_compiling() and held is not None:
+            return held[4]
         parent_rows, _ = self._indices(device)
         stamp = (self.symbol_table.revision, len(self._tensor_rows), self._room, size)
-        held = self.__dict__.get('_inventory_indices')
         if (held is not None and held[0] is parent_rows and held[1] is self.symbol_table
-                and held[2] is self._tensor_rows and held[3] == stamp):
+                and held[2] == id(self._tensor_rows) and held[3] == stamp):
             return held[4]
         with torch.no_grad():
             view = self.bind(range(size))
             targets, columns = view._indices(device)
             result = (view._inventory_edges.to(device), targets, columns,
                       view._thing_seats.to(device), view._thing_complete.to(device))
-        self.__dict__['_inventory_indices'] = parent_rows, self.symbol_table, self._tensor_rows, stamp, result
+        self.__dict__['_inventory_indices'] = parent_rows, self.symbol_table, id(self._tensor_rows), stamp, result
         self.__dict__.pop('_spread_indices', None)
         self.__dict__.pop('_definition_depth', None)
         return result
 
     def spread_indices(self, size, device):
         """The sparse inventory addresses for expectation, shared across its looks."""
-        topology = self.inventory_indices(size, device)
         cached = self.__dict__.get('_spread_indices')
+        if torch.compiler.is_compiling() and cached is not None:
+            return cached[1]
+        topology = self.inventory_indices(size, device)
         if cached is None or cached[0] is not topology[0]:
             edges, rows, sources, seats, complete = topology
             count = seats.shape[0]
@@ -6902,17 +6907,22 @@ class ConceptualAttentionLayer(SparseLayer):
     def concept_rows(self, ids):
         """Resolve a tensor of concept names in the occupied inventory."""
         # Admission appends assignments. Checkpoint restore replaces the map.
-        rows = self._tensor_rows
         cached = self.__dict__.get('_concept_row_lookup')
-        if (cached is None or cached[0] is not rows or cached[1] != len(rows)
-                or cached[2].device != ids.device):
-            ordered = sorted((key[1], row) for key, row in rows.items()
-                             if isinstance(key, tuple) and key[:1] == ('concept',))
-            # The extra row absorbs absent names, including an empty inventory.
-            table = ids.new_tensor(ordered + [(-1, -1)], dtype=torch.long)
-            cached = rows, len(rows), table[:, 0].contiguous(), table[:, 1].contiguous()
-            self.__dict__['_concept_row_lookup'] = cached
-        names, seats = cached[2:]
+        if torch.compiler.is_compiling() and cached is not None:
+            names, seats = cached[2:]
+            if names.device != ids.device:
+                names, seats = names.to(ids.device), seats.to(ids.device)
+        else:
+            rows = self._tensor_rows
+            if (cached is None or cached[0] != id(rows) or cached[1] != len(rows)
+                    or cached[2].device != ids.device):
+                ordered = sorted((key[1], row) for key, row in rows.items()
+                                 if isinstance(key, tuple) and key[:1] == ('concept',))
+                # The extra row absorbs absent names, including an empty inventory.
+                table = ids.new_tensor(ordered + [(-1, -1)], dtype=torch.long)
+                cached = id(rows), len(rows), table[:, 0].contiguous(), table[:, 1].contiguous()
+                self.__dict__['_concept_row_lookup'] = cached
+            names, seats = cached[2:]
         at = torch.searchsorted(names[:-1], ids.contiguous())
         return torch.where((ids >= 0) & (names[at] == ids), seats[at], -1)
 

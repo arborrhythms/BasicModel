@@ -149,6 +149,8 @@ def write(store, meaning, *, key):
 
 
 def snapshot(stores):
+    if torch.compiler.is_compiling():
+        return tuple(tuple(None for _ in row) for row in stores)
     return tuple(tuple(None if not len(store) else (
         {name:value.clone() for name,value in store.state_dict().items()},
         {name:value.clone() for name,value in store.parts.state_dict().items()},
@@ -157,6 +159,8 @@ def snapshot(stores):
 
 
 def restore(stores, saved):
+    if torch.compiler.is_compiling():
+        return
     for row, snapshots in zip(stores, saved, strict=True):
         for store, state in zip(row, snapshots, strict=True):
             if state is None:
