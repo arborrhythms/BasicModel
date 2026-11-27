@@ -149,6 +149,8 @@ Standing rules:
      the thinking loop." The loop of `Looks.run`, `attentionBudget` and `hardwireReading` go; this
      is the form (1) and (2) take. (7) The symbols' Pi (plan §9.9): no one in the symbol table;
      the sparse Pi that reads the symbols has an entry for that input, with a learned weight.
+     The Sigma the same: "we dont have a member list independent of the weights, we just add an
+     edge to the sparse matrix (in this case the LDU) that corresponds to the child being added."
    - Open for Alec: the map's two rates; whether to keep the Sigma links between neighbouring
      intensity levels; `OrderZero.read_word` still reads a signed match;
      `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`

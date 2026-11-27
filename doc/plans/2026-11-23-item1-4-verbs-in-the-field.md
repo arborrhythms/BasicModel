@@ -932,6 +932,16 @@ entry of that Pi's weight matrix made present for that input, with a
 weight that is learned. The symbol table's own Pi at one
 (`SymbolTable._append`) is to go.
 
+*The Sigma's members, the same.* "SIgma membership should follow the same
+pattern: we dont have a member list independent of the weights, we just add
+an edge to the sparse matrix (in this case the LDU) that corresponds to the
+child being added." So for the Pi and for the Sigma alike, to be a member
+is to have an entry in the sparse matrix, and there is no list of members
+kept apart from the weights. As built there are such lists: the symbol
+table's members beside its Pi, and the order-zero members
+(`order_zero_members`) beside the Sigma's entries. Both are to be read off
+the matrices instead.
+
 *One loop.* Told that `attend` is called once a word in a reading loop and
 that thinking has an attention of its own: "This is unfortunate: I am
 intending that attend() is one of thoughts operations, as is output, and it
@@ -943,6 +953,22 @@ How many words are read is thought's decision, and the walk of §9.6,
 answer 2, ends with that loop because it is that loop. The loop of
 `Looks.run`, `attentionBudget` and `hardwireReading` are what the rework
 removes. This is the form of the first two requirements for submission.
+
+*The order of teaching it (Alec, 2026-11-27, an aside).* "attend() and
+output() are so necessary to learning that I am wondering if we can leave
+it to explore/exploit to find them and call them repeatedly to do the
+reading task, since calling those operators in that order might be a needle
+in a haystack, so we might want to do single-word reading until we get that
+reliable, then move on to reading longer sentences in word order." So the
+one loop is taught by a curriculum: one word first (`attend`, then
+`output`, the echo of item 1.7), until that is reliable; then longer
+sentences in the order of their words. Claude agrees, and adds: the chance
+of finding `attend` then `output` by exploration alone falls with the
+number of operations and the length of the run, so the one-word lesson is
+where that pair is found at all; a sentence of n words then needs only the
+repetition of what is known. A prior on the choice of operation that
+favours `attend` while words are unread (a bias that is learned away, not
+a rule) is the alternative where the curriculum is not enough.
 
 ## 10. Added from item 1.6: evidence at order zero is positive, and the Not is an exchange of lanes (Alec, 2026-11-24)
 
