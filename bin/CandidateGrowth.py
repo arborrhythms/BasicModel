@@ -841,6 +841,9 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
             observed = [(b, present, {**present, **held[b]} if held and held[b] else present)
                         for b, present in enumerate(readings) if live is None or live[b]]
     pending = [] if trial is not None else None
+    held_pi = matrices(owner)['pi']
+    prepared_offers = retained_pair_offers(
+        owner, held_pi, [(b, (p, s, None)) for b, p, s in observed])
     for batch, present, sentence in observed:
         forecast = None if values is None else values[batch]
         if kind_rows is not None:
@@ -850,6 +853,6 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
             if batch not in trial.streams:
                 trial.streams[batch] = GrowthTrial(owner, path=trial.path, stream=batch)
         with row_scope(owner, batch):
-            pi_step(owner, sentence, collect=pending)
+            pi_step(owner, sentence, collect=pending, offers=prepared_offers.get(batch))
             sigma_step(owner, present, forecast, collect=pending)
     publish_look(owner, pending)
