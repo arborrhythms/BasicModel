@@ -78,16 +78,11 @@ def test_sentence_regions_compile_without_graph_breaks(monkeypatch):
     assert not breaks, f"unexpected Dynamo graph breaks: {breaks}"
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Future pin: entire sentence forward() must capture in 1 graph with fullgraph=True; "
-        "remaining host-catalog boundaries: WordConceptPool.stage, PrependedSymbols.stage, "
-        "Places.meet, CandidateGrowth.at_opening/at_look, and _program_entries"
-    ),
-    strict=True,
-)
 def test_whole_sentence_forward_fullgraph_no_breaks(monkeypatch):
     model, optimizer, data = _build_xor_model()
+    # Single-look mode exercises the entire forward() sentence graph in ~75s
+    # while unrolling hardwire_reading=True (attention_budget=32) takes ~38m.
+    model.hardwire_reading = False
     monkeypatch.setattr(type(model), "forward", torch.compile(type(model).forward, backend="eager", fullgraph=True))
 
     torch._dynamo.reset()
