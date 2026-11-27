@@ -8716,10 +8716,29 @@ class BasicModel(BaseModel):
                         prepare_form_centroids_host(self._concept_owner(), input_data.device)
                         from ModelAttention import prepare_symbol_bank_host
                         prepare_symbol_bank_host(self._concept_owner(), input_data.device)
+                        self._prepare_sentence_reference_banks_host(input_data)
+                        owner = self._concept_owner()
                         self._forward_host_prepared = True
                         try:
-                            return self._execute_input_sentence(input_data, executor)
+                            out = self._execute_input_sentence(input_data, executor)
+                            if owner is not None:
+                                deferred_looks = owner.__dict__.pop('_deferred_growth_looks', ())
+                                if deferred_looks:
+                                    from CandidateGrowth import publish_look
+                                    for pending in deferred_looks:
+                                        publish_look(owner, pending)
+                            deferred_commits = self.__dict__.pop('_deferred_growth_commits', ())
+                            if deferred_commits:
+                                from CandidateGrowth import GrowthTrial
+                                for growth_trials, sel in deferred_commits:
+                                    GrowthTrial.commit(growth_trials, sel)
+                            return out
                         finally:
+                            if owner is not None:
+                                owner.__dict__.pop('_deferred_growth_looks', None)
+                            self.__dict__.pop('_deferred_growth_commits', None)
+                            self._compiled_ref_banks = None
+                            self._compiled_ref_types_host = None
                             self._forward_host_prepared = False
                             self._staged_in_sub = None
                             if not external_start:
@@ -21088,9 +21107,84 @@ class BasicModel(BaseModel):
         self._publish_sentence_scratch(state)
         return state
 
+    def _prepare_sentence_reference_banks_host(self, input_data):
+        """Pre-stage ReferenceBank and symbol_table on host before compiled forward."""
+        owner = self._concept_owner()
+        if owner is None:
+            self._compiled_ref_banks = None
+            self._compiled_ref_types_host = None
+            return
+        alloc = getattr(owner, '_concept_allocator', None)
+        if alloc is not None:
+            alloc.symbol_table()
+            alloc.layer(0)._indices(input_data.device)
+        mtm = getattr(owner, 'mtm', None)
+        if mtm is not None:
+            streams = max(1, len(input_data))
+            trials = 2 + int(getattr(self, 'explore_paths', 0))
+            mtm.reserve_relation_trials(streams, trials, input_data.device)
+            mtm._candidate_pairs.reserve_publication(
+                streams * (1 + int(getattr(self, 'attention_budget', 0))))
+            mtm._candidate_relations.read_symbols(owner)
+        owner.__dict__['_deferred_growth_looks'] = []
+        self.__dict__['_deferred_growth_commits'] = []
+        sources = self._word_symbol_concept_ids()
+        words = word_view(self.inputSpace, 'concept_rows')
+        like = torch.empty(
+            len(input_data), owner.similarity_codebook.W.shape[-1],
+            device=input_data.device, dtype=owner.similarity_codebook.W.dtype)
+        self._compiled_ref_types_host = None
+        if torch.is_tensor(sources) and torch.is_tensor(words):
+            batch, count = sources.shape
+            surfaces = [[owner.word_surface_for_row(word) for word in row] for row in words.tolist()]
+            orders = sorted({owner._concept_source_order(identity)
+                             for row in surfaces for surface in row if surface is not None
+                             for identity in owner.word_concepts(surface)
+                             if owner._concept_source_order(identity) >= 0})
+            if orders:
+                source_ids = sources.tolist()
+                identities = torch.full((batch, count, len(orders)), -1,
+                                        device=like.device, dtype=torch.long)
+                row_indices = torch.full_like(identities, -1)
+                for b in range(batch):
+                    for w in range(count):
+                        surface = surfaces[b][w]
+                        if surface is None:
+                            continue
+                        for index, order in enumerate(orders):
+                            identity = owner.resolve_word_concept(
+                                surface, order=order, previous=source_ids[b][w])
+                            row = None if identity is None else owner._concept_row_of(identity)
+                            if row is not None:
+                                identities[b, w, index] = identity
+                                row_indices[b, w, index] = row
+                self._compiled_ref_types_host = (
+                    sources.detach().clone(),
+                    sources.new_tensor(orders),
+                    identities,
+                    row_indices,
+                )
+        mask = getattr(self.inputSpace, '_packed_sentence_slot_mask', None)
+        if not torch.is_tensor(mask) or mask.ndim != 2:
+            self._compiled_ref_banks = None
+            return
+        self._compiled_ref_banks = {
+            sid: self._sentence_reference_bank(mask[:, sid].bool(), like)
+            for sid in range(int(mask.shape[1]))
+        }
+
     def _sentence_reference_types(self, like):
         """Stage existing typed dictionary points for this open reading only."""
         from ReferenceContext import ReferenceTypes
+        if torch.compiler.is_compiling() and self.__dict__.get('_compiled_ref_types_host') is not None:
+            sources, orders, identities, row_indices = self._compiled_ref_types_host
+            owner = self._concept_owner()
+            valid = row_indices >= 0
+            values = owner.similarity_codebook.lookup_rows(
+                row_indices.clamp_min(0).to(like.device), streams=True).to(like)
+            values = torch.where(valid.to(like.device)[..., None], values, 0.)
+            return ReferenceTypes(sources.to(like.device), orders.to(like.device),
+                                  identities.to(like.device), values)
         sources = self._word_symbol_concept_ids()
         words = word_view(self.inputSpace, 'concept_rows')
         if not torch.is_tensor(sources) or not torch.is_tensor(words):
@@ -21126,6 +21220,12 @@ class BasicModel(BaseModel):
     def _sentence_reference_bank(self, active, like):
         """Rebuild the predictor's bounded situation before the greedy walk."""
         from ReferenceContext import ReferenceBank
+        if torch.compiler.is_compiling() and getattr(self, '_compiled_ref_banks', None) is not None:
+            sid = int(getattr(self, '_open_sentence_slot', 0))
+            staged = self._compiled_ref_banks.get(sid)
+            if staged is not None:
+                types = self._sentence_reference_types(like) if staged.types is not None else None
+                return staged._replace(types=types)
         disc = getattr(self.symbolSpace, 'expectation', None)
         B, D = active.shape[0], like.shape[-1]
         window = max(1, int(getattr(disc, '_inter_chain_window', 1)))
@@ -21744,7 +21844,7 @@ class BasicModel(BaseModel):
 
             from CandidateGrowth import GrowthTrial
             growth = []
-            if single and self.explore_paths:
+            if not torch.compiler.is_compiling() and single and self.explore_paths:
                 pool.reserve_relation_trials(B, 2 + self.explore_paths, words.device)
                 pool._candidate_pairs.reserve_publication(B * (1 + self.attention_budget))
             def trial_scope(*, reuse=False):
@@ -22013,7 +22113,10 @@ class BasicModel(BaseModel):
             if speculative:
                 NativeReading.commit(native_paths, selected)
             if growth:
-                GrowthTrial.commit(growth, winner_indices)
+                if torch.compiler.is_compiling():
+                    self.__dict__.setdefault('_deferred_growth_commits', []).append((growth, selected.detach()))
+                else:
+                    GrowthTrial.commit(growth, winner_indices)
             observations.clear()
             # Later reads of a retained bank must use current where/when entries.
             from BasicPercepts import BasicPercepts

@@ -99,12 +99,15 @@ class GrowthTrial:
         owner = trials[0].owner
         owner._expected_knowing[:len(selected)].copy_(
             torch.stack([trial.expected for trial in trials], 1)[streams, selected])
-        indices = selected.tolist() if indices is None else indices
-        retained = {trials[index] for index in indices}
+        if torch.compiler.is_compiling():
+            retained = None
+        else:
+            indices = selected.tolist() if indices is None else indices
+            retained = {trials[index] for index in indices}
         for name in trials[0].costs:
             terms = []
             for trial in dict.fromkeys(trials):
-                if trial not in retained:
+                if retained is not None and trial not in retained:
                     continue
                 winners = torch.zeros_like(selected, dtype=torch.bool)
                 for index, candidate in enumerate(trials):
@@ -623,6 +626,12 @@ def publish_look(owner, pending):
     """Expose this look's promotions to their own next fixation."""
     if not pending:
         return
+    if torch.compiler.is_compiling():
+        queue = owner.__dict__.get('_deferred_growth_looks')
+        if queue is None:
+            queue = owner.__dict__['_deferred_growth_looks'] = []
+        queue.append(list(pending))
+        return
     device = pending[0][1].device
     summary = torch.stack([
         torch.stack((pool.count if pool.count.device == device else pool.count.to(device),
@@ -750,6 +759,38 @@ def at_opening(model, field, extent, active, prior=None, *, binding=None):
     return prior
 
 
+def _compiled_readings(owner, field, active, binding, withheld, limit):
+    """Fixed-width device readings without host conversions or data-dependent branches."""
+    evidence = field.evidence
+    B = evidence.shape[1]
+    active_mask = torch.ones(B, dtype=torch.bool, device=evidence.device) if active is None else active.bool()
+    concepts = field.concept_ids
+    if concepts.ndim == 1:
+        concepts = concepts[:, None].expand(-1, B)
+    lanes = evidence.detach().amax(2)
+    levels = (lanes[..., 0] - lanes[..., 1]).clamp_min(0).T
+    if withheld is None and torch.is_tensor(binding) and 0 < len(binding) <= limit:
+        names = binding
+    else:
+        positive = (levels.T > 0) & active_mask[None, :] & (concepts >= 0)
+        pos_ids = torch.where(positive, concepts, -1).reshape(-1)
+        if withheld is not None:
+            missing = (withheld >= 0) & active_mask[:, None]
+            pos_ids = torch.cat((pos_ids, torch.where(missing, withheld, -1).reshape(-1)))
+        width = min(max(1, int(limit)), max(1, int(pos_ids.shape[0])))
+        names = binding_names(pos_ids, width)
+    if withheld is not None:
+        values, ranks, sentence = omitted_levels(
+            concepts, levels, names, active_mask,
+            torch.where(active_mask[:, None] & (withheld >= 0), withheld, -1))
+    else:
+        values, ranks = named_levels(concepts, levels, names, active_mask)
+        sentence = values
+    count = int(len(names))
+    return [(page, (names, values[page], ranks[page], count), (names, sentence[page], ranks[page], count))
+            for page in range(B)]
+
+
 def at_look(model, field, extent=None, active=None, *, forecast=None, binding=None):
     """The candidates' step at one look, in training. A pair is offered and
     weighed from what the sentence held at the look: its field, and the
@@ -778,23 +819,27 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
     activity = active if trial is not None else None
     pool = getattr(owner.mtm, '_candidate_pairs', None)
     withheld = withheld_names(owner, omission, extent)
-    if withheld is not None:
-        if bool((withheld >= 0).any()):
-            if pool is not None:
-                observed = omitted_field_readings(field, withheld, activity, pool.binding_width)
-            if observed is None:
-                held = withheld_words(model, extent)
-    elif extent is not None and omission is not None and 'word_bytes' in omission:
-        held = withheld_words(model, extent)
-    if observed is None:
-        readings = (field_readings(owner, field, activity, binding)
-                    if pool is not None and not any(held or ()) else None)
-        live = None
-        if readings is None:
-            readings = presences(field)
-            live = activity.tolist() if activity is not None else None
-        observed = [(b, present, {**present, **held[b]} if held and held[b] else present)
-                    for b, present in enumerate(readings) if live is None or live[b]]
+    if torch.compiler.is_compiling():
+        limit = pool.binding_width if pool is not None else 64
+        observed = _compiled_readings(owner, field, activity, binding, withheld, limit)
+    else:
+        if withheld is not None:
+            if bool((withheld >= 0).any()):
+                if pool is not None:
+                    observed = omitted_field_readings(field, withheld, activity, pool.binding_width)
+                if observed is None:
+                    held = withheld_words(model, extent)
+        elif extent is not None and omission is not None and 'word_bytes' in omission:
+            held = withheld_words(model, extent)
+        if observed is None:
+            readings = (field_readings(owner, field, activity, binding)
+                        if pool is not None and not any(held or ()) else None)
+            live = None
+            if readings is None:
+                readings = presences(field)
+                live = activity.tolist() if activity is not None else None
+            observed = [(b, present, {**present, **held[b]} if held and held[b] else present)
+                        for b, present in enumerate(readings) if live is None or live[b]]
     pending = [] if trial is not None else None
     for batch, present, sentence in observed:
         forecast = None if values is None else values[batch]
