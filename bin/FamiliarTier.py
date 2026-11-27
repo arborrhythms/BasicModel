@@ -92,6 +92,9 @@ def held_members(owner):
     for (row, column), position in store._index.items():
         if column == bias or float(store.values[position]) <= 0 or owner._row_order(row) == 0:
             continue
+        # A concept one step back is no member: it is not a symbol's column.
+        if getattr(store, 'delayed_of_column', None) is not None and store.delayed_of_column(column) is not None:
+            continue
         cid = owner.concept_id_at_row(row)
         if cid is not None:
             held = found.setdefault(int(cid), [])

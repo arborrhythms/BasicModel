@@ -108,6 +108,35 @@ Standing rules:
      The testpoint is `test/test_item14_meta_concept.py` (plan §15.2): stage A passes; B (the
      links by conditioning, the intensity as an answer) and C (the class) fail, the mechanism not
      being built.
+   - Where state is kept (Alec, 2026-11-27; plan §9.4): in STM, MTM or LTM and nowhere else,
+     except the unit delay's kept activations. STM is the state within a sentence, `attend`'s
+     included: its eight entries are the stack the tree is built on. LTM is the state between
+     sentences, written at a sentence's end and brought into STM before use.
+   - Required before 1.4 is submitted (Alec, 2026-11-27): (1) feed the state after the reduce
+     into the next `attend`. Each `attend` reads one word and is a shift; "the grammatical and
+     syntactic information from the possible reduce of the tree will inform the next attend()".
+     Today the request reads the opening field, the last look's field spread once and where the
+     last look landed, and not the STM after the reduce. This also gives the walk its end: the
+     grammar's own close, not a budget of looks. What `attend` is to be given (Alec, 2026-11-27):
+     "the symbolic activations which it just set to read the last word (which will have spatial
+     information, and be included in the conceptual differences)", and "information about the
+     current parse (such as the part of speech that it might be looking for) ... since that is
+     happening using a operator-prefixed tensor, we should just provide some or all of that
+     tensor". He expects the differencing to be needed for the right word to be read. The differencing
+     steps once a look, the opening being look zero and compared with the next opening (plan
+     §9.5); the priming and the delay are then one update of the field. (2) Then retire `attentionBudget` and
+     `hardwireReading` as the walk's controls, leaving one `attend` for each shift, driven by
+     the parse. With `hardwireReading` off today only the first word is read and 11 reading
+     certificates fail (measured 2026-11-27).
+     (3) Behaviour from LTM by way of the basic level (plan §9.3): "LTM can be used to train the
+     basic level network, and ... recursive application (with some measure of previous state from
+     output or thought) will yield the behavioral chains that we are hoping for." There is one
+     `LTM1` ("relations in LTM1 should not be a part of a different store"): the links between
+     kept ideas are in it, marked as transitions. To build: episodic memory as percepts (plan §6),
+     a replay of kept ideas in the order of their links to train the basic level, and the result
+     of a sentence (the output or the thought) as an input at the next sentence. This is not
+     the wire of (1): that one updates at every shift within a sentence, and LTM updates only at
+     a sentence's end.
    - Open for Alec: the map's two rates; whether to keep the Sigma links between neighbouring
      intensity levels; `OrderZero.read_word` still reads a signed match;
      `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`

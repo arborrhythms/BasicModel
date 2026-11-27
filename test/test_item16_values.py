@@ -291,15 +291,19 @@ def test_v6_one_not():
     calls = []
     original = owner.order_zero_field
 
+    basic = owner.basic_percepts
+
     def counted(lanes, inputs, rows):
-        calls.append(list(inputs))
+        # With the unit delay (architecture.perceptDelay) the inputs after
+        # the rows are the rows one step back, ``capacity + row``: they are
+        # not basic percept rows, so only the rows are counted.
+        calls.append([r for r in inputs if r < int(basic.capacity)])
         return original(lanes, inputs, rows)
     owner.order_zero_field = counted
     try:
         model.forward(values)
     finally:
         del owner.order_zero_field
-    basic = owner.basic_percepts
     kinds = [dict(values=sum(basic.is_value(r) for r in inputs),
                   places=sum(r in basic.place_rows for r in inputs),
                   conjunctions=sum(r in basic.conjunctions for r in inputs)) for inputs in calls]

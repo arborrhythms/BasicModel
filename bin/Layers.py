@@ -6504,6 +6504,9 @@ class ConceptualAttentionLayer(SparseLayer):
         for matrix in self.part_matrices():
             matrix.nOutput = size
             matrix._dev_cache = None
+        if self.__dict__.get('_delayed_columns'):
+            # A row's input one step back is a column of its own.
+            self.nInput = self._room + 1 + size
         for name, value in list(self.named_buffers(recurse=False)):
             if value.ndim == 1:
                 fill = {'refinement_best': float('inf'),
@@ -6511,21 +6514,54 @@ class ConceptualAttentionLayer(SparseLayer):
                 setattr(self, name, torch.cat((value, value.new_full((size - old,), fill))))
 
     @classmethod
-    def square(cls, n_concepts, device=None, *, symbols=None):
+    def square(cls, n_concepts, device=None, *, symbols=None, delayed=False):
         """``n_concepts`` concept rows read things: the rows of the symbols'
         Pi (room for ``symbols``, by default one for each concept row) and
         the bias (EVERYTHING, whose value is one), one column each. No
         column is a concept's row. A concept may not read a symbol that
-        holds it.
+        holds it. With ``delayed`` (the unit delay, item 1.4), each concept
+        row has a further column after the bias: that concept one step
+        back (:meth:`delayed_column`).
         """
         n = int(n_concepts)
         symbols = n if symbols is None else int(symbols)
         if symbols < 1:
             raise ValueError('the concept store needs room for its symbols')
-        layer = cls(symbols + 1, n, device=device, forbid_self_edges=True)
+        layer = cls(symbols + 1 + (n if delayed else 0), n, device=device, forbid_self_edges=True)
         layer._thing_columns = True
         layer._room = symbols
+        layer._delayed_columns = bool(delayed)
         return layer
+
+    def delayed_column(self, row):
+        """The column of the concept of row ``row`` one step back: after the
+        symbols and the bias, one for each concept row. Its value is the
+        concept's greatest activation in the step before (item 1.4)."""
+        if not self.__dict__.get('_delayed_columns') or not 0 <= int(row) < self.nOutput:
+            raise ValueError('this store has no input one step back for that row')
+        return self._room + 1 + int(row)
+
+    def delayed_of_column(self, column):
+        """The concept row whose input one step back ``column`` is, or
+        ``None`` for a symbol or the bias."""
+        column = int(column)
+        return column - self._room - 1 if column > self._room and self.__dict__.get('_delayed_columns') else None
+
+    def delayed_entries(self, device):
+        """The entries on concepts one step back: ``(rows, sources,
+        positions)``, each ``[D]``: the row holding the entry, the row of
+        the concept it reads one step back, and the entry's place among the
+        store's values. Empty where the store has no such columns."""
+        rows, cols = self._indices(device)
+        if not self.__dict__.get('_delayed_columns'):
+            return rows[:0], rows[:0], rows[:0]
+        held = self.__dict__.get('_delayed_entries')
+        if held is not None and held[0] is rows:
+            return held[1]
+        positions = (cols > self._room).nonzero().flatten()
+        result = rows.index_select(0, positions), cols.index_select(0, positions) - self._room - 1, positions
+        self.__dict__['_delayed_entries'] = rows, result
+        return result
 
     # -- the columns are things: one column for each row of the symbols' Pi
     # (a symbol, :class:`Symbols.SymbolTable`) and one for the bias. A thing
@@ -6544,15 +6580,21 @@ class ConceptualAttentionLayer(SparseLayer):
         return table
 
     def column_of_thing(self, thing):
-        """The column of ``thing`` (``None``: the bias)."""
+        """The column of ``thing`` (``None``: the bias; ``('delayed', r)``:
+        the concept of row ``r`` one step back)."""
         if thing is None:
             return self._room
         if thing[0] == 'sym' and 0 <= int(thing[1]) < self._room:
             return int(thing[1])
+        if thing[0] == 'delayed':
+            return self.delayed_column(thing[1])
         raise ValueError(f'{thing!r} is no thing of this store')
 
     def thing_of_column(self, column):
         """The thing that ``column`` reads, ``None`` for the bias."""
+        delayed = self.delayed_of_column(column)
+        if delayed is not None:
+            return ('delayed', delayed)
         return None if int(column) == self._room else ('sym', int(column))
 
     def bias_column(self):
@@ -6574,7 +6616,8 @@ class ConceptualAttentionLayer(SparseLayer):
     def thing_rows(self, thing):
         """The store rows of the concepts a symbol holds; a member with no
         row is left out."""
-        if thing is None:
+        if thing is None or thing[0] != 'sym':
+            # A concept one step back is no symbol: it holds no concept now.
             return ()
         rows = (self._tensor_rows.get(('concept', int(member)))
                 for member in self.symbol_table.members(int(thing[1])))
@@ -6597,7 +6640,8 @@ class ConceptualAttentionLayer(SparseLayer):
         if found is None:
             thing = self.thing_of_column(position)
             rows = self.thing_rows(thing)
-            complete = thing is None or len(rows) == len(self.symbol_table.members(int(thing[1]))) > 0
+            complete = thing is None or (thing[0] == 'sym' and
+                                         len(rows) == len(self.symbol_table.members(int(thing[1]))) > 0)
             found = cache[1][position] = (thing, rows, complete)
         return found
 
@@ -6653,7 +6697,7 @@ class ConceptualAttentionLayer(SparseLayer):
         but for one at zero, which takes ``weight``."""
         if self._thing_columns and role is None and 0 <= int(col) < self.nInput:
             thing = self.thing_of_column(col)
-            if thing is not None and int(thing[1]) >= len(self.symbol_table):
+            if thing is not None and thing[0] == 'sym' and int(thing[1]) >= len(self.symbol_table):
                 raise ValueError(f'column {int(col)} reads symbol {thing[1]}, which the table has not made')
         position = self._index.get((int(row), int(col)))
         if position is not None:
@@ -6698,6 +6742,10 @@ class ConceptualAttentionLayer(SparseLayer):
                 lookup[row] = seat
         rows_host = self._rows
         selected = [i for i, row in enumerate(rows_host) if row in lookup]
+        if self.__dict__.get('_delayed_columns'):
+            # An entry on a concept one step back reads no seat of the
+            # field; it is read apart (:meth:`delayed_entries`).
+            selected = [i for i in selected if self._cols[i] <= self._room]
         slots, specs = {}, []
         for i in selected:
             position = self._cols[i]
@@ -7312,6 +7360,9 @@ class ConceptAllocator:
                                        else (1, 1, None, None))
             if roles is None and int(n_in) == int(n_out) + 1:
                 got = ConceptualAttentionLayer.square(int(n_out), device=dev)
+            elif roles is None and int(n_in) == 2 * int(n_out) + 1:
+                # The unit delay (item 1.4): each row one step back as well.
+                got = ConceptualAttentionLayer.square(int(n_out), device=dev, delayed=True)
             else:
                 got = ConceptualAttentionLayer(
                     max(1, int(n_in)), max(1, int(n_out)),

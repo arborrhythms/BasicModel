@@ -2621,6 +2621,8 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         if owner is not None:
             kept = set(keep.tolist()) if keep.numel() else set()
             removed = [self.occurrence_of(row) for row in range(len(self)) if row not in kept]
+        if len(keep) < len(self):
+            self._forget_transitions(keep)
         temporal = self.__dict__.get('_temporal_owner')
         if temporal is not None and temporal() is not None and len(keep) < len(self):
             temporal().forget_heads(self.row_names[keep], relations=False)
@@ -2640,6 +2642,26 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
             for reference in removed:
                 owner.mtm.pending.pop(reference,None)
                 owner.mtm.forget(reference)
+
+    @torch.no_grad()
+    def _forget_transitions(self, keep):
+        """Drop the transitions that name a row not in ``keep``, and the last
+        idea of a stream when it is such a row: a forgotten idea leaves no
+        link behind."""
+        transitions = self.parts.__dict__.get('_transition_rows')
+        last = self.__dict__.get('_transitions_last')
+        if not transitions and not last:
+            return
+        names = self.row_names[:len(self)]
+        gone = set(names.tolist()) - set(names.index_select(0, keep).tolist())
+        if transitions:
+            drop = {row for row, pair in self.parts.reference_pairs(sorted(transitions)).items()
+                    if any(kind == OCCURRENCE and value in gone for kind, value in pair)}
+            if drop:
+                self.parts.retain([row for row in self.parts.indices().tolist() if row not in drop])
+        if last:
+            for stream in [stream for stream, name in last.items() if name in gone]:
+                del last[stream]
 
     @torch.no_grad()
     def reset(self):
@@ -2755,6 +2777,37 @@ class LTM0(IdeaRows):
             self.activity[first:end] = self.activity_config.default
         self._write_count(end)
         return range(first, end)
+
+    @torch.no_grad()
+    def keep_transitions(self, stream, before):
+        """Link each idea kept since ``before`` (the row names held then), in
+        the order kept, to the idea kept before it in ``stream``: "this
+        followed that" (``architecture.ideaTransitions``). The link is a
+        relation of this store over two of its rows. The last idea of each
+        stream is held across sentences and batches until the stream's hard
+        reset (``end_transitions``) or until that idea is forgotten."""
+        names = self.row_names[:len(self)]
+        kept = names[~torch.isin(names, before.to(names))].tolist()
+        if not kept:
+            return
+        last = self.__dict__.setdefault('_transitions_last', {})
+        previous = last.get(stream)
+        if previous is not None and self.location(('ltm', self.address_domain, previous)) is None:
+            previous = None
+        for name in kept:
+            if previous is not None and previous != name:
+                self.parts.add_transition(previous, name)
+            previous = name
+        last[stream] = previous
+
+    def end_transitions(self, stream=None):
+        """Begin a new chain in ``stream``, or in every stream when None."""
+        last = self.__dict__.get('_transitions_last')
+        if last:
+            if stream is None:
+                last.clear()
+            else:
+                last.pop(stream, None)
 
     def _idea_description(self, index, reference):
         value = super()._idea_description(index, reference)
@@ -3070,13 +3123,21 @@ class LTM1(_CountedRows, nn.Module):
         handles = self.__dict__.get('_sentence_handles')
         if handles is not None:
             handles.add(row)
+        if row in self.__dict__.get('_transition_rows', ()):
+            # A transition is neither a part nor a kind (:meth:`add_transition`).
+            return
         bisect.insort(self._parts.setdefault(right, []), left, key=lambda ref: self._pairs[ref, right])
         bisect.insort(self._wholes.setdefault(left, []), right, key=lambda ref: self._pairs[left, ref])
         for reference in {left, right}:
             bisect.insort(self._references.setdefault(reference, []), row)
 
     def protected_references(self, rows=None):
+        """The references the relations hold. A transition is not one: it is
+        dropped with the idea it names, which it does not keep."""
         pending = self.indices().tolist() if rows is None else list(rows)
+        transitions = self.__dict__.get('_transition_rows')
+        if rows is None and transitions:
+            pending = [row for row in pending if row not in transitions]
         seen, references = set(), set()
         while pending:
             pairs = self.reference_pairs(pending)
@@ -3097,6 +3158,37 @@ class LTM1(_CountedRows, nn.Module):
         for left in operands:
             head = RELATION, self.add(left, head, truth_plus=1.)
         return head
+
+    @torch.no_grad()
+    def add_transition(self, before, after):
+        """Record that the idea named ``after`` followed the idea named
+        ``before`` (``architecture.ideaTransitions``): a pair of occurrence
+        references, held as an observation and neither counted nor read. A
+        pair already held is that link, and is not marked again.
+
+        The link is a relation of this LTM1, the one store of relations,
+        told apart from the others by its mark (:meth:`transition_rows`).
+        It is read as neither a part nor a kind: :meth:`parts` and
+        :meth:`wholes` do not give it, so it gives no concept or idea an
+        order or a member."""
+        pair = (OCCURRENCE, int(before)), (OCCURRENCE, int(after))
+        row = self.find(*pair)
+        if row is not None:
+            return row
+        row = self.add(*pair, truth_plus=1.)
+        self.__dict__.setdefault('_transition_rows', set()).add(row)
+        left, right = pair
+        for table, key, value in ((self._parts, right, left), (self._wholes, left, right)):
+            held = table.get(key)
+            if held is not None and value in held:
+                held.remove(value)
+                if not held:
+                    del table[key]
+        return row
+
+    def transition_rows(self):
+        """The handles of the transitions recorded by ``add_transition``."""
+        return frozenset(self.__dict__.get('_transition_rows', ()))
 
     def leaves(self, head):
         """Follow a typed head left to right, preserving repeated occurrences."""
@@ -3186,8 +3278,11 @@ class LTM1(_CountedRows, nn.Module):
             self.relation_order.fill_(-1)
             self._clear_index()
             self._order_revision = self._index_version = self._topology_revision
+            self.__dict__.pop('_transition_rows', None)
             return
         selected = set(indices.tolist())
+        if self.__dict__.get('_transition_rows'):
+            self._transition_rows &= selected
         if len(selected) != len(indices) or not all(self.contains_rows(indices)):
             raise ValueError('invalid LTM1 retention selection')
         if any(kind == RELATION and child not in selected for pair in self.reference_pairs(indices).values() for kind, child in pair):
@@ -3209,6 +3304,8 @@ class LTM1(_CountedRows, nn.Module):
         version = state.get(prefix+'layout_version')
         if version is None or int(version) not in (5, VERSION):
             raise ValueError('unsupported LTM1 checkpoint layout')
+        # The marks of transitions are not kept in a checkpoint.
+        self.__dict__.pop('_transition_rows', None)
         allowed = {*self.columns, 'count', 'layout_version'}
         for key in tuple(state):
             if key.startswith(prefix) and key[len(prefix):] not in allowed:

@@ -12476,7 +12476,9 @@ def _concept_alloc_of(host):
                 for p in params():
                     dev = p.device
                     break
-            return N + 1, N, dev, None
+            # With the unit delay each concept row is a column one step
+            # back as well (item 1.4).
+            return (2 * N + 1 if getattr(_h, 'percept_delay', False) else N + 1), N, dev, None
 
         def _cap(_h=host):
             caps_fn = getattr(_h, "_order_caps", None)
@@ -13795,6 +13797,8 @@ class ConceptualSpace(Space):
             self._prepare_part_learning()
             self._maybe_rebuild_optimizer_for_csw()
         super().Reset(batch=batch, hard=hard)
+        if hard:
+            self.clear_delay(batch=batch)
         self._clear_percept_field(batch=batch)
         if not hard:
             stm = getattr(self, 'stm', None)
@@ -14651,6 +14655,13 @@ class ConceptualSpace(Space):
         order = self._row_order(int(row))
         if order < 1:
             raise ValueError('a kind of order zero is read in the order-zero Sigma')
+        if thing[0] == 'delayed':
+            # A concept one step back is read at the orders above its own.
+            source = self._row_order(int(thing[1]))
+            if source is None or source >= order:
+                raise ValueError(f'a kind of order {order} reads concepts one step back of lower orders only: '
+                                 f'row {thing[1]} is of order {source}')
+            return
         store = _concept_alloc_of(self).layer(0)
         orders = set()
         for member in store.symbol_table.members(int(thing[1])):
@@ -14755,17 +14766,131 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_percept_delay_on', held)
         return held
 
+    #: The registered buffers that keep the unit delay: each one's
+    #: activations now and one step back, ``[rows, B, 2]``, and the tick of
+    #: the model's clock at which the percepts' present step began. They
+    #: are not saved; a forward compiled whole reads and writes them in
+    #: place, so they are made, for the number of streams, before it
+    #: (:meth:`prepare_delay`).
+    _DELAY_BUFFERS = dict(percept=('_percept_delay_current', '_percept_delay_previous'),
+                          concept=('_concept_delay_current', '_concept_delay_previous'))
+
+    def _delay_state(self, kind):
+        """The kept activations of ``kind`` (``'percept'`` or ``'concept'``),
+        ``(current, previous)``, or ``None`` where none are kept."""
+        current, previous = self._DELAY_BUFFERS[kind]
+        held = getattr(self, current, None)
+        return None if held is None else (held, getattr(self, previous))
+
+    def _make_delay(self, kind, rows, B, device, dtype=torch.float32):
+        """Make the kept activations of ``kind`` empty for ``B`` streams, on
+        ``device``; where they are kept already in that shape, they are
+        kept. Returns ``(current, previous)`` and whether they were made
+        now."""
+        state = self._delay_state(kind)
+        if state is not None and state[0].shape == (rows, B, 2) and state[0].device == device:
+            return state, False
+        if torch.compiler.is_compiling():
+            raise RuntimeError('the unit delay is made before a forward compiled whole (prepare_delay)')
+        current, previous = self._DELAY_BUFFERS[kind]
+        self.register_buffer(current, torch.zeros(rows, B, 2, device=device, dtype=dtype), persistent=False)
+        self.register_buffer(previous, torch.zeros(rows, B, 2, device=device, dtype=dtype), persistent=False)
+        if kind == 'percept':
+            model = getattr(self, '_model', None)
+            tick = -1 if model is None else int(model.present())
+            self.register_buffer('_percept_delay_tick', torch.tensor(tick, device=device), persistent=False)
+        return self._delay_state(kind), True
+
+    @torch.no_grad()
+    def prepare_delay(self, B, device):
+        """Before a forward compiled whole: the kept activations of the
+        basic percepts and of the concepts are made for ``B`` streams on
+        ``device`` where they are not, so the forward only reads and writes
+        them in place."""
+        if self.percept_delay:
+            self._make_delay('percept', int(self.basic_percepts.capacity), int(B), device)
+            self._make_delay('concept', int(self.nVectors), int(B), device)
+
+    @torch.no_grad()
+    def clear_delay(self, batch=None):
+        """A hard reset: nothing is one step back. The kept activations of
+        the basic percepts and of the concepts, now and one step back, are
+        cleared for the streams ``batch`` (all of them where it is not
+        given)."""
+        for kind in self._DELAY_BUFFERS:
+            state = self._delay_state(kind)
+            if state is None:
+                continue
+            for held in state:
+                if batch is None:
+                    held.zero_()
+                else:
+                    rows = torch.as_tensor(batch, device=held.device)
+                    rows = rows[:held.shape[1]] if rows.dtype == torch.bool else rows
+                    held[:, rows] = 0
+
     def delayed_input(self, percept):
         """The order-zero Sigma's input for basic percept ``percept`` one step back."""
         return int(self.basic_percepts.capacity) + int(percept)
 
     @torch.no_grad()
-    def step_percept_delay(self):
+    def step_percept_delay(self, changed=None):
         """A step ends: what was found in it becomes what was found one step
-        back, and the present starts from nothing."""
-        state = self.__dict__.get('_percept_delay_state')
-        if state is not None:
-            state['previous'], state['current'] = state['current'], torch.zeros_like(state['current'])
+        back, and the present starts from nothing; for basic percepts and
+        for the concepts above order zero alike. With ``changed`` (a
+        boolean tensor) the step ends only where it is true, read on the
+        device and not on the host."""
+        for kind in self._DELAY_BUFFERS:
+            state = self._delay_state(kind)
+            if state is None:
+                continue
+            current, previous = state
+            if changed is None:
+                previous.copy_(current)
+                current.zero_()
+            else:
+                previous.copy_(torch.where(changed, current, previous))
+                current.copy_(torch.where(changed, torch.zeros_like(current), current))
+
+    @torch.no_grad()
+    def keep_concept_activations(self, field, addresses):
+        """Each concept's greatest activation in the present step: the
+        field ``[S, B, L, 2]`` of the seats ``addresses`` (``[S]`` or
+        ``[S, B]`` rows, ``-1`` none) is kept, lane by lane, where it is
+        greater than what the step has kept of the row (item 1.4)."""
+        S, B = min(int(field.shape[0]), int(addresses.shape[0])), int(field.shape[1])
+        if not S or not B:
+            return
+        (current, _), _ = self._make_delay('concept', int(self.nVectors), B, field.device)
+        N = current.shape[0]
+        addresses = addresses[:S].to(field.device)
+        if addresses.ndim == 1:
+            addresses = addresses[:, None].expand(-1, B)
+        found = field[:S].detach().amax(2).to(current).reshape(S * B, 2)          # [S * B, 2]
+        valid = ((addresses >= 0) & (addresses < N)).reshape(-1, 1)
+        flat = (addresses.clamp(0, N - 1) * B + torch.arange(B, device=field.device)).reshape(-1)
+        # A seat with no row gives nothing: its value is below every kept
+        # one, so the greatest is unchanged (no host read of the seats).
+        found = torch.where(valid, found, torch.full_like(found, float('-inf')))
+        current.view(N * B, 2).scatter_reduce_(0, flat[:, None].expand(-1, 2), found, 'amax')
+
+    def delayed_concepts(self, sources, B, device):
+        """The activations one step back of the concepts of rows
+        ``sources`` (``[D]``), ``[D, B, 2]``; nothing where none was kept."""
+        state = self._delay_state('concept')
+        if state is None or state[1].shape[1] != B:
+            return torch.zeros(len(sources), B, 2, device=device)
+        return state[1].to(device).index_select(0, sources.to(device))
+
+    def link_delayed_concept(self, row, source, weight=0.0, *, negated=False):
+        """The entry of the kind on store row ``row`` on the concept of row
+        ``source`` one step back, at ``weight`` (zero until it is learned),
+        reading its not-value where ``negated``: below zero it reads "not
+        before". The source is of an order below the kind's, as a symbol's
+        concepts are. Returns the entry's position."""
+        if not self.percept_delay:
+            raise ValueError('concepts one step back are read only with architecture.perceptDelay')
+        return self.add_thing_edge(int(row), ('delayed', int(source)), weight, negated=negated)
 
     def delayed_percepts(self, values, inputs, *, publish=True):
         """The unit delay on basic percepts (Alec, 2026-11-27): ``values``
@@ -14778,29 +14903,31 @@ class ConceptualSpace(Space):
         :meth:`step_percept_delay`. Nothing
         is subtracted: "there now and not before" is an entry above zero
         on the row and one below zero on its delayed input. Returns the
-        joined values and inputs."""
+        joined values and inputs.
+
+        The kept activations and the tick are registered buffers, read and
+        written in place: whether the clock has moved is a tensor, so a
+        forward compiled whole reads nothing on the host here."""
         capacity = int(self.basic_percepts.capacity)
         P, B, E = values.shape[:3]
         model = getattr(self, '_model', None)
-        tick = None if model is None else int(model.present())
-        state = self.__dict__.get('_percept_delay_state')
-        if (state is None or state['current'].shape[1] != B or state['current'].device != values.device):
-            empty = values.new_zeros(capacity, B, 2).detach()
-            state = dict(tick=tick, current=empty, previous=empty.clone())
-            object.__setattr__(self, '_percept_delay_state', state)
-        elif tick is not None and tick != state['tick']:
+        (current, previous), made = self._make_delay('percept', capacity, B, values.device, values.dtype)
+        if model is not None and not made:
             # A step is a tick at which percepts are read. The clock also
             # ticks for an answer or a thought, where none are, so one step
             # back is the last tick that read any.
-            state['previous'] = state['current']
-            state['current'] = torch.zeros_like(state['current'])
-            state['tick'] = tick
+            held = self._percept_delay_tick
+            when = getattr(model, 'when_time', None)
+            now = (when.reshape(()) if torch.is_tensor(when) else torch.tensor(int(model.present()))).to(held)
+            self.step_percept_delay(changed=now != held)
+            with torch.no_grad():
+                held.copy_(now)
         rows = torch.as_tensor(list(inputs), dtype=torch.long, device=values.device)
         if publish and P:
             with torch.no_grad():
-                found = values.detach().amax(2).to(state['current'])
-                state['current'][rows] = torch.maximum(state['current'][rows], found)
-        before = state['previous'].index_select(0, rows).to(values)[:, :, None].expand(P, B, E, 2)
+                found = values.detach().amax(2).to(current)
+                current.index_put_((rows,), torch.maximum(current.index_select(0, rows), found))
+        before = previous.index_select(0, rows).to(values)[:, :, None].expand(P, B, E, 2)
         return torch.cat((values, before)), [*inputs, *(capacity + int(row) for row in inputs)]
 
     def _zero_frozen_entries(self, grad):
@@ -15659,8 +15786,15 @@ class ConceptualSpace(Space):
             if (not torch.compiler.is_compiling() and staged is not None and staged[0] is addresses
                     and staged[1] == addresses._version and staged[2] is topology and staged[3] == field.shape[1]):
                 plan = staged[4]
+            delayed = None
+            if store.__dict__.get('_delayed_columns'):
+                # The entries on concepts one step back read the kept
+                # activations, not the field (item 1.4).
+                rows, sources, positions = store.delayed_entries(field.device)
+                if len(rows):
+                    delayed = (rows, positions, self.delayed_concepts(sources, field.shape[1], field.device))
             return seated_rung(field, addresses.to(field.device), store.values,
-                               topology, store.nOutput, start, end, plan)
+                               topology, store.nOutput, start, end, plan, delayed=delayed)
         if addresses.ndim == 2:
             return torch.cat([self._concept_rung_presence(field[:, b:b+1], start, end,
                 inventory_rows=addresses[:, b]) for b in range(field.shape[1])], 1)
@@ -15670,12 +15804,13 @@ class ConceptualSpace(Space):
         result = signed_lanes(sigma_read(ly, options, start, end))
         return result.reshape(end - start, B, L, 2)
 
-    def cs_forward_content(self, a_0):
+    def cs_forward_content(self, a_0, *, publish=False):
         """Compose paired evidence within occurrences: the concept field.
 
         The taper ranks either pole and admits both together. Only the bounded
         store span is materialized. Returns the field ``[S, B, L, 2]``; it
-        holds no code.
+        holds no code. With ``publish`` and the unit delay, each concept's
+        activation is kept for the step (:meth:`keep_concept_activations`).
         """
         from ConceptEvidence import symbols
         from Layers import thing_priorities
@@ -15746,6 +15881,8 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_level_act_tensor', torch.stack(level_acts))
         object.__setattr__(self, '_cs_level_rows', [r.detach() for r in sel_rows])
         object.__setattr__(self, '_cs_wave_qe', None)
+        if publish and self.percept_delay:
+            self.keep_concept_activations(field, self._field_inventory_rows(field.device))
         return field
 
     def cs_reverse_presence(self, field, *, observed=None, inventory_rows=None, stream_batch=True):
@@ -16165,7 +16302,7 @@ class ConceptualSpace(Space):
             self._cs_field_concept_ids,
             torch.nn.functional.pad(a_0, (0, 0, 0, 0, 0, 0, 0, sum(self._field_caps()) - len(a_0))),
             self._cs_field_where, self._cs_field_when, None, getattr(self, '_cs_field_wires', None)))
-        acts = self.cs_forward_content(a_0)
+        acts = self.cs_forward_content(a_0, publish=True)
         # Stage the pyramid's per-order winners on the subspace index so a
         # generic materialize() pulls exactly the selected codes (rev 2 #6).
         rows = getattr(self, "_cs_level_rows", None)

@@ -591,13 +591,19 @@ class BasicPercepts(nn.Module):
         self._place_cone_rows = {}
         # Store binary32 observations even when a model casts its parameters
         # to a lower precision. These live counts and cones expire on restore.
-        place_cap = max(16, self.capacity)
+        # Places are far fewer than percepts: their room is its own key, and
+        # the host path grows it where more are met (place_cone_storage).
+        place_cap = max(16, min(self.capacity, int(TheXMLConfig.get('architecture.placeCapacity', default=1024))))
         self.register_buffer('_place_cone_bits', torch.zeros(place_cap, 2 * WHERE_WIRES + self.width,
                              dtype=torch.int32), persistent=False)
         self.register_buffer('_place_cone_keys', torch.zeros(place_cap, WHERE_WIRES, dtype=torch.int64),
                              persistent=False)
         self.register_buffer('_place_cone_counts', torch.zeros(place_cap, dtype=torch.int64), persistent=False)
         self.register_buffer('_place_cone_used', torch.zeros((), dtype=torch.int64), persistent=False)
+        # Each stream's visits to a seat in compiled regions since the host
+        # last counted them (Places.sync_compiled_places).
+        self.register_buffer('_place_cone_streams', torch.zeros(place_cap, self.PLACE_STREAMS, dtype=torch.int64),
+                             persistent=False)
         # Each row's kept value and weight on the where wires and on the when
         # wires of an attended percept. They are learned, so the module that
         # learns them registers them (``PartSpace.place_entries``); the
@@ -1040,6 +1046,9 @@ class BasicPercepts(nn.Module):
         return {key: values[row].split((WHERE_WIRES, WHERE_WIRES, self.width))
                 for key, row in self._place_cone_rows.items()}
 
+    #: The streams whose visits to a place a compiled region keeps apart.
+    PLACE_STREAMS = 64
+
     def place_cone_storage(self, needed):
         if needed > len(self._place_cone_bits):
             old = self._place_cone_bits
@@ -1055,6 +1064,10 @@ class BasicPercepts(nn.Module):
             grown_counts = old_counts.new_zeros((cap,))
             grown_counts[:len(old_counts)].copy_(old_counts)
             self._place_cone_counts = grown_counts
+            old_streams = self._place_cone_streams
+            grown_streams = old_streams.new_zeros((cap, old_streams.shape[1]))
+            grown_streams[:len(old_streams)].copy_(old_streams)
+            self._place_cone_streams = grown_streams
         return self._place_cone_bits.view(torch.float32)
 
     def reserve_place(self, plus, minus, what=None, *, key=None):
@@ -2419,6 +2432,7 @@ class BasicPercepts(nn.Module):
         self._place_cone_bits.zero_()
         self._place_cone_keys.zero_()
         self._place_cone_counts.zero_()
+        self._place_cone_streams.zero_()
         self._place_cone_used.zero_()
         learned = self.where_entries.detach().clone()
         for row, (parts, wholes) in enumerate(state['occurrences']):

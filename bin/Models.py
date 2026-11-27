@@ -201,6 +201,19 @@ def _append_observed_meaning(store, clause, *, trust=0.0, expectation=None, stre
     return result
 
 
+def _keeping_transitions(store, streams, on):
+    """Yield each stream's writes in turn. With ``on``, the ideas the store
+    keeps during a stream's writes are then linked, in the order kept, to the
+    idea kept before them in that stream (``architecture.ideaTransitions``)."""
+    for item in streams:
+        if not on:
+            yield item
+            continue
+        before = store.row_names[:len(store)].clone()
+        yield item
+        store.keep_transitions(item[0] if isinstance(item, tuple) else item, before)
+
+
 def _keeps_recent_situation(discourse):
     """Keep provisioning's rows outside the caller's recent situation."""
     return bool(
@@ -6734,6 +6747,16 @@ class BasicModel(BaseModel):
             return x.clamp(min=-1 + epsilon, max=1 - epsilon)
         return x
 
+    @property
+    def idea_transitions(self):
+        """Whether each idea kept in the idea store is linked to the idea kept
+        before it in its stream (``architecture.ideaTransitions``; item 1.4)."""
+        held = self.__dict__.get('_idea_transitions_on')
+        if held is None:
+            held = bool(TheXMLConfig.get('architecture.ideaTransitions', default=False))
+            object.__setattr__(self, '_idea_transitions_on', held)
+        return held
+
     def End(self):
         """Per-batch teardown. Cascades End() to every Space.
 
@@ -8745,6 +8768,11 @@ class BasicModel(BaseModel):
                 _l0.concept_rows(torch.empty(0, dtype=torch.long, device=device))
                 from CaseSelection import case_edges
                 case_edges(_l0, device)
+                # The entries on concepts one step back, found on the host.
+                _l0.delayed_entries(device)
+            if hasattr(_space, 'prepare_delay'):
+                # The unit delay's kept activations, made for the streams.
+                _space.prepare_delay(int(batch_size), device)
             if hasattr(_space, '_prepare_closure_plan_host'):
                 _space._prepare_closure_plan_host(device)
             _interp = getattr(_space, '_interpret_operator', None)
@@ -8781,6 +8809,16 @@ class BasicModel(BaseModel):
                         _compiling_exec = self._is_compiled_host_staging(executor)
                         try:
                             self._staged_in_sub = self._lex_embed_stem(input_data)
+                            if (hasattr(executor, '_torchdynamo_orig_callable')
+                                    or hasattr(type(self).forward, '_torchdynamo_orig_callable')
+                                    or hasattr(self.forward, '_torchdynamo_orig_callable')):
+                                # A forward compiled whole reads the host tables staged
+                                # here for every sentence: they are right for one.
+                                _slots = getattr(self.inputSpace, '_packed_sentence_slot_mask', None)
+                                if torch.is_tensor(_slots) and _slots.ndim == 2 and int(_slots.sum(1).max()) > 1:
+                                    raise NotImplementedError(
+                                        'a forward compiled whole reads one sentence for each stream; '
+                                        'compile the sentence regions for inputs of several sentences')
                             from ModelAttention import prepare_symbol_bank_host, stage_symbol_bank
                             prepare_symbol_bank_host(owner, input_data.device)
                             _exp = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
@@ -15906,6 +15944,12 @@ class BasicModel(BaseModel):
             self._clear_recall_history()
         if not hard_eos:
             return
+        store = getattr(getattr(self, 'symbolSpace', None), 'ltm_store', None)
+        if isinstance(store, LTM0):
+            # A hard reset of a stream begins its chain of kept ideas anew.
+            for b, done in enumerate(hard_eos):
+                if done:
+                    store.end_transitions(b)
         if all(hard_eos):
             # Legacy-parity hot path (L6 in the handoff): a single
             # global Reset per space when every row finishes a doc on
@@ -21094,8 +21138,9 @@ class BasicModel(BaseModel):
         from Interpret import SilenceLayer
         silent = SilenceLayer.silent(state[1][11][:, sid], active)
         self._sentence_silence = silent
+        transitions = isinstance(store, LTM0) and self.idea_transitions
         if store is not None:
-            for b in silent.nonzero().flatten().tolist():
+            for b in _keeping_transitions(store, silent.nonzero().flatten().tolist(), transitions):
                 partial = chosen[b]['partial'][b]
                 if partial is None:
                     from Occurrence import operand_name
@@ -21118,7 +21163,7 @@ class BasicModel(BaseModel):
         written_clauses = [dict(observe_sides=True) if observe_sides else {} for _ in rows]
         if store is not None and getattr(self.conceptualSpace, '_ltm_consolidation', False):
             retain = _keeps_recent_situation(disc)
-            for b, payload in enumerate(view['payloads']):
+            for b, payload in _keeping_transitions(store, enumerate(view['payloads']), transitions):
                 if payload is None:
                     continue
                 comparison = None

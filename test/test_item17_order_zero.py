@@ -245,7 +245,12 @@ def test_the_order_zero_sigma_is_sparse_and_not_penalized(lesson):
     # Item 1.4: no Not stands between the first Pi and this Sigma.
     sigma = owner.order_zero
     assert isinstance(sigma, SparseSigmaLDU) and not hasattr(owner, 'order_zero_not')
-    assert (sigma.nInput, sigma.nOutput) == (basic.capacity, owner._order_caps()[0])
+    # With the unit delay (architecture.perceptDelay, on by default) each
+    # row has a second input, its signed value one step back, at
+    # ``capacity + row``: the inputs are the rows now and the rows one step
+    # back, and still no code and no place.
+    rows = basic.capacity * (2 if owner.percept_delay else 1)
+    assert (sigma.nInput, sigma.nOutput) == (rows, owner._order_caps()[0])
     assert any(p is sigma.value for p in owner.getParameters())
     keys = {key[key.index('order_zero.'):] for key in owner.state_dict() if 'order_zero.' in key}
     assert {'order_zero.value', 'order_zero.entry_row', 'order_zero.entry_input', 'order_zero.count'} <= keys
@@ -352,7 +357,16 @@ def test_square_a_new_concept_reads_only_its_own_row(lesson):
     if 'nominated' not in lesson:
         test_no_row_on_a_first_reading(lesson)
     word, row, c_row = lesson['nominated']
-    assert owner.order_zero.entries(c_row) == [(row, 1., False)]
+    # With the unit delay (architecture.perceptDelay, on by default) MTM
+    # also links the concept to its row one step back, an entry written at
+    # zero (bring_concept). An entry at zero is still an entry, so it is
+    # counted: on the rows now the concept has the one entry on its own row
+    # at one, and its one other entry is that link, at zero, weighing
+    # nothing until it is learned.
+    entries = owner.order_zero.entries(c_row)
+    assert [e for e in entries if e[0] < basic.capacity] == [(row, 1., False)]
+    assert [e for e in entries if e[0] >= basic.capacity] == (
+        [(owner.delayed_input(row), 0., False)] if owner.percept_delay else [])
     bound = 1 - 1e-7
     read = lambda lanes: float(torch.atanh(owner.order_zero_field(torch.tensor([[[lanes]]]), [row], [c_row])
                                            .detach()[0, 0, 0, 0].clamp(-bound, bound)))

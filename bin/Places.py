@@ -88,15 +88,19 @@ def sync_compiled_places(owner, *, promoted=None):
     if not delta_seats:
         return []
     from BasicPercepts import WHERE_WIRES
-    reading = owner.reading(0)
+    # A reading is one sentence of one stream: each stream that visited a
+    # seat counts once, as on the host path.
+    visited = {}
+    for seat, stream in basic._place_cone_streams[:used].nonzero().tolist():
+        visited.setdefault(seat, []).append(stream)
+    basic._place_cone_streams.zero_()
     chosen_seats = []
     for seat in delta_seats:
         key = _host_key(qrows[seat])
-        delta = counts[seat] - synced.get(seat, 0)
         synced[seat] = counts[seat]
         nominated = False
-        for _ in range(delta):
-            if owner.nominates(('place', key), reading):
+        for stream in visited.get(seat, (0,)):
+            if owner.nominates(('place', key), owner.reading(stream)):
                 nominated = True
         if nominated:
             chosen_seats.append(seat)
@@ -169,6 +173,9 @@ def _meet_tensor(owner, basic, c, has, what):
     write_src = slot_match.long().argmax(0)
     keys_buf.copy_(torch.where(has_write[:, None], qkeys.index_select(0, write_src), keys_buf))
     basic._place_cone_counts.scatter_add_(0, safe_seat, valid_seat.long())
+    streams = basic._place_cone_streams
+    stream = (torch.arange(N, device=c.device) // K).clamp_max(streams.shape[1] - 1)
+    streams.view(-1).scatter_add_(0, safe_seat * streams.shape[1] + stream, valid_seat.long())
     basic._place_cone_used.add_(novel.long().sum().clamp_max((M - used).clamp_min(0)))
     return []
 

@@ -77,6 +77,7 @@ sub-elements `<training>` and `<data>` (see below).
 | `ergodic` | bool | `false` | Ergodic exploration: eligible layers use `W_eff = bias * W + var * noise`; `bias`/`var` are gradient-energy buffers, not Adam parameters. See [Ergodic.md](Ergodic.md). |
 | `naive` | bool | `false` | Materialise `W_eff` densely in `InvertibleLinearLayer`. Slower; debugging only. `false` uses sequential L / D / U triangular solves. |
 | `attentionBudget` | nonnegative int | `32` | One allowance for the looks of a sentence, symbol recall and thought attention. Each call of `attend` spends one unit. Grammatical word composition does not spend it. Zero disables the looks and thought work while retaining ordinary word composition for the VP-only control. |
+| `placeCapacity` | positive int | `1024` | Room for the places met, each a row of where wires with its cone and count. It is no more than the percept capacity and no less than 16. The host path grows it where more are met; a compiled region does not, and a place met there beyond the room is not kept. |
 | `hardwireReading` | int (`0`/`1`) | `1` | When non-zero (default `1`), pre-unrolls `attentionBudget` looks over hardwired reading order rather than single-look learned reading. Set `0` to disable hardwired reading (e.g., for fast whole-sentence fullgraph capture). |
 | `thoughtSearchExhaustion` | positive int | `1` | Consecutive completed region queries with no candidate before conclude is legal despite free variables or missing evidence. At that closing, source-supported forward referents are provisionally minted; regions without source evidence stay question rows. A query cut short by the budget is not a completed empty search. |
 | `bindingDepth` | nonnegative int | `1` | Number of constructed percept/concept binding layers, with live recurrence between them; model capacity, not an attention work allowance. Exactly one WholeSpace is shared by these stages; its property inventory and where slice do not multiply with this depth. |
@@ -928,14 +929,34 @@ it. Zero is no presence. Reverse returns at each place the centroid of the
 percept a concept of the field reads for there, so an input is put back once
 its regions and places are known. `architecture.intensityPartCardinality` (256) is the number of levels
 of the alphabet of intensity, a codebook over one pixel's value.
-`architecture.perceptDelay` (false) is the unit delay on basic percepts (item
+`architecture.perceptDelay` (true) is the unit delay on basic percepts (item
 1.4): true, each basic percept's greatest activation in a step is kept, and at
 the next step it is a second input of the order-zero Sigma beside the row
-itself, which is then twice as wide. A concept brought by a row is linked to
+itself, which is then twice as wide. The same holds one order up: each concept's
+activation one step back is a column of the concept store of its own, on which
+a kind of a higher order may hold an entry. A concept brought by a row is linked to
 the row's delayed input at zero; learned below zero it reads "there now and
 not before". One step is one tick of the model's clock at which percepts are
-read. False until the
-combined tree has been run with it.
+read. A hard reset clears what is kept, so nothing
+is one step back across a document's boundary. On by default (Alec,
+2026-11-27).
+`architecture.ideaTransitions` (false) records the sequence links of item 1.4
+(Alec, 2026-11-27: "the idea store has a graph of transitions which is not
+yet mined"): true, each idea kept in the idea store (`LTM0`) at a sentence's
+commit is linked to the idea kept just before it in the same stream, by a
+relation of `LTM1` whose first reference is the earlier row and whose second
+is the later one, both as occurrence references. Ideas of
+different streams are not linked. A stream's last idea is held across
+sentences and batches; a hard reset of the stream begins a new chain. A link
+does not keep its ideas from being forgotten: when a row is forgotten its
+links are dropped with it. Nothing counts, reads or promotes the links. There
+is one `LTM1` (Alec: "relations in LTM1 should not be a part of a different
+store"): the idea store's `parts` is the concept taxonomy's own, so a link is
+written there and takes a concept id as its handle. A link is told apart from
+the other relations by its mark (`LTM1.transition_rows`) and is read as
+neither a part nor a kind: `LTM1.parts` and `LTM1.wholes` do not give it, so
+it gives no concept an order or a member. The marks are not saved in a
+checkpoint.
 `architecture.intensityLevelsFixed` (true) keeps the levels linear and
 fixed, level k of n at k / (n - 1) on 0 to 1, so that a remembered value
 does not drift over a long run and a run compiled in bfloat16 reads the

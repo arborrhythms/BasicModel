@@ -462,11 +462,16 @@ def test_forecast_places_the_last_addressed_slot_in_each_stream():
 
 
 def test_forecast_keeps_the_same_outside_evidence_with_bounded_history():
+    from types import SimpleNamespace
     from LookForecast import LookForecast
     forecast = LookForecast.__new__(LookForecast)
     forecast.basic_count = forecast.order_zero_width = forecast.width = 2
     forecast.address = torch.arange(2)
-    forecast._located = lambda evidence: evidence
+    # Each of the two field slots is seated at its own inventory row, so the
+    # located evidence is the field's own evidence.
+    ids = torch.arange(2)
+    forecast.owner = SimpleNamespace(_cs_field_concept_ids=ids, _cs_field_rows=torch.arange(2))
+    forecast.rows, forecast.index = [0, 1], torch.tensor([0, 1, -1])
     initial = torch.arange(24, dtype=torch.float32).reshape(2, 3, 2, 2) / 24
     forecast.observations = initial
     forecast.latest = torch.zeros(2, 2)
@@ -474,7 +479,8 @@ def test_forecast_keeps_the_same_outside_evidence_with_bounded_history():
     for width in (6, 2, 4, 7):
         extent = (torch.arange(width)[None] + torch.arange(2)[:, None]) % 3 == 0
         evidence = torch.rand(2, width, 2, 2)
-        forecast.observe(evidence, extent, torch.zeros(2, 2, 2))
+        field = SimpleNamespace(concept_ids=ids, evidence=evidence.permute(2, 0, 1, 3))
+        forecast.observe(field, extent, torch.zeros(2, 2, 2))
         observed.append(torch.where(extent[..., None, None], evidence, 0.))
         positions.append(torch.arange(width))
         longest = max(len(slots) for slots in positions)
@@ -820,7 +826,8 @@ def test_forecast_structure_keeps_zero_and_muted_seats_without_dynamic_outputs(d
     pi_rows = torch.tensor([0, 0, 0, 1, 1], device=device)
     owner = SimpleNamespace(nVectors=3, _concept_allocator=None,
         _expected_knowing=torch.zeros(1, 3, 2, device=device),
-        order_zero=SimpleNamespace(nnz=4, nInput=2, entry_row=rows, entry_input=inputs, w=lambda: sigma_value),
+        order_zero=SimpleNamespace(nnz=4, nInput=2, entry_row=rows, entry_input=inputs, value=sigma_value,
+                                  w=lambda: sigma_value),
         basic_percepts=SimpleNamespace(pi=SimpleNamespace(n_rows=2, nnz=5, keys=('a', 'b'),
             crow=torch.tensor([0, 3, 5], device=device), col=col, value=pi_value)))
     observed = torch.tensor([[[.8, .1], [.1, .4]], [[.2, .4], [.9, .1]], [[.7, .3], [.4, .6]]], device=device)

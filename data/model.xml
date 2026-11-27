@@ -122,6 +122,8 @@
     <!-- One completed selected grammatical question owns this many shared
          controller/query-work units. Policy sampling remains separately off. -->
     <attentionBudget>32</attentionBudget>
+    <!-- Room for the places met (rows of where wires); the host path grows it. -->
+    <placeCapacity>1024</placeCapacity>
     <!-- Pre-unroll attention reading (1=enabled default, 0=disabled). -->
     <hardwireReading>1</hardwireReading>
     <!-- Retain both overlapping meaning lanes at the mask input. -->
@@ -288,7 +290,11 @@
          same alphabet. false lets the levels learn as a linear
          self-organizing map, very slowly, with its ends fixed at 0 and 1. -->
     <intensityLevelsFixed>true</intensityLevelsFixed>
-    <perceptDelay>false</perceptDelay>
+    <perceptDelay>true</perceptDelay>
+    <!-- true links each idea kept in the idea store to the idea kept before
+         it in the same stream, as a relation of the idea store over the two
+         rows: a graph of transitions, neither counted nor read. -->
+    <ideaTransitions>false</ideaTransitions>
     <!-- The width in places of the Gaussian aperture about a part's centre:
          a part of adjacent atoms holds the places nearer its centre than
          this, each weighed by the Gaussian; a value's row is read at no

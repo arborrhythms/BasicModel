@@ -514,6 +514,26 @@ things), which MTM would have to offer; what is kept of a step is one
 activation for a row, so where it was is not kept; the measures of §8; and
 anything for the other parts of speech.
 
+Second part, the same day (built by an Opus subagent, read and run by
+Claude): the numeric stem gives the order-zero Sigma the same delayed
+inputs, and the delay reaches the orders above zero. "Concept r one step
+back" is a column of the concept store of its own, beside the symbols and
+the bias; an entry on it is an ordinary signed weight read by the same
+Sigma, a kind may hold one only on a concept of a lower order, and both
+stores step at the same tick. Certified in `test/test_item14_unit_delay.py`
+(8 certificates): a kind with an entry on a concept and a Not entry on the
+same concept one step back reads "gained", and the two entries are learned
+from zero.
+
+Open, for Alec: (1) who writes a link from a kind to a concept one step
+back (`link_delayed_concept` exists; MTM does not call it yet); (2) a kind
+whose only entries are on concepts one step back is never seated in a real
+model's field, since seating follows what is active now; (3) which reads
+count toward a step (only the main read of each order keeps activations);
+(4) whether the source must be exactly one order below; (5) a checkpoint
+saved with the key on cannot be loaded with it off, and the load's remap of
+columns does not yet move the delayed ones.
+
 ### 9.2 The sequence links (Alec, 2026-11-27)
 
 > MTM can hold the sequence links. Basically, I think they are M1
@@ -566,6 +586,140 @@ for now, the idea store has a graph of transitions which is not yet mined,
 and we will see how sequence learning looks after TD concepts." So what is
 to be built now is only the graph: each idea's link to the idea that
 followed it, in the idea store's relations, neither counted nor read.
+
+Correction (2026-11-27, found in building it): the idea store has no
+relations of its own. `ClauseRow.attach_clause_index` replaces the store's
+`LTM1` with the concept allocator's, so `ltm_store.parts` and
+`_concept_allocator.parts` are one object, and "two stores of one kind
+already" above is wrong. The graph of transitions is built
+(`architecture.ideaTransitions`, false; `LTM0.keep_transitions`,
+`LTM1.add_transition`; `test/test_item14_idea_transitions.py`), and its
+links are right (each kept idea to the next in its stream, none across
+streams, dropped with a forgotten row), but they are written into the
+taxonomy's store and each takes a concept id as its handle. The
+certificate that the taxonomy is untouched fails and is left failing. For
+Alec: a relation store of the idea store's own (a change to `ClauseRow`
+and to checkpoints), or the one store with the links marked apart.
+
+Decided (Alec, 2026-11-27): "relations in LTM1 should not be a part of a
+different store." So there is one `LTM1`, and the links between ideas are
+in it beside the relations of parts and kinds, marked as transitions
+(`LTM1.add_transition`, `transition_rows`). The certificate that asked for
+the taxonomy's store to be untouched asked for the wrong thing and is
+restated: the links are in the one store, are told apart from the others
+by their mark, and are read as neither a part nor a kind.
+
+### 9.3 Behaviour from LTM by way of the basic level (Alec, 2026-11-27; Claude agrees)
+
+> My guess is that LTM can be used to train the basic level network, and
+> that recursive application (with some measure of previous state from
+> output or thought) will yield the behavioral chains that we are hoping
+> for.
+
+Claude agrees, for these reasons, and with one condition.
+
+- *It needs no new learner.* With the unit delay the basic level already
+  reads what was there one step back beside what is there now, so "after
+  this, that" is something its ordinary layers can hold. What it lacks is
+  enough examples in order. LTM has them: the ideas as they were kept, and
+  now the link from each to the next. Presenting those again, in their
+  order, is training data for the same layers. Episodic memory as percepts
+  (§6) is what makes a kept idea presentable again.
+- *It keeps the dividing line.* LTM stays linear and unmined: a record of
+  what followed what. The basic level is where a sequence becomes a
+  disposition. Nothing has to be consolidated in LTM itself, which is why
+  the Markov count can wait.
+- *A chain is then a recursion, not a stored list.* One step of the basic
+  level gives the next state from the present one and the one before. Fed
+  its own result, it gives the step after. A chain of any length is that
+  one step applied again, which is the linear depth that the conceptual
+  orders (depth log n) cannot give.
+- *The condition: the result must come back in.* "Some measure of previous
+  state from output or thought" is what closes the loop, and today nothing
+  does. The delay holds what was *perceived* one step back, not what was
+  *answered* or *thought*. Claude first wrote that this is the same
+  missing wire as the first requirement for submission (the state after
+  the reduce fed to the next `attend`). Alec, 2026-11-27: "It is not
+  really 'the same missing wire as requirement 1', since that updates
+  multi-step over the course of the sentence, and LTM updates only at the
+  end of the sentence." So they are two wires at two rates. Within a
+  sentence, each shift's reduce informs the next `attend`: many steps to a
+  sentence. Across sentences, what was output or thought at one sentence's
+  end is an input at the next: one step to a sentence, which is the step
+  of LTM and of the unit delay.
+- *What the literature adds.* Replaying stored sequences to train a slower
+  learner is the complementary-systems account of memory, and it is the
+  best-supported part of the review. Its caution is the one already
+  recorded: two things that predict each other form a loop, which is a
+  composite and not a kind, so chains trained this way are behaviour and
+  will not of themselves yield classes.
+
+Not built. What it would take, in order: episodic memory as percepts (§6);
+a replay that presents kept ideas in the order of their links; the result
+of a sentence (its output or its thought) as an input at the next sentence.
+
+### 9.4 Where state is kept (Alec, 2026-11-27)
+
+> So all state has to be in one of the memories: STM, MTM, LTM. We
+> generally treat LTM as a cold storage, pulling it into STM before use. So
+> within sentence updates are generally happening in one STM slot as a
+> tree, my guess is that the STM tree should be updated with every attend
+> operation, which allows us to use the 8 STM entries as a stack to build
+> the tree on (it gets reduced to 1 or 2 slots as determined by the grammar
+> for absolute and relative sentences).
+
+Decided, with his two corrections of the same day:
+
+- *The rule.* State is in STM, MTM or LTM, and nowhere else. One
+  exception: "the state rule should make an exception for delayed
+  activation". The unit delay's kept activations stay on the conceptual
+  space, as a delay on the wires and not a memory.
+- *Within a sentence: STM.* STM is the state of `attend` and of everything
+  that changes from word to word. Its eight entries are a stack on which
+  the tree is built, a shift at each `attend` and the grammar's reduces
+  after it, down to the one or two roots the grammar allows.
+- *Between sentences: LTM.* LTM is written at a sentence's end and is cold:
+  what is wanted from it is brought into STM before it is used. (His first
+  wording had the two the other way about; he confirmed this reading.)
+
+What this means for the first requirement for submission (Claude): as
+built, each word is already pushed on the STM stack and reduced there, and
+where the last look landed is already kept on the STM's state. What is
+missing is only that the request of `attend` does not read the stack. So
+the change is to give the request the top of the stack beside what it reads
+now, and to end the walk at the grammar's close.
+
+### 9.5 One update of the conceptual field, at each look (Alec, 2026-11-27)
+
+> I think the differencing should update once per look: it makes attend()
+> easier, since it just looks at the conceptual field. But Im considering
+> the effect of a lack of-sentence level update, and Im also wondering how
+> it interacts with priming (which is also an update step of the conceptual
+> field, and it makes sense to have a single update cycle).
+
+Decided: the delay steps once a look, and "the opening is look zero: that
+is good." This replaces §5.9's step of one sentence for the delay (one
+activation is still a sentence for the clock and for LTM). What follows,
+as Claude put it to him:
+
+- *One cycle.* At each look the field is read, kept as what is one step
+  back for the next look, and spread once, which is the priming. What
+  `attend` reads today as the last look's field spread once is this same
+  kept field, so the two become one mechanism and `attend` reads the
+  present field beside the kept one.
+- *Across sentences.* What is kept is not cleared between sentences, so the
+  first look of a sentence has the last look of the sentence before one
+  step back. A hard reset clears it.
+- *The opening is look zero, and openings are compared with openings.* The
+  wide-open read of a sentence sees the whole scene, and a look after it
+  sees one word. So the opening's field is kept apart and is what is one
+  step back at the next sentence's opening. A change from one scene to the
+  next (the measures of §8) is read there, a whole field against a whole
+  field.
+
+To build: the step at the look in place of the tick; the opening's kept
+field apart from the looks'; the request of `attend` reading the kept field
+in place of its `memory` input.
 
 ## 10. Added from item 1.6: evidence at order zero is positive, and the Not is an exchange of lanes (Alec, 2026-11-24)
 

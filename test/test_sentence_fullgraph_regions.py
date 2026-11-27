@@ -95,3 +95,25 @@ def test_whole_sentence_forward_fullgraph_no_breaks(monkeypatch):
     breaks = dict(torch._dynamo.utils.counters.get("graph_break", {}))
     assert stats.get("unique_graphs", 0) == 1, f"expected 1 graph for whole sentence, got: {stats}"
     assert not breaks, f"unexpected Dynamo graph breaks: {breaks}"
+
+
+@pytest.mark.slow
+def test_whole_sentence_forward_fullgraph_over_several_looks(monkeypatch):
+    """The loop of looks the default configuration runs, compiled whole: the
+    gate above reads one look, so a break from the second look on passes it.
+    A budget of two looks keeps the unrolled graph small."""
+    model, optimizer, data = _build_xor_model()
+    assert model.hardwire_reading
+    model.attention_budget = 2
+    monkeypatch.setattr(type(model), "forward", torch.compile(type(model).forward, backend="eager", fullgraph=True))
+
+    torch._dynamo.reset()
+    torch._dynamo.utils.counters.clear()
+
+    texts = ["hello world hello", "world hello world", "red blue red", "blue red blue"]
+    _step(model, optimizer, data, texts)
+
+    stats = dict(torch._dynamo.utils.counters.get("stats", {}))
+    breaks = dict(torch._dynamo.utils.counters.get("graph_break", {}))
+    assert stats.get("unique_graphs", 0) == 1, f"expected 1 graph for whole sentence, got: {stats}"
+    assert not breaks, f"unexpected Dynamo graph breaks: {breaks}"

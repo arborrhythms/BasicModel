@@ -296,7 +296,10 @@ are available for conceptual input at subsequent orders" (Alec,
 2026-11-27). One step is one sentence. The layers above then read what is
 there now beside what was there one step back, and learn a change (there
 now and not before) or a sequence of two with no operation of their own.
-Nothing is subtracted. Decided for item 1.4; not yet built.
+Nothing is subtracted. Built behind `architecture.perceptDelay` (on by
+default): a basic percept one step back is a second input of the
+order-zero Sigma, and a concept one step back is a column of the concept
+store.
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most

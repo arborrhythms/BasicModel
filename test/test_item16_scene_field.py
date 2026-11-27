@@ -208,6 +208,10 @@ def test_c2_one_not(model, monkeypatch):
     present(model, [row], train=False)
     assert len(calls) == 1, calls
     inputs, shape = calls[0]
+    # With the unit delay (architecture.perceptDelay) the inputs after the
+    # rows are the rows one step back, ``capacity + row``: they are not
+    # basic percept rows, so only the rows are counted.
+    inputs = tuple(p for p in inputs if p < int(basic.capacity))
     forms = [p for p in inputs if basic.forms[p] is not None and not basic.is_value(p)]
     values = [p for p in inputs if basic.is_value(p)]
     image = set(ImagePercepts.image_rows(model))

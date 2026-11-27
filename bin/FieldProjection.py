@@ -91,6 +91,9 @@ def rung_entries(store, addresses, like):
     # The inventory view elides out-of-range rows before numbering entries.
     physical = [(row, column) for row, column in zip(store._rows, store._cols, strict=True)
                 if 0 <= row < store.nOutput]
+    if store.__dict__.get('_delayed_columns'):
+        # It leaves out the entries on concepts one step back too: they are read apart.
+        physical = [(row, column) for row, column in physical if column <= store._room]
     for page, field_rows in enumerate(addresses):
         seated = set(field_rows)
         for edge, (row, column) in enumerate(physical):
@@ -103,8 +106,14 @@ def rung_entries(store, addresses, like):
     return columns.split((len(pages), len(entries), len(symbolic)))
 
 
-def seated_rung(field, addresses, weights, topology, inventory_size, start, end, entry_plan=None):
-    """Read a Sigma rung for all pages from their own seats in the same inventory."""
+def seated_rung(field, addresses, weights, topology, inventory_size, start, end, entry_plan=None, delayed=None):
+    """Read a Sigma rung for all pages from their own seats in the same inventory.
+
+    ``delayed`` (the unit delay, item 1.4) is ``(rows, positions, lanes)``:
+    the entries on concepts one step back, each of the row ``rows`` ``[D]``
+    with its number at ``positions`` among ``weights``, reading the kept
+    lanes ``[D, B, 2]`` through the Not as any other entry reads a symbol's,
+    in the same Sigma."""
     from Layers import NotLayer3, _EntryRead, signed_lanes
     edges, targets, columns, members, complete = topology
     size, batch, places, _ = field.shape
@@ -148,6 +157,7 @@ def seated_rung(field, addresses, weights, topology, inventory_size, start, end,
         pages_grid = torch.arange(batch, device=field.device)[:, None].expand(batch, E)
         target = ((seat - start).clamp(0, width - 1) * batch + pages_grid).reshape(-1)
         total = field.new_zeros(width * batch, places).index_add(0, target, terms)
+        total = _delayed_terms(total, delayed, field, inverse, weights, start, width)
         return signed_lanes(total.tanh()).reshape(width, batch, places, 2)
     if entry_plan is None:
         flat = (destinations >= 0).reshape(-1).nonzero().flatten()
@@ -181,7 +191,27 @@ def seated_rung(field, addresses, weights, topology, inventory_size, start, end,
     terms = _EntryRead.apply(value[:, None].expand(-1, places), NotLayer3.options(lanes))
     target = (seat - start).clamp(0, width - 1) * batch + pages
     total = field.new_zeros(width * batch, places).index_add(0, target, terms)
+    total = _delayed_terms(total, delayed, field, inverse, weights, start, width)
     return signed_lanes(total.tanh()).reshape(width, batch, places, 2)
+
+
+def _delayed_terms(total, delayed, field, inverse, weights, start, width):
+    """``total`` ``[width * B, L]`` with the terms of the entries on
+    concepts one step back added, each on its row's seat of the rung."""
+    if delayed is None or not len(delayed[0]) or width <= 0:
+        return total
+    from Layers import NotLayer3, _EntryRead
+    rows, positions, lanes = delayed
+    batch, places = field.shape[1], field.shape[2]
+    D = len(rows)
+    seat = inverse.index_select(1, rows.to(inverse.device))                       # [B, D]
+    valid = (seat >= start) & (seat < start + width)
+    value = weights.to(field)[positions.to(weights.device)][None].expand(batch, D) * valid.to(field)
+    options = NotLayer3.options(lanes.to(field).transpose(0, 1)[:, :, None].expand(batch, D, places, 2))
+    terms = _EntryRead.apply(value.reshape(batch * D, 1).expand(-1, places), options.reshape(batch * D, places, 2))
+    pages = torch.arange(batch, device=field.device)[:, None]
+    target = ((seat - start).clamp(0, width - 1) * batch + pages).reshape(-1)
+    return total.index_add(0, target, terms)
 
 
 def inventory(owner):
@@ -209,12 +239,17 @@ def _close(owner, rows, evidence, percepts=None):
     positions = {int(row): i for i, row in enumerate(rows)}
     values = store.values
     definitions = {row: [] for row in positions}
+    # The entries on concepts one step back (item 1.4): ``(source, index)``.
+    delayed = {row: [] for row in positions}
+    behind = store.delayed_of_column if store.__dict__.get('_delayed_columns') else None
     entries = [(row, column, index) for (row, column), index in store._index.items() if row in positions]
     if values is not None and entries:
         indices = torch.tensor([entry[2] for entry in entries], device=values.device)
         active = values.detach().index_select(0, indices).ne(0).tolist()
         for (row, column, index), enabled in zip(entries, active, strict=True):
-            if enabled:
+            if enabled and behind is not None and behind(column) is not None:
+                delayed[row].append((behind(column), index))
+            elif enabled:
                 sources = None if store.thing_of_column(column) is None else store.column_rows(column)
                 definitions[row].append((sources, index))
     # Each basic percept's place among the lanes given.
@@ -231,7 +266,7 @@ def _close(owner, rows, evidence, percepts=None):
             edges = definitions[row]
             bound = [(at[percept], weight) for (target, percept), weight in store.percept_entries.items()
                      if target == row and weight and percept in at]
-            if edges or bound:
+            if edges or bound or delayed[row]:
                 operands = []
                 for sources, _ in edges:
                     if sources is None:
@@ -242,6 +277,12 @@ def _close(owner, rows, evidence, percepts=None):
                         held = [done.get(source, torch.zeros_like(value)) for source in sources]
                         item = torch.stack(held).prod(0) if held else torch.zeros_like(value)
                     operands.append(item)
+                if delayed[row]:
+                    # A concept one step back: its kept lanes in each stream.
+                    sources = torch.tensor([source for source, _ in delayed[row]], device=value.device)
+                    kept = owner.delayed_concepts(sources, value.shape[0], value.device).to(value)
+                    operands.extend(kept[:, :, None].expand(-1, -1, value.shape[1], -1))
+                    edges = edges + [(None, index) for _, index in delayed[row]]
                 options = NotLayer3.options(torch.stack(operands)) if operands else value.new_zeros(0, *value.shape)
                 entry = values.index_select(0, torch.tensor([index for _, index in edges], dtype=torch.long,
                                                             device=values.device)).to(options)

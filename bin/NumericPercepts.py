@@ -48,8 +48,10 @@ class NumericPercepts:
         reading of its own (:meth:`BasicPercepts.BasicPercepts.with_things`);
         the promoted rows are read by the Pi over values, no value's row over
         more places than the aperture holds, and the order-zero Sigma reads
-        them through the one Not. The definitions above order zero are
-        closed."""
+        them through the one Not; with ``architecture.perceptDelay``, each
+        row one step back as well. The definitions above order zero are
+        closed, and with the delay each concept's activation is kept for the
+        step."""
         from FieldProjection import inventory, close
         from FamiliarTier import observe_intersection, promote_candidates
         from Places import meet, nominate
@@ -86,8 +88,14 @@ class NumericPercepts:
                 owner.mtm.close(None, stream=batch, references=getattr(owner, '_field_activated_references', {}).get(batch, ()))
             promote_candidates(owner)
         rows = inventory(owner)
-        evidence = owner.order_zero_field(presence, nominated, rows)
+        lanes, inputs = presence, nominated
+        if owner.percept_delay:
+            # The unit delay: each row one step back is an input as well.
+            lanes, inputs = owner.delayed_percepts(presence, nominated)
+        evidence = owner.order_zero_field(lanes, inputs, rows)
         evidence = close(owner, rows, evidence, (presence, nominated))
+        if owner.percept_delay:
+            owner.keep_concept_activations(evidence, torch.as_tensor(rows, dtype=torch.long, device=evidence.device))
         ids = torch.tensor([owner.concept_id_at_row(row) for row in rows], device=values.device)
         when = torch.full_like(bank.where, self.model.present())
         return ConceptualField(ids, evidence, bank.where, when, percepts)

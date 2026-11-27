@@ -165,6 +165,8 @@
       <xs:element name="intensityPartCardinality" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="intensityLevelsFixed" type="xs:boolean" minOccurs="0"/>
       <xs:element name="perceptDelay" type="xs:boolean" minOccurs="0"/>
+      <!-- Each kept idea linked to the one kept before it in its stream. -->
+      <xs:element name="ideaTransitions" type="xs:boolean" minOccurs="0"/>
       <!-- The width in places of the Gaussian aperture about a part's
            centre; 0 sets no limit. -->
       <xs:element name="intensityPartSigma" type="xs:nonNegativeInteger" minOccurs="0"/>
@@ -292,6 +294,7 @@
       <!-- Bounded work for one normal selected grammatical-thought episode.
            Zero permits only the defined cutoff/finish drain. -->
       <xs:element name="attentionBudget" type="xs:nonNegativeInteger" minOccurs="0"/>
+      <xs:element name="placeCapacity" type="xs:positiveInteger" minOccurs="0"/>
       <!-- Pre-unroll attention reading for compiler debugging (1=enabled, 0=disabled). -->
       <xs:element name="hardwireReading" type="xs:nonNegativeInteger" minOccurs="0"/>
       <xs:element name="hetTolerance" minOccurs="0">
