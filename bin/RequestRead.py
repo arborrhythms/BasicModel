@@ -1,4 +1,8 @@
-"""Attention requests concepts from the open field and the preceding look."""
+"""Attention requests concepts from the open field and the preceding look.
+
+With the unit delay (``architecture.perceptDelay``) the preceding look is
+read from the trace, what the cycle of each look leaves (:func:`prime`;
+plan §9.5)."""
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -147,3 +151,68 @@ def _spread_once(owner, held):
     observed = held.transpose(0, 1)
     value, _ = spread(owner, observed)
     return union(observed, value[:len(observed)]).transpose(0, 1).detach()
+
+
+
+def prime(model, owner, observed, before=None, rows=None, asked=None):
+    """The cycle of one look (Alec, 2026-11-27; plan §9.5): "it is modified
+    by expect() on the way up, and modified by attend() on the way down
+    (unless attention is fully open, since attention is a mask). Then
+    delayed". One traversal of the structure (:func:`ConceptSpread._flow`,
+    a fan up and a share down over the Pi, the Not and the Sigma of every
+    order):
+
+    1. the delayed set, decayed: ``before`` ``[B, V, 2]``, what was kept at
+       the last look, reduced by the conceptual space's decay of priming
+       (``architecture.primingDecay``, the share kept);
+    2. up, met by expectation: the look's field ``observed`` ``[B, V, 2]``
+       rises through the structure, and at each concept, of every order,
+       what rises is weighed against the delayed set there by
+       :func:`Expectation.gain_field` at the strength of the field reads
+       (``symbolExpectationGain``): what was expected is damped and what is
+       new keeps its weight; it is joined with the delayed set, which rises
+       with it;
+    3. down, masked by attention: what descends to each concept is
+       multiplied by ``asked`` ``[B, V, 2]``, ``attend``'s prediction at the
+       look carried down to the concepts (:func:`Salience.concepts_asked`),
+       its greater lane, in [0, 1]; with no ``asked`` (the opening,
+       attention fully open) nothing is masked;
+    4. delayed: what the traversal leaves at the concepts, what rose there
+       joined with what descended, as the product on complements, is the
+       trace, kept for the next look. The priming is that traversal.
+
+    With no delayed set, the strength at zero and nothing masked it is the
+    field spread once (:func:`spread_once`). Where ``rows`` ``[B]`` is false
+    the trace is ``before``, unchanged. Returns the trace ``[B, V, 2]``,
+    detached: expectation is never evidence."""
+    from CandidateGrowth import read_streams
+    return read_streams(owner, lambda: _prime(model, owner, observed, before, rows, asked), axis=0)
+
+
+def _prime(model, owner, observed, before, rows, asked):
+    from ConceptSpread import _flow, structure, union
+    from Expectation import gain_field
+    strength = float(getattr(model, 'word_expectation_gain', 0.))
+    epsilon = float(getattr(model, 'expectation_epsilon', 1e-6))
+    saturation = str(getattr(model, 'expectation_saturation', 'clip'))
+    V = observed.shape[1]
+    field = observed.detach().clamp(0., 1.).transpose(0, 1)                    # [V, B, 2]
+    delayed = (torch.zeros_like(field) if before is None else
+               float(getattr(owner, '_priming_decay', .9)) * before.detach().clamp(0., 1.).transpose(0, 1))
+
+    def rise(source, up):
+        new = union(source, up)
+        head = gain_field(new[:V], delayed, strength=strength, epsilon=epsilon, saturation=saturation)
+        return torch.cat((union(delayed, head.content), new[V:]))
+    graph = structure(owner, field.device)
+    mask = None
+    if asked is not None:
+        mask = field.new_ones(graph.size, field.shape[1], 1)
+        mask[:V] = asked.detach().clamp(0., 1.).amax(-1, keepdim=True).transpose(0, 1)
+    with torch.no_grad():
+        source, up, down, _, _ = _flow(graph, field, None, 4 * (len(owner._order_caps()) + 1),
+                                       native=True, rise=rise, mask=mask)
+        trace = union(rise(source, up)[:V], down[:V]).transpose(0, 1).detach()
+    if rows is not None:
+        trace = torch.where(rows[:, None, None], trace, before)
+    return trace

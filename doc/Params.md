@@ -584,7 +584,7 @@ configuration and is set only by a runtime override.
 | `ltmConsolidation` | `Models.py` (BaseModel init) | `false` | Read when selecting the serial word-major path. |
 | `whereRungRatio` | `Models.py` (BaseModel init) | `32` | Ratio that assigns spatial periods to the rungs of the `.where` ladder. Not in the schema. |
 | `stateless` | `Models.py`, `Language.py` | `true` | Serving lifecycle. `true` runs no forgetting pass after a conversation's request; `false` (a stateful deployment) runs the activity pass after each. Restoring a checkpoint keeps every retained row and its trust: a row has no origin by which it could be withdrawn. |
-| `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Decay of the observed seen ledger per prime event; placement reads this ledger. Concept spread comes from `expect` (`ConceptSpread`). |
+| `primingDecay` | `Models.py` (BaseModel init) | `0.9` | Decay of the observed seen ledger per prime event; placement reads this ledger. Concept spread comes from `expect` (`ConceptSpread`). With `perceptDelay`, also the share of the looks' trace kept from one look to the next (`RequestRead.prime`). |
 | `primingBridgeCapacity` | `ConceptualSpace` | `0` | Fixed reservation in sparse 32-destination blocks for projection to the percept and property towers together. Zero preserves the complete bipartite reservation. A positive value caps that reservation; a rebuild that exceeds it raises before writing the cache or target surfaces. No resize or dropped connection. The corpus candidate reserves 8,388,608 blocks per stage. |
 | `serialWordCapacity` | `Models.py` (BaseModel init) | `256`, declared in `data/model.xml` | Sentence word bound for every model and the word count used to size its pinned STM banks. Inherited from the defaults file when omitted locally; construction raises if neither file declares it. Independent of PS/WS/CS field width and recent STM depth. Longer sentences raise instead of clipping or resizing. The realised output slab allows `2W` words, and the tensor loop executes only through its final live column. |
 | `serialResidualPartCapacity` | `Models.py` / `InputSpace` | `16` | Fixed compiler-visible integer radix/subword-ID extent for one cold spelling. It is not a dense percept-vector axis; the masked PS fold reduces those IDs into PS's configured live field. BasicModel uses 64. |
@@ -936,10 +936,27 @@ itself, which is then twice as wide. The same holds one order up: each concept's
 activation one step back is a column of the concept store of its own, on which
 a kind of a higher order may hold an entry. A concept brought by a row is linked to
 the row's delayed input at zero; learned below zero it reads "there now and
-not before". One step is one tick of the model's clock at which percepts are
-read. A hard reset clears what is kept, so nothing
-is one step back across a document's boundary. On by default (Alec,
-2026-11-27).
+not before". For basic percepts one step is one tick of the model's clock at
+which percepts are read: a sentence's opening; a look's read is given what is
+one step back and is not kept, so the basic percepts are compared from opening
+to opening. For concepts one step is one look, and the opening is look zero
+(plan §9.5): at a look what is one step back is the field observed at the look
+before (at the reading it took), and at the first look the opening's field;
+an opening has the last opening's field one step back, not the last look's.
+At each look the trace is the cycle of one look (plan §9.5, Glossary "Look
+cycle"): the trace one look back reduced by `primingDecay` (the share kept);
+the look's observed field risen through the structure (`ConceptSpread`, fan
+up), each concept's new activation met by expectation, the delayed set there,
+by the gain of the field reads (`symbolExpectationGain`); and descended (share
+down) masked by `attend`'s prediction for the look, carried down to the
+concepts (no mask at the opening, attention fully open). With `primingDecay`
+zero, `symbolExpectationGain` zero and attention open it is the field spread
+once. The request of `attend` reads the trace in place of the last look's
+field spread once, and the trace carries on into the next sentence's opening.
+Each path of a sentence keeps its own, and the winning path's is kept at the
+sentence's end. A hard reset clears what is kept, the opening's field and the
+trace, so nothing is one step back across a document's boundary. On by
+default (Alec, 2026-11-27).
 `architecture.ideaTransitions` (false) records the sequence links of item 1.4
 (Alec, 2026-11-27: "the idea store has a graph of transitions which is not
 yet mined"): true, each idea kept in the idea store (`LTM0`) at a sentence's

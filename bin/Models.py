@@ -22223,6 +22223,8 @@ class BasicModel(BaseModel):
                     active_winners = torch.where(present, selected, -1).tolist()
                     winner_indices = [max(0, index) for index in active_winners]
                 WordForecast.keep(forecast_paths, selected)
+                # The unit delay keeps the winning path's looks (plan §9.5).
+                Looks.keep(look_trials, selected)
                 if speculative:
                     NativeReading.select(self, native_paths, selected)
                     from SentenceCompose import select_paths

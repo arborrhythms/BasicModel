@@ -21,10 +21,11 @@ from RequestRead import at_rows, spread_once
 def perceive(model, activity, bank, *, fixation=None):
     """A look's read of the sentence's bank with each occurrence present to
     the degree of ``activity`` ``[B, occurrences, 2]``: no lookup and no read
-    on the host."""
+    on the host. The unit delay on basic percepts does not keep a look's
+    read: they step from opening to opening (plan §9.5)."""
     owner = model._concept_owner()
-    evidence = (owner.cs_read_bank(bank, activity) if fixation is None
-                else owner.cs_read_bank(bank, activity, fixation=fixation))
+    evidence = (owner.cs_read_bank(bank, activity, keep=False) if fixation is None
+                else owner.cs_read_bank(bank, activity, fixation=fixation, keep=False))
     owner._cs_last_a0 = evidence.detach()
     knowing = owner.cs_forward_content(evidence)
     from Understanding import ConceptualField
@@ -309,6 +310,9 @@ class Looks:
         self._turn_slots = []
         self.look_credit = None
         self.open_forecast = None
+        # This path's kept field (the unit delay): look zero, and at the
+        # last look what was one step back, observed and primed.
+        self.opening_primed = self.opening_before = self.final = None
         self.supplied = getattr(model, '_attention_supplied_reading', None)
 
     def source_orders(self):
@@ -333,7 +337,14 @@ class Looks:
     def _look_interpret_and_spread(self, model, owner, bank, state, observation,
                                    look_field, extent, words, rows, index, found,
                                    anticipated, request, stop, found_where, found_code,
-                                   own, memory, stream, word_slots, decision, turn):
+                                   own, memory, stream, word_slots, decision, turn, primed=None):
+        """Interpret the look's word and update what the next request reads
+        of this look: with no unit delay, ``memory``, the field at the
+        reading taken spread once; with it, ``primed``, the path's kept
+        field ``(observed, trace)``: the field observed at the reading taken
+        (the delay) and what the look's cycle leaves, masked on the way down
+        by what ``request`` asked (:func:`RequestRead.prime`); ``memory`` is
+        the trace."""
         if self.look_credit is not None:
             self.look_credit.observe(
                 anticipated,
@@ -388,10 +399,20 @@ class Looks:
                                  idea=fragment['idea'], classes=fragment['classes'])
         V = int(owner.nVectors)
         from SentenceField import inventory
-        memory = torch.where(rows[:, None, None],
-                             spread_once(owner, at_rows(inventory(owner, look_field), look_field, V, len(rows), index)),
-                             memory)
-        return choice, interpreted, own, memory, fragment_leaf
+        observed = at_rows(inventory(owner, look_field), look_field, V, len(rows), index)
+        if primed is None:
+            memory = torch.where(rows[:, None, None], spread_once(owner, observed), memory)
+        else:
+            from RequestRead import prime
+            from Salience import concepts_asked
+            kept, trace = primed
+            # What attend predicted at this look, carried down: the mask on
+            # the way down of the look's cycle.
+            asked = concepts_asked(owner, request[:model.request_read.rows].detach()).transpose(0, 1)
+            trace = prime(model, owner, observed, trace, rows, asked=asked)
+            primed = (torch.where(rows[:, None, None], observed, kept), trace)
+            memory = trace
+        return choice, interpreted, own, memory, primed, fragment_leaf
 
     def run(self, arrive):
         model, state = self.model, self.walk
@@ -438,6 +459,10 @@ class Looks:
             return at_rows(inventory(owner, field), field, V, B, index)
         held = located(opened) if opened is not None else own.new_zeros((B, V, 2))
         memory = torch.zeros_like(held)
+        primed = self._opening_primed(model, owner, B, held) if owner.percept_delay else None
+        if primed is not None:
+            # The opening is look zero: the first look reads its trace.
+            memory = primed[1]
         if model.training and torch.is_grad_enabled() and self.supplied is None:
             from LookForecast import OccurrenceCredit
             self.look_credit = (self.prior.look_credit.fork() if self.prior is not None and self.prior.look_credit is not None
@@ -465,6 +490,12 @@ class Looks:
             rows = left & ~(stop.detach() > 0)
             if not compiling and not bool(rows.any()):
                 break
+            if primed is not None:
+                # The concepts' step is the look: what is one step back is
+                # the field observed at the look before, this path's own.
+                with torch.no_grad():
+                    owner._concept_delay_previous.copy_(primed[0].transpose(0, 1))
+                    owner._concept_delay_current.zero_()
             if regions:
                 from CandidateGrowth import visible_store
                 from ConceptSpread import definition_depth
@@ -524,11 +555,16 @@ class Looks:
             if not compiling and not bool(found.any()):
                 break
             decision = len(self.decisions)
-            choice, interpreted, own, memory, fragment_leaf = look_interpret_fn(
+            before = None if primed is None else primed[0]
+            choice, interpreted, own, memory, primed, fragment_leaf = look_interpret_fn(
                 self, model, owner, bank, state, observation,
                 look_field, extent, words, rows, index, found,
                 anticipated, request, stop, found_where, found_code,
-                own, memory, stream, word_slots, decision, turn)
+                own, memory, stream, word_slots, decision, turn, primed)
+            if primed is not None:
+                self.final = (before, primed[0], primed[1])
+                with torch.no_grad():
+                    owner._concept_delay_current.copy_(primed[0].transpose(0, 1))
             self.decisions.append(choice)
             if fragment_leaf is not None:
                 model._fragment_leaf = fragment_leaf
@@ -551,7 +587,54 @@ class Looks:
                         arrive(word, interpreted & (index == word))
             finally:
                 model.__dict__.pop('_fragment_leaf', None)
+        if primed is not None:
+            Looks._commit(owner, self.final)
         return state.reading()
+
+    def _opening_primed(self, model, owner, B, held):
+        """This sentence's look zero, ``(observed, trace)``, each ``[B, V,
+        2]``: the field kept at the opening, and what the opening's cycle
+        leaves from the trace the last sentence left, attention fully open
+        (:func:`RequestRead.prime`). Every path of the sentence starts from it, so
+        a path's looks read nothing another path wrote; it is made once, by
+        the first path."""
+        if self.prior is not None and getattr(self.prior, 'opening_primed', None) is not None:
+            self.opening_primed, self.opening_before = self.prior.opening_primed, self.prior.opening_before
+        else:
+            from RequestRead import prime
+            owner._make_delay('concept', held.shape[1], B, held.device)
+            observed = owner._concept_delay_opening.transpose(0, 1).clamp(0., 1.).clone()
+            carried = owner._concept_trace.transpose(0, 1).clone()
+            self.opening_primed = (observed, prime(model, owner, observed, carried))
+            # What the opening had one step back: the opening before it.
+            self.opening_before = owner._concept_delay_previous.transpose(0, 1).clone()
+        self.final = (self.opening_before, *self.opening_primed)
+        return self.opening_primed
+
+    @staticmethod
+    @torch.no_grad()
+    def _commit(owner, final):
+        """Write a path's kept field into the unit delay: what is one step
+        back, what the last look observed, and the trace."""
+        before, observed, trace = final
+        owner._concept_delay_previous.copy_(before.transpose(0, 1))
+        owner._concept_delay_current.copy_(observed.transpose(0, 1))
+        owner._concept_trace.copy_(trace.transpose(0, 1))
+
+    @staticmethod
+    def keep(paths, winners):
+        """At a sentence's end the kept field of each stream's winning path
+        (``winners`` ``[B]``, an index into ``paths``) is what the unit delay
+        holds; a discarded path leaves nothing in it."""
+        held = [getattr(path, 'final', None) for path in paths]
+        first = next((value for value in held if value is not None), None)
+        if first is None:
+            return
+        owner = next(path for path in paths if getattr(path, 'final', None) is not None).model._concept_owner()
+        held = [first if value is None else value for value in held]
+        streams = torch.arange(len(winners), device=winners.device)
+        Looks._commit(owner, tuple(torch.stack([value[part] for value in held], 1)[streams, winners]
+                                   for part in range(3)))
 
 
 def handoff_reading(model, state):

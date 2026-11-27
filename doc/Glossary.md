@@ -293,13 +293,24 @@ a linear difference is used only as a metric inside a cost.
 **Unit delay.** A delay of one step on percepts, which are basic percepts
 and symbols: their activations are stored, "so that the delayed versions
 are available for conceptual input at subsequent orders" (Alec,
-2026-11-27). One step is one sentence. The layers above then read what is
+2026-11-27). For basic percepts one step is one sentence, opening to
+opening; for concepts one step is one look, the opening being look zero,
+and openings are compared with openings (plan §9.5). The layers above then read what is
 there now beside what was there one step back, and learn a change (there
 now and not before) or a sequence of two with no operation of their own.
 Nothing is subtracted. Built behind `architecture.perceptDelay` (on by
 default): a basic percept one step back is a second input of the
 order-zero Sigma, and a concept one step back is a column of the concept
 store.
+
+**Look cycle.** The one update of the conceptual field at each look, the
+opening being look zero (Alec, 2026-11-27): the delayed set, decayed; up
+through the structure, each order's new activation met by expectation; down
+through it, masked by `attend`'s prediction (no mask while attention is
+fully open); and what is left kept as the delayed set for the next look.
+The spread of priming is that up-and-down traversal, and is no step of its
+own. The observed field is kept beside it, unchanged, as the unit delay. What is left, the trace, is what the request of `attend` reads of the
+looks before (`RequestRead.prime`).
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most

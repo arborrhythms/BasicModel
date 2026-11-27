@@ -717,6 +717,81 @@ as Claude put it to him:
   next (the measures of §8) is read there, a whole field against a whole
   field.
 
+Amended the same day. Alec: "the idea of priming, from the connectionist
+literature, is that it is an AR(1) filter. the delay is an MA(1). So it
+makes sense to combine the two, writing from the delayed version some small
+activation spread, in the hopes that a few iterations will triangulate on
+relevant information several hops away." So the one update at a look keeps
+two things:
+
+- *the delay* (MA(1)): the field as it was observed, unchanged. It is what
+  the layers' delayed inputs read, so "there now and not before" stays a
+  comparison of two observations;
+- *the trace* (AR(1)): the field updated by the model's own expectation,
+  not by a linear filter. Alec: "We had been using a better model of
+  non-linear expectation to do that update, and we should still do that."
+  What is expected from the trace one look back is the vertical spread
+  (`ConceptSpread.expected`), and the new observation is weighed against it
+  by `Expectation.gain_field`: what was expected is damped and what is new
+  keeps its weight. Over a few looks the expected part carries forward and
+  reaches concepts several hops away. It is what `attend` reads. It uses the
+  existing expectation keys and adds none.
+
+The cycle of one look, as Alec specified it (2026-11-27, three messages):
+
+> The current set of symbols is delayed, and that set is used to update the
+> current activation; in general there will be a decay of activation, a
+> bump related to new bottom-up activation (which is met with expectation),
+> and top-down activation, and some spread (which can propagate along
+> structural lines).
+
+> By top-down I meant the prediction from attend itself.
+
+> Structural spread is already a part of up/down traversal, isn't it? ...
+> So it is modified by expect() on the way up, and modified by attend() on
+> the way down (unless attention is fully open, since attention is a mask).
+> Then delayed (assuming that priming spread was achieved during the
+> up-down propagation).
+
+It is (Claude): the spread is the up-and-down traversal of the structure's
+own matrices (`ConceptSpread`: a fan up and a share down over the Pi, the
+Not and the Sigma of every order). Movement within conceptual space by
+similarity is part of it, by the Pi: a row of a Pi is a region of sameness
+(a cone), so going up to it and back down reaches its other members, which
+are the concept's neighbours (Alec: "Pi should be doing that"; Claude had
+first written that nothing moves activation sideways by similarity, which
+was wrong). As built, the spread carries a symbol's Pi at one for each
+member, so it reaches every member of a region alike and not by how near
+each is; whether the traversal should read the cone's graded weights there
+is open. Alec, the same day: "The pi limitation that propagates each at one
+feels like an error, but it may have been designed to produce an
+elementwise mask on saliency. It should not be binary." So the traversal is
+to carry each member by its graded weight in the symbol's Pi, and a reader
+that needs a mask derives it from the graded values. And: "if saliency does need to be a
+binary mask at the perceptual level, filled by perceptual content, we can
+binarize it at the input." So the traversal stays graded at every order,
+and a binary salience, where one is needed, is made at the perceptual input
+where it is applied. So the spread is not a fourth term beside the others; it is the
+traversal in which the others act. One look, in order:
+
+1. *The delayed set, decayed.* What was kept at the last look (at the
+   opening, the last opening's) is the start, reduced by the decay.
+2. *Up, met by expectation.* The new bottom-up activation of this look
+   rises through the structure, and at each order it is weighed against
+   what was expected there (`Expectation.gain_field`): what was expected
+   is damped and what is new keeps its weight.
+3. *Down, masked by attention.* The result descends through the structure,
+   and `attend`'s own prediction for this look acts as a mask on the way
+   down. With attention fully open (the opening, look zero) the mask
+   passes everything.
+4. *Delayed.* What the up-and-down traversal leaves is kept as the delayed
+   set for the next look. The priming is what that traversal spread; it
+   is not a further step.
+
+Beside it the observed field of the look is kept unchanged (the delay,
+MA(1)), for the layers' inputs one step back, so that a change is still a
+comparison of two observations.
+
 To build: the step at the look in place of the tick; the opening's kept
 field apart from the looks'; the request of `attend` reading the kept field
 in place of its `memory` input.

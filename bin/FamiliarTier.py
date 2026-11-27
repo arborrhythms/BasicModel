@@ -511,7 +511,9 @@ def open_sentence(model, sid, present, *, device_rows=False):
     field = read_opening(model, sid, bank)
     from SentenceField import open_field
     owner._cs_last_a0 = field.detach()
-    acts = owner.cs_forward_content(field)
+    # The sentence's opening, look zero of its looks: with the unit delay
+    # its field is kept as the opening's (plan §9.5).
+    acts = owner.cs_forward_content(field, publish=True)
     if getattr(owner, '_mereology_raise', False) and owner._percept_field is not None:
         owner._refinement_field = owner.refinement_field(owner._percept_field)
     regions = getattr(model, '_compiled_sentence_regions', None)

@@ -205,8 +205,14 @@ def _carry(values, source, target, share, negated, size):
     return 1. - rest
 
 
-def _flow(graph, observed, percepts, depth, *, native=False):
-    """The sources, and the spread's up and down at every node, detached."""
+def _flow(graph, observed, percepts, depth, *, native=False, rise=None, mask=None):
+    """The sources, and the spread's up and down at every node, detached.
+
+    ``rise(source, up)``, where given, is what a node carries up and down in
+    place of the two joined (a look's cycle weighs it against what was
+    expected, :func:`RequestRead.prime`); ``mask`` ``[N, B, 1]`` in [0, 1],
+    where given, multiplies what each node receives on the way down
+    (``attend``'s prediction)."""
     N = graph.size
     source = observed.new_zeros(N, *observed.shape[1:])
     source[:min(len(observed), graph.concepts)] = observed[:graph.concepts]
@@ -231,9 +237,13 @@ def _flow(graph, observed, percepts, depth, *, native=False):
         down_rounds = min(depth, upper + int(bool(graph.percepts)) + int(bool(graph.parts)))
         up_rounds = down_rounds if percepts is not None else min(depth, upper)
     for _ in range(up_rounds):
-        up = _carry(union(source, up), graph.child, graph.parent, up_share, graph.negated, N)
+        risen = union(source, up) if rise is None else rise(source, up)
+        up = _carry(risen, graph.child, graph.parent, up_share, graph.negated, N)
     for _ in range(down_rounds):
-        down = _carry(union(source, up, down), graph.parent, graph.child, down_share, graph.negated, N)
+        held = union(source, up, down) if rise is None else union(rise(source, up), down)
+        down = _carry(held, graph.parent, graph.child, down_share, graph.negated, N)
+        if mask is not None:
+            down = down * mask
     return source, up, down, fan, row
 
 

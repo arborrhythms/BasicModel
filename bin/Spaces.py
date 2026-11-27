@@ -14775,6 +14775,13 @@ class ConceptualSpace(Space):
     _DELAY_BUFFERS = dict(percept=('_percept_delay_current', '_percept_delay_previous'),
                           concept=('_concept_delay_current', '_concept_delay_previous'))
 
+    #: Beside the concepts' two (item 1.4, plan §9.5), made and cleared with
+    #: them: the field observed at the last opening, which is one step back
+    #: at the next opening, and the field the looks have primed (the trace)
+    #: as the kept path left it at the end of its sentence, which carries on
+    #: into the next. Both ``[rows, B, 2]`` at the concepts' inventory rows.
+    _DELAY_KEPT = ('_concept_delay_opening', '_concept_trace')
+
     def _delay_state(self, kind):
         """The kept activations of ``kind`` (``'percept'`` or ``'concept'``),
         ``(current, previous)``, or ``None`` where none are kept."""
@@ -14795,6 +14802,9 @@ class ConceptualSpace(Space):
         current, previous = self._DELAY_BUFFERS[kind]
         self.register_buffer(current, torch.zeros(rows, B, 2, device=device, dtype=dtype), persistent=False)
         self.register_buffer(previous, torch.zeros(rows, B, 2, device=device, dtype=dtype), persistent=False)
+        if kind == 'concept':
+            for name in self._DELAY_KEPT:
+                self.register_buffer(name, torch.zeros(rows, B, 2, device=device, dtype=dtype), persistent=False)
         if kind == 'percept':
             model = getattr(self, '_model', None)
             tick = -1 if model is None else int(model.present())
@@ -14816,11 +14826,14 @@ class ConceptualSpace(Space):
         """A hard reset: nothing is one step back. The kept activations of
         the basic percepts and of the concepts, now and one step back, are
         cleared for the streams ``batch`` (all of them where it is not
-        given)."""
+        given), and so are the concepts' field at the last opening and the
+        trace of the looks."""
         for kind in self._DELAY_BUFFERS:
             state = self._delay_state(kind)
             if state is None:
                 continue
+            if kind == 'concept':
+                state = (*state, *(getattr(self, name) for name in self._DELAY_KEPT))
             for held in state:
                 if batch is None:
                     held.zero_()
@@ -14839,7 +14852,12 @@ class ConceptualSpace(Space):
         back, and the present starts from nothing; for basic percepts and
         for the concepts above order zero alike. With ``changed`` (a
         boolean tensor) the step ends only where it is true, read on the
-        device and not on the host."""
+        device and not on the host.
+
+        In a sentence read by looks the concepts' step is the look (plan
+        §9.5): the opening sets what is one step back to the last opening
+        (:meth:`_step_concepts_at_opening`) and each look to the look
+        before (:class:`SentenceLooks.Looks`), over what this step left."""
         for kind in self._DELAY_BUFFERS:
             state = self._delay_state(kind)
             if state is None:
@@ -14892,7 +14910,7 @@ class ConceptualSpace(Space):
             raise ValueError('concepts one step back are read only with architecture.perceptDelay')
         return self.add_thing_edge(int(row), ('delayed', int(source)), weight, negated=negated)
 
-    def delayed_percepts(self, values, inputs, *, publish=True):
+    def delayed_percepts(self, values, inputs, *, publish=True, keep=True):
         """The unit delay on basic percepts (Alec, 2026-11-27): ``values``
         ``[P, B, E, 2]`` of the rows ``inputs`` with, after them, each row's
         activation one step back as an input of its own
@@ -14907,12 +14925,17 @@ class ConceptualSpace(Space):
 
         The kept activations and the tick are registered buffers, read and
         written in place: whether the clock has moved is a tensor, so a
-        forward compiled whole reads nothing on the host here."""
+        forward compiled whole reads nothing on the host here.
+
+        A look's read (``keep`` false) is given what is one step back and
+        neither ends the step nor is kept in it: the basic percepts step
+        from opening to opening, a whole scene against a whole scene
+        (plan §9.5)."""
         capacity = int(self.basic_percepts.capacity)
         P, B, E = values.shape[:3]
         model = getattr(self, '_model', None)
         (current, previous), made = self._make_delay('percept', capacity, B, values.device, values.dtype)
-        if model is not None and not made:
+        if model is not None and not made and keep:
             # A step is a tick at which percepts are read. The clock also
             # ticks for an answer or a thought, where none are, so one step
             # back is the last tick that read any.
@@ -14923,7 +14946,7 @@ class ConceptualSpace(Space):
             with torch.no_grad():
                 held.copy_(now)
         rows = torch.as_tensor(list(inputs), dtype=torch.long, device=values.device)
-        if publish and P:
+        if publish and keep and P:
             with torch.no_grad():
                 found = values.detach().amax(2).to(current)
                 current.index_put_((rows,), torch.maximum(current.index_select(0, rows), found))
@@ -15334,10 +15357,10 @@ class ConceptualSpace(Space):
         meet(self, bank, promoted=rows)
         return basic.prepare(bank)
 
-    def _cs_read_bank_impl(self, bank, activity=None, *, publish=True, fixation=None):
+    def _cs_read_bank_impl(self, bank, activity=None, *, publish=True, fixation=None, keep=True):
         percepts = (self.basic_percepts.read_bank(bank, activity) if fixation is None
                     else self.basic_percepts.read_bank(bank, activity, fixation=fixation))
-        field = self.cs_read_percept_field(percepts, publish=publish)
+        field = self.cs_read_percept_field(percepts, publish=publish, keep=keep)
         if publish:
             # Each reading's own .where wires, from its percept's muxed row.
             from Places import readings
@@ -15351,16 +15374,17 @@ class ConceptualSpace(Space):
             object.__setattr__(self, '_cs_field_wires', wires)
         return field
 
-    def cs_read_bank(self, bank, activity=None, *, publish=True, fixation=None):
+    def cs_read_bank(self, bank, activity=None, *, publish=True, fixation=None, keep=True):
         """The order-zero concepts of a bank's readings, each event present
         to the degree of ``activity`` ``[B, events, 2]`` (all of them where
-        it is not given)."""
+        it is not given). A look's read (``keep`` false) is not kept by the
+        unit delay on basic percepts (:meth:`delayed_percepts`)."""
         compiled = getattr(self, '_compiled_cs_read_bank', None)
         if compiled is not None and not torch.compiler.is_compiling():
-            return compiled(self, bank, activity, publish=publish, fixation=fixation)
-        return self._cs_read_bank_impl(bank, activity, publish=publish, fixation=fixation)
+            return compiled(self, bank, activity, publish=publish, fixation=fixation, keep=keep)
+        return self._cs_read_bank_impl(bank, activity, publish=publish, fixation=fixation, keep=keep)
 
-    def cs_read_percept_field(self, perception, *, publish=True):
+    def cs_read_percept_field(self, perception, *, publish=True, keep=True):
         """The order-zero concepts of the current open-attention percept field.
 
         In each reading the Not makes each basic percept's row one signed
@@ -15386,7 +15410,7 @@ class ConceptualSpace(Space):
         values = perception.values
         inputs = [key[1] for key in perception.keys]
         if self.percept_delay:
-            values, inputs = self.delayed_percepts(values, inputs, publish=publish)
+            values, inputs = self.delayed_percepts(values, inputs, publish=publish, keep=keep)
         n0 = self._field_caps()[0] if publish else self._order_caps()[0]
         addresses = (self._field_inventory_rows() if publish else
                      torch.arange(self.nVectors, device=values.device))
@@ -15809,13 +15833,18 @@ class ConceptualSpace(Space):
 
         The taper ranks either pole and admits both together. Only the bounded
         store span is materialized. Returns the field ``[S, B, L, 2]``; it
-        holds no code. With ``publish`` and the unit delay, each concept's
-        activation is kept for the step (:meth:`keep_concept_activations`).
+        holds no code. With ``publish`` the read is an opening: with the
+        unit delay, what is one step back is the field kept at the last
+        opening, and each concept's activation is kept for the step
+        (:meth:`keep_concept_activations`) and as this opening's field
+        (:meth:`_step_concepts_at_opening`).
         """
         from ConceptEvidence import symbols
         from Layers import thing_priorities
         if a_0.ndim != 4 or a_0.shape[-1] != 2:
             raise ValueError('snap requires [concept, batch, occurrence, 2]')
+        if publish and self.percept_delay:
+            self._step_concepts_at_opening(int(a_0.shape[1]), a_0.device)
         caps = self._field_caps()
         ly = _concept_alloc_of(self).layer(0)
         S, B, L = sum(caps), a_0.shape[1], a_0.shape[2]
@@ -15883,7 +15912,19 @@ class ConceptualSpace(Space):
         object.__setattr__(self, '_cs_wave_qe', None)
         if publish and self.percept_delay:
             self.keep_concept_activations(field, self._field_inventory_rows(field.device))
+            with torch.no_grad():
+                self._concept_delay_opening.copy_(self._concept_delay_current)
         return field
+
+    @torch.no_grad()
+    def _step_concepts_at_opening(self, B, device):
+        """An opening is look zero (Alec, 2026-11-27; plan §9.5). Openings
+        are compared with openings: what is one step back at an opening is
+        the field observed at the last opening, not at the last look, and
+        the present step starts from nothing."""
+        (current, previous), _ = self._make_delay('concept', int(self.nVectors), int(B), device)
+        previous.copy_(self._concept_delay_opening)
+        current.zero_()
 
     def cs_reverse_presence(self, field, *, observed=None, inventory_rows=None, stream_batch=True):
         if not stream_batch:
