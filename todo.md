@@ -76,96 +76,90 @@ Standing rules:
    - Carried from item 2.0, status not confirmed: the basic-percept feature layout at order 0, and
      the port of
      `test/test_sparse_concept_e2e.py::test_interpreted_object_keeps_the_native_features_in_one_row`.
-- **1.4. Verbs in the field of concepts** (after items 1.6 and 1.5; [the item 1.4
-   plan](doc/plans/2026-11-23-item1-4-verbs-in-the-field.md), §10 to §14 for what follows).
-   - Built on local branch `item1-4`, uncommitted: evidence at order zero is positive (the first Pi
-     reads "for" only; no Not at order zero); MTM writes a link at zero from a held row's concept to
-     its holder's row and the Sigma learns it; refinement's "both" is read one order up; intensity
-     levels are linear and fixed by default (`architecture.intensityLevelsFixed`), with a slow
-     linear self-organizing map when it is false; the first Pi reads a word form as the set (OR) of
-     its parts again (`WordIdentity.LIVE_TABLE_CODES` false), which restored discrimination that
-     item 1.5's graded table codes had lost.
-   - Two production bugs from item 1.5 found and fixed on this branch: native references were not
-     bound at sentence close (`bin/ClauseJournal.py`); the word pool could nominate a word onto a
-     row already taken (`bin/Models.py`).
-   - Not yet built: the delayed perceptual field and verbs as changes (plan §5.8); episodic memory
-     as percepts (plan §6).
-   - To do at 1.4 integration (Alec, 2026-11-26); these three tests are left failing on purpose,
-     unweakened: (a)
-     `test/test_item17_looks.py::test_32_a_known_word_is_not_read_inside_a_longer_known_word`: with
-     the against lane gone, decide how a look uses a link below zero (a look for `the` still returns
-     `there`); (b)
-     `test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`: evaluate
-     together with the Meta-Concept learning; (c)
-     `test/test_item17_word_said_back.py::test_the_answer_depends_on_the_spoken_request`: the same.
-   - Meta-concept learning, to build at the 1.4 integration (Alec, 2026-11-27; plan §15.1): link
-     the word to the object and the object to the word as relations (M1: `STM1`, `MTM1`, `LTM1`) at the conceptual level
-     (presumably by sentence definition, but from any source); each direction causes its own MTM
-     promotion. When `word < object` and `object < word` both hold, the two are improper parts of
-     one another and cannot be ordered: an equivalence class one order up is formed over them.
-     This replaces the meta-concept that `architecture.createMetaConcepts` makes today on a word's
-     first reading.
-     The testpoint is `test/test_item14_meta_concept.py` (plan §15.2): stage A passes; B (the
-     links by conditioning, the intensity as an answer) and C (the class) fail, the mechanism not
-     being built.
-   - Where state is kept (Alec, 2026-11-27; plan §9.4): in STM, MTM or LTM and nowhere else,
-     except the unit delay's kept activations. STM is the state within a sentence, `attend`'s
-     included: its eight entries are the stack the tree is built on. LTM is the state between
-     sentences, written at a sentence's end and brought into STM before use.
-   - Required before 1.4 is submitted (Alec, 2026-11-27): (1) feed the state after the reduce
-     into the next `attend`. Each `attend` reads one word and is a shift; "the grammatical and
-     syntactic information from the possible reduce of the tree will inform the next attend()".
-     Today the request reads the opening field, the last look's field spread once and where the
-     last look landed, and not the STM after the reduce. This also gives the walk its end: the
-     grammar's own close, not a budget of looks. What `attend` is to be given (Alec, 2026-11-27):
-     "the symbolic activations which it just set to read the last word (which will have spatial
-     information, and be included in the conceptual differences)", and "information about the
-     current parse (such as the part of speech that it might be looking for) ... since that is
-     happening using a operator-prefixed tensor, we should just provide some or all of that
-     tensor". He expects the differencing to be needed for the right word to be read. The differencing
-     steps once a look, the opening being look zero and compared with the next opening (plan
-     §9.5); the priming and the delay are then one update of the field. (2) Then retire `attentionBudget` and
-     `hardwireReading` as the walk's controls, leaving one `attend` for each shift, driven by
-     the parse. With `hardwireReading` off today only the first word is read and 11 reading
-     certificates fail (measured 2026-11-27).
-     (3) Behaviour from LTM by way of the basic level (plan §9.3): "LTM can be used to train the
-     basic level network, and ... recursive application (with some measure of previous state from
-     output or thought) will yield the behavioral chains that we are hoping for." There is one
-     `LTM1` ("relations in LTM1 should not be a part of a different store"): the links between
-     kept ideas are in it, marked as transitions. To build: episodic memory as percepts (plan §6),
-     a replay of kept ideas in the order of their links to train the basic level, and the result
-     of a sentence (the output or the thought) as an input at the next sentence. This is not
-     the wire of (1): that one updates at every shift within a sentence, and LTM updates only at
-     a sentence's end.
-   - Also required before 1.4 is submitted (Alec, 2026-11-27; plan §9.8): (4) two kinds of
-     input and two kinds of output, text and intensity, "and parameters on the model to specify
-     which to enable". Today an intensity is an output only on the numeric stem (XOR), and the
-     text model refuses one as an answer. (5) Activity one step back counts toward what is
-     reached at a look, so a kind over concepts one step back is computed. The looks are as
-     wanted: one look at the whole sentence (the opening), then one look for each `attend`,
-     called several times; `hardwireReading` 0 is no target.
-     (6) One loop (plan §9.9): "attend() is one of thoughts operations, as is output, and it can
-     decide to read as many words as it likes. We should not have a reading loop independent of
-     the thinking loop." The loop of `Looks.run`, `attentionBudget` and `hardwireReading` go; this
-     is the form (1) and (2) take. (7) The symbols' Pi (plan §9.9): no one in the symbol table;
-     the sparse Pi that reads the symbols has an entry for that input, with a learned weight.
-     The Sigma the same: "we dont have a member list independent of the weights, we just add an
-     edge to the sparse matrix (in this case the LDU) that corresponds to the child being added."
-   - Open for Alec: the map's two rates; whether to keep the Sigma links between neighbouring
-     intensity levels; `OrderZero.read_word` still reads a signed match;
-     `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`
-     failed once and could not be reproduced;
-     `test/test_compiled_lesson_step.py::test_one_lesson_sentence_trains_with_the_compiled_output_walk`
-     needs more than 9.6 GiB and is left out of sweeps.
-   - Waiting on this item: the XOR of intensities, the name formed by MTM, the order of two words
-     through grammar training ([item 1.6 plan](doc/plans/2026-11-18-item1-6-felt-math-world.md),
-     §44).
-   - Documentation (Alec, 2026-11-24), status not confirmed: what positive concepts mean at each
-     order, in [Logic](doc/Logic.md), [Orders](doc/Orders.md) and [Philosophy](doc/Philosophy.md).
-   - The complete default sweep ran on 2026-11-27 (plan §16.4): 7,807 tests, 7 failing; three
-     were new and are settled (two certificates restated for the set codes, one GPU hang), which
-     leaves the three tests above and the pinned-banks bound. Before the branch is pushed: code
-     review of 1.4 and of 1.5, then the two combined.
+- **1.4. Verbs in the field of concepts** ([the item 1.4
+   plan](doc/plans/2026-11-23-item1-4-verbs-in-the-field.md); §9 to §9.9 hold Alec's decisions of
+   2026-11-27 in his words, §15 the meta-concept, §16 the defects fixed). On `main` since
+   2026-11-27 (`bd766c1596`), merged with item 1.5 and its compiler work (`4664cd0563`).
+   - **Built.**
+     - Evidence at order zero is positive: the first Pi reads "for" only, there is no Not at order
+       zero, and what tells against a concept is an entry below zero on another row at the same
+       place, on a link MTM writes at zero. "Both" is read one order up. Intensity levels are
+       linear and fixed by default (`intensityLevelsFixed`). A word form is the set of its parts
+       again (`WordIdentity.LIVE_TABLE_CODES` false).
+     - The unit delay (`perceptDelay`, on): each basic percept one step back is a second input
+       of the order-zero Sigma, on the numeric stem too; each concept one step back is a column
+       of the concept store, and a kind over such columns is reached from what was active then.
+       A hard reset clears it; it is saved with a checkpoint.
+     - The look cycle (plan §9.5): the opening is look zero and openings are compared with
+       openings; at each look the kept trace is decayed, the field rises met by expectation,
+       descends masked by `attend`'s request, and what is left is what `attend` reads next.
+     - `attend`'s request reads the whole STM stack, through a weight that starts at zero.
+     - The links between kept ideas (`ideaTransitions`, off): in the one `LTM1`, marked, read as
+       neither a part nor a kind, saved with a checkpoint.
+     - `make test` writes the log `make push` reads; `test/failures_ok.txt` holds the written oks.
+   - **To do, in this order** (all required before 1.4 is submitted; Alec, 2026-11-27).
+     1. *One loop* (plan §9.9). "attend() is one of thoughts operations, as is output, and it can
+        decide to read as many words as it likes. We should not have a reading loop independent
+        of the thinking loop." Each `attend` is one look and reads one word, a shift; the reduce
+        after it informs the next, through the STM stack. The loop of `Looks.run`,
+        `attentionBudget` and `hardwireReading` go, and the walk ends with the thinking loop.
+        Taught by a curriculum: "single-word reading until we get that reliable, then ... longer
+        sentences in word order". The measure: one word said back (`attend`, then `output`)
+        reliably; then as many `attend`s as words, each on the next word, before `output`.
+        `hardwireReading` 0 (one look a sentence) is no target.
+     2. *Two kinds of input and two of output*, text and intensity, "and parameters on the model
+        to specify which to enable" (plan §9.8). Today an intensity is an output only on the
+        numeric stem (XOR), and the text model refuses one as an answer.
+     3. *Membership read off the matrices* (plan §9.9). No one in the symbol table: "the spares PI
+        matrix that operates on the symbols at every turn should have its weight matrix adjusted
+        so that its weights are not sparse for that input", with a learned weight. The Sigma the
+        same: "we dont have a member list independent of the weights, we just add an edge to the
+        sparse matrix (in this case the LDU)". The symbol table's member list and
+        `order_zero_members` go. The spread then carries a symbol's members by graded weights
+        (it carries each at one today); a binary salience, where one is needed, is made at the
+        perceptual input.
+     4. *Verbs as operations* (plan §9.6, 3). "verbs will generalize an operation, presumably into
+        24 verb classes or so, and be capable of transforming their noun. So the word is placed on
+        the stack, but the operation specified by the verb is performed", trained from the
+        corpus. A verb's extension is "the map of running() to the extension of 'things that
+        run'". Then the measures of plan §8, and what follows for the other parts of speech.
+     5. *The meta-concept* (plan §15.1, §9.6, §9.8). "the meta concept is a result of identity,
+        when a implies b and b implies a (where that implication is a link)." Both get a parent
+        above the greater of their orders; "if one was a superset of the other, then it is lowered
+        with respect to its element when they are both placed into the same class." It replaces
+        the meta-concept `createMetaConcepts` makes on a word's first reading. Testpoint:
+        `test/test_item14_meta_concept.py` (A passes; B and C fail until this is built; B also
+        waits on 2, the intensity as an answer).
+     6. *Behaviour from LTM by way of the basic level* (plan §9.3). "LTM can be used to train the
+        basic level network, and ... recursive application (with some measure of previous state
+        from output or thought) will yield the behavioral chains that we are hoping for." To
+        build: episodic memory as percepts (plan §6; `episodicConcepts`, 4, percepts to an
+        entry); a replay of kept ideas in the order of their links; a sentence's result as an
+        input at the next ("we write to LTM and clear STM"). The Markov count waits: "the idea
+        store has a graph of transitions which is not yet mined".
+   - **Standing rules from this item.** State is in STM, MTM or LTM and nowhere else, except the
+     unit delay's kept activations; STM is the state within a sentence and LTM between sentences
+     (plan §9.4). A link is an entry of a sparse Pi or Sigma, made implicitly in MTM's pools or
+     explicitly by a stated type relation (plan §9.8). M0 is the tier of ideas and M1 of
+     relations, in each memory.
+   - **Open for Alec.** The decay of the trace: "we should have a look at psych literature, and
+     also decide if we want a two-parameter gamma memory" (it uses `primingDecay`, 0.9, today).
+     Whether the same `attend` serves reading and thought's own attention (implied by 1; not
+     said). The slow map's two rates; the Sigma links between neighbouring intensity levels;
+     `OrderZero.read_word` still reads a signed match.
+   - **Tests.** Failing and left so, each with Alec's written ok in `test/failures_ok.txt`:
+     `test_32_a_known_word_is_not_read_inside_a_longer_known_word` (how a look uses a link below
+     zero), `test_81_expectation_restores_the_omitted_native_word` and
+     `test_the_answer_depends_on_the_spoken_request` (with the meta-concept). Failing with no ok
+     yet: the meta-concept stages B and C. Marked `intermittent`: `test_partition_isolation`,
+     `test_n7_the_corpus`, `test_84`, the MPS timing. `slow`: the compiled lesson step
+     (unmeasured) and the gate over several looks. Last run, 36 files through `make test` on the
+     merged tree: 392 passed, 12 skipped, 5 failed (those five). No complete `make test` has been
+     run since the first sweep of 2026-11-27 (7,807 tests), so there is no log and `make push`
+     will refuse: run `make test` first on the faster machine.
+   - **Waiting on this item:** the XOR of intensities, the name formed by MTM, the order of two
+     words through grammar training ([item 1.6
+     plan](doc/plans/2026-11-18-item1-6-felt-math-world.md), §44).
 - **1. Compiler work.** Built by Claude, side by side with item 0.5 on Codex (Alec, 2026-11-09).
    Detail of each line: [the block as it
    stood](doc/DevelopmentHistory.md#live-items-15-to-0-as-they-stood-in-todomd).
