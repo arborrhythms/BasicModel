@@ -838,6 +838,9 @@ def compile(model, verbose=True, fullgraph=False, backend=None):
     _msg(f"Debug checks: {'ON (MODEL_DEBUG)' if MODEL_DEBUG else 'OFF'}"
          f"{'' if __debug__ else ' [asserts stripped by -O]'}")
     _patch_inductor_paths()
+    if backend in (None, "auto", "inductor"):
+        import torch._functorch.config as _aot_config
+        _aot_config.donated_buffer = False
 
     # dynamo specializes (guards on the value of) integer attributes of
     # nn.Modules. The grammar rule-cursor / generation counters
@@ -955,6 +958,150 @@ def compile(model, verbose=True, fullgraph=False, backend=None):
                     _reduce_any_dtype_patched)
                 _msg("MPS: inductor any-reduction dtype metadata patched "
                      "(Metal 'bool' -> torch.bool)")
+            _masked_orig = getattr(_mps_cg.MetalOverrides, "masked", None)
+            if (callable(_masked_orig)
+                    and not getattr(
+                        _masked_orig, "_basicmodel_masked_dtype_patch", False)):
+                import itertools
+                from torch._inductor.codegen.mps import DTYPE_TO_METAL, value_to_metal
+                from torch._inductor.loop_body import LoopBodyBlock
+                from torch._inductor.utils import IndentedBuffer
+                from torch._inductor.virtualized import V
+
+                def _masked_dtype_patched(mask, body, other):
+                    other_str = value_to_metal(other)
+                    scoped_body = IndentedBuffer()
+                    with V.kernel.swap_buffers(scoped_body), scoped_body.indent():
+                        V.kernel.cse.iter_buffer_ids = itertools.count()
+                        V.kernel.cse.name_prefix += "_scoped"
+                        rc = body()
+                    decl_dtype = rc.dtype
+                    if (decl_dtype == torch.float32
+                            and isinstance(body, LoopBodyBlock)):
+                        float_ops = {
+                            "truediv", "true_divide", "sigmoid", "exp", "exp2",
+                            "expm1", "log", "log10", "log1p", "log2", "sqrt",
+                            "rsqrt", "sin", "cos", "tan", "sinh", "cosh", "tanh",
+                            "asin", "acos", "atan", "erf", "erfc", "lgamma", "pow",
+                        }
+                        has_float = False
+                        has_int64 = False
+                        for node in body.graph.nodes:
+                            if node.op == "call_method" and node.target == "load":
+                                ld_dtype = V.graph.get_dtype(node.args[1])
+                                if ld_dtype.is_floating_point:
+                                    has_float = True
+                                    break
+                                if ld_dtype == torch.int64:
+                                    has_int64 = True
+                            elif node.op == "call_method":
+                                tgt = str(node.target)
+                                if tgt in float_ops:
+                                    has_float = True
+                                    break
+                                if tgt == "constant" and isinstance(node.args[0], float):
+                                    has_float = True
+                                    break
+                                if tgt in ("to_dtype", "index_expr", "value_expr") and len(node.args) >= 2:
+                                    dt = node.args[1]
+                                    if isinstance(dt, torch.dtype):
+                                        if dt.is_floating_point:
+                                            has_float = True
+                                            break
+                                        if dt == torch.int64:
+                                            has_int64 = True
+                        if not has_float and has_int64:
+                            decl_dtype = torch.int64
+                            rc.dtype = torch.int64
+                    cache_key = f"{mask}:{scoped_body.getvalue()}:{rc}:{other_str}"
+                    var = V.kernel.cse.try_get(cache_key)
+                    if not var:
+                        var = V.kernel.cse.newvar(dtype=decl_dtype)
+                        V.kernel.cse.put(cache_key, var)
+                        V.kernel.compute.writelines(
+                            [f"{DTYPE_TO_METAL[decl_dtype]} {var};", f"if ({mask}) {{"]
+                        )
+                        with V.kernel.compute.indent():
+                            V.kernel.compute.splice(scoped_body)
+                            V.kernel.compute.writeline(
+                                f"{var} = static_cast<decltype({var})>({rc});"
+                            )
+                        V.kernel.compute.writeline(
+                            f"}} else {var} = static_cast<decltype({var})>({other_str});"
+                        )
+                    return var
+
+                _masked_dtype_patched._basicmodel_masked_dtype_patch = True
+                _mps_cg.MetalOverrides.masked = staticmethod(_masked_dtype_patched)
+                _msg("MPS: inductor masked integer dtype metadata patched "
+                     "(prevents float index subscript errors)")
+            _sr_lowering = lowering.lowerings.get(torch.ops.aten.scatter_reduce_.two)
+            if (callable(_sr_lowering)
+                    and not getattr(_sr_lowering, "_basicmodel_mps_contig_patch", False)):
+                from torch._inductor import ir as _sr_ir
+
+                def _mps_scatter_reduce_inplace(self, dim, index, src, reduce, *, include_self=True):
+                    if (self.get_device().type == "mps"
+                            and self.get_dtype() == torch.int64
+                            and reduce in ("amin", "amax")):
+                        self = _sr_ir.ExternKernel.require_contiguous(self)
+                    return _sr_lowering(self, dim, index, src, reduce, include_self=include_self)
+
+                def _mps_scatter_reduce(x, dim, index, src, reduction_type, **kwargs):
+                    return _mps_scatter_reduce_inplace(
+                        lowering.clone(x), dim, index, src, reduction_type, **kwargs)
+
+                _mps_scatter_reduce_inplace._basicmodel_mps_contig_patch = True
+                _mps_scatter_reduce._basicmodel_mps_contig_patch = True
+                lowering.lowerings[torch.ops.aten.scatter_reduce_.two] = _mps_scatter_reduce_inplace
+                lowering.lowerings[torch.ops.aten.scatter_reduce.two] = _mps_scatter_reduce
+                torch.compiler.config.cache_key_tag += '/basicmodel-mps-sr-contig'
+                _msg("MPS: int64 scatter_reduce_(amin/amax) lowering enforces contiguous self")
+            import torch._functorch._aot_autograd.runtime_wrappers as _aot_rw
+            import torch._functorch._aot_autograd.graph_compile as _aot_gc
+            if not getattr(_aot_rw.make_runtime_safe, "_basicmodel_none_tangent_patch", False):
+                _orig_make_runtime_safe = _aot_rw.make_runtime_safe
+                _orig_codegen_bw_prologue = _aot_rw._codegen_backward_prologue
+
+                def _make_runtime_safe_patched(fw_metadata, maybe_subclass_meta):
+                    specs = []
+                    for t in getattr(fw_metadata, "traced_tangents", ()):
+                        if isinstance(t, torch.Tensor):
+                            shape = tuple(int(s) if isinstance(s, int) else None for s in t.shape)
+                            specs.append((shape, t.dtype, t.device))
+                        else:
+                            specs.append(None)
+                    fw_metadata._basicmodel_tangent_specs = specs
+                    return _orig_make_runtime_safe(fw_metadata, maybe_subclass_meta)
+
+                def _codegen_bw_prologue_patched(fw_metadata, maybe_subclass_meta, codegen_unwrap_fn):
+                    prologue_fn = _orig_codegen_bw_prologue(
+                        fw_metadata, maybe_subclass_meta, codegen_unwrap_fn)
+                    specs = getattr(fw_metadata, "_basicmodel_tangent_specs", None)
+                    if not specs or maybe_subclass_meta is not None:
+                        return prologue_fn
+
+                    def _prologue_materialize_none(
+                            ctx_saved_tensors, ctx_symints, ctx_opaque_objects, flat_args):
+                        all_args = prologue_fn(
+                            ctx_saved_tensors, ctx_symints, ctx_opaque_objects, flat_args)
+                        ts = len(ctx_symints) + len(ctx_saved_tensors) + len(ctx_opaque_objects)
+                        for j, spec in enumerate(specs):
+                            idx = ts + j
+                            if idx < len(all_args) and all_args[idx] is None and spec is not None:
+                                shape, dtype, dev = spec
+                                if all(s is not None for s in shape):
+                                    all_args[idx] = torch.zeros(shape, dtype=dtype, device=dev)
+                        return all_args
+
+                    return _prologue_materialize_none
+
+                _make_runtime_safe_patched._basicmodel_none_tangent_patch = True
+                _codegen_bw_prologue_patched._basicmodel_none_tangent_patch = True
+                _aot_rw.make_runtime_safe = _make_runtime_safe_patched
+                _aot_gc.make_runtime_safe = _make_runtime_safe_patched
+                _aot_rw._codegen_backward_prologue = _codegen_bw_prologue_patched
+                _msg("MPS: AOTAutograd backward prologue materializes None tangents as zeros")
             # A carried zero-width metadata tensor in the real W=512
             # while-loop reaches Inductor's read-realization heuristic. In
             # PyTorch 2.12.1 the heuristic divides total read size by the
