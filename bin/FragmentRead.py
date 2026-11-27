@@ -196,7 +196,7 @@ def as_leaf(model, payload, index, rows):
     if held is None or held['idea'] is None:
         return payload, None
     taking = rows & held['taking'] & (held['index'] == index)
-    if not bool(taking.any()):
+    if not torch.compiler.is_compiling() and not bool(taking.any()):
         return payload, None
     event, atom = payload[0], payload[6]
     idea = held['idea'].detach() if not torch.is_grad_enabled() else held['idea']
@@ -208,12 +208,23 @@ def as_leaf(model, payload, index, rows):
     table = getattr(model, '_occupation_word_table', None)
     restore = None
     if torch.is_tensor(table) and table.shape[-1] == held['classes'].shape[-1]:
-        slot = int(index)
-        saved = table[:, slot].clone()
-        with torch.no_grad():
-            table[:, slot] = torch.where(taking[:, None], held['classes'].to(table), table[:, slot])
-
-        def restore():
+        if torch.is_tensor(index) and index.ndim > 0:
+            ar = torch.arange(len(taking), device=table.device)
+            slots = index.clamp(0, table.shape[1] - 1)
+            saved = table[ar, slots].clone()
             with torch.no_grad():
-                table[:, slot] = saved
+                table[ar, slots] = torch.where(taking[:, None], held['classes'].to(table), table[ar, slots])
+
+            def restore():
+                with torch.no_grad():
+                    table[ar, slots] = saved
+        else:
+            slot = int(index)
+            saved = table[:, slot].clone()
+            with torch.no_grad():
+                table[:, slot] = torch.where(taking[:, None], held['classes'].to(table), table[:, slot])
+
+            def restore():
+                with torch.no_grad():
+                    table[:, slot] = saved
     return payload, restore

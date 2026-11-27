@@ -20189,14 +20189,14 @@ class BasicModel(BaseModel):
         B = event.shape[0]
         from ModelAttention import read_poles
         pair = read_poles(self, '_attention_sentence_payload').gather(
-            1,w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
+            1,w.reshape(-1,1,1).expand(B,1,2)).squeeze(1)
         pole_representation = getattr(self, '_attention_pole_representation', False)
         if pole_representation:
             event = pair[:,None].to(event)
             atom = pair.to(atom)
             presence = torch.ones_like(presence)
         return (event,orders,row,presence,obj,obj_order,atom,gate,
-                commit & reading.accepted.gather(1,w.reshape(1,1).expand(B,1)).reshape_as(commit),routing,valid,pair)
+                commit & reading.accepted.gather(1,w.reshape(-1,1).expand(B,1)).reshape_as(commit),routing,valid,pair)
 
     def _compose_score_function_loss(self, path, costs):
         """§16.3: p(departure) times its detached paired cost difference.
@@ -21669,10 +21669,10 @@ class BasicModel(BaseModel):
                             from ModelAttention import read_poles
                             w = index.clamp(0, reading.accepted.shape[1]-1)
                             raw_lanes = read_poles(self, 'SymbolField.read').gather(
-                                1, w.reshape(1,1,1).expand(B,1,2)).squeeze(1)
+                                1, w.reshape(-1,1,1).expand(B,1,2)).squeeze(1)
                         payload = self._attention_sentence_payload(payload,index)
                     if fork is not None:
-                        fork.current_rows = payload[7].reshape(B)
+                        fork.current_rows = payload[7].reshape(B).clone()
                         fork.phase = ('closing' if closing else 'word') if separate_closing else None
                         latches = fork.begin_word(index, latches)
                         fork.current_latches = latches
@@ -21697,6 +21697,38 @@ class BasicModel(BaseModel):
                     nonlocal sub, sym, source_columns, shared_sources
                     from ModelAttention import forecast_percept, observe_percept
                     from SentenceAttention import masked_payload
+                    if torch.is_tensor(word):
+                        ar = torch.arange(B, device=words.device)
+                        safe = word.clamp(0, W - 1)
+                        index = safe
+                        lanes = (self._attention_words.poles[ar, safe] if reading_walk is not None else
+                                 torch.stack((rows, torch.zeros_like(rows)), -1).to(words))
+                        path_forecast.arrive(safe, rows, lanes)
+                        if native_path is None:
+                            forecast = forecast_percept(self, rows)
+                        else:
+                            forecast = forecast_percept(self, rows, history=native_path.history)
+                        if shared_sources is None:
+                            payload, sub = perceive(words[ar, safe][:, None], rows[:, None], index, None, sub)
+                        else:
+                            payload, sub = perceive(words[ar, safe][:, None], rows[:, None], index, None, sub,
+                                                    sources=word_sources(index))
+                        payload, sym = symbolize(payload, empty_feedback, index, None, sym)
+                        if native_path is None:
+                            payload = observe_percept(self, forecast, payload, sub, safe, rows)
+                        else:
+                            payload = observe_percept(self, forecast, payload, sub, safe, rows,
+                                path=native_path, turn=0 if reading_walk is None else reading_walk.taken)
+                        native = sub[3:9] if native_support else ()
+                        payload = masked_payload(payload, rows)
+                        from FragmentRead import as_leaf
+                        payload, restore = as_leaf(self, payload, index, rows)
+                        if field is not None:
+                            field.arrive(index, payload, native, rows)
+                        word_step(index, payload, native)
+                        if restore is not None:
+                            restore()
+                        return
                     index = word_slots[word]
                     lanes = (self._attention_words.poles[:,word] if reading_walk is not None else
                              torch.stack((rows,torch.zeros_like(rows)),-1).to(words))
@@ -21755,6 +21787,7 @@ class BasicModel(BaseModel):
                 looks = None
                 separate_closing = field is not None or reading_walk is not None
                 if reading_walk is not None:
+                    self._canonical_sentence_bricks = bool(native_support)
                     looks = Looks(self,reading_walk,sid,present,
                         prior=None if exploit is None else look_trials[0],
                         draw=None if exploit is None else draw,kept=kept)
@@ -21777,16 +21810,25 @@ class BasicModel(BaseModel):
                     last = torch.where(active & (sentence_ids==sid),
                         torch.arange(W,device=words.device),-1).amax(-1)
                     D = current_stm[0].shape[-1]
-                    word_indices = range(W) if torch.compiler.is_compiling() else last[present].unique().tolist()
-                    for word in word_indices:
-                        rows = present & (last==word)
-                        index = torch.tensor(word,device=words.device)
+                    if torch.compiler.is_compiling():
+                        rows = present & (last >= 0)
+                        index = last.clamp(0, W - 1)
                         payload = (words.new_zeros(B,1,D),torch.zeros(B,1,device=words.device,dtype=torch.long),
                             torch.full((B,),-1,device=words.device,dtype=torch.long),words.new_zeros(B),
                             torch.full((B,),-1,device=words.device,dtype=torch.long),
                             torch.zeros(B,device=words.device,dtype=torch.long),words.new_zeros(B,D),
                             rows[:,None],torch.zeros_like(rows[:,None]),*empty_feedback,words.new_zeros(B,2))
                         word_step(index,payload,(),closing=True)
+                    else:
+                        for word in last[present].unique().tolist():
+                            rows = present & (last==word)
+                            index = torch.tensor(word,device=words.device)
+                            payload = (words.new_zeros(B,1,D),torch.zeros(B,1,device=words.device,dtype=torch.long),
+                                torch.full((B,),-1,device=words.device,dtype=torch.long),words.new_zeros(B),
+                                torch.full((B,),-1,device=words.device,dtype=torch.long),
+                                torch.zeros(B,device=words.device,dtype=torch.long),words.new_zeros(B,D),
+                                rows[:,None],torch.zeros_like(rows[:,None]),*empty_feedback,words.new_zeros(B,2))
+                            word_step(index,payload,(),closing=True)
                 path = (current_stm, current_lang, current_feedback)
                 if kept is not None and field is not None:
                     self.inputSpace._ar_grammar_leaf_mask = field.grammar_leaves(source_leaf_mask)
@@ -22369,10 +22411,11 @@ class BasicModel(BaseModel):
         def _gather_unit_column(source, index):
             """``[B]`` column of a ``[B, K]`` map, ``-1`` past its width."""
             K = int(source.shape[1])
-            safe = index.clamp(0, K - 1).reshape(1, 1).expand(B, 1)
-            value = source.gather(1, safe).reshape(B)
+            safe = index.clamp(0, K - 1)
+            safe_idx = safe.reshape(1, 1).expand(B, 1) if safe.numel() == 1 else safe.reshape(B, 1)
+            value = source.gather(1, safe_idx).reshape(B)
             return torch.where(
-                index.reshape(1).expand(B) < K, value,
+                index.reshape(-1).expand(B) < K, value,
                 torch.full_like(value, -1))
 
         zero_concept = words.new_zeros(B, n_locations, concept_dim)
@@ -22486,8 +22529,11 @@ class BasicModel(BaseModel):
             torch.zeros(B, 1, dtype=torch.bool, device=words.device),
         )
         def _gather_word(source, index):
-            safe = index.clamp(0, width - 1).reshape(1)
-            return torch.index_select(source, 1, safe)
+            safe = index.clamp(0, source.shape[1] - 1)
+            if safe.numel() == 1:
+                return torch.index_select(source, 1, safe.reshape(1))
+            idx = safe.reshape(B, 1, *([1] * (source.ndim - 2))).expand(B, 1, *source.shape[2:])
+            return source.gather(1, idx)
 
         def word_sources(index):
             local_ids = _gather_word(part_ids, index)
@@ -22602,7 +22648,7 @@ class BasicModel(BaseModel):
             feedback_sentence = _gather_word(
                 sentence_ids, feedback_source_index).reshape(B)
             same_sentence = torch.logical_and(
-                index >= 2,
+                (index >= 2).reshape(-1).expand(B),
                 torch.logical_and(
                     current_sentence >= 0,
                     current_sentence == feedback_sentence))
@@ -22693,7 +22739,7 @@ class BasicModel(BaseModel):
             wholes = ShortTermMemory.functional_wholes_push(
                 current_cs_lang[7], commit,
                 _gather_unit_column(unit_parent, index),
-                index.reshape(1).expand(B),
+                index.reshape(-1).expand(B),
                 _gather_unit_column(unit_clause, index))
             chunk_slab, chunk_count = current_cs_lang[8], current_cs_lang[9]
 
@@ -22735,7 +22781,7 @@ class BasicModel(BaseModel):
                     if torch.is_tensor(word_view(isp, 'concept_ids')) else None))
             import STMParse
             final_stm = STMParse.push(resolved, index.clamp(0, width - 1), commit.reshape(B))
-            word_events = STMChunks.write(current_cs_lang[29], index.expand(B),
+            word_events = STMChunks.write(current_cs_lang[29], index.reshape(-1).expand(B),
                 torch.stack((current_cs_lang[28].amax(-1) + 1,
                     (current_cs_lang[29][..., 0] >= 0).sum(-1), final_stm[STMChunks.DEPTH]), -1), commit.reshape(B))
             current_cs_lang = (*current_cs_lang[:29], word_events, *current_cs_lang[30:])
@@ -22753,16 +22799,16 @@ class BasicModel(BaseModel):
             closing_width = max(1, 2 * capacity)
             syntactic_budget = int(getattr(self, 'syntacticOrder', 0) or 0)
             closing_budget = min(closing_width, syntactic_budget) if syntactic_budget > 0 else closing_width
-            group = ((index + 1) % width).expand(B)
+            group = ((index + 1) % width).reshape(-1).expand(B)
             if sentence_transactions:
                 final = _gather_word(sentence_end_mask & ~intermediate_end_mask, index).reshape(B)
                 group = torch.where(final, 0, group)
             # Pipeline fill/drain ticks carry an out-of-range word index.
             # They have no active grammar row, but gather/scatter addresses
             # must still be legal before the row mask makes the write a no-op.
-            journal_word = index.clamp(0, width - 1)
+            journal_word = index.clamp(0, width - 1).reshape(-1, 1).expand(B, 1)
             journal_columns = torch.cat((
-                (3 * journal_word + torch.arange(3, device=words.device))[None].expand(B, -1),
+                3 * journal_word + torch.arange(3, device=words.device)[None],
                 3 * width + group[:, None] * closing_width
                 + torch.arange(closing_budget, device=words.device)[None]), dim=1)
             if record_columns is not None:
@@ -22789,9 +22835,11 @@ class BasicModel(BaseModel):
                 current_cs_lang[25])
             explorable_slab = current_cs_lang[23]
             log_probability_slab = current_cs_lang[24]
-            round_active = commit.reshape(B)
-            post_op = unary_op = torch.full_like(current_stm[1], -1)
-            post_valid = unary_valid = torch.zeros_like(round_active)
+            round_active = commit.reshape(B).clone()
+            post_op = torch.full_like(current_stm[1], -1)
+            unary_op = torch.full_like(current_stm[1], -1)
+            post_valid = torch.zeros_like(round_active)
+            unary_valid = torch.zeros_like(round_active)
             # The full resolved concept remains only in ``final_stm`` above.
             # SymbolSpace receives the concept's quantized 0-D reference
             # activation; identity is the staged object row.  Do not retain a
@@ -22819,211 +22867,563 @@ class BasicModel(BaseModel):
                 sentence_end_mask if sentence_transactions else intermediate_end_mask, index).reshape(B) & row_gate.reshape(B)
             if at_close is not None:
                 intermediate_end = row_gate.reshape(B) if at_close else torch.zeros_like(intermediate_end)
-            def fork_state(working_stm, working_active):
-                return (current_cs_lang, working_stm, working_active, wholes,
+            if torch.compiler.is_compiling():
+                _wg_next_sym = next_symbol_activations.clone()
+                _wg_row_gate = row_gate.clone()
+                _wg_commit = commit.clone()
+                _wg_inter_end = intermediate_end.clone()
+                _wg_fork_rows = None if fork is None else fork.current_rows.clone()
+            else:
+                _wg_next_sym = next_symbol_activations
+                _wg_row_gate = row_gate
+                _wg_commit = commit
+                _wg_inter_end = intermediate_end
+                _wg_fork_rows = None if fork is None else fork.current_rows
+
+            def fork_state(working_cs_lang, working_stm, working_active, working_wholes,
+                           working_chunk_slab, working_chunk_count, working_trace_state,
+                           working_left_rows, working_right_rows, working_position_slab,
+                           working_action_slab, working_attempted_slab, working_clause_state,
+                           working_closing_events, working_operation_values, working_operation_refs,
+                           working_reference_relations, working_unary_history,
+                           working_explorable_slab, working_log_probability_slab,
+                           working_post_op, working_unary_op, working_post_valid,
+                           working_unary_valid, working_occupation_words, working_case_state):
+                return (working_cs_lang, working_stm, working_active, working_wholes,
+                    working_chunk_slab, working_chunk_count, working_trace_state,
+                    working_left_rows, working_right_rows, working_position_slab,
+                    working_action_slab, working_attempted_slab, working_clause_state,
+                    working_closing_events, working_operation_values, working_operation_refs,
+                    working_reference_relations, working_unary_history,
+                    working_explorable_slab, working_log_probability_slab,
+                    working_post_op, working_unary_op, working_post_valid,
+                    working_unary_valid, _wg_next_sym,
+                    _wg_row_gate, _wg_commit, _wg_inter_end, working_occupation_words, working_case_state)
+
+            def _pack_fork_tensors(sample_state):
+                if fork is None:
+                    return ()
+                if fork.explore:
+                    return (fork.joined, fork.taken)
+                from SentenceFork import snapshot
+                latches_tpl = snapshot(tuple(fork.current_latches), live=fork.live)
+                res_k = len(fork.reservoir)
+                zero_state = tuple(
+                    tuple(torch.zeros_like(v) if torch.is_tensor(v) else v for v in part)
+                    if isinstance(part, tuple) else (torch.zeros_like(part) if torch.is_tensor(part) else part)
+                    for part in sample_state
+                )
+                zero_latches = tuple(
+                    tuple(torch.zeros_like(v) for v in part)
+                    for part in latches_tpl
+                )
+                packed_res = []
+                for item in fork.reservoir:
+                    if item is None:
+                        packed_res.append((
+                            zero_state, zero_latches,
+                            torch.zeros_like(fork.word), torch.zeros_like(fork.slot),
+                            torch.zeros_like(fork.action), torch.zeros_like(fork.selected),
+                        ))
+                    else:
+                        packed_res.append((
+                            item['state'], item['latches'],
+                            item['word'], item['slot'], item['action'], item['valid'],
+                        ))
+                return (fork.count, tuple(packed_res))
+
+            def _unpack_fork_tensors(packed):
+                if fork is None or not packed:
+                    return
+                if fork.explore:
+                    fork.joined, fork.taken = packed
+                    return
+                from SentenceFork import snapshot
+                fork.count, packed_res = packed
+                prefix = None if fork.inverse_candidates is None else fork.inverse_candidates.snapshot()
+                any_written = False
+                for i, (st_i, la_i, w_i, sl_i, ac_i, va_i) in enumerate(packed_res):
+                    if fork.reservoir[i] is not None or prefix is not None:
+                        any_written = True
+                    fork.reservoir[i] = dict(
+                        state=st_i, latches=la_i, inverse_prefix=prefix,
+                        word=w_i, slot=sl_i, action=ac_i, valid=va_i,
+                    )
+                fork.choose(())
+
+            def _apply_round_step(round_idx, slot, j_col_idx, carry, *,
+                                  closing_flag, slots_val, rounds_left_val,
+                                  pending_flag, joining_flag, policy_grad_flag):
+                (working_active, working_stm, working_cs_lang, working_wholes,
+                 working_chunk_slab, working_chunk_count, working_trace_state,
+                 working_left_rows, working_right_rows, working_position_slab,
+                 working_action_slab, working_attempted_slab, working_clause_state,
+                 working_closing_events, working_operation_values, working_operation_refs,
+                 working_reference_relations, working_unary_history,
+                 working_explorable_slab, working_log_probability_slab,
+                 working_post_op, working_unary_op, working_post_valid,
+                 working_unary_valid, working_occupation_words, working_case_state,
+                 fork_pack) = carry
+                if fork is not None:
+                    if fork.explore and joining_flag is not False and fork.state is not None:
+                        from SentenceFork import select_rows
+                        take = fork.selected & _wg_fork_rows & ~fork_pack[0] & (fork.slot == slot)
+                        joined_next = fork_pack[0] | take
+                        fork_pack = (joined_next, fork_pack[1])
+                        resumed = select_rows(fork_state(
+                            working_cs_lang, working_stm, working_active, working_wholes,
+                            working_chunk_slab, working_chunk_count, working_trace_state,
+                            working_left_rows, working_right_rows, working_position_slab,
+                            working_action_slab, working_attempted_slab, working_clause_state,
+                            working_closing_events, working_operation_values, working_operation_refs,
+                            working_reference_relations, working_unary_history,
+                            working_explorable_slab, working_log_probability_slab,
+                            working_post_op, working_unary_op, working_post_valid,
+                            working_unary_valid, working_occupation_words, working_case_state),
+                            fork.state, take)
+                        (working_cs_lang, working_stm, working_active, working_wholes,
+                         working_chunk_slab, working_chunk_count, working_trace_state,
+                         working_left_rows, working_right_rows, working_position_slab,
+                         working_action_slab, working_attempted_slab, working_clause_state,
+                         working_closing_events, working_operation_values, working_operation_refs,
+                         working_reference_relations, working_unary_history,
+                         working_explorable_slab, working_log_probability_slab,
+                         working_post_op, working_unary_op, working_post_valid,
+                         working_unary_valid, _, _, _, _,
+                         working_occupation_words, working_case_state) = resumed
+                working_stm, _, refresh = STMChunks.refresh(
+                    working_stm, STMChunks.stack_indices(working_stm)[:, :2],
+                    working_active[:, None], witness=True)
+                if sentence_transactions:
+                    j_col = journal_columns.index_select(1, j_col_idx.reshape(1)).squeeze(1)
+                    working_operation_refs = ChunkJournal.record_refresh(
+                        working_operation_refs, j_col, refresh, working_active)
+                before_stm = working_stm
+                if closing_flag:
+                    op_slots = scope.slots(working_clause_state, before_stm[1])
+                    op_allow = op_slots
+                else:
+                    op_slots = torch.full_like(before_stm[1], capacity - 1)
+                    op_allow = op_slots
+                proposal = choose_operation(
+                    before_stm, working_active, slots=op_slots,
+                    sample=False, allowance=op_allow,
+                    rounds_left=rounds_left_val,
+                    **({'closing': True} if closing_flag else {}),
+                    masked_action=self._compose_masked_action(slot, before_stm[1]),
+                    op_prior=self._chunk_structural_prior(working_wholes, B, before_stm[0]),
+                    reference_scope=working_clause_state if sentence_transactions else None,
+                    form_spans=working_wholes,
+                    case_state=working_case_state if case_enabled and sentence_transactions else None,
+                    previous_unary=working_unary_history, lesson_slot=slot,
+                    occupation=working_occupation_words,
+                    policy_grad=policy_grad_flag)
+                choice = proposal[0] if sentence_transactions else proposal
+                if fork is not None:
+                    if fork.explore:
+                        at = fork.selected & _wg_fork_rows & (fork.slot == slot)
+                        taken_next = fork_pack[1] | (at & choice.valid & (choice.action != fork.action))
+                        fork_pack = (fork_pack[0], taken_next)
+                    else:
+                        from SentenceFork import snapshot, select_rows
+                        f_count, f_res = fork_pack
+                        eligible_f = _wg_fork_rows & choice.valid & (choice.alternative_count > 0)
+                        f_count = f_count + eligible_f.long()
+                        rank_f = (torch.rand_like(f_count, dtype=torch.float32) * f_count).long()
+                        rank_f = torch.where(f_count <= len(f_res), f_count - 1, rank_f)
+                        places_f = torch.arange(len(f_res), device=rank_f.device)
+                        take_f = eligible_f[:, None] & (rank_f[:, None] == places_f)
+                        snap_st = snapshot(fork_state(
+                            working_cs_lang, working_stm, working_active, working_wholes,
+                            working_chunk_slab, working_chunk_count, working_trace_state,
+                            working_left_rows, working_right_rows, working_position_slab,
+                            working_action_slab, working_attempted_slab, working_clause_state,
+                            working_closing_events, working_operation_values, working_operation_refs,
+                            working_reference_relations, working_unary_history,
+                            working_explorable_slab, working_log_probability_slab,
+                            working_post_op, working_unary_op, working_post_valid,
+                            working_unary_valid, working_occupation_words, working_case_state), live=fork.live)
+                        snap_la = snapshot(tuple(fork.current_latches), live=fork.live)
+                        new_w = torch.zeros_like(fork.word) + index
+                        new_sl = torch.zeros_like(fork.slot) + slot
+                        new_ac = choice.action
+                        new_res = []
+                        for fi, (o_st, o_la, o_w, o_sl, o_ac, o_va) in enumerate(f_res):
+                            sel_f = take_f[:, fi]
+                            new_res.append((
+                                select_rows(o_st, snap_st, sel_f),
+                                select_rows(o_la, snap_la, sel_f),
+                                torch.where(sel_f, new_w, o_w),
+                                torch.where(sel_f, new_sl, o_sl),
+                                torch.where(sel_f, new_ac, o_ac),
+                                o_va | sel_f,
+                            ))
+                        fork_pack = (f_count, tuple(new_res))
+                working_unary_history = language.update_unary_history(working_unary_history, choice)
+                eligible = (choice.alternative_count if choice.alternative_count is not None else
+                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                working_explorable_slab = self._tensor_record_selected_values(
+                    working_explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                log_probability = (choice.log_probability if choice.log_probability is not None
+                    else choice.probability.clamp_min(torch.finfo(choice.probability.dtype).tiny).log())
+                working_log_probability_slab = self._tensor_record_selected_values(
+                    working_log_probability_slab.unsqueeze(-1), slot, log_probability[:, None], choice.valid).squeeze(-1)
+                if sentence_transactions:
+                    _, refs, relative, operands = proposal
+                    working_clause_state = scope.resolve(working_clause_state, choice, refs, relative)
+                    frame = ChunkJournal.value_record(operands, choice)
+                    working_operation_values = self._tensor_record_selected_values(
+                        working_operation_values, j_col_idx, frame, choice.applied)
+                    working_reference_relations = self._tensor_record_selected_values(
+                        working_reference_relations, j_col_idx, relative, choice.applied)
+                    working_stm, working_clause_state, working_operation_refs, ended = language.chunk_journal.apply(
+                        before_stm, working_clause_state, choice, operands, refs, working_operation_refs,
+                        (working_cs_lang[19], working_operation_values, journal_columns),
+                        column=j_col, free_ids=language._free_transient_ids, clause_scope=scope)
+                    if case_enabled:
+                        working_case_state = CaseFlow.apply(working_case_state, language._reference_bank.cases, choice,
+                            operands, language._compose_binary_rules, language._compose_unary_rules,
+                            language._tree_layer(2).ops, column=j_col_idx.expand(B),
+                            unary_ops=language._tree_layer(1).unary_ops)
+                working_occupation_words = update_flow(
+                    working_occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
+                if not sentence_transactions:
+                    working_stm = apply_language_choice(before_stm, choice)
+                    working_clause_state, ended = scope.apply(working_clause_state, choice, slot)
+                working_closing_events = record_clause_end(working_closing_events, slot, ended)
+                working_wholes = self._transpose_provenance(working_wholes, choice)
+                binary = choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True)
+                pair_choice = choice.applied & ((choice.kind == 1) | (choice.kind == 3))
+                if not closing_flag:
+                    unary_chosen = choice.applied & (choice.kind == 2)
+                    working_post_op = torch.where(pair_choice, choice.local_op, working_post_op)
+                    working_unary_op = torch.where(unary_chosen, choice.local_op, working_unary_op)
+                    working_post_valid = working_post_valid | pair_choice
+                    working_unary_valid = working_unary_valid | unary_chosen
+                (working_wholes, phrase_row, working_chunk_slab, working_chunk_count) = self._chunk_reduce_provenance(
+                    working_wholes, choice.local_op, binary, working_chunk_slab, working_chunk_count, table=chunk_table)
+                working_stm = cs.apply_phrase_rows(working_stm, phrase_row, binary)
+                working_stm, parse_pairs, parse_order = STMParse.apply(before_stm, working_stm, choice, slot,
+                    working_cs_lang[26], working_cs_lang[28], language.parts_of_speech._operation_symbols,
+                    language._parse_binary_operators, language._parse_unary_operators)
+                working_cs_lang = (*working_cs_lang[:26], parse_pairs, working_cs_lang[27], parse_order, *working_cs_lang[29:])
+                parse_depths = STMChunks.write(working_cs_lang[30], slot.expand(B), working_stm[STMChunks.DEPTH], choice.applied)
+                working_cs_lang = (*working_cs_lang[:30], parse_depths, *working_cs_lang[31:])
+                (working_trace_state, working_position_slab, working_action_slab, working_attempted_slab) = self._tensor_record_operation(
+                    working_trace_state, working_position_slab, working_action_slab, working_attempted_slab, slot,
+                    choice, binary_map, unary_map)
+                working_left_rows, working_right_rows = self._tensor_record_operands(
+                    working_left_rows, working_right_rows, slot, before_stm, pair_choice)
+                working_active = working_active & choice.applied
+                return (
+                    working_active, working_stm, working_cs_lang, working_wholes,
+                    working_chunk_slab, working_chunk_count, working_trace_state,
+                    working_left_rows, working_right_rows, working_position_slab,
+                    working_action_slab, working_attempted_slab, working_clause_state,
+                    working_closing_events, working_operation_values, working_operation_refs,
+                    working_reference_relations, working_unary_history,
+                    working_explorable_slab, working_log_probability_slab,
+                    working_post_op, working_unary_op, working_post_valid,
+                    working_unary_valid, working_occupation_words, working_case_state,
+                    fork_pack,
+                )
+
+            plan_fork = fork is not None and fork.explore
+            if torch.compiler.is_compiling():
+                from torch.utils._pytree import tree_flatten, tree_unflatten
+                def _clone_fresh(obj):
+                    leaves, spec = tree_flatten(obj)
+                    seen = set()
+                    fresh = []
+                    for v in leaves:
+                        if torch.is_tensor(v):
+                            v = v.clone()
+                        seen.add(id(v))
+                        fresh.append(v)
+                    return tree_unflatten(fresh, spec)
+                def _clone_return(inputs, outputs):
+                    in_leaves, _ = tree_flatten(inputs)
+                    in_ids = {id(v) for v in in_leaves if torch.is_tensor(v)}
+                    out_leaves, spec = tree_flatten(outputs)
+                    seen = set()
+                    fresh = []
+                    for v in out_leaves:
+                        if torch.is_tensor(v) and (id(v) in in_ids or id(v) in seen):
+                            v = v.clone()
+                        if torch.is_tensor(v):
+                            seen.add(id(v))
+                        fresh.append(v)
+                    return tree_unflatten(fresh, spec)
+                from SentenceFork import snapshot as _snap
+                _init_snap = _snap(fork_state(
+                    current_cs_lang, final_stm, round_active, wholes,
                     chunk_slab, chunk_count, trace_state, left_rows, right_rows,
                     position_slab, action_slab, attempted_slab, clause_state,
                     closing_events, operation_values, operation_refs,
                     reference_relations, unary_history, explorable_slab,
                     log_probability_slab, post_op, unary_op, post_valid,
-                    unary_valid, next_symbol_activations,
-                    row_gate, commit, intermediate_end, occupation_words, case_state)
-            # A separate NULL close never shifts a word. A separate word
-            # turn cannot join a closing fork or have an intermediate end.
-            plan_fork = fork is not None and fork.explore
-            word_visits = None
-            if plan_fork and not torch.compiler.is_compiling() and at_close is not True:
-                slots = (3 * index + torch.arange(3, device=index.device)).expand(B, -1)
-                word_visits = fork.round_visits(index, slots, closing=False, width=width).tolist()
-            for round_index in range(0 if at_close is True else 3):
-                pending, joining, policy_grad = (
-                    word_visits[round_index] if word_visits is not None
-                    else ((True, True, True) if plan_fork else (False, False, fork is None)))
-                if not torch.compiler.is_compiling() and not pending and not bool(round_active.any()):
-                    break
-                slot = 3 * index + round_index
-                if fork is not None:
-                    (current_cs_lang, final_stm, round_active, wholes, chunk_slab,
-                     chunk_count, trace_state, left_rows, right_rows, position_slab,
-                     action_slab, attempted_slab, clause_state, closing_events,
-                     operation_values, operation_refs, reference_relations,
-                     unary_history, explorable_slab, log_probability_slab, post_op,
-                     unary_op, post_valid, unary_valid,
-                     next_symbol_activations,
-                     row_gate, commit, intermediate_end, occupation_words, case_state
-                    ) = fork.resume(slot, fork_state(final_stm, round_active), joining=joining)
-                final_stm, _, refresh = STMChunks.refresh(final_stm, STMChunks.stack_indices(final_stm)[:, :2], round_active[:,None], witness=True)
-                if sentence_transactions:
-                    operation_refs = ChunkJournal.record_refresh(operation_refs,
-                        journal_columns[:,round_index],refresh,round_active)
-                before = final_stm
-                journal_slot = index.new_full((), round_index)
-                proposal = choose_operation(
-                    # Waiting within the STM allowance is legal before the
-                    # closing. Enforcing a final field here forces an early
-                    # left fold (e.g. `what is` before its object arrives).
-                    before, round_active, slots=torch.full_like(before[1], capacity - 1),
-                    sample=False,
-                    allowance=torch.full_like(before[1], capacity - 1), rounds_left=index.new_full((), 3 - round_index),
-                    masked_action=self._compose_masked_action(slot, before[1]),
-                    op_prior=self._chunk_structural_prior(wholes, B, before[0]),
-                    reference_scope=clause_state if sentence_transactions else None,
-                    form_spans=wholes,
-                    case_state=case_state if case_enabled and sentence_transactions else None,
-                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
-                    policy_grad=policy_grad)
-                choice = proposal[0] if sentence_transactions else proposal
-                if fork is not None:
-                    fork.record(choice, slot, fork_state(final_stm, round_active),
-                                word=index, latches=fork.current_latches)
-                unary_history = language.update_unary_history(unary_history, choice)
-                eligible = (choice.alternative_count if choice.alternative_count is not None else
-                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
-                explorable_slab = self._tensor_record_selected_values(
-                    explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
-                log_probability = (choice.log_probability if choice.log_probability is not None
-                    else choice.probability.clamp_min(torch.finfo(choice.probability.dtype).tiny).log())
-                log_probability_slab = self._tensor_record_selected_values(
-                    log_probability_slab.unsqueeze(-1), slot, log_probability[:, None], choice.valid).squeeze(-1)
-                if sentence_transactions:
-                    _, refs, relative, operands = proposal
-                    clause_state = scope.resolve(clause_state, choice, refs, relative)
-                    frame = ChunkJournal.value_record(operands, choice)
-                    operation_values = self._tensor_record_selected_values(
-                        operation_values, journal_slot, frame, choice.applied)
-                    reference_relations = self._tensor_record_selected_values(
-                        reference_relations, journal_slot, relative, choice.applied)
-                    final_stm, clause_state, operation_refs, ended = language.chunk_journal.apply(
-                        before,clause_state,choice,operands,refs,operation_refs,
-                        (current_cs_lang[19],operation_values,journal_columns),
-                        column=journal_columns[:,round_index],free_ids=language._free_transient_ids,clause_scope=scope)
-                    if case_enabled:
-                        case_state = CaseFlow.apply(case_state, language._reference_bank.cases, choice,
-                            operands, language._compose_binary_rules, language._compose_unary_rules,
-                            language._tree_layer(2).ops, column=journal_slot.expand(B),
-                            unary_ops=language._tree_layer(1).unary_ops)
-                occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
-                if not sentence_transactions:
-                    final_stm = apply_language_choice(before, choice)
-                    clause_state, ended = scope.apply(clause_state, choice, slot)
-                closing_events = record_clause_end(closing_events, slot, ended)
-                wholes = self._transpose_provenance(wholes, choice)
-                binary = choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True)
-                pair_choice = choice.applied & ((choice.kind == 1) | (choice.kind == 3))
-                unary_chosen = choice.applied & (choice.kind == 2)
-                post_op = torch.where(pair_choice, choice.local_op, post_op)
-                unary_op = torch.where(unary_chosen, choice.local_op, unary_op)
-                post_valid = post_valid | pair_choice
-                unary_valid = unary_valid | unary_chosen
-                (wholes, phrase_row, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
-                    wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
-                final_stm = cs.apply_phrase_rows(final_stm, phrase_row, binary)
-                final_stm, parse_pairs, parse_order = STMParse.apply(before, final_stm, choice, slot,
-                    current_cs_lang[26], current_cs_lang[28], language.parts_of_speech._operation_symbols,
-                    language._parse_binary_operators, language._parse_unary_operators)
-                current_cs_lang = (*current_cs_lang[:26], parse_pairs, current_cs_lang[27], parse_order, *current_cs_lang[29:])
-                parse_depths = STMChunks.write(current_cs_lang[30], slot.expand(B), final_stm[STMChunks.DEPTH], choice.applied)
-                current_cs_lang = (*current_cs_lang[:30], parse_depths, *current_cs_lang[31:])
-                (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
-                    trace_state, position_slab, action_slab, attempted_slab, slot,
-                    choice, binary_map, unary_map)
-                left_rows, right_rows = self._tensor_record_operands(
-                    left_rows, right_rows, slot, before, pair_choice)
-                round_active = round_active & choice.applied
+                    unary_valid, occupation_words, case_state), live=fork.live) if (fork is not None and not fork.explore) else None
+                fork_pack = _pack_fork_tensors(_init_snap)
+                carry = _clone_fresh((
+                    round_active, final_stm, current_cs_lang, wholes,
+                    chunk_slab, chunk_count, trace_state, left_rows, right_rows,
+                    position_slab, action_slab, attempted_slab, clause_state,
+                    closing_events, operation_values, operation_refs,
+                    reference_relations, unary_history, explorable_slab,
+                    log_probability_slab, post_op, unary_op, post_valid,
+                    unary_valid, occupation_words, case_state, fork_pack,
+                ))
+                if at_close is not True:
+                    _p, _j, _pg = (True, True, True) if plan_fork else (False, False, fork is None)
+                    def _word_cond(ri, st):
+                        return (ri < 3) if plan_fork else ((ri < 3) & st[0].any())
+                    def _word_body(ri, st):
+                        s = 3 * index + ri
+                        nxt = _apply_round_step(
+                            ri, s, ri, st, closing_flag=False, slots_val=None,
+                            rounds_left_val=3 - ri, pending_flag=_p,
+                            joining_flag=_j, policy_grad_flag=_pg)
+                        return ri + 1, _clone_return(st, nxt)
+                    _, carry = torch.while_loop(_word_cond, _word_body, (index.new_zeros(()), carry))
+                (round_active, final_stm, current_cs_lang, wholes,
+                 chunk_slab, chunk_count, trace_state, left_rows, right_rows,
+                 position_slab, action_slab, attempted_slab, clause_state,
+                 closing_events, operation_values, operation_refs,
+                 reference_relations, unary_history, explorable_slab,
+                 log_probability_slab, post_op, unary_op, post_valid,
+                 unary_valid, occupation_words, case_state, fork_pack) = carry
+                end_stm = final_stm
+                closing_active = intermediate_end
+                if at_close is not False:
+                    _p, _j, _pg = (True, True, True) if plan_fork else (False, False, fork is None)
+                    closing_carry = _clone_fresh((
+                        closing_active, end_stm, current_cs_lang, wholes,
+                        chunk_slab, chunk_count, trace_state, left_rows, right_rows,
+                        position_slab, action_slab, attempted_slab, clause_state,
+                        closing_events, operation_values, operation_refs,
+                        reference_relations, unary_history, explorable_slab,
+                        log_probability_slab, post_op, unary_op, post_valid,
+                        unary_valid, occupation_words, case_state, fork_pack,
+                    ))
+                    def _close_cond(ci, st):
+                        return (ci < closing_budget) if plan_fork else ((ci < closing_budget) & st[0].any())
+                    def _close_body(ci, st):
+                        s = 3 * width + group * closing_width + ci
+                        nxt = _apply_round_step(
+                            ci, s, 3 + ci, st, closing_flag=True, slots_val=None,
+                            rounds_left_val=closing_budget - ci, pending_flag=_p,
+                            joining_flag=_j, policy_grad_flag=_pg)
+                        return ci + 1, _clone_return(st, nxt)
+                    _, closing_carry = torch.while_loop(_close_cond, _close_body, (index.new_zeros(()), closing_carry))
+                    (closing_active, end_stm, current_cs_lang, wholes,
+                     chunk_slab, chunk_count, trace_state, left_rows, right_rows,
+                     position_slab, action_slab, attempted_slab, clause_state,
+                     closing_events, operation_values, operation_refs,
+                     reference_relations, unary_history, explorable_slab,
+                     log_probability_slab, post_op, unary_op, post_valid,
+                     unary_valid, occupation_words, case_state, fork_pack) = closing_carry
+                _unpack_fork_tensors(fork_pack)
+            else:
+                def _fork_state_legacy(working_stm, working_active):
+                    return (
+                        current_cs_lang, working_stm, working_active, wholes,
+                        chunk_slab, chunk_count, trace_state, left_rows, right_rows,
+                        position_slab, action_slab, attempted_slab, clause_state,
+                        closing_events, operation_values, operation_refs,
+                        reference_relations, unary_history, explorable_slab,
+                        log_probability_slab, post_op, unary_op, post_valid,
+                        unary_valid, next_symbol_activations,
+                        row_gate, commit, intermediate_end, occupation_words, case_state)
+                word_visits = None
+                if plan_fork and at_close is not True:
+                    slots = (3 * index + torch.arange(3, device=index.device)).expand(B, -1)
+                    word_visits = fork.round_visits(index, slots, closing=False, width=width).tolist()
+                for round_index in range(0 if at_close is True else 3):
+                    pending, joining, policy_grad = (
+                        word_visits[round_index] if word_visits is not None
+                        else ((True, True, True) if plan_fork else (False, False, fork is None)))
+                    if not pending and not bool(round_active.any()):
+                        break
+                    slot = 3 * index + round_index
+                    if fork is not None:
+                        (current_cs_lang, final_stm, round_active, wholes, chunk_slab,
+                         chunk_count, trace_state, left_rows, right_rows, position_slab,
+                         action_slab, attempted_slab, clause_state, closing_events,
+                         operation_values, operation_refs, reference_relations,
+                         unary_history, explorable_slab, log_probability_slab, post_op,
+                         unary_op, post_valid, unary_valid,
+                         next_symbol_activations,
+                         row_gate, commit, intermediate_end, occupation_words, case_state
+                        ) = fork.resume(slot, _fork_state_legacy(final_stm, round_active), joining=joining)
+                    final_stm, _, refresh = STMChunks.refresh(final_stm, STMChunks.stack_indices(final_stm)[:, :2], round_active[:,None], witness=True)
+                    if sentence_transactions:
+                        operation_refs = ChunkJournal.record_refresh(operation_refs,
+                            journal_columns[:,round_index],refresh,round_active)
+                    before = final_stm
+                    journal_slot = index.new_full((), round_index)
+                    proposal = choose_operation(
+                        before, round_active, slots=torch.full_like(before[1], capacity - 1),
+                        sample=False,
+                        allowance=torch.full_like(before[1], capacity - 1), rounds_left=index.new_full((), 3 - round_index),
+                        masked_action=self._compose_masked_action(slot, before[1]),
+                        op_prior=self._chunk_structural_prior(wholes, B, before[0]),
+                        reference_scope=clause_state if sentence_transactions else None,
+                        form_spans=wholes,
+                        case_state=case_state if case_enabled and sentence_transactions else None,
+                        previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
+                        policy_grad=policy_grad)
+                    choice = proposal[0] if sentence_transactions else proposal
+                    if fork is not None:
+                        fork.record(choice, slot, _fork_state_legacy(final_stm, round_active),
+                                    word=index, latches=fork.current_latches)
+                    unary_history = language.update_unary_history(unary_history, choice)
+                    eligible = (choice.alternative_count if choice.alternative_count is not None else
+                                (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                    explorable_slab = self._tensor_record_selected_values(
+                        explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                    log_probability = (choice.log_probability if choice.log_probability is not None
+                        else choice.probability.clamp_min(torch.finfo(choice.probability.dtype).tiny).log())
+                    log_probability_slab = self._tensor_record_selected_values(
+                        log_probability_slab.unsqueeze(-1), slot, log_probability[:, None], choice.valid).squeeze(-1)
+                    if sentence_transactions:
+                        _, refs, relative, operands = proposal
+                        clause_state = scope.resolve(clause_state, choice, refs, relative)
+                        frame = ChunkJournal.value_record(operands, choice)
+                        operation_values = self._tensor_record_selected_values(
+                            operation_values, journal_slot, frame, choice.applied)
+                        reference_relations = self._tensor_record_selected_values(
+                            reference_relations, journal_slot, relative, choice.applied)
+                        final_stm, clause_state, operation_refs, ended = language.chunk_journal.apply(
+                            before,clause_state,choice,operands,refs,operation_refs,
+                            (current_cs_lang[19],operation_values,journal_columns),
+                            column=journal_columns[:,round_index],free_ids=language._free_transient_ids,clause_scope=scope)
+                        if case_enabled:
+                            case_state = CaseFlow.apply(case_state, language._reference_bank.cases, choice,
+                                operands, language._compose_binary_rules, language._compose_unary_rules,
+                                language._tree_layer(2).ops, column=journal_slot.expand(B),
+                                unary_ops=language._tree_layer(1).unary_ops)
+                    occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
+                    if not sentence_transactions:
+                        final_stm = apply_language_choice(before, choice)
+                        clause_state, ended = scope.apply(clause_state, choice, slot)
+                    closing_events = record_clause_end(closing_events, slot, ended)
+                    wholes = self._transpose_provenance(wholes, choice)
+                    binary = choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True)
+                    pair_choice = choice.applied & ((choice.kind == 1) | (choice.kind == 3))
+                    unary_chosen = choice.applied & (choice.kind == 2)
+                    post_op = torch.where(pair_choice, choice.local_op, post_op)
+                    unary_op = torch.where(unary_chosen, choice.local_op, unary_op)
+                    post_valid = post_valid | pair_choice
+                    unary_valid = unary_valid | unary_chosen
+                    (wholes, phrase_row, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
+                        wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
+                    final_stm = cs.apply_phrase_rows(final_stm, phrase_row, binary)
+                    final_stm, parse_pairs, parse_order = STMParse.apply(before, final_stm, choice, slot,
+                        current_cs_lang[26], current_cs_lang[28], language.parts_of_speech._operation_symbols,
+                        language._parse_binary_operators, language._parse_unary_operators)
+                    current_cs_lang = (*current_cs_lang[:26], parse_pairs, current_cs_lang[27], parse_order, *current_cs_lang[29:])
+                    parse_depths = STMChunks.write(current_cs_lang[30], slot.expand(B), final_stm[STMChunks.DEPTH], choice.applied)
+                    current_cs_lang = (*current_cs_lang[:30], parse_depths, *current_cs_lang[31:])
+                    (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
+                        trace_state, position_slab, action_slab, attempted_slab, slot,
+                        choice, binary_map, unary_map)
+                    left_rows, right_rows = self._tensor_record_operands(
+                        left_rows, right_rows, slot, before, pair_choice)
+                    round_active = round_active & choice.applied
 
-            end_stm = final_stm
-            closing_active = intermediate_end
-            closing_visits = None
-            if plan_fork and not torch.compiler.is_compiling() and at_close is not False:
-                slots = 3 * width + group[:, None] * closing_width + torch.arange(closing_budget, device=index.device)
-                closing_visits = fork.round_visits(index, slots, closing=True, width=width).tolist()
-            for closing_index in range(0 if at_close is False else closing_budget):
-                pending, joining, policy_grad = (
-                    closing_visits[closing_index] if closing_visits is not None
-                    else ((True, True, True) if plan_fork else (False, False, fork is None)))
-                if not torch.compiler.is_compiling() and not pending and not bool(closing_active.any()):
-                    break
-                slot = 3 * width + group * closing_width + closing_index
-                if fork is not None:
-                    (current_cs_lang, end_stm, closing_active, wholes, chunk_slab,
-                     chunk_count, trace_state, left_rows, right_rows, position_slab,
-                     action_slab, attempted_slab, clause_state, closing_events,
-                     operation_values, operation_refs, reference_relations,
-                     unary_history, explorable_slab, log_probability_slab, post_op,
-                     unary_op, post_valid, unary_valid,
-                     next_symbol_activations,
-                     row_gate, commit, intermediate_end, occupation_words, case_state
-                    ) = fork.resume(slot, fork_state(end_stm, closing_active), joining=joining)
-                end_stm, _, refresh = STMChunks.refresh(end_stm, STMChunks.stack_indices(end_stm)[:, :2], closing_active[:,None], witness=True)
-                if sentence_transactions:
-                    operation_refs = ChunkJournal.record_refresh(operation_refs,
-                        journal_columns[:,3+closing_index],refresh,closing_active)
-                pre_closing = end_stm
-                journal_slot = index.new_full((), 3 + closing_index)
-                proposal = choose_operation(
-                    pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
-                    sample=False,
-                    allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=index.new_full((), closing_budget - closing_index), closing=True,
-                    masked_action=self._compose_masked_action(slot, pre_closing[1]),
-                    op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
-                    reference_scope=clause_state if sentence_transactions else None,
-                    form_spans=wholes,
-                    case_state=case_state if case_enabled and sentence_transactions else None,
-                    previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
-                    policy_grad=policy_grad)
-                choice = proposal[0] if sentence_transactions else proposal
-                if fork is not None:
-                    fork.record(choice, slot, fork_state(end_stm, closing_active),
-                                word=index, latches=fork.current_latches)
-                unary_history = language.update_unary_history(unary_history, choice)
-                eligible = (choice.alternative_count if choice.alternative_count is not None else
-                            (choice.valid if choice.alternatives is None else choice.alternatives).long())
-                explorable_slab = self._tensor_record_selected_values(
-                    explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
-                log_probability = (choice.log_probability if choice.log_probability is not None
-                    else choice.probability.clamp_min(torch.finfo(choice.probability.dtype).tiny).log())
-                log_probability_slab = self._tensor_record_selected_values(
-                    log_probability_slab.unsqueeze(-1), slot, log_probability[:, None], choice.valid).squeeze(-1)
-                if sentence_transactions:
-                    _, refs, relative, operands = proposal
-                    clause_state = scope.resolve(clause_state, choice, refs, relative)
-                    frame = ChunkJournal.value_record(operands, choice)
-                    operation_values = self._tensor_record_selected_values(
-                        operation_values, journal_slot, frame, choice.applied)
-                    reference_relations = self._tensor_record_selected_values(
-                        reference_relations, journal_slot, relative, choice.applied)
-                    end_stm, clause_state, operation_refs, ended = language.chunk_journal.apply(
-                        pre_closing,clause_state,choice,operands,refs,operation_refs,
-                        (current_cs_lang[19],operation_values,journal_columns),
-                        column=journal_columns[:,3+closing_index],free_ids=language._free_transient_ids,clause_scope=scope)
-                    if case_enabled:
-                        case_state = CaseFlow.apply(case_state, language._reference_bank.cases, choice,
-                            operands, language._compose_binary_rules, language._compose_unary_rules,
-                            language._tree_layer(2).ops, column=journal_slot.expand(B),
-                            unary_ops=language._tree_layer(1).unary_ops)
-                occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
-                if not sentence_transactions:
-                    end_stm = apply_language_choice(pre_closing, choice)
-                    clause_state, ended = scope.apply(clause_state, choice, slot)
-                closing_events = record_clause_end(closing_events, slot, ended)
-                wholes = self._transpose_provenance(wholes, choice)
-                binary = choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True)
-                (wholes, phrase, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
-                    wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
-                end_stm = cs.apply_phrase_rows(end_stm, phrase, binary)
-                end_stm, parse_pairs, parse_order = STMParse.apply(pre_closing, end_stm, choice, slot,
-                    current_cs_lang[26], current_cs_lang[28], language.parts_of_speech._operation_symbols,
-                    language._parse_binary_operators, language._parse_unary_operators)
-                current_cs_lang = (*current_cs_lang[:26], parse_pairs, current_cs_lang[27], parse_order, *current_cs_lang[29:])
-                parse_depths = STMChunks.write(current_cs_lang[30], slot.expand(B), end_stm[STMChunks.DEPTH], choice.applied)
-                current_cs_lang = (*current_cs_lang[:30], parse_depths, *current_cs_lang[31:])
-                (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
-                    trace_state, position_slab, action_slab, attempted_slab,
-                    slot, choice, binary_map, unary_map)
-                left_rows, right_rows = self._tensor_record_operands(
-                    left_rows, right_rows, slot, pre_closing,
-                    choice.applied & ((choice.kind == 1) | (choice.kind == 3)))
-                closing_active = closing_active & choice.applied
+                end_stm = final_stm
+                closing_active = intermediate_end
+                closing_visits = None
+                if plan_fork and at_close is not False:
+                    slots = 3 * width + group[:, None] * closing_width + torch.arange(closing_budget, device=index.device)
+                    closing_visits = fork.round_visits(index, slots, closing=True, width=width).tolist()
+                for closing_index in range(0 if at_close is False else closing_budget):
+                    pending, joining, policy_grad = (
+                        closing_visits[closing_index] if closing_visits is not None
+                        else ((True, True, True) if plan_fork else (False, False, fork is None)))
+                    if not pending and not bool(closing_active.any()):
+                        break
+                    slot = 3 * width + group * closing_width + closing_index
+                    if fork is not None:
+                        (current_cs_lang, end_stm, closing_active, wholes, chunk_slab,
+                         chunk_count, trace_state, left_rows, right_rows, position_slab,
+                         action_slab, attempted_slab, clause_state, closing_events,
+                         operation_values, operation_refs, reference_relations,
+                         unary_history, explorable_slab, log_probability_slab, post_op,
+                         unary_op, post_valid, unary_valid,
+                         next_symbol_activations,
+                         row_gate, commit, intermediate_end, occupation_words, case_state
+                        ) = fork.resume(slot, _fork_state_legacy(end_stm, closing_active), joining=joining)
+                    end_stm, _, refresh = STMChunks.refresh(end_stm, STMChunks.stack_indices(end_stm)[:, :2], closing_active[:,None], witness=True)
+                    if sentence_transactions:
+                        operation_refs = ChunkJournal.record_refresh(operation_refs,
+                            journal_columns[:,3+closing_index],refresh,closing_active)
+                    pre_closing = end_stm
+                    journal_slot = index.new_full((), 3 + closing_index)
+                    proposal = choose_operation(
+                        pre_closing, closing_active, slots=scope.slots(clause_state, pre_closing[1]),
+                        sample=False,
+                        allowance=scope.slots(clause_state, pre_closing[1]), rounds_left=index.new_full((), closing_budget - closing_index), closing=True,
+                        masked_action=self._compose_masked_action(slot, pre_closing[1]),
+                        op_prior=self._chunk_structural_prior(wholes, B, pre_closing[0]),
+                        reference_scope=clause_state if sentence_transactions else None,
+                        form_spans=wholes,
+                        case_state=case_state if case_enabled and sentence_transactions else None,
+                        previous_unary=unary_history, lesson_slot=slot, occupation=occupation_words,
+                        policy_grad=policy_grad)
+                    choice = proposal[0] if sentence_transactions else proposal
+                    if fork is not None:
+                        fork.record(choice, slot, _fork_state_legacy(end_stm, closing_active),
+                                    word=index, latches=fork.current_latches)
+                    unary_history = language.update_unary_history(unary_history, choice)
+                    eligible = (choice.alternative_count if choice.alternative_count is not None else
+                                (choice.valid if choice.alternatives is None else choice.alternatives).long())
+                    explorable_slab = self._tensor_record_selected_values(
+                        explorable_slab.unsqueeze(-1), slot, eligible[:, None], choice.valid).squeeze(-1)
+                    log_probability = (choice.log_probability if choice.log_probability is not None
+                        else choice.probability.clamp_min(torch.finfo(choice.probability.dtype).tiny).log())
+                    log_probability_slab = self._tensor_record_selected_values(
+                        log_probability_slab.unsqueeze(-1), slot, log_probability[:, None], choice.valid).squeeze(-1)
+                    if sentence_transactions:
+                        _, refs, relative, operands = proposal
+                        clause_state = scope.resolve(clause_state, choice, refs, relative)
+                        frame = ChunkJournal.value_record(operands, choice)
+                        operation_values = self._tensor_record_selected_values(
+                            operation_values, journal_slot, frame, choice.applied)
+                        reference_relations = self._tensor_record_selected_values(
+                            reference_relations, journal_slot, relative, choice.applied)
+                        end_stm, clause_state, operation_refs, ended = language.chunk_journal.apply(
+                            pre_closing,clause_state,choice,operands,refs,operation_refs,
+                            (current_cs_lang[19],operation_values,journal_columns),
+                            column=journal_columns[:,3+closing_index],free_ids=language._free_transient_ids,clause_scope=scope)
+                        if case_enabled:
+                            case_state = CaseFlow.apply(case_state, language._reference_bank.cases, choice,
+                                operands, language._compose_binary_rules, language._compose_unary_rules,
+                                language._tree_layer(2).ops, column=journal_slot.expand(B),
+                                unary_ops=language._tree_layer(1).unary_ops)
+                    occupation_words = update_flow(occupation_words, choice, language._occupation_binary_flow, language._occupation_unary_flow)
+                    if not sentence_transactions:
+                        end_stm = apply_language_choice(pre_closing, choice)
+                        clause_state, ended = scope.apply(clause_state, choice, slot)
+                    closing_events = record_clause_end(closing_events, slot, ended)
+                    wholes = self._transpose_provenance(wholes, choice)
+                    binary = choice.applied & (choice.kind == 1) & (choice.stack_arity != 1 if choice.stack_arity is not None else True)
+                    (wholes, phrase, chunk_slab, chunk_count) = self._chunk_reduce_provenance(
+                        wholes, choice.local_op, binary, chunk_slab, chunk_count, table=chunk_table)
+                    end_stm = cs.apply_phrase_rows(end_stm, phrase, binary)
+                    end_stm, parse_pairs, parse_order = STMParse.apply(pre_closing, end_stm, choice, slot,
+                        current_cs_lang[26], current_cs_lang[28], language.parts_of_speech._operation_symbols,
+                        language._parse_binary_operators, language._parse_unary_operators)
+                    current_cs_lang = (*current_cs_lang[:26], parse_pairs, current_cs_lang[27], parse_order, *current_cs_lang[29:])
+                    parse_depths = STMChunks.write(current_cs_lang[30], slot.expand(B), end_stm[STMChunks.DEPTH], choice.applied)
+                    current_cs_lang = (*current_cs_lang[:30], parse_depths, *current_cs_lang[31:])
+                    (trace_state, position_slab, action_slab, attempted_slab) = self._tensor_record_operation(
+                        trace_state, position_slab, action_slab, attempted_slab,
+                        slot, choice, binary_map, unary_map)
+                    left_rows, right_rows = self._tensor_record_operands(
+                        left_rows, right_rows, slot, pre_closing,
+                        choice.applied & ((choice.kind == 1) | (choice.kind == 3)))
+                    closing_active = closing_active & choice.applied
             if sentence_transactions:
                 operation_values = current_cs_lang[19].scatter(1, value_columns, operation_values)
                 reference_relations = current_cs_lang[21].scatter(1, ref_columns, reference_relations)

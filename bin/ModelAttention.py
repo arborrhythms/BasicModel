@@ -590,20 +590,39 @@ def observe_percept(model, forecast, payload, sub, index, active, *, path=None, 
     """Score this arrival against its own pre-observation forecast."""
     expectation = model.percept_expectation
     width = expectation.width
-    native = sub[1][:,int(index)]
-    observed = native[...,:width]
+    per_batch = torch.is_tensor(index) and index.ndim > 0
+    if per_batch:
+        ar = torch.arange(len(active), device=sub[1].device)
+        safe = index.clamp(0, sub[1].shape[1] - 1)
+        native = sub[1][ar, safe]
+    else:
+        native = sub[1][:, int(index)]
+    observed = native[..., :width]
     if path is None:
         arrival = expectation.arrive(forecast, observed, active, sentence=True)
         local = expectation.last_arrival['local_loss']
     else:
         arrival, local = expectation.preview(path.history, forecast, observed, active)
-        path.arrivals[turn, index] = (observed.detach(), (forecast[0].detach(), forecast[1]), active)
+        key = (turn, -1) if per_batch else (turn, index)
+        path.arrivals[key] = (observed.detach(), (forecast[0].detach(), forecast[1]), active)
     # Different pages can reach one source word on different looks. A
     # later arrival updates only the streams that actually observed it.
-    prior = model._percept_expected[:, index]
-    loss = model._percept_arrival_loss[:, index]
-    model._percept_expected[:, index] = torch.where(active[:, None], arrival.expected, prior)
-    model._percept_arrival_loss[:, index] = torch.where(active, local, loss)
+    if per_batch:
+        B, W_p, exp_w = model._percept_expected.shape
+        safe_p = index.clamp(0, W_p - 1)
+        prior = model._percept_expected.gather(1, safe_p.reshape(B, 1, 1).expand(B, 1, exp_w)).squeeze(1)
+        loss = model._percept_arrival_loss.gather(1, safe_p.reshape(B, 1)).squeeze(1)
+        model._percept_expected = model._percept_expected.scatter(
+            1, safe_p.reshape(B, 1, 1).expand(B, 1, exp_w),
+            torch.where(active[:, None], arrival.expected, prior).unsqueeze(1))
+        model._percept_arrival_loss = model._percept_arrival_loss.scatter(
+            1, safe_p.reshape(B, 1),
+            torch.where(active, local, loss).unsqueeze(1))
+    else:
+        prior = model._percept_expected[:, index]
+        loss = model._percept_arrival_loss[:, index]
+        model._percept_expected[:, index] = torch.where(active[:, None], arrival.expected, prior)
+        model._percept_arrival_loss[:, index] = torch.where(active, local, loss)
     # Identity-valued forward chart, retaining the ordinary source pullback.
     # The two poles of conceptual evidence are unchanged by this P interface.
     from Expectation import recombine_percept

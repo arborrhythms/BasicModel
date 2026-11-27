@@ -257,7 +257,22 @@ class WordForecast:
         if self.reader is None:
             return
         from WordExpectation import ExpectedWords
-        fresh = rows & ~self.arrived[:,index] & self.live[:,index]
+        per_batch = torch.is_tensor(index) and index.ndim > 0
+        W = self.live.shape[1]
+        if per_batch:
+            ar = torch.arange(len(rows), device=rows.device)
+            safe = index.clamp(0, W - 1)
+            fresh = rows & ~self.arrived[ar, safe] & self.live[ar, safe]
+            codes = self.codes[ar, safe]
+            identities = self.identities[ar, safe]
+            live_here = rows & self.live[ar, safe]
+            mask = (torch.arange(W, device=rows.device)[None] == index[:, None]) & fresh[:, None]
+        else:
+            fresh = rows & ~self.arrived[:,index] & self.live[:,index]
+            codes = self.codes[:, index]
+            identities = self.identities[:, index]
+            live_here = rows & self.live[:, index]
+            mask = (torch.arange(W,device=rows.device)==index)[None] & fresh[:,None]
         # Score from this path's prefix. A repeated occurrence still enters
         # its observed context, but only its first forecast occupies the ledger.
         # The interpreter dispatches disjoint sets of streams by source
@@ -267,11 +282,10 @@ class WordForecast:
         regions = getattr(self.model, '_compiled_sentence_regions', None)
         step_fn = (regions['word_arrivals_step']
                    if regions and not torch.compiler.is_compiling() else type(self.reader).step)
-        current = step_fn(self.reader, self.codes[:, index], self.identities[:, index],
-                          active=rows & self.live[:, index], lanes=lanes,
+        current = step_fn(self.reader, codes, identities,
+                          active=live_here, lanes=lanes,
                           forecast=turn is None or turn != self.predicted_look)
         self.predicted_look = turn
-        mask = (torch.arange(self.live.shape[1],device=rows.device)==index)[None] & fresh[:,None]
         values=[]
         for name in ExpectedWords.__dataclass_fields__:
             value = getattr(current, name)
@@ -524,7 +538,9 @@ class Looks:
             try:
                 # Each stream offers at most one source slot per look. Keep
                 # the batch width fixed at the serial grammar handoff.
-                if compiling:
+                if compiling and getattr(model, '_canonical_sentence_bricks', False):
+                    arrive(index, interpreted)
+                elif compiling:
                     for word in range(W):
                         arrive(word, interpreted & (index == word))
                 else:

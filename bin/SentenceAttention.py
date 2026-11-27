@@ -33,24 +33,32 @@ class SentenceField:
     def arrive(self, index, payload, native, rows):
         """Retain only the interpreted occurrence's own evidence and address."""
         B = self.scope.shape[0]
-        column = (self.positions == index).long().argmax()
+        per_batch = torch.is_tensor(index) and index.ndim > 0
+        if per_batch:
+            ar = torch.arange(B, device=rows.device)
+            safe = index.clamp(0, len(self.positions) - 1)
+            column = (self.positions[None] == index[:, None]).long().argmax(1)
+        else:
+            column = (self.positions == index).long().argmax()
         identity = torch.where(payload[2] >= 0,payload[2],payload[4])
         registry = self.model.where_registry
         # A symbol has no address. An identified occurrence is placed where
         # it stands in the text, the address its word step was given.
         from PrependedSymbols import word_view
-        band = word_view(self.model.inputSpace, 'symbol_where')[:, index]
+        all_band = word_view(self.model.inputSpace, 'symbol_where')
+        band = all_band[ar, safe] if per_batch else all_band[:, index]
         start = registry.decode(band).to(torch.long)
         known = torch.where((identity >= 0)[:, None] & band.ne(0).any(-1, keepdim=True),
                             torch.stack((start, start + 1), -1), -1)
-        pair = self.model._attention_words.poles[:,index]
+        poles = self.model._attention_words.poles
+        pair = poles[ar, safe] if per_batch else poles[:, index]
         if native:
             parts, wholes, codes, roles, evidence, mask = native
             for name, carrier in (('parts', parts), ('wholes', wholes)):
                 value = torch.where(rows[:, None, None], carrier[:, -1], 0.)
                 prior = getattr(self, name)
                 setattr(self, name, value if prior is None else prior + value)
-            address = codes + torch.where(roles == 0,registry.slices['parts'][0],
+            address = codes + torch.where(roles == 0,registry._ranges['parts'][0],
                 int(self.model.wholeSpace.subspace.what.where_offset))
             address = address[:,None].expand_as(evidence)
             mask = mask & (codes[:,None]>=0) & rows[:,None,None]
@@ -67,7 +75,8 @@ class SentenceField:
             if self.reads:
                 raise ValueError('an arrival changed the native support width')
             self.support = support.new_zeros(B,len(self.positions),support.shape[1],2)
-        at = (torch.arange(len(self.positions),device=rows.device)==column)[None]&rows[:,None]
+        col_match = (torch.arange(len(self.positions),device=rows.device)[None] == (column[:, None] if per_batch else column))
+        at = col_match & rows[:,None]
         self.support = torch.where(at[...,None,None],support[:,None],self.support)
         self.where = torch.where(at[...,None],extent[:,None].to(self.where),self.where)
         self.identities = torch.where(at,identity[:,None],self.identities)
@@ -85,17 +94,26 @@ class SentenceField:
         """
         window = self.support_window
         B, K, W = window.shape
+        per_batch = torch.is_tensor(index) and index.ndim > 0
         if not closing:
-            column = (self.positions == index).long().argmax()
-            head = torch.nn.functional.one_hot(column, W).to(window)[None].expand(B, -1)
+            if per_batch:
+                column = (self.positions[None] == index[:, None]).long().argmax(1)
+                head = torch.nn.functional.one_hot(column, W).to(window)
+                columns = [3 * index + r for r in range(3)]
+            else:
+                column = (self.positions == index).long().argmax()
+                head = torch.nn.functional.one_hot(column, W).to(window)[None].expand(B, -1)
+                columns = range(3 * int(index), 3 * int(index) + 3)
             window = torch.where(rows[:, None, None], torch.cat((head[:, None], window[:, :-1]), 1), window)
-            columns = range(3 * int(index), 3 * int(index) + 3)
         else:
             width = self.scope.shape[1]
-            group = int(index) + 1 if int(index) < width - 1 else 0
-            # The final sentence uses group zero even in a padded bucket.
             all_last = torch.where(self.model.inputSpace._word_active_mask,
                 torch.arange(width, device=rows.device)[None], -1).amax(-1)
+            if per_batch:
+                group = torch.where(index < width - 1, index + 1, 0)
+            else:
+                group = int(index) + 1 if int(index) < width - 1 else 0
+            # The final sentence uses group zero even in a padded bucket.
             groups = torch.where(all_last == index, 0, group)
             columns = [3 * width + groups * (2 * K) + r for r in range(2 * K)]
         from Language import TheGrammar, GRAMMAR_LAYER_CLASSES
@@ -132,7 +150,8 @@ class SentenceField:
         """Source columns of the accepted arrivals in this stream's read order."""
         if not self.reads:
             return self.positions.new_empty(0)
-        columns = torch.stack([entry['index'] for entry in self.reads])
+        columns = torch.stack([entry['index'][row] if (torch.is_tensor(entry['index']) and entry['index'].ndim > 0)
+                               else entry['index'] for entry in self.reads])
         accepted = torch.stack([entry['rows'][row] for entry in self.reads])
         if valid is not None:
             accepted = accepted & valid[columns]
@@ -142,7 +161,8 @@ class SentenceField:
         """All streams' interpreted arrivals, padded where a stream did not read."""
         if not self.reads:
             return self.positions.new_full((len(self.scope), 1), -1)
-        columns = torch.stack([entry['index'] for entry in self.reads])
+        columns = torch.stack([entry['index'] if (torch.is_tensor(entry['index']) and entry['index'].ndim > 0)
+                               else entry['index'].expand(len(self.scope)) for entry in self.reads], dim=1)
         accepted = torch.stack([entry['rows'] for entry in self.reads], dim=1)
         return torch.where(accepted, columns, -1)
 
