@@ -6588,7 +6588,8 @@ class ConceptualAttentionLayer(SparseLayer):
         """``(thing, member rows, complete)`` of a column: ``complete`` is
         false where a member of a symbol has no row."""
         key = (id(self.symbol_table), self.symbol_table.revision,
-               id(self._tensor_rows), len(self._tensor_rows), self._room)
+               self._tensor_rows, len(self._tensor_rows),
+               getattr(self, '_record_revision', 0), self._room)
         cache = self.__dict__.get('_thing_specs')
         if cache is None or cache[0] != key:
             cache = self.__dict__['_thing_specs'] = (key, {})
@@ -6606,16 +6607,17 @@ class ConceptualAttentionLayer(SparseLayer):
         if torch.compiler.is_compiling() and held is not None:
             return held[4]
         parent_rows, _ = self._indices(device)
-        stamp = (self.symbol_table.revision, len(self._tensor_rows), self._room, size)
+        stamp = (self.symbol_table.revision, len(self._tensor_rows),
+                 getattr(self, '_record_revision', 0), self._room, size)
         if (held is not None and held[0] is parent_rows and held[1] is self.symbol_table
-                and held[2] == id(self._tensor_rows) and held[3] == stamp):
+                and held[2] is self._tensor_rows and held[3] == stamp):
             return held[4]
         with torch.no_grad():
             view = self.bind(range(size))
             targets, columns = view._indices(device)
             result = (view._inventory_edges.to(device), targets, columns,
                       view._thing_seats.to(device), view._thing_complete.to(device))
-        self.__dict__['_inventory_indices'] = parent_rows, self.symbol_table, id(self._tensor_rows), stamp, result
+        self.__dict__['_inventory_indices'] = parent_rows, self.symbol_table, self._tensor_rows, stamp, result
         self.__dict__.pop('_spread_indices', None)
         self.__dict__.pop('_definition_depth', None)
         return result
@@ -6909,20 +6911,21 @@ class ConceptualAttentionLayer(SparseLayer):
         # Admission appends assignments. Checkpoint restore replaces the map.
         cached = self.__dict__.get('_concept_row_lookup')
         if torch.compiler.is_compiling() and cached is not None:
-            names, seats = cached[2:]
+            names, seats = cached[3:]
             if names.device != ids.device:
                 names, seats = names.to(ids.device), seats.to(ids.device)
         else:
             rows = self._tensor_rows
-            if (cached is None or cached[0] != id(rows) or cached[1] != len(rows)
-                    or cached[2].device != ids.device):
+            rev = getattr(self, '_record_revision', 0)
+            if (cached is None or cached[0] is not rows or cached[1] != len(rows)
+                    or cached[2] != rev or cached[3].device != ids.device):
                 ordered = sorted((key[1], row) for key, row in rows.items()
                                  if isinstance(key, tuple) and key[:1] == ('concept',))
                 # The extra row absorbs absent names, including an empty inventory.
                 table = ids.new_tensor(ordered + [(-1, -1)], dtype=torch.long)
-                cached = id(rows), len(rows), table[:, 0].contiguous(), table[:, 1].contiguous()
+                cached = rows, len(rows), rev, table[:, 0].contiguous(), table[:, 1].contiguous()
                 self.__dict__['_concept_row_lookup'] = cached
-            names, seats = cached[2:]
+            names, seats = cached[3:]
         at = torch.searchsorted(names[:-1], ids.contiguous())
         return torch.where((ids >= 0) & (names[at] == ids), seats[at], -1)
 

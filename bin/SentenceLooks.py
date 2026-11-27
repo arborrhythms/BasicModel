@@ -333,7 +333,7 @@ class Looks:
     def _look_interpret_and_spread(self, model, owner, bank, state, observation,
                                    look_field, extent, words, rows, index, found,
                                    anticipated, request, stop, found_where, found_code,
-                                   own, memory, stream, word_slots, decision):
+                                   own, memory, stream, word_slots, decision, turn):
         if self.look_credit is not None:
             self.look_credit.observe(
                 anticipated,
@@ -350,7 +350,7 @@ class Looks:
                 replay_grammar = self.present
             else:
                 at = self.draw.get('interpret_round', torch.full_like(index, -1))
-                replay_grammar = (((self.draw['attention_round'] < 0) | (state.taken < self.draw['attention_round']))
+                replay_grammar = (((self.draw['attention_round'] < 0) | (turn < self.draw['attention_round']))
                                   & ((at < 0) | (decision < at)))
                 options['masked_action'] = torch.where(at == decision, old['action'], -1)
             options['replay_action'] = torch.where(replay_grammar, old['action'], -1)
@@ -528,7 +528,7 @@ class Looks:
                 self, model, owner, bank, state, observation,
                 look_field, extent, words, rows, index, found,
                 anticipated, request, stop, found_where, found_code,
-                own, memory, stream, word_slots, decision)
+                own, memory, stream, word_slots, decision, turn)
             self.decisions.append(choice)
             if fragment_leaf is not None:
                 model._fragment_leaf = fragment_leaf

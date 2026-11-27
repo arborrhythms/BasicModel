@@ -1868,7 +1868,8 @@ class BasicPercepts(nn.Module):
         context = torch.cat((whole_spans.to(device), brackets, learned), 1)
         spans, holder, counts = merge_occurrences(own, context)
         # The precise live width preserves attention's draw among equal
-        # nominations, including the RNG consumed when the table is over capacity.
+        # nominations, including the RNG consumed when the table is over capacity
+        # (replay parity holds within a mode: compiled traces use full width).
         if spans.numel():
             if torch.compiler.is_compiling():
                 seats, limit = spans.shape[1], text.shape[1]
@@ -2456,6 +2457,7 @@ class BasicPercepts(nn.Module):
         place_rows = dict(state.get('place_rows', ()))
         self.place_rows.seats.clear()
         self._place_cone_rows = {}
+        self.__dict__.pop('_place_cone_synced_counts', None)
         self._place_cone_bits.zero_()
         self._place_cone_keys.zero_()
         self._place_cone_counts.zero_()

@@ -304,7 +304,7 @@ def prepare_inverse(bank):
 
 
 def prepare_host(owner, device):
-    """Pre-compute conceptual row -> basic_percepts word index table on host."""
+    """Pre-compute occupied conceptual row -> basic_percepts word index table on host."""
     if owner is None or not hasattr(owner, 'basic_percepts'):
         return
     basic = owner.basic_percepts
@@ -312,9 +312,8 @@ def prepare_host(owner, device):
     row_map = torch.full((n_vec,), -1, dtype=torch.long, device=device)
     cand = set()
     if getattr(basic, 'words', None):
-        for row in range(n_vec):
-            identity = owner.concept_id_at_row(row)
-            if identity is None:
+        for row, identity in sorted(owner._row_to_concept().items()):
+            if not (0 <= row < n_vec):
                 continue
             if owner._row_order(row) > 0:
                 words = owner.definitions.words(identity)

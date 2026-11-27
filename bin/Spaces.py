@@ -16600,7 +16600,7 @@ class ConceptualSpace(Space):
         """Only percepts and kinds discovered from them have witnessed where."""
         alloc = _concept_alloc_of(self)
         ly = alloc.layer(0)
-        revision = (id(ly._tensor_rows), len(ly._tensor_rows),
+        revision = (ly._tensor_rows, len(ly._tensor_rows),
                     getattr(ly, '_record_revision', 0), frozenset(alloc.retired),
                     id(ly.witnessed), ly.witnessed._version, self._order_caps()[0])
         cached = self.__dict__.get('_witnessed_row_cache')

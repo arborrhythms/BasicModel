@@ -8681,6 +8681,68 @@ class BasicModel(BaseModel):
         """Run caller-supplied sentence execution under the same phase mask."""
         return (executor or self.forward)(input_data)
 
+    def _is_compiled_host_staging(self, executor=None):
+        """Whether this forward uses compiled whole-sentence or region execution."""
+        return (
+            bool(getattr(self, '_compiled_sentence_regions', None))
+            or getattr(self, '_active_compiled_step', None) is not None
+            or hasattr(executor, '_torchdynamo_orig_callable')
+            or hasattr(type(self).forward, '_torchdynamo_orig_callable')
+            or hasattr(self.forward, '_torchdynamo_orig_callable')
+        )
+
+    def _refresh_compiled_host_stage(self, batch_size, device, input_data=None):
+        """Refresh host staging and lookup caches used by compiled regions/graphs."""
+        owner = self._concept_owner()
+        if owner is not None and getattr(owner, 'definitions', None) is not None:
+            owner.definitions._ensure()
+        from PrependedSymbols import prepare_host_stage
+        prepare_host_stage(self, int(batch_size))
+        from DefinitionFold import prepare_host as prepare_definition_fold_host
+        prepare_definition_fold_host(owner, device)
+        from FormCentroids import prepare_host as prepare_form_centroids_host
+        prepare_form_centroids_host(owner, device)
+        _exp = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
+        if _exp is not None:
+            from ModelAttention import prepare_symbol_bank_host, stage_symbol_bank
+            prepare_symbol_bank_host(owner, device)
+            stage_symbol_bank(self, _exp)
+            for _buf_name in ('_bank_keys', '_bank_ids', '_bank_addresses', '_bank_orders'):
+                _buf = getattr(_exp, _buf_name, None)
+                if torch.is_tensor(_buf) and _buf.ndim > 0 and _buf.shape[0] >= 2:
+                    torch._dynamo.mark_dynamic(_buf, 0)
+            from WordExpectation import prepare_context_host
+            prepare_context_host(_exp, int(batch_size), device,
+                                 owner.similarity_codebook.W.dtype)
+        ref_source = input_data if input_data is not None else torch.empty(int(batch_size), 0, device=device)
+        self._prepare_sentence_reference_banks_host(ref_source)
+        if owner is not None and getattr(owner, 'basic_percepts', None) is not None:
+            owner.basic_percepts._refresh_pi()
+        _ltm_store = getattr(self.symbolSpace, 'ltm_store', None)
+        if _ltm_store is not None and hasattr(_ltm_store, '_occupied_names'):
+            _ltm_store._occupied_names()
+        _pos = getattr(getattr(self, 'languageSpace', None), 'parts_of_speech', None)
+        if _pos is not None and hasattr(_pos, 'prepare_values'):
+            _pos.prepare_values()
+        for _space in getattr(self, 'conceptualSpaces', ()):
+            _oz = getattr(_space, 'order_zero', None)
+            if _oz is not None and hasattr(_oz, '_products_at_entries'):
+                _oz._products_at_entries(device)
+            _alloc = getattr(_space, '_concept_allocator', None)
+            if _alloc is not None and hasattr(_space, 'nVectors'):
+                from FieldProjection import seated_names
+                seated_names(_alloc, int(_space.nVectors), ref_source)
+                _l0 = _alloc.layer(0)
+                _l0.spread_indices(int(_space.nVectors), device)
+                _l0.concept_rows(torch.empty(0, dtype=torch.long, device=device))
+                from CaseSelection import case_edges
+                case_edges(_l0, device)
+            if hasattr(_space, '_prepare_closure_plan_host'):
+                _space._prepare_closure_plan_host(device)
+            _interp = getattr(_space, '_interpret_operator', None)
+            if _interp is not None and hasattr(_interp, 'spelling_seats'):
+                _interp.spelling_seats(torch.empty(0, dtype=torch.long, device=device))
+
     def _present_input_sentence(self, input_data, executor):
         self._stage_host_surface()
         own_forward = (executor is None or executor == self.forward
@@ -8707,115 +8769,82 @@ class BasicModel(BaseModel):
                         external_start = bool(getattr(self, '_spaces_started_for_forward', False))
                         if not external_start:
                             self._start_spaces_for_forward()
-                        self._staged_in_sub = self._lex_embed_stem(input_data)
-                        from PrependedSymbols import prepare_host_stage
-                        prepare_host_stage(self, len(input_data))
-                        from DefinitionFold import prepare_host as prepare_definition_fold_host
-                        prepare_definition_fold_host(self._concept_owner(), input_data.device)
-                        from FormCentroids import prepare_host as prepare_form_centroids_host
-                        prepare_form_centroids_host(self._concept_owner(), input_data.device)
-                        from ModelAttention import prepare_symbol_bank_host
-                        prepare_symbol_bank_host(self._concept_owner(), input_data.device)
-                        _exp = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
-                        if _exp is not None:
-                            from ModelAttention import stage_symbol_bank
-                            stage_symbol_bank(self, _exp)
-                            for _buf_name in ('_bank_keys', '_bank_ids', '_bank_addresses', '_bank_orders'):
-                                _buf = getattr(_exp, _buf_name, None)
-                                if torch.is_tensor(_buf) and _buf.ndim > 0 and _buf.shape[0] >= 2:
-                                    torch._dynamo.mark_dynamic(_buf, 0)
-                            from WordExpectation import prepare_context_host
-                            prepare_context_host(_exp, len(input_data), input_data.device,
-                                                 self._concept_owner().similarity_codebook.W.dtype)
-                        self._prepare_sentence_reference_banks_host(input_data)
                         owner = self._concept_owner()
-                        if owner is not None and getattr(owner, 'basic_percepts', None) is not None:
-                            owner.basic_percepts._refresh_pi()
-                        self._forward_host_prepared = True
-                        self._sentence_look_fields = {}
-                        self._modules['_sentence_order_zero_reverse'] = None
-                        for _name in ('_answer_attention_obs', '_last_output_comparison',
-                                      '_last_output_walk_trace', '_sentence_answer_cost',
-                                      '_sentence_answer_predictions', '_sentence_answer_raw_cost',
-                                      '_sentence_close_errors', '_path_thinking',
-                                      '_sentence_expectation_comparison', '_sentence_gradient_objectives',
-                                      '_sentence_target',
-                                      '_last_path_comparison', '_sentence_walk_residuals',
-                                      '_sentence_output_walk_credits', '_sentence_order_zero_field',
-                                      '_last_closing_thoughts', '_intuition_bracket',
-                                      '_concept_prediction', '_last_decoder_trace',
-                                      '_last_decoder_comparison', '_compose_sampling_scale',
-                                      '_word_expectation', '_last_answer_construction',
-                                      '_attention_words', '_attention_greedy',
-                                      '_tensor_pushed_ideas', '_tensor_sentence_roots_live',
-                                      '_packed_sentence_roots'):
-                            self.__dict__.setdefault(_name, None)
-                        if not getattr(self.symbolSpace, '_per_sentence_initialized', False):
-                            self.symbolSpace.soft_reset()
-                            self.symbolSpace._per_sentence_initialized = True
-                        _ltm_store = getattr(self.symbolSpace, 'ltm_store', None)
-                        if _ltm_store is not None and hasattr(_ltm_store, '_occupied_names'):
-                            _ltm_store._occupied_names()
-                        _trace = self._reconstruction_stack()
-                        if _trace is not None:
-                            for _name in ('_choice_values', '_choice_action_records',
-                                          '_choice_log_probabilities', '_forward_losses',
-                                          '_forward_loss_mask', '_choice_rule_ids',
-                                          '_choice_arities', '_choice_mask',
-                                          '_chunk_state', '_case_state',
-                                          '_parse_order', '_parse_word_events',
-                                          '_parse_depths'):
-                                _trace.__dict__[_name] = None
-                        _pe = getattr(self, 'percept_expectation', None)
-                        if _pe is not None:
-                            _pe.last_arrival = None
-                        self._expectation_looks = []
-                        self._expectation_percept_looks = []
-                        _pos = getattr(getattr(self, 'languageSpace', None), 'parts_of_speech', None)
-                        if _pos is not None and hasattr(_pos, 'prepare_values'):
-                            _pos.prepare_values()
-                        for _space in getattr(self, 'conceptualSpaces', ()):
-                            if '_cs_field_caps' not in _space.__dict__ and hasattr(_space, '_order_caps'):
-                                object.__setattr__(_space, '_cs_field_caps', tuple(_space._order_caps()))
-                            _space.__dict__['_expectation_stages'] = {}
-                            for _name in ('_percept_field', '_cs_open_field', '_cs_field_wires',
-                                          '_cs_field_where', '_cs_field_when',
-                                          '_cs_field_concept_ids', '_cs_field_rows'):
-                                object.__setattr__(_space, _name, None)
-                            for _name in ('_serial_concept_path', '_concept_prediction_open'):
-                                _space.__dict__.setdefault(_name, None)
-                            _stm = getattr(_space, 'stm', None)
-                            if _stm is not None:
-                                if getattr(_stm, '_scope_columns', 2) != 2:
-                                    _stm._scope_columns = 2
-                                _ms = getattr(_stm, 'model_state', None)
-                                if _ms is not None and getattr(_ms, 'last_where', None) is None:
-                                    _ms.last_where = torch.full(
-                                        (len(input_data), 2), -1, dtype=torch.long, device=input_data.device)
-                            _oz = getattr(_space, 'order_zero', None)
-                            if _oz is not None and hasattr(_oz, '_products_at_entries'):
-                                _oz._products_at_entries(input_data.device)
-                            _alloc = getattr(_space, '_concept_allocator', None)
-                            if _alloc is not None and hasattr(_space, 'nVectors'):
-                                from FieldProjection import seated_names
-                                seated_names(_alloc, int(_space.nVectors), input_data)
-                                _l0 = _alloc.layer(0)
-                                _l0.spread_indices(int(_space.nVectors), input_data.device)
-                                _l0.concept_rows(input_data.new_empty(0, dtype=torch.long))
-                                from CaseSelection import case_edges
-                                case_edges(_l0, input_data.device)
-                            if hasattr(_space, '_prepare_closure_plan_host'):
-                                _space._prepare_closure_plan_host(input_data.device)
-                            _interp = getattr(_space, '_interpret_operator', None)
-                            if _interp is not None and hasattr(_interp, 'spelling_seats'):
-                                _interp.spelling_seats(input_data.new_empty(0, dtype=torch.long))
-                            _carrier = getattr(_space, 'subspace', None)
-                            if _carrier is not None:
-                                for _name in ('_concept_activations', '_concept_codes',
-                                              '_concept_ids', '_concept_where', '_concept_when',
-                                              '_concept_inventory_rows', '_concept_code_owner'):
-                                    _carrier.__dict__[_name] = None
+                        _compiling_exec = self._is_compiled_host_staging(executor)
                         try:
+                            self._staged_in_sub = self._lex_embed_stem(input_data)
+                            from ModelAttention import prepare_symbol_bank_host, stage_symbol_bank
+                            prepare_symbol_bank_host(owner, input_data.device)
+                            _exp = getattr(getattr(self, 'symbolSpace', None), 'expectation', None)
+                            if _exp is not None:
+                                stage_symbol_bank(self, _exp)
+                            if _compiling_exec:
+                                self._refresh_compiled_host_stage(
+                                    len(input_data), input_data.device, input_data=input_data)
+                            else:
+                                self._compiled_ref_banks = None
+                                self._compiled_ref_types_host = None
+                            self._forward_host_prepared = True
+                            self._sentence_look_fields = {}
+                            self._modules['_sentence_order_zero_reverse'] = None
+                            for _name in ('_answer_attention_obs', '_last_output_comparison',
+                                          '_last_output_walk_trace', '_sentence_answer_cost',
+                                          '_sentence_answer_predictions', '_sentence_answer_raw_cost',
+                                          '_sentence_close_errors', '_path_thinking',
+                                          '_sentence_expectation_comparison', '_sentence_gradient_objectives',
+                                          '_sentence_target',
+                                          '_last_path_comparison', '_sentence_walk_residuals',
+                                          '_sentence_output_walk_credits', '_sentence_order_zero_field',
+                                          '_last_closing_thoughts', '_intuition_bracket',
+                                          '_concept_prediction', '_last_decoder_trace',
+                                          '_last_decoder_comparison', '_compose_sampling_scale',
+                                          '_word_expectation', '_last_answer_construction',
+                                          '_attention_words', '_attention_greedy',
+                                          '_tensor_pushed_ideas', '_tensor_sentence_roots_live',
+                                          '_packed_sentence_roots'):
+                                self.__dict__.setdefault(_name, None)
+                            if not getattr(self.symbolSpace, '_per_sentence_initialized', False):
+                                self.symbolSpace.soft_reset()
+                                self.symbolSpace._per_sentence_initialized = True
+                            _trace = self._reconstruction_stack()
+                            if _trace is not None:
+                                for _name in ('_choice_values', '_choice_action_records',
+                                              '_choice_log_probabilities', '_forward_losses',
+                                              '_forward_loss_mask', '_choice_rule_ids',
+                                              '_choice_arities', '_choice_mask',
+                                              '_chunk_state', '_case_state',
+                                              '_parse_order', '_parse_word_events',
+                                              '_parse_depths'):
+                                    _trace.__dict__[_name] = None
+                            _pe = getattr(self, 'percept_expectation', None)
+                            if _pe is not None:
+                                _pe.last_arrival = None
+                            self._expectation_looks = []
+                            self._expectation_percept_looks = []
+                            for _space in getattr(self, 'conceptualSpaces', ()):
+                                if '_cs_field_caps' not in _space.__dict__ and hasattr(_space, '_order_caps'):
+                                    object.__setattr__(_space, '_cs_field_caps', tuple(_space._order_caps()))
+                                _space.__dict__['_expectation_stages'] = {}
+                                for _name in ('_percept_field', '_cs_open_field', '_cs_field_wires',
+                                              '_cs_field_where', '_cs_field_when',
+                                              '_cs_field_concept_ids', '_cs_field_rows'):
+                                    object.__setattr__(_space, _name, None)
+                                for _name in ('_serial_concept_path', '_concept_prediction_open'):
+                                    _space.__dict__.setdefault(_name, None)
+                                _stm = getattr(_space, 'stm', None)
+                                if _stm is not None:
+                                    if getattr(_stm, '_scope_columns', 2) != 2:
+                                        _stm._scope_columns = 2
+                                    _ms = getattr(_stm, 'model_state', None)
+                                    if _ms is not None and getattr(_ms, 'last_where', None) is None:
+                                        _ms.last_where = torch.full(
+                                            (len(input_data), 2), -1, dtype=torch.long, device=input_data.device)
+                                _carrier = getattr(_space, 'subspace', None)
+                                if _carrier is not None:
+                                    for _name in ('_concept_activations', '_concept_codes',
+                                                  '_concept_ids', '_concept_where', '_concept_when',
+                                                  '_concept_inventory_rows', '_concept_code_owner'):
+                                        _carrier.__dict__[_name] = None
                             out = self._execute_input_sentence(input_data, executor)
                             deferred_losses = self.__dict__.pop('_deferred_sentence_losses', ())
                             for sentence_loss in deferred_losses:
@@ -8842,6 +8871,9 @@ class BasicModel(BaseModel):
                                 for meter, cost in zip(meters, looks_t.tolist()):
                                     if cost:
                                         meter.require('look', cost)
+                            if _compiling_exec and owner is not None:
+                                from Places import sync_compiled_places
+                                sync_compiled_places(owner)
                             return out
                         finally:
                             self.__dict__.pop('_deferred_sentence_losses', None)
@@ -22374,6 +22406,8 @@ class BasicModel(BaseModel):
             store = getattr(self.symbolSpace, 'ltm_store', None)
             if store is not None:
                 store.forget_sentences.add_(present.sum().to(store.forget_sentences))
+            if not torch.compiler.is_compiling() and self._is_compiled_host_staging(None):
+                self._refresh_compiled_host_stage(len(present), present.device)
             reported = tuple(v.detach() for v in reconstruction)
             if self._sentence_reconstruction:
                 # The global lexicon can decode even when this sentence has
@@ -23233,6 +23267,7 @@ class BasicModel(BaseModel):
                         f_count, f_res = fork_pack
                         eligible_f = _wg_fork_rows & choice.valid & (choice.alternative_count > 0)
                         f_count = f_count + eligible_f.long()
+                        # Draws every round inside the static graph; RNG replay parity holds within a mode.
                         rank_f = (torch.rand_like(f_count, dtype=torch.float32) * f_count).long()
                         rank_f = torch.where(f_count <= len(f_res), f_count - 1, rank_f)
                         places_f = torch.arange(len(f_res), device=rank_f.device)
@@ -23660,9 +23695,6 @@ class BasicModel(BaseModel):
                 intermediate_end.reshape(B, 1, 1),
                 live_candidate, current_cs_lang[10])
             valid_depth = (end_depth <= scope.slots(clause_state, end_depth)) & (end_depth > 0)
-            if not bool(getattr(getattr(self._concept_owner(), 'interpret', None), 'mandatory', False)):
-                from Memory import OCCURRENCE as _STM_OCCURRENCE
-                valid_depth = valid_depth & ~(STMParse.roots(end_stm)[..., 0] == _STM_OCCURRENCE).any(-1)
             depth_candidate = current_cs_lang[11].scatter(
                 1, root_slot.reshape(B, 1),
                 torch.where(valid_depth, end_depth.to(torch.long), -1).reshape(B, 1))

@@ -6697,6 +6697,7 @@ class OperationSelectionLayer(nn.Module):
             if replay_bias is None:
                 replay_bias = torch.full_like(offered, -1, dtype=torch.long)
             if torch.compiler.is_compiling():
+                # Fixed-width draw keeps the compiled graph static (replay parity holds within a mode).
                 fresh_mask = offered & (replay_bias < 0)
                 biased = (offered & (replay_bias == 1)) | (
                     fresh_mask & (torch.rand(len(offered), device=word.device) < self.interpret_bias))

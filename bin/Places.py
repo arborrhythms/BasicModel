@@ -58,6 +58,66 @@ def definition_keys(plus, minus, what):
             for row in torch.cat(columns, -1).tolist()]
 
 
+def _quantize_keys(c):
+    """Canonical binary32 where-wire key rows, ``[*, width]`` int64 at 1e-6."""
+    return torch.round(c.detach().float() * 1e6).to(torch.int64)
+
+
+def _host_key(qrow):
+    """Host tuple key derived from a quantized int64 row of ``_quantize_keys``."""
+    return tuple(int(v) / 1e6 for v in qrow)
+
+
+def sync_compiled_places(owner, *, promoted=None):
+    """Synchronize host place registry and nominations with compiled cone buffers."""
+    basic = getattr(owner, 'basic_percepts', None)
+    if basic is None or not hasattr(basic, '_place_cone_used'):
+        return []
+    used = min(int(basic._place_cone_used), int(basic._place_cone_keys.shape[0]))
+    if not used:
+        return []
+    registry = basic._place_cone_rows
+    qrows = basic._place_cone_keys[:used].tolist()
+    if len(registry) < used:
+        for seat in range(used):
+            key = _host_key(qrows[seat])
+            registry.setdefault(key, seat)
+    counts = basic._place_cone_counts[:used].tolist()
+    synced = basic.__dict__.setdefault('_place_cone_synced_counts', {})
+    delta_seats = [seat for seat in range(used) if counts[seat] > synced.get(seat, 0)]
+    if not delta_seats:
+        return []
+    from BasicPercepts import WHERE_WIRES
+    reading = owner.reading(0)
+    chosen_seats = []
+    for seat in delta_seats:
+        key = _host_key(qrows[seat])
+        delta = counts[seat] - synced.get(seat, 0)
+        synced[seat] = counts[seat]
+        nominated = False
+        for _ in range(delta):
+            if owner.nominates(('place', key), reading):
+                nominated = True
+        if nominated:
+            chosen_seats.append(seat)
+    if not chosen_seats:
+        return []
+    storage = basic._place_cone_bits.view(torch.float32)
+    nominated = storage.index_select(0, basic._place_cone_keys.new_tensor(chosen_seats))
+    plus, minus, kept = nominated.split((WHERE_WIRES, WHERE_WIRES, basic.width), -1)
+    from functools import partial
+    publish = admit if promoted is None else partial(admit, promoted=set(promoted))
+    iw = basic.identity_width
+    made = []
+    for i, key in enumerate(definition_keys(plus, minus, kept)):
+        has_part = bool(key[-1] and key[-1][0] < iw)
+        row = publish(owner, plus[i], minus[i], kept[i] if has_part else None,
+                      key=key if has_part else (*key[:3], ()))
+        if row is not None:
+            made.append(row)
+    return made
+
+
 def _meet_tensor(owner, basic, c, has, what):
     """Compiled fullgraph tensor update of pre-allocated place-cone buffers."""
     B, K, width = c.shape
@@ -65,7 +125,7 @@ def _meet_tensor(owner, basic, c, has, what):
     c = c.detach().float()
     N = B * K
     live = has.reshape(N)
-    qkeys = torch.round(c * 1e6).to(torch.int64).reshape(N, width)
+    qkeys = _quantize_keys(c).reshape(N, width)
     keys_buf = basic._place_cone_keys
     M = keys_buf.shape[0]
     used = basic._place_cone_used
@@ -103,8 +163,11 @@ def _meet_tensor(owner, basic, c, has, what):
         0, safe_seat[:, None].expand(-1, obs.shape[1] - split), obs_wholes, reduce='amax', include_self=True)
     updated = torch.cat((new_parts, new_wholes), -1)
     storage.copy_(updated)
-    keys_buf.scatter_(0, safe_seat[:, None].expand(-1, width),
-                      torch.where(novel[:, None] & (novel_seat[:, None] < M), qkeys, keys_buf.index_select(0, safe_seat)))
+    # Deterministic new-seat key write without scatter_ races on duplicate or inactive rows.
+    slot_match = (safe_seat[:, None] == torch.arange(M, device=c.device)[None, :]) & is_new_seat[:, None]
+    has_write = slot_match.any(0)
+    write_src = slot_match.long().argmax(0)
+    keys_buf.copy_(torch.where(has_write[:, None], qkeys.index_select(0, write_src), keys_buf))
     basic._place_cone_counts.scatter_add_(0, safe_seat, valid_seat.long())
     basic._place_cone_used.add_(novel.long().sum().clamp_max((M - used).clamp_min(0)))
     return []
@@ -119,19 +182,20 @@ def meet(owner, bank, *, promoted=None):
     c, has, what = readings(bank)
     if torch.compiler.is_compiling():
         return _meet_tensor(owner, basic, c, has, what)
+    made = sync_compiled_places(owner, promoted=promoted)
     iw = bank.identity_width
     c = c.detach().float()
     width, readings_per_page = c.shape[-1], c.shape[1]
-    # MTM keys use Python's six-decimal rounding of each binary32 wire.
-    # Only those keys and their occupancy are needed to link visits.
-    keys = torch.cat((has[..., None], c), -1).tolist()
+    # Both host and compiled paths share the same quantized int64 key table.
+    qrows = _quantize_keys(c).tolist()
+    has_rows = has.tolist()
     visits, positions, prior_rows, predecessors = [], [], [], []
     last, depth = {}, {}
-    for b, page in enumerate(keys):
-        for k, (occupied, *wires) in enumerate(page):
+    for b, (occ_row, qpage) in enumerate(zip(has_rows, qrows)):
+        for k, (occupied, wires) in enumerate(zip(occ_row, qpage)):
             if not occupied:
                 continue
-            key = tuple(round(v, 6) for v in wires)
+            key = _host_key(wires)
             at = len(visits)
             if key in last:
                 before = last[key]
@@ -146,18 +210,26 @@ def meet(owner, bank, *, promoted=None):
             positions.append(b * readings_per_page + k)
             last[key] = at
     if not visits:
-        return []
+        return made
 
     registry = basic._place_cone_rows
     for key in last:
         if key not in registry:
             registry[key] = len(registry)
     storage = basic.place_cone_storage(len(registry))
+    synced = basic.__dict__.setdefault('_place_cone_synced_counts', {})
     if registry:
         row_ids = list(registry.values())
         key_rows = torch.tensor([[round(v * 1e6) for v in k] for k in registry], dtype=torch.int64, device=c.device)
         basic._place_cone_keys.index_copy_(0, key_rows.new_tensor(row_ids), key_rows)
         basic._place_cone_used.fill_(len(registry))
+    visit_counts = {}
+    for _b, key in visits:
+        seat = registry[key]
+        visit_counts[seat] = visit_counts.get(seat, 0) + 1
+    for seat, delta in visit_counts.items():
+        basic._place_cone_counts[seat] += delta
+        synced[seat] = int(basic._place_cone_counts[seat])
     observations = torch.cat((c, 1 - c, what.detach().float()), -1).flatten(0, 1)
     seats = torch.tensor(positions, dtype=torch.long, device=c.device)
     points = observations.index_select(0, seats)
@@ -172,7 +244,6 @@ def meet(owner, bank, *, promoted=None):
     # folded into storage, but cannot teach an earlier nominated percept.
     chosen = [at for at, (b, key) in enumerate(visits)
               if owner.nominates(('place', key), owner.reading(b))]
-    made = []
     if not chosen:
         return made
     nominated = points.index_select(0, seats.new_tensor(chosen))

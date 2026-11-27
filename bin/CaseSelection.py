@@ -173,7 +173,9 @@ def case_edges(store, device):
     if torch.compiler.is_compiling() and cached is not None:
         return cached[2:]
     indices, _ = store._indices(device)
-    stamp = (id(store.symbol_table), store.symbol_table.revision, id(store._tensor_rows), len(store._tensor_rows))
+    stamp = (id(store.symbol_table), store.symbol_table.revision,
+             store._tensor_rows, len(store._tensor_rows),
+             getattr(store, '_record_revision', 0))
     if cached is None or cached[0] is not indices or cached[1] != stamp:
         edges, complete = [], []
         for edge, (parent, column) in enumerate(zip(store._rows, store._cols, strict=True)):
