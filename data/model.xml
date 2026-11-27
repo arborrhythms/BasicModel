@@ -276,9 +276,16 @@
          wires of the two-rung ladder; text lies on the first axis. -->
     <whereAxes>3</whereAxes>
     <!-- The alphabet of intensity: the number of levels on the sorted line
-         of values, learned by vector quantization; at 256, before any
-         learning, each step of an eight-bit pixel is a level. -->
+         of values; at 256, before any learning, each step of an eight-bit
+         pixel is a level. -->
     <intensityPartCardinality>256</intensityPartCardinality>
+    <!-- true (the default) keeps the levels of intensity linear and fixed:
+         level k of n is k / (n - 1) on 0..1 for the life of the model and
+         nothing moves it, so that a value remembered is the same value a
+         million sentences later, and a run compiled in bfloat16 reads the
+         same alphabet. false lets the levels learn as a linear
+         self-organizing map, very slowly, with its ends fixed at 0 and 1. -->
+    <intensityLevelsFixed>true</intensityLevelsFixed>
     <!-- The width in places of the Gaussian aperture about a part's centre:
          a part of adjacent atoms holds the places nearer its centre than
          this, each weighed by the Gaussian; a value's row is read at no

@@ -4,9 +4,13 @@ plan, round 6d, the production pass)."""
 import json
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# Measured alone on 2026-11-27: not ended after 15 minutes, 8.2 GiB at its peak.
+@pytest.mark.slow
 def test_one_lesson_sentence_trains_with_the_compiled_output_walk():
     import torch
     import util

@@ -40,9 +40,9 @@ def test_extent_read_joins_attested_parts_and_preserves_both_property_lanes(monk
                           [(0, 6), (1, 4), (0, 1), (4, 7), (2, 5), (0, 0)]])
     percepts = (None, None, book.primitive_properties, raw, None)
     def read():
-        what, away = basic._occurrence_what(percepts, spans, (0, 1, 3))
-        grad, = torch.autograd.grad(what.sum() + .3 * away.sum(), book.primitive_properties.members)
-        return what.detach(), away.detach(), grad
+        what = basic._occurrence_what(percepts, spans, (0, 1, 3))
+        grad, = torch.autograd.grad(what.sum(), book.primitive_properties.members)
+        return what.detach(), grad
     actual = read()
     with monkeypatch.context() as m:
         m.setattr(identity, 'occurrence_bank', lambda device: None)

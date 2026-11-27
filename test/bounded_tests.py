@@ -986,6 +986,10 @@ def main(argv=None):
                            keyword=args.keyword, marker=args.marker)
     except (ValueError, OSError, RuntimeError) as exc:
         parser.error(str(exc))
+    if requires_suite_lock(args.selectors, args.keyword, args.marker):
+        # Only a complete run is the log that ``make push`` reads.
+        from push_gate import write_log
+        print(f"Test log: {write_log(root, result, run_dir)}", flush=True)
     print(f"Result: {result['reason']}, exit {result['exit_code']}; "
           f"{len(result['completed'])}/{len(result['selected'])} cases completed.\n{run_dir / 'result.json'}", flush=True)
     for phase, records in result.get('skipped_certificates_by_phase', {}).items():

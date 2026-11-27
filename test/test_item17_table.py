@@ -44,10 +44,8 @@ def compare_table(basic, percepts, bank):
     if plain:
         boundary = basic.read_points(points[None].to(basic.value_codes), plain)  # [2, R, 1, O, 2]
         part, whole = boundary[0, :, 0, :, 0], boundary[1, :, 0, :, 0]   # [R, O]
-        against = torch.stack([basic.against(r) for r in plain]).detach()[:, :basic.identity_width] > .5
-        hit = (points[None, :, :basic.identity_width] > .5) & against[:, None]
-        added = hit.any(-1).to(part)
-        value = torch.stack((part * whole, part * torch.maximum(1 - whole, added)), -1)   # [R, O, 2]
+        # Item 1.4: a row is read for, and nothing against.
+        value = torch.stack((part * whole, torch.zeros_like(part)), -1)                  # [R, O, 2]
         for k, (a, z) in enumerate(brackets):
             inside = torch.tensor([a <= s and e <= z for s, e in occurrences])
             if bool(inside.any()):

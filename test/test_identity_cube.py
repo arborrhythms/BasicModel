@@ -133,6 +133,9 @@ def test_wide_cube_identity_length_is_not_a_compose_activation(gain):
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
     host._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
         _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
+    # Item 1.5 reads each rule's head role from the chunk journal's rule tables.
+    from ChunkJournal import ChunkJournal
+    host.chunk_journal = ChunkJournal((), ())
     from Memory import STMChunks as chunks
     state = chunks.empty(1,8,4)
     for index in (1,0):

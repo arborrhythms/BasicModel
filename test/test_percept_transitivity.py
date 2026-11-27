@@ -45,7 +45,11 @@ def test_native_kept_readings_have_transitive_percept_codes(tmp_path, monkeypatc
             kept = torch.isin(staged[b], reading.word_ids.to(staged.device))
             word_records, entropy = [], []
             for position in kept.nonzero().flatten().tolist():
-                raw = ps['word_texts'][b][position].encode('latin1')
+                # Item 1.5 took the word strings out of the stem: a word is the
+                # bytes of the sentence that its unit spans.
+                lo, hi = ps['unit_spans'][b, position].tolist()
+                surface = ps['sentence_bytes'][b].reshape(-1) if ps['sentence_bytes'].ndim == 2 else ps['sentence_bytes'][b, 0]
+                raw = bytes(surface[lo:hi].tolist())
                 code, atoms = form(raw), identity.part_atoms(raw)
                 words[raw] = (code, atoms)
                 atom_edges, nested_edges = [], []

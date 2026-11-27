@@ -51,6 +51,18 @@ def case(omitted=False, relation=False):
         if not relation:
             answer = host.resolveAnswer(understanding, What.present(0))
             idea, ready, _, _ = host._materialize_answer_idea(understanding, answer, What.present(0))
+            # In the complete grammar the answer is the operands of the
+            # executed output(meaning) calls, and a closing with no emission
+            # is silent (778e41ce78). No thought was executed here.
+            assert 'output' in host.grammatical_thoughts.executable_operation_ids
+            assert not answer.selected_thoughts and answer.answer_meanings == ((),)
+            assert not idea.any()
+            assert ready.all() and answer.resolved
+            # Given to the materializer as an emission gives it, the observed
+            # cat is the answer idea with no attenuation.
+            emitted = replace(answer, conceptual_answer=field.meaning.roles[None],
+                              answer_meanings=((field.meaning,),))
+            idea, ready, _, _ = host._materialize_answer_idea(understanding, emitted, What.present(0))
             torch.testing.assert_close(idea[0], entry.end_state, atol=0, rtol=0)
             assert ready.all() and answer.resolved
         index = fixture.store.location(field.row_id)

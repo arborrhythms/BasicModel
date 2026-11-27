@@ -823,6 +823,147 @@ where attention opens, as in biased competition, but attention only selects,
 so misdirected attention yields mis-attended percepts, never invented ones.
 Desire is held to the same limit.
 
+### Negation needs a place (Alec, 2026-11-26)
+
+> We cannot negate what does not exist unless we know exactly where it does
+> not exist.
+
+The section above says an absence is concluded and never perceived. This
+says where the conclusion can be drawn. Alec, working out item 1.4's
+positive evidence at order zero:
+
+> If a digit shows up, should we say that it is not a letter? My feeling is
+> that judgment should be made at the conceptual level: we do not perceive
+> that it is "not a letter" directly. [...] I think this is inline with St
+> Augustine: only from the absence of the letter are we able to infer it.
+
+and, of how it can then be formed at all:
+
+> I think we will have to infer it from location: a thing is not a letter
+> if, at that thing's location, something is present which is not a letter.
+> That might work, and it further makes sense: we cannot negate that which
+> does not exist unless we know exactly where it does not exist.
+
+Three things follow, each a property of the layers and none a rule added to
+them.
+
+- *Nothing cannot be negated.* The Not exchanges a concept's two lanes. A
+  concept with no evidence has nothing on either, and the exchange of
+  nothing is nothing. So no order of the hierarchy turns an unlit concept
+  into its denial: silence about a letter never becomes "not a letter".
+  This is the privation of Augustine in the model's terms: an absence has
+  no being of its own to be read.
+- *What is present can tell against.* Where a digit's percept is found, a
+  concept of the letter may hold a weight below zero on that percept. The
+  letter's concept is then lit against, and a Not above it lights "not a
+  letter". The denial is carried, entirely, by something that is there.
+- *So a denial is always somewhere.* The percept that tells against has a
+  place, and the concept it tells against is read at that place. "Not a
+  letter" is true of a place where something else stands. An empty place
+  is neither a letter nor not a letter; it is the fourth corner, neither,
+  of [the catuskoti](#quaternary-truth-and-the-catuskoti).
+
+It agrees with Dharmakirti's restriction above from the other side. There,
+an absence is licensed only where the thing would have been observed; here,
+the place where it would have been observed must be occupied by something
+else. The affirming negation, `not`, which implies an alternative
+(*paryudasa*), is therefore the only one that can be learned from
+perception alone, and its alternative is the located thing; `non`, the
+pure removal, asserts nothing and needs no place
+([the two negations](#negation-and-logical-operators)).
+
+**"Nothing" is a first-order concept (Alec's theory, 2026-11-26; testable,
+some day).**
+
+> The word "nothing" is a first-order concept. It does not have any
+> percept, so it is not "nothing seen at a particular space and time": such
+> a message cannot be conveyed as a presence, that would be a causal ex
+> nihilo. Rather, it is the negation of every zero-th order concept.
+
+This settles what was first left open here. A percept of nothing is ruled
+out: a presence caused by no thing would be something from nothing. And
+"nothing" is no order-zero concept, since order zero has no negation
+(above, and the spoon and the fork below). It first exists where the first
+Not stands, one order up, as the denial of every concept of order zero,
+which is why it is "defined only via relative truth, not absolute" (Alec,
+the same day): it is said wholly by way of the things it denies and has no
+content of its own, like a hole, which is defined only by what is around
+it. What a test of it has to show, when one is built: as the layers stand,
+the Not of a concept with no evidence reads nothing, so a concept made only
+of such denials is unlit where no thing is found; the test is whether
+"nothing" is read there all the same, and by what.
+
+What it rules out is the complement taken as a percept: reading "outside
+this whole" off a property's wire as one less its value, with nothing
+positive behind it. Perceptual space stays the positive cube
+([Perception carries no negation](#perception-carries-no-negation)), and
+what tells against a concept is learned in its Sigma. As built on
+2026-11-26 the first Pi still carries an against lane; its removal is item
+1.4 ([plan](plans/2026-11-23-item1-4-verbs-in-the-field.md), §10 to §12).
+
+### The spoon and the fork: ultimate and relative nature (Alec, 2026-11-26)
+
+> If the spoon is present at a place, the fork is absent. So the sigma of
+> the fork event has a negative weight on spoon. That means that the spoon
+> sighting is a not-fork sighting. But the essence of the spoon is its
+> ultimate nature, experienced by its perceptual content. The relative
+> nature of the spoon is defined in terms of it being not a fork, but we do
+> not ever have a counterfactual in the sense of a missing ultimate nature,
+> or a concept of a not-fork (at order zero): we get only the presence of
+> the ultimate nature of the spoon (which has also its relative nature).
+
+In the layers: the spoon's percept is found at a place, and that is all
+perception gives. The fork's concept holds a weight below zero on that
+percept, so at that place the fork's concept is read against. There is one
+event, the spoon's presence, and it is read twice: as the spoon, by its own
+content, and as telling against the fork, by a weight in another concept's
+Sigma. No row at order zero is "not-fork", nothing is perceived as missing,
+and no percept stands for what did not come. A concept of not-fork needs the
+Not, which first stands above order zero. This settles what a weight below
+zero may be at order zero: one percept, present at a place, telling against
+a concept at that place, and never the denial of a concept.
+
+Shantideva opens the ninth chapter of the *Bodhicaryavatara* with the two
+truths (9.2): there are the relative and the ultimate; the ultimate is not
+within the reach of the intellect, and the intellect is what is called
+relative. Everything has both. Read here, the spoon's ultimate nature is met
+without a concept, in the positive cube of percepts, where nothing is
+denied; its relative nature is everything said of it by way of something
+else, and it lives in the signed weights of the concepts. Being not a fork
+is of the second kind. The model keeps the two apart in the same way and
+for the same reason: what is met is never a counterfactual.
+
+Near the chapter's end (9.139; the number varies by edition) he gives the
+other half, that a denial has no footing of its own: without depending on
+the thing imputed, its negation cannot be grasped, so the negation is no
+more real than what it negates. That is the section above, that nothing is
+denied except by way of something present; and it is why "not-fork" can
+only be relative. One caution: for Shantideva the ultimate is the emptiness
+of the spoon too, not its perceptual content, so "ultimate nature" in
+Alec's words is nearer the particular that perception meets
+(*svalaksana*, [above](#valid-cognition-in-dharmakirti)) than the
+Madhyamaka's ultimate. What carries over is the structure: two natures of
+one thing, and a relative one that depends on what is other than it.
+
+Dogen says it of firewood and ash in the *Genjokoan*. Firewood becomes ash
+and does not become firewood again, yet ash is not to be taken as after and
+firewood as before: each "abides in its own Dharma-position", complete, with
+its before and after. So the spoon is wholly the spoon at its place. It is
+not a fork that failed to appear, and the fork's absence is no part of
+what is there.
+
+Earlier in the same fascicle, of seeing forms and hearing sounds with the
+whole body and mind: it is not like a thing and its image in a mirror, or
+the moon and its image in water; "when one side is illuminated, the other
+side is dark" (Tanahashi's rendering; the line is among Dogen's most
+disputed, read by some as the incompleteness of any one view and by others
+as all things merged in the one that is met). Either way it is the spoon
+and the fork. Perception is not a reflection that holds both a thing and
+its other; what is met is lit, and what is not met is not lit against, it
+is dark. The fork at the spoon's place is not seen to be absent. It is
+unlit, and only a concept above, by a weight learned on the spoon, says
+"not a fork".
+
 ### Identity is an expectation
 
 > Identity has to be carried by expectation or prediction because (at least

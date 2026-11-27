@@ -50,8 +50,9 @@ def test_basic_read_ties_both_towers_and_teaches_the_properties():
     field = basic.read(source, spans, (row,))
     # A basic percept is a row of the first Pi (rule 6): its run of parts is
     # its presence on both lanes, its whole read on its own lanes. Its part
-    # is present wholly, its whole .4 for and .6 against.
-    presence, whole_pair = 1., torch.tensor([.4, .6])
+    # is present wholly, its whole .4 for; nothing is read against (item
+    # 1.4, §10.2).
+    presence, whole_pair = 1., torch.tensor([.4, 0.])
     torch.testing.assert_close(field.values[0, 0, 0], presence * whole_pair)
     # The read gives the memberships their gradient: order zero's read of
     # which bytes belong to a property takes its error.
@@ -93,15 +94,22 @@ def test_basic_read_preserves_ordered_part_witnesses_after_native_fusion():
 
 def test_stored_forms_of_one_set_of_characters_are_told_apart():
     """(a, b), (b, a) and (a, a) stored as forms: each row reads for at its
-    own form and nothing at the other two; the three tightest wholes
-    differ."""
+    own form and nothing at the other two. They are told apart by their
+    parts, a stored form being a part of its own: the three codes in the
+    parts half differ. The wholes half is a set (item 1.5, 49bcfe83c9: a
+    form's whole is the OR of its characters' groups), so ``ab`` and ``ba``,
+    of one set of characters, have one tightest whole, and it holds that of
+    ``aa``."""
     from test_item17_code import coded, _read_form
     forms = (b'ab', b'ba', b'aa')
     identity, basic, book, rows = coded(forms)
     read = torch.stack([_read_form(basic, book, form, [rows[w] for w in forms]) for form in forms])
     torch.testing.assert_close(read[..., 0].cpu(), torch.eye(3))
-    tightest = [identity.tightest(identity.parts(form)) for form in forms]
-    assert all(not torch.equal(tightest[i], tightest[j]) for i in range(3) for j in range(i))
+    parts = [identity.form(form) for form in forms]
+    assert all(not torch.equal(parts[i], parts[j]) for i in range(3) for j in range(i))
+    ab, ba, aa = (identity.tightest(identity.parts(form)) for form in forms)
+    assert torch.equal(ab, ba) and bool(ab.any())
+    assert bool((aa <= ab).all()) and bool(aa.any())
 
 
 def test_basic_compose_presence_keeps_the_existing_weighted_mean_pullback():

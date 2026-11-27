@@ -19,29 +19,32 @@ class IdeaStack(STM0):
         # lexical row may have the same referent without that annotation.
         self.register_buffer('_identity_bound', self.row_names.new_zeros(self.capacity, dtype=torch.bool),
                              persistent=False)
-        self.register_buffer('_operation_rows', self.slots.new_empty(action_capacity, 3, self.nDim),
-                             persistent=False)
-
-        self.register_buffer('_word_rows', self.slots.new_empty(word_capacity, self.nDim),
-                             persistent=False)
+        # A candidate's journals of word and action values are reserved by
+        # their capacities and allocated when the candidate is first leased:
+        # most stores of a wide model are never a leased candidate's, and
+        # allocating every one's at construction took a 20M model from 2 GiB
+        # to more than 16.
+        self._action_capacity, self._word_capacity = int(action_capacity), int(word_capacity)
+        self.register_buffer('_operation_rows', self.slots.new_empty(0, 3, self.nDim), persistent=False)
+        self.register_buffer('_word_rows', self.slots.new_empty(0, self.nDim), persistent=False)
 
     def word_rows(self, like):
         """Own the interpreted values written by shifts of this candidate."""
-        rows = self._word_rows
-        if len(like) > len(rows) or like.shape[1:] != rows.shape[1:]:
+        if len(like) > self._word_capacity or like.shape[1:] != self._word_rows.shape[1:]:
             raise OverflowError('candidate words exceed the reserved STM word rows')
-        if rows.device != like.device or rows.dtype != like.dtype:
-            self._word_rows = rows = like.new_empty(rows.shape)
+        rows = self._word_rows
+        if len(rows) != self._word_capacity or rows.device != like.device or rows.dtype != like.dtype:
+            self._word_rows = rows = like.new_empty(self._word_capacity, *rows.shape[1:])
         # Each shift writes its addressed word before comprehension reads it.
         return rows[:len(like)].detach()
 
     def operation_rows(self, like):
         """Start the numerical journal for this stream's leased candidate."""
-        rows = self._operation_rows
-        if len(like) > len(rows) or like.shape[1:] != rows.shape[1:]:
+        if len(like) > self._action_capacity or like.shape[1:] != self._operation_rows.shape[1:]:
             raise OverflowError('candidate actions exceed the reserved STM operation rows')
-        if rows.device != like.device or rows.dtype != like.dtype:
-            self._operation_rows = rows = like.new_empty(rows.shape)
+        rows = self._operation_rows
+        if len(rows) != self._action_capacity or rows.device != like.device or rows.dtype != like.dtype:
+            self._operation_rows = rows = like.new_empty(self._action_capacity, *rows.shape[1:])
         return rows[:len(like)].detach().zero_()
 
     def append_closed_idea(self, point, *, identity, evidence, entry, surprise, name):

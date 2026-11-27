@@ -16,6 +16,8 @@ concept, and a basic percept's row through the Not of order zero.
 """
 import ast
 import os
+
+import pytest
 from dataclasses import replace
 
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
@@ -97,8 +99,11 @@ def test_a1_the_alphabet(monkeypatch):
 
 def test_a2_learned():
     """Intensities presented about a value move the level they fall to toward
-    their mean, and the levels stay in order."""
+    their mean, very slowly (item 1.4, §14.3: the alphabet is a linear
+    self-organizing map), the levels beside it less, and the levels stay in
+    order; what fell to the level goes on falling to it."""
     table = _table()
+    table.levels_fixed = False        # the learned alphabet (``intensityLevelsFixed`` false)
     level = int(table.fall(torch.tensor(.3)))
     before = float(table.levels[level])
     step = float(table.levels[1] - table.levels[0])
@@ -109,7 +114,9 @@ def test_a2_learned():
     print(dict(level=level, before=before, presented=about.tolist(), their_mean=mean, after=after,
                neighbours=[float(table.levels[level - 1]), float(table.levels[level + 1])]))
     assert table.fall(about).unique().tolist() == [level]
-    assert abs(after - mean) < 1e-6 and abs(after - mean) < abs(before - mean)
+    rate = 1 - (1 - table.LEVEL_RATE) ** about.shape[1]
+    assert after == pytest.approx(before + rate * (mean - before), abs=1e-7)
+    assert 0 < abs(after - before) < step / 100 and abs(after - mean) < abs(before - mean)
     # Every intensity of a fine grid of the line, presented: the levels move
     # and stay in order.
     grid = torch.arange(1, 1000)[None] / 999
@@ -126,7 +133,7 @@ def test_a2_learned():
 def test_a3_an_atoms_row():
     """Its part is its level and its whole the set of values allowed to it,
     the level's seat as a lower cut and as an upper cut, read for by what falls
-    to the level and against by what lies above; its centroid is its level; a
+    to the level and by nothing above it (item 1.4: nothing is read against); its centroid is its level; a
     value met once has no row promoted, and met as often as nominates it has
     one."""
     from test_item16_values import _xor, _bank
@@ -159,7 +166,7 @@ def test_a3_an_atoms_row():
     assert seen[0] == [(row, False, None)] and all(s == [(row, False, None)] for s in seen[:-1])
     assert promoted and concept is not None
     assert lanes[0].tolist() == [[1., 0.], [1., 0.]]
-    assert lanes[1].tolist() == [[0., 1.], [0., 0.]]
+    assert lanes[1].tolist() == [[0., 0.], [0., 0.]]
 
 
 # -- A4: the aperture -----------------------------------------------------------------

@@ -34,6 +34,9 @@ def test_native_compose_reads_dimmed_content_and_preserves_raw_candidates(gain,m
         _structural_context=lambda **kw:None,_compose_binary_rules=(),_compose_unary_rules=())
     host._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
         _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
+    # Item 1.5 reads each rule's head role from the chunk journal's rule tables.
+    from ChunkJournal import ChunkJournal
+    host.chunk_journal = ChunkJournal((), ())
     values=keys[:,:2].clone()
     state=(values,torch.tensor([2]),torch.tensor([[1,0]]),torch.zeros(1,2,dtype=torch.long),
            torch.tensor([[-1,1]]),torch.tensor([[0.,.7]]))
@@ -81,6 +84,9 @@ def test_norm_and_leaf_coefficients_receive_one_explicit_gain_in_compose_view():
         _structural_context=lambda **kw: None, _compose_binary_rules=(), _compose_unary_rules=())
     host._symbol_space = SimpleNamespace(conceptualSpace=SimpleNamespace(
         _model=SimpleNamespace(symbolSpace=SimpleNamespace(ltm_store=SimpleNamespace(when_start=None)))))
+    # Item 1.5 reads each rule's head role from the chunk journal's rule tables.
+    from ChunkJournal import ChunkJournal
+    host.chunk_journal = ChunkJournal((), ())
     state = (keys[:,:2].clone(), torch.tensor([2]), torch.tensor([[1,0]]), torch.zeros(1,2,dtype=torch.long),
              torch.tensor([[-1,1]]), torch.tensor([[0.,.7]]))
     from chunk_fixtures import from_stack

@@ -1070,9 +1070,8 @@ def promote_candidates(owner):
                 if all(not pole for _, pole in literal[1]) and all(len(p) == 1 for p in percepts):
                     percept = owner.basic_percepts.reserve_conjunction([p for p, in percepts])
                     owner.basic_percepts.promote(percept)
-                    # Its members now have a holder: their stored against
-                    # lanes are written again.
-                    owner.basic_percepts.follow(p for p, in percepts)
+                    # Its members now have a holder: each member's concept
+                    # is linked to the conjunction's row (``link_holders``).
                     owner.bring_concept(percept, row)
             elif literal[0] == 'ps':
                 # The existing field-case curriculum witnesses an entire

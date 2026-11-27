@@ -50,11 +50,15 @@ def test_mixing_bank_uses_byte_preserving_word_texts():
         _packed_sentence_ids=torch.zeros(1, 1, dtype=torch.long),
         _finalize_sentence_word_layout=lambda active: None)
     observed = 'café'.encode('utf-8')
+    # Item 1.5 (commit 77ce9d58b8) took the per-word strings out of the staged
+    # percepts: a word's target is the bytes of the sentence over its span.
+    sentence = torch.tensor([list(b' ' + observed + b' ')], dtype=torch.long)
+    spans = torch.tensor([[[1, 1 + len(observed)]]])
     model = SimpleNamespace(word_brackets=True, reconstruct_in_loop=True, inputSpace=isp,
         word_surface_capacity=64,
         _aligned_serial_word_mode=lambda: False,
         _concept_owner=lambda: SimpleNamespace(word_surface_for_row=lambda row: observed),
-        perceptualSpace=SimpleNamespace(_forward_input={'word_texts': [[observed.decode('latin1')]]}))
+        perceptualSpace=SimpleNamespace(_forward_input={'sentence_bytes': sentence, 'unit_spans': spans}))
     BasicModel._stage_mixing_reconstruction_bank(model)
     assert bytes(isp._ar_target_word_bytes[isp._ar_target_word_mask].tolist()) == observed
     assert bytes(isp._ar_bank_bytes[isp._ar_bank_valid].tolist()) == observed

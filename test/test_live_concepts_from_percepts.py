@@ -19,7 +19,6 @@ def _space():
     cs.intuit_map = cs.idea_stack = None
     cs.inputShape = cs.outputShape = [2, 4]
     # Four basic percepts, sixteen concepts of order zero.
-    cs.order_zero_not = NotLayer3(4)
     cs.order_zero = SparseSigmaLDU(4, 16, 16)
     return cs
 

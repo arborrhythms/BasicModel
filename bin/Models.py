@@ -7938,29 +7938,36 @@ class BasicModel(BaseModel):
                 "BASICMODEL_MPS_RESIDUAL_PARTS must be at least 3; got "
                 f"{capacity}")
         if raw_width > capacity:
-            raise RuntimeError(
-                "a radix word needs "
-                f"{raw_width} residual percepts, beyond the fixed "
-                f"compiled P={capacity} contract; refusing to truncate it")
+            # The stem lays every unit's cover out to the longest form of the
+            # table, whatever the words need. Columns no word fills are
+            # padding, not constituents: they are dropped here, and only a
+            # word with a real part beyond the capacity is refused.
+            filled = mask.reshape(-1, raw_width).any(0).nonzero()
+            needed = int(filled.max()) + 1 if filled.numel() else 0
+            if needed > capacity:
+                raise RuntimeError(
+                    "a radix word needs "
+                    f"{needed} residual percepts, beyond the fixed "
+                    f"compiled P={capacity} contract; refusing to truncate it")
         bucket = capacity
 
         # A valid physical row (zero) is gathered before the false mask
         # removes it.  ``-1`` would alias the final learnable codebook row
         # during the gather and is therefore not a semantic identity.
-        pad_width = bucket - raw_width
+        pad_width = max(0, bucket - raw_width)
         pad_shape = tuple(ids.shape[:-1]) + (pad_width,)
         padded_ids = torch.cat((
-            ids,
+            ids[..., :bucket],
             torch.zeros(pad_shape, dtype=ids.dtype, device=ids.device)),
             dim=-1)
         padded_mask = torch.cat((
-            mask,
+            mask[..., :bucket],
             torch.zeros(pad_shape, dtype=torch.bool, device=mask.device)),
             dim=-1)
         padded_offsets = None
         if torch.is_tensor(offsets):
             padded_offsets = torch.cat((
-                offsets,
+                offsets[..., :bucket],
                 torch.full(pad_shape, -1, dtype=offsets.dtype,
                            device=offsets.device)), dim=-1)
         isp._ar_word_part_ids = padded_ids
@@ -7984,7 +7991,7 @@ class BasicModel(BaseModel):
                         or int(value.shape[0]) != B
                         or int(value.shape[1]) != flat_width):
                     return
-                view = value.reshape(B, W, raw_width, *value.shape[2:])
+                view = value.reshape(B, W, raw_width, *value.shape[2:])[:, :, :bucket]
                 fill_shape = (B, W, pad_width, *value.shape[2:])
                 pad = torch.full(
                     fill_shape, fill, dtype=value.dtype, device=value.device)
@@ -8583,7 +8590,8 @@ class BasicModel(BaseModel):
 
     def _stage_host_surface(self):
         """The host boundary before a sentence: decode the delivered bytes and seat each in the percept store."""
-        if not isinstance(self.inputSpace, InputSpace):
+        # A model with no input space built has no host surface to stage.
+        if not isinstance(getattr(self, 'inputSpace', None), InputSpace):
             return
         self.inputSpace.stage_host_surface()
         delivery = self.inputSpace._staged_delivery
@@ -8621,7 +8629,8 @@ class BasicModel(BaseModel):
         self._stage_host_surface()
         own_forward = (executor is None or executor == self.forward
                        or executor is getattr(self, '_active_compiled_step', None))
-        if own_forward and getattr(self, 'word_brackets', False) and isinstance(self.inputSpace, InputSpace):
+        if (own_forward and getattr(self, 'word_brackets', False)
+                and isinstance(getattr(self, 'inputSpace', None), InputSpace)):
             owner = self._concept_owner()
             if owner is not None:
                 with owner._concept_allocator.parts.sentence_handles():
@@ -9695,9 +9704,10 @@ class BasicModel(BaseModel):
                     reference_table.append(reference)
         stack_references = self._walk_operand(reference_ids[..., None],
             infix_rows=infix_rows, occupied=occupied)[..., 0]
-        # The compiled walk's shape follows offered slots, including those
-        # with no reference. The number of named operands varies per reading.
-        reference_orders = reference_ids.new_zeros(1 + reference_ids.numel())
+        # The compiled walk's shape follows the stack it is given, padded to
+        # the STM capacity. The number of offered slots and of named operands
+        # varies per reading; every reference index is below the stack's size.
+        reference_orders = reference_ids.new_zeros(1 + stack_references.numel())
         reference_orders[1:len(reference_table)] = reference_ids.new_tensor([
             max(0, self._concept_owner()._concept_source_order(reference))
             for reference in reference_table[1:]])
@@ -13769,6 +13779,13 @@ class BasicModel(BaseModel):
             if getattr(self, '_delivery_seated', None) is None and hasattr(ps, 'seat_bytes'):
                 # No delivery was seated before the sentence; its surfaces were read here.
                 ps.seat_bytes(getattr(self.inputSpace, '_analyse_surfaces', None) or ())
+                # A word pool already made nominates seats from the free
+                # rows of order zero as they stand now: rows taken since the
+                # last delivery (a place's concept, say) are no longer
+                # offered. A model with no pool is not given one here.
+                if getattr(self._concept_owner().mtm, 'word_pool', None) is not None:
+                    from WordConceptPool import prepare as prepare_word_pool
+                    prepare_word_pool(self)
             ps._staged_unit_longest = (getattr(self, '_delivery_longest', None)
                                        if getattr(self, '_delivery_seated', None) is not None else None)
             self._delivery_seated = None

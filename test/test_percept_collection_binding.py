@@ -46,7 +46,17 @@ def test_bind_percept_collection_reads_membership_not_coordinate_overlap(named_s
             entry=replace(understood.sentence_states[0],meaning=result['meaning'],query=None)
             understood=replace(understood,sentence_states=(entry,))
             answer=model.resolveAnswer(understood,What.inference(0))
-            assert model.reverseOutput(understood,answer).texts==('gamma',)
+            # In the complete grammar the answer is the operands of the
+            # executed output(meaning) calls and a closing with no emission
+            # is silent (778e41ce78); a concluded meaning is no longer said
+            # of itself. None was executed here.
+            assert 'output' in model.grammatical_thoughts.executable_operation_ids
+            assert model.reverseOutput(understood,answer).texts==('',)
+            # Given to the writer as an emission gives it, the bound member
+            # is said by its name.
+            meaning=result['meaning']
+            emitted=replace(answer,conceptual_answer=meaning.roles[None],answer_meanings=((meaning,),))
+            assert model.reverseOutput(understood,emitted).texts==('gamma',)
 
 
 def test_binding_a_lowered_collection_keeps_its_order_when_the_word_also_names_a_kind(named_scalar_model):

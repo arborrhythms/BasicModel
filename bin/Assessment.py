@@ -344,10 +344,17 @@ def read_sentence(model, text, *, scalar=None, context=(), answer=False, trace=F
             source = text if scalar is None else dict(text=text, scalar=scalar)
             understood = model.understand(model.inputSpace.prepInput([source]))
             forms = getattr(model, '_attention_forms', None)
-            if forms is not None:
+            native = model.perceptualSpace._forward_input or {}
+            if (forms is not None and 'pool_word_texts' in native
+                    and torch.is_tensor(native.get('sentence_bytes'))):
+                # MTM's pool labels only the words it has nominated. The
+                # report names every unit at its position, known or not, so
+                # it spells each from the sentence's bytes.
+                raw = bytes(native['sentence_bytes'][0].tolist())
+                forms = [raw[lo:hi].decode('latin1') for lo, hi in native['unit_spans'][0].tolist()]
+            elif forms is not None:
                 forms = forms[0][0]
             else:
-                native = model.perceptualSpace._forward_input
                 texts = native.get('word_texts')
                 if texts is None and torch.is_tensor(native.get('sentence_bytes')):
                     from WordSurfaces import unit_texts

@@ -17,6 +17,11 @@ def model_with(tmp_path, monkeypatch, texts=(SENTENCE,), bias=0.):
     from nomination_fixtures import nominated_sentences
     nominated_sentences(model, list(texts))
     model._stm_reducer().fragment_bias = bias
+    # These certificates count the words of a sentence read whole. Once its
+    # words are said back correctly, adaptive omission hides a word in about
+    # one training read in ten, so it is held off here (a target of one draws
+    # nothing and takes no random number).
+    model.omission.target = 1.
     return model
 
 

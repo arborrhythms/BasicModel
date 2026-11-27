@@ -3,23 +3,32 @@ import json
 import os
 from pathlib import Path
 
+import pytest
+
 
 def test_symbolic_hosts_follow_grammar_declaration_order(tmp_path):
     from test_mm_xor import _fresh_model
     from Language import TheGrammar
 
-    # Native construction, with several generic symbolic methods and a
-    # repeated declaration. Pre-wired substrate layers keep their owners.
+    # Native construction, with several generic symbolic methods. Pre-wired
+    # substrate layers keep their owners.
     template = Path(__file__).resolve().parents[1] / 'data/XOR_grammar.xml'
-    text = template.read_text().replace(
-        '<rule>S = conjunction.forward(S, S)</rule>',
-        '<rule>S = sum.forward(S, S)</rule>\n'
+    declarations = ('<rule>S = sum.forward(S, S)</rule>\n'
         '            <rule>S = equal.forward(S, S)</rule>\n'
-        '            <rule>S = conjunction.forward(S, S)</rule>\n'
-        '            <rule>S = sum.forward(S, S)</rule>', 1)
-    config = tmp_path / 'host-order.xml'
-    config.write_text(text)
-    model, _, _ = _fresh_model(str(config))
+        '            <rule>S = conjunction.forward(S, S)</rule>')
+    def grammar(name, rules):
+        config = tmp_path / name
+        config.write_text(template.read_text().replace(
+            '<rule>S = conjunction.forward(S, S)</rule>', rules, 1))
+        return str(config)
+    # A repeated declaration gives one operator seat two execution
+    # interfaces. The catalog owner refuses it when the catalogs are attached
+    # (item 1.5, commit fe5ab0f525); before, only a parse that chose the seat did.
+    repeated = grammar('host-order-repeated.xml', declarations
+        + '\n            <rule>S = sum.forward(S, S)</rule>')
+    with pytest.raises(ValueError, match='no unique declared execution interface'):
+        _fresh_model(repeated)
+    model, _, _ = _fresh_model(grammar('host-order.xml', declarations))
     try:
         owner = model.symbolSpace.subspace
         syntactic = owner.syntacticLayer

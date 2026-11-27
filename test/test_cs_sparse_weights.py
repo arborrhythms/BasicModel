@@ -166,12 +166,12 @@ def test_membership_read_is_input_dependent_and_differentiable():
         primitive.members[:, 48:50] = torch.tensor([[.2, .8], [.7, .3]])
     read = cs.cs_read_memberships(native, extents)
     assert read.shape == (cs._order_caps()[0], 1, 1, 2)
-    # Fractional properties keep both lanes inside (0, 1) at the basic
-    # percepts' rows that carry them: the part present, its property .2 for
-    # and .8 against, the other .7 and .3.
+    # Fractional properties are read for, by degree, at the basic percepts'
+    # rows that carry them: the part present, its property .2, the other .7;
+    # nothing is read against (item 1.4, §10.2).
     field, basic = cs._percept_field, cs.basic_percepts
     rows = field.values[[field.keys.index(('bp', basic.index[((48,), (p,))])) for p in (0, 1)], 0, 0]
-    torch.testing.assert_close(rows.detach(), torch.tensor([[.2, .8], [.7, .3]]))
+    torch.testing.assert_close(rows.detach(), torch.tensor([[.2, 0.], [.7, 0.]]))
     # The concept reads its entries in the order-zero Sigma, and the basic
     # percepts' read of the property memberships takes its error: a
     # concept's error reaches which bytes belong to a property.

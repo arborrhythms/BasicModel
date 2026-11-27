@@ -44,6 +44,9 @@ _DATA = os.path.join(_PROJECT, "data")
 
 _CACHE = []
 
+#: The evidence the controlled reading gives each assertion.
+_READ = .8
+
 
 def _model():
     """Build the (serial, truth-layer-bearing) MM_grammar model once."""
@@ -72,6 +75,15 @@ def _model():
         # receives an explicit absolute reading; parsing quality is separate.
         from reading_fixtures import force_absolute_reading
         force_absolute_reading(m)
+        # A source's trust weights the reader's evidence (c54730c54a), and
+        # this untrained reader gives none. Supply a controlled reading for
+        # each assertion, as test_ltm_consolidation does.
+        from dataclasses import replace
+        write = m.symbolSpace.ltm_store.write_clause
+        def identified(clause, **kwargs):
+            kwargs['evidence'] = (_READ, 0.)
+            return write(replace(clause, evidence=(_READ, 0.)), **kwargs)
+        m.symbolSpace.ltm_store.write_clause = identified
         _CACHE.append((m, Models))
     return _CACHE[0]
 
@@ -104,14 +116,14 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
             self.assertEqual(loader.dataset.num_streams, 3)
 
     def test_store_truths_records_truths(self):
-        # The supplied signed trust is the ingested row's evidence pair.
+        # The supplied signed trust weights the reading's evidence pair.
         m, Models = _model()
         store = m.symbolSpace.ltm_store
         m.store_truths([{"content": "hello world", "trust": 0.9},
                         {"content": "loving there", "trust": 0.4}])
         rows = store.trust[:len(store)].ne(0).nonzero().flatten()
         self.assertEqual(rows.numel(), 2)
-        torch.testing.assert_close(store.trust[rows], torch.tensor([.9, .4]))
+        torch.testing.assert_close(store.trust[rows], _READ * torch.tensor([.9, .4]))
         self.assertIn('trust', store.state_dict())
 
     @pytest.mark.usefixtures('eager_reading')
@@ -122,11 +134,11 @@ class TestRuntimeSplitIngestion(unittest.TestCase):
         m.store_truths([{"content": "hello world", "trust": 0.8}])
         rows = store.trust[:len(store)].ne(0).nonzero().flatten()
         self.assertEqual(rows.numel(), 1)
-        torch.testing.assert_close(store.trust[rows], torch.tensor([.8]))
+        torch.testing.assert_close(store.trust[rows], _READ * torch.tensor([.8]))
         m.store_truths([{"content": "loving world", "trust": 0.6}])
         rows = store.trust[:len(store)].ne(0).nonzero().flatten()
         self.assertEqual(rows.numel(), 2)
-        torch.testing.assert_close(store.trust[rows], torch.tensor([.8,.6]))
+        torch.testing.assert_close(store.trust[rows], _READ * torch.tensor([.8,.6]))
 
 
 if __name__ == "__main__":

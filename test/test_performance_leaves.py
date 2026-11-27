@@ -33,7 +33,11 @@ def test_mps_retains_range_pullbacks_and_large_single_rung_addresses(name):
         phase = signed_phase(half)
         for period in (64, 256, 8192):
             encoding = WhereEncoding(maxP=period, nWhere=2)
-            expected = (torch.atan2(phase[:, 0], phase[:, 1]) % (2*torch.pi)) / encoding.div_lf
+            # A position is stamped past the seam at where_origin, and decode
+            # takes that shift off again (it has since 6d756c7476; the
+            # expectation written in 08d1cab2bf left it out).
+            expected = ((torch.atan2(phase[:, 0], phase[:, 1]) % (2*torch.pi)) / encoding.div_lf
+                        - encoding.where_origin)
             torch.testing.assert_close(encoding.decode(half), expected, rtol=0, atol=0)
 
 

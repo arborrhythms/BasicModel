@@ -163,7 +163,7 @@ def structure(owner, device=None):
             row_of = torch.repeat_interleave(torch.arange(pi.n_rows, device=device), counts, output_size=nnz)
             col = pi.col[:nnz].to(device)
             weight = pi.value[0, :nnz].to(device)
-            keep = ~pi.against[:nnz].to(device) & (col >= 0)
+            keep = col >= 0
             # Against and standing-bias seats carry no forward part edge.
             # Give muted seats an in-range source even with an empty catalog;
             # their value and their pullback are both exactly zero.

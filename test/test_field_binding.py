@@ -132,12 +132,14 @@ def test_observed_complement_is_pooled_inside_one_bracket(bracket, expected):
     percepts, basic = cs._percept_field, cs.basic_percepts
     assert len(percepts.keys) == 2
     inside = raw[0, bracket[0]:bracket[1]]
-    at = {49: torch.tensor([1., 0.]), 48: torch.tensor([0., 1.])}
+    # Item 1.4, §10.2: where the property does not hold (at 48) the row
+    # reads nothing; nothing is read against, and no concept is both.
+    at = {49: torch.tensor([1., 0.]), 48: torch.tensor([0., 0.])}
     for part in (48, 49):
         index = percepts.keys.index(('bp', basic.index[((part,), (0,))]))
         presence = float((inside == part).any())
         torch.testing.assert_close(percepts.values[index, 0, 0].detach().cpu(), presence * at[part])
-    torch.testing.assert_close(cs.order_zero_both(percepts, [0])[0, 0, 0], torch.tensor(min(expected)))
+    torch.testing.assert_close(cs.order_zero_both(percepts, [0])[0, 0, 0], torch.tensor(0.))
     # The concept is one signed number, for less against.
     _, lanes = order_zero_expected(cs, 0, published_presence(cs))
     torch.testing.assert_close(field[0, 0, 0], lanes.to(field), atol=1e-5, rtol=1e-5)

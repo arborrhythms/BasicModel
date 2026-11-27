@@ -114,21 +114,12 @@ def test_46_the_code_is_two_halves_of_64_on_two_lanes():
         # A code is at or below each of its wholes', and below the top.
         for whole in basic.occurrences[row][1]:
             assert bool((two[0, 64:] <= basic.whole_codes([whole])[0]).all())
-        # One with no holder has nothing on its parts half's against lane.
-        if not identity.holders[word]:
-            assert not two[1, :64].any()
+        # Item 1.4: a code has nothing on its second lane.
+        assert not two[1].any()
     # The for lane of a form lies at or below that of a form holding it.
     for word in rows:
         for holder in identity.holders[word]:
             assert bool((lanes[word][0] <= lanes[holder][0]).all()), (word, holder)
-    # archery holds archer: its y is evidence against archer.
-    y = identity.atom_code(('part', 'y'))
-    assert bool((lanes[b'archer'][1, :64] >= y * (1 - lanes[b'archer'][0, :64])).all())
-    assert lanes[b'archer'][1, :64].any() and not lanes[b'archery'][1, :64].any()
-    # The wholes half's against lane is what the upper bound cuts away, one
-    # less its for lane (rule 52).
-    for word in rows:
-        torch.testing.assert_close(lanes[word][1, 64:], 1 - lanes[word][0, 64:])
     # The table: a lower-case word lies in letter and word, not in capital
     # (inside letter) nor in digit and the rest (inside the top).
     inside = properties.directly_inside()
@@ -200,7 +191,6 @@ def test_46_printed_on_the_dictionary():
     identity, basic, _book, rows, _measure = dictionary_coded()
     words = list(rows)
     F = torch.stack([basic.code(rows[w]) for w in words]).detach().cpu().numpy() > .5
-    A = torch.stack([basic.against(rows[w]) for w in words]).detach().cpu().numpy() > .5
     def sharing(M):
         keys = {}
         for i, r in enumerate(M):
@@ -213,10 +203,9 @@ def test_46_printed_on_the_dictionary():
         le[i] = False
         for j in np.flatnonzero(le):
             true, accident = (true + 1, accident) if parts[i] <= parts[j] else (true, accident + 1)
-    print(dict(words=len(words), sharing_for=sharing(F), sharing_both=sharing(np.concatenate((F, A), 1)),
+    print(dict(words=len(words), sharing_for=sharing(F),
                sharing_parts_half=sharing(F[:, :64]), inside_true=true, inside_by_accident=accident,
                added_parts=len(identity.added)))
-    assert not (F & A).any()
 
 
 def test_a_checkpoint_of_the_old_layout_is_refused_with_the_reason():
@@ -248,44 +237,54 @@ def _read_form(basic, book, word, rows):
 
 
 def test_47_for_and_against_at_the_first_pi():
-    """The row of ``archer`` reads for 1 and against 0 on ``archer``, for 1
-    and against 1 on ``archery``; the row of ``is`` reads against on
-    ``this``; a row with no holder never reads against from a part. The
-    against entries are the parts the nearest holders add, joined by the
-    union, read by the set of parts found."""
+    """Item 1.4, §10.2: the first Pi reads for alone. The row of ``archer``
+    reads for 1 on ``archer`` and on ``archery``, and the row of ``is`` on
+    ``this``; no row reads against. The parts the nearest holders add are
+    still recorded with the row (the first Pi's against entries, until
+    they are taken out of its storage); what tells against ``archer`` on
+    ``archery`` is the row of ``archery``, by a weight its concept learns
+    (``test_54c``)."""
     words = (b'archer', b'archery', b'is', b'this', b'his', b'cat', b'dog')
     identity, basic, book, rows = coded(words)
-    pi = basic.pi
-    atoms = {row: atom for atom, row in identity.atoms.items()}
-    entries = {w.decode(): sorted(atoms[key[1][0]][1] for key in pi.row_against(rows[w])) for w in words}
-    print(dict(against_entries=entries))
-    assert entries['archer'] == ['y'] and entries['is'] == ['h']  # his is nearer than this
-    assert not entries['archery'] and not entries['cat']
+    # A row's holders are the rows of the forms nearest to holding its form.
+    for row in rows.values():
+        basic.promote(row)
+    holders = {w.decode(): sorted(basic.holder_rows(rows[w])) for w in words}
+    print(dict(holders=holders))
+    assert holders['archer'] == [rows[b'archery']] and holders['is'] == [rows[b'his']]  # his is nearer than this
+    assert not holders['archery'] and not holders['cat']
+    assert basic.held_rows(rows[b'archery']) == [rows[b'archer']]
     read = lambda form, row: _read_form(basic, book, form, [rows[row]])[0].tolist()
     assert read(b'archer', b'archer') == [1., 0.]
-    assert read(b'archery', b'archer') == [1., 1.]
-    assert read(b'this', b'is') == [1., 1.] and read(b'his', b'is') == [1., 1.]
+    assert read(b'archery', b'archer') == [1., 0.]
+    assert read(b'this', b'is') == [1., 0.] and read(b'his', b'is') == [1., 0.]
     assert read(b'is', b'is') == [1., 0.]
     for word in (b'archery', b'cat', b'dog', b'this'):
         if not identity.holders[word]:
             for other in words:
                 assert _read_form(basic, book, other, [rows[word]])[0, 1] == 0.
-    # Any one entry is enough: a row with two (is, held by his and by this
-    # at one remove) reads against where either is found.
+    # A row with two nearest holders (is, held by his and by isa) has both
+    # and reads against at neither.
     late = coded(words + (b'isa',))
-    entries = sorted(late[0].atoms and {a for a in late[0].against_atoms(b'is')})
-    assert entries == [('part', 'a'), ('part', 'h')]
+    for row in late[3].values():
+        late[1].promote(row)
+    assert sorted(late[1].holder_rows(late[3][b'is'])) == sorted((late[3][b'his'], late[3][b'isa']))
     for form in (b'his', b'isa'):
-        assert _read_form(late[1], late[2], form, [late[3][b'is']])[0, 1] == 1.
+        assert _read_form(late[1], late[2], form, [late[3][b'is']])[0].tolist() == [1., 0.]
 
 
 def test_47_the_first_pi_is_written_again_when_a_nearer_holder_comes():
+    """Item 1.4: the first Pi holds a row's members alone. A row's holders
+    are read from the stored forms when they are asked for, so a nearer
+    holder that comes later takes the farther one's place."""
     identity, basic, book, rows = coded((b'is', b'this'))
-    key = lambda ch: ('ps', (identity.atoms[('part', ch)],))
-    assert sorted(basic.pi.row_against(rows[b'is'])) == sorted([key('h'), key('t')])
+    for row in rows.values():
+        basic.promote(row)
+    assert basic.holder_rows(rows[b'is']) == [rows[b'this']]
     identity.admit(b'his')
     basic._refresh_pi()
-    assert basic.pi.row_against(rows[b'is']) == [key('h')]
+    # his is nearer and has no row: nothing holds is among the rows.
+    assert basic.holder_rows(rows[b'is']) == []
     assert basic.pi.row_members(rows[b'is']) == basic.member_keys(rows[b'is'])
 
 
@@ -309,9 +308,8 @@ def test_48_on_the_dictionary():
         le[i] = False
         for j in np.flatnonzero(le):
             kinds['run' if words[i] in words[j] else 'parts' if parts[i] <= parts[j] else 'accident'] += 1
-    entries = [len(basic.pi.row_against(rows[w])) + len(basic.pi.row_members(rows[w])) for w in words]
-    against = [len(basic.pi.row_against(rows[w])) for w in words]
-    print(dict(holders_by_kind=kinds, against_entries=(min(against), round(float(np.mean(against)), 2), max(against)),
+    entries = [len(basic.pi.row_members(rows[w])) for w in words]
+    print(dict(holders_by_kind=kinds,
                entries_a_row=(min(entries), round(float(np.mean(entries)), 2), max(entries)),
                rows_over_16=sum(e > 16 for e in entries), pi_entries=basic.pi.nnz,
                allocated=basic.capacity * basic.ENTRIES_PER_ROW))

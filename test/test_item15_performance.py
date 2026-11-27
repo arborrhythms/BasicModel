@@ -815,14 +815,14 @@ def test_forecast_structure_keeps_zero_and_muted_seats_without_dynamic_outputs(d
     pi_value = torch.tensor([[.7, .3, .8, .4, .5]], device=device, requires_grad=True)
     rows = torch.tensor([0, 0, 1, 2], device=device)
     inputs = torch.tensor([0, 1, 1, 0], device=device)
-    col = torch.tensor([0, -1, 1, 1, 0], device=device)
-    against = torch.tensor([False, False, True, False, False], device=device)
+    # The first Pi holds members alone (item 1.4); a seat of no key is muted.
+    col = torch.tensor([0, -1, -1, 1, 0], device=device)
     pi_rows = torch.tensor([0, 0, 0, 1, 1], device=device)
     owner = SimpleNamespace(nVectors=3, _concept_allocator=None,
         _expected_knowing=torch.zeros(1, 3, 2, device=device),
         order_zero=SimpleNamespace(nnz=4, nInput=2, entry_row=rows, entry_input=inputs, w=lambda: sigma_value),
         basic_percepts=SimpleNamespace(pi=SimpleNamespace(n_rows=2, nnz=5, keys=('a', 'b'),
-            crow=torch.tensor([0, 3, 5], device=device), col=col, value=pi_value, against=against)))
+            crow=torch.tensor([0, 3, 5], device=device), col=col, value=pi_value)))
     observed = torch.tensor([[[.8, .1], [.1, .4]], [[.2, .4], [.9, .1]], [[.7, .3], [.4, .6]]], device=device)
     percepts = torch.tensor([[[.4, .3], [.6, .2]], [[.9, .1], [.2, .5]]], device=device)
 
@@ -838,7 +838,7 @@ def test_forecast_structure_keeps_zero_and_muted_seats_without_dynamic_outputs(d
         with torch.no_grad():
             sigma_value.copy_(sigma_value.new_tensor(weights))
         live = sigma_value != 0
-        keep = ~against & (col >= 0)
+        keep = col >= 0
         graph = spread.Structure(torch.cat((rows[live], 3 + pi_rows[keep])),
             torch.cat((3 + inputs[live], 5 + col[keep])),
             torch.cat((sigma_value[live].abs(), pi_value[0, keep])),

@@ -164,8 +164,8 @@ def _bank(model, values):
 
 def test_v3_the_pi_over_values():
     """On an image's bank, a basic percept of intensity reads for at an
-    occurrence of its level, against at one above it, where its part is
-    held, and nothing below it or where nothing is: the first Pi's test of
+    occurrence of its level, and nothing above it, below it or where nothing
+    is (item 1.4, §10.2: no evidence against at order zero): the first Pi's test of
     part and whole on two lanes, the level and the occurrence compared by
     their values. Its row is keyed by its part and its whole taken from the
     alphabet, each value of the image falls to a level of its own, and its
@@ -187,7 +187,7 @@ def test_v3_the_pi_over_values():
             for a in range(A):
                 there = float(values[b, a])
                 j = int(basic.fall(torch.tensor(there)))
-                expected = ((0., 0.) if there <= 0 or j < k else (1., 0.) if j == k else (0., 1.))
+                expected = (1., 0.) if there > 0 and j == k else (0., 0.)
                 got = tuple(lanes[r, b, a].tolist())
                 read[(k, there)] = got
                 assert got == expected, (value, there, got)
@@ -437,8 +437,8 @@ def test_v10_atomic_over_digits():
 def test_v11_reconstituted_to_the_centroids():
     """After its values and places are known an image comes back to its
     percepts' centroids, from the basic percepts its concepts read for:
-    exactly where one value recurred at its level, and to the mean of the
-    values met at it where several did; with the field's evidence at
+    each value at the level it falls to, within half a step, and two values
+    of one level as one (item 1.4, §14.3); with the field's evidence at
     nothing, nothing comes back; the way back reads no value percepts kept
     beside the field."""
     from dataclasses import replace
@@ -461,11 +461,16 @@ def test_v11_reconstituted_to_the_centroids():
     by_value = {round(v, 4): back[given == v].unique().tolist() for v in alone + shared}
     print(dict(width=width, regions={round(v, 4): r for v, r in regions.items()}, back_by_value=by_value,
                mean_of_the_shared=float(mean)))
+    # Item 1.4, §14.3: a value is put back at the level it falls to, which
+    # moves toward what falls to it very slowly; so it comes back within
+    # half a step, and two values of one level come back as one.
     for v in alone:
-        assert torch.equal(back[given == v], given[given == v])
+        assert len(back[given == v].unique()) == 1
+        assert float((back[given == v] - given[given == v]).abs().max()) <= step / 2
     middle = back[(given == shared[0]) | (given == shared[1])]
     assert len(middle.unique()) == 1
-    torch.testing.assert_close(middle[0].double(), mean, rtol=0, atol=1e-6)
+    assert abs(float(middle[0]) - float(mean)) <= step / 2
+    assert float(middle[0]) == pytest.approx(float(basic.levels[regions[shared[0]]]), abs=1e-6)
     assert not bool(back[given == 0].any())
     silent = image.numeric_percepts.reverse(replace(field, evidence=torch.zeros_like(field.evidence), percepts=None))
     print(dict(silent_greatest=float(silent.abs().max())))

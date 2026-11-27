@@ -35,10 +35,11 @@ def test_order0_unions_alternative_percept_conjunctions(conceptual_pi):
     basic, field = cs.basic_percepts, cs._percept_field
     rows = [basic.index[((65,), (prop,))] for prop in range(4)]
     members = primitive.members[:, 65].detach()
-    # Each property keeps both lanes at the basic percept that carries it:
-    # the row is its part's presence (1) times its property on each lane.
+    # Item 1.4, §10.2: each property is read for at the basic percept that
+    # carries it, its part's presence (1) times its degree, and nothing is
+    # read against.
     slots = [field.keys.index(('bp', r)) for r in rows]
-    torch.testing.assert_close(field.values[slots, 0, 0], torch.stack((members, 1 - members), -1))
+    torch.testing.assert_close(field.values[slots, 0, 0], torch.stack((members, torch.zeros_like(members)), -1))
     # Each concept has an entry on each member's row at one; a negated
     # literal is a Not entry (rule 62).
     def entries(signs):

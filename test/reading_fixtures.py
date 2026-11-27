@@ -340,6 +340,16 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     lang.append(torch.full((1, 3), -1, dtype=torch.long))
     lang.append(torch.zeros_like(lang[1], dtype=torch.bool))
     lang.append(torch.zeros(1,3,len(language.parts_of_speech.arguments)))
+    # Item 1.5's parse costs: the order a rule was applied in, each word's
+    # arrival and each application's memory load. This fixture supplies its
+    # leaves explicitly and applies nothing, in one sentence.
+    lang.extend((torch.zeros(1, 1), torch.zeros(1, 1),
+                 torch.full_like(lang[15], -1, dtype=torch.long),
+                 torch.full((1, 1, 3), -1, dtype=torch.long),
+                 torch.zeros_like(lang[15], dtype=torch.long)))
+    owner._compose_round_owners = lambda actions: (
+        torch.zeros_like(actions, dtype=torch.long), torch.zeros(1, 1, dtype=torch.long),
+        torch.zeros(1, 1, dtype=torch.long))
     state = stm, tuple(lang), None
     active = torch.tensor([active], dtype=torch.bool)
     view = owner._sentence_observation(state, sid, active)
@@ -372,8 +382,10 @@ def commit_reading(language, registry, entry, store, *, discourse=None, sid=0,
     view['meanings'] = [None if value is None else value.meaning for value in view['clauses']]
     if discourse is not None:
         discourse._prepare_expectation_documents([document], active, 1)
+    # The winner is the index of the kept path, as the sentence close passes
+    # it: item 1.5 gathers the retained streams by that index.
     BasicModel._commit_sentence(owner, state, sid, active, [view],
-                               torch.zeros(1, dtype=torch.bool))
+                               torch.zeros(1, dtype=torch.long))
     return owner, view, None
 
 

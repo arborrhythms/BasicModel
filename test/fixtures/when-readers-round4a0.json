@@ -413,17 +413,6 @@
       "reads": "difference"
     },
     {
-      "file": "bin/ReadingMemory.py",
-      "function": "_read",
-      "attributes": [
-        "when_band"
-      ],
-      "role": "retained occurrence transport",
-      "previous_absolute_time": false,
-      "now": "Copies the selected occurrence time band into its STM idea.",
-      "reads": "absolute"
-    },
-    {
       "file": "bin/ReferenceClose.py",
       "function": "ReferenceClose.accessible",
       "attributes": [
@@ -1286,6 +1275,68 @@
       "now": "Reads the when band of an event as stamped; the present comes from the model.",
       "line": 0,
       "reads": "stamp"
+    },
+    {
+      "file": "bin/BasicPercepts.py",
+      "function": "BasicPercepts.with_things",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Gives a thing's event the stamp of the bank's last event; the stamp is copied, not interpreted.",
+      "line": 0,
+      "reads": "stamp"
+    },
+    {
+      "file": "bin/ImagePercepts.py",
+      "function": "image_bank",
+      "attributes": [
+        "when_encoding"
+      ],
+      "role": "writer",
+      "previous_absolute_time": false,
+      "now": "Stamps an image's value events at the model's present with the model's one encoder.",
+      "line": 0,
+      "reads": "stamp"
+    },
+    {
+      "file": "bin/ImagePercepts.py",
+      "function": "joined",
+      "attributes": [
+        "when",
+        "when_band",
+        "when_encoding"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Joins the image's events to the sentence's field: their stamps follow the sentence's, coded by the model's one encoder; no learned scorer receives the phase.",
+      "line": 0,
+      "reads": "stamp"
+    },
+    {
+      "file": "bin/NumericPercepts.py",
+      "function": "NumericPercepts.read",
+      "attributes": [
+        "when_encoding"
+      ],
+      "role": "writer",
+      "previous_absolute_time": false,
+      "now": "Stamps a numeric input's value events at the model's present with the model's one encoder.",
+      "line": 0,
+      "reads": "stamp"
+    },
+    {
+      "file": "bin/Understanding.py",
+      "function": "ConceptualField.scaled_at_locations",
+      "attributes": [
+        "when"
+      ],
+      "role": "carrier",
+      "previous_absolute_time": false,
+      "now": "Carries the snapshot's when band unchanged beside its reweighted evidence.",
+      "line": 0,
+      "reads": "absolute"
     }
   ],
   "dynamic_readers": [
@@ -1832,6 +1883,36 @@
     [
       "bin/WalkTrials.py",
       "ThoughtTrialState.restore"
+    ]
+  ],
+  "item15_removed_readers": [
+    [
+      "bin/ReadingMemory.py",
+      "_read"
+    ]
+  ],
+  "item15_added_readers": [
+    [
+      "bin/Understanding.py",
+      "ConceptualField.scaled_at_locations"
+    ]
+  ],
+  "item16_added_readers": [
+    [
+      "bin/BasicPercepts.py",
+      "BasicPercepts.with_things"
+    ],
+    [
+      "bin/ImagePercepts.py",
+      "image_bank"
+    ],
+    [
+      "bin/ImagePercepts.py",
+      "joined"
+    ],
+    [
+      "bin/NumericPercepts.py",
+      "NumericPercepts.read"
     ]
   ]
 }

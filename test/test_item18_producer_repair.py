@@ -50,10 +50,13 @@ def test_02_admitted_word_and_basic_percept_are_positive_before_teaching(eager_r
         concept=next(w for w in captured[-1]['words'] if w['form']=='This')['concepts'][0]
         sigma=cs.order_zero
         assert sigma.entries(concept['row'])==[(concept['features'][0]['bp'],1.,False)]
-        expected=float(torch.tanh(torch.tensor(1.)*1.))
-        assert expected==pytest.approx(float(torch.tanh(torch.tensor(1.))),abs=1e-6)
+        # Since item 1.5 (`53825210c5`) a form's parts code is graded, read
+        # live from the table of forms, so the row's value at its own word
+        # is high and below one; and since item 1.4 nothing is read against.
+        value,against=concept['features'][0]['pair']
+        assert .5<value<=1. and against==0.
+        expected=float(torch.tanh(torch.tensor(value)))
         assert word['native_field']['concepts'][0]['evidence']==pytest.approx([expected,0.],abs=1e-6)
-        assert concept['features'][0]['pair']==[1.,0.]
     finally:model.End();model.symbolSpace.soft_reset()
 
 

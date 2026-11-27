@@ -123,7 +123,9 @@ def test_depth_one_two_and_four_pairs():
     assert sum(learned[1]) >= 4 and sum(learned[2]) >= 4
 
 
-_DEVICES = ['cpu'] + (['mps'] if torch.backends.mps.is_available() else [])
+_DEVICES = ['cpu'] + ([pytest.param('mps', marks=pytest.mark.intermittent(
+    reason='a GPU hang (kIOGPUCommandBufferCallbackErrorHang) when the machine is loaded by a sweep'))]
+    if torch.backends.mps.is_available() else [])
 
 
 @pytest.mark.parametrize('device', _DEVICES)
