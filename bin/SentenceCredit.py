@@ -133,7 +133,8 @@ def score_function(probabilities, scale, mask, costs):
     correction = torch.where(trained, scale, 0.)
     difference = torch.where(trained, advantage[:, None], 0.)
     result = ((probability * correction * difference).sum(-1)
-              if bool(trained.any()) else probabilities.new_zeros(len(costs)))
+              if torch.compiler.is_compiling() or bool(trained.any())
+              else probabilities.new_zeros(len(costs)))
     return result, dict(costs=costs.detach(), advantage=advantage, mask=mask.detach(),
                         probabilities=probabilities.detach(), scale=scale)
 

@@ -6696,21 +6696,33 @@ class OperationSelectionLayer(nn.Module):
         else:
             if replay_bias is None:
                 replay_bias = torch.full_like(offered, -1, dtype=torch.long)
-            fresh = (offered & (replay_bias < 0)).nonzero().flatten()
-            biased = offered & (replay_bias == 1)
-            if len(fresh):
-                biased[fresh] = torch.rand(len(fresh), device=word.device) < self.interpret_bias
+            if torch.compiler.is_compiling():
+                fresh_mask = offered & (replay_bias < 0)
+                biased = (offered & (replay_bias == 1)) | (
+                    fresh_mask & (torch.rand(len(offered), device=word.device) < self.interpret_bias))
+            else:
+                fresh = (offered & (replay_bias < 0)).nonzero().flatten()
+                biased = offered & (replay_bias == 1)
+                if len(fresh):
+                    biased[fresh] = torch.rand(len(fresh), device=word.device) < self.interpret_bias
 
         action = biased.long()
         logits = word.new_full((len(word), 2), -torch.inf).scatter_(1, action[:, None], 0.)
         result = dict(action=action, interpreted=biased, eligible=torch.zeros_like(offered),
                       probability=word.new_ones(len(word)), alternatives=torch.zeros_like(action),
                       proposal=word.new_zeros(len(word)), logits=logits)
-        free = (offered & ~biased).nonzero().flatten()
-        if len(free):
-            choice = self.choose_interpret(word[free], offered[free],
-                **{key: value[free] for key, value in options.items() if value is not None})
-            result = {key: value.index_copy(0, free, choice[key]) for key, value in result.items()}
+        if torch.compiler.is_compiling():
+            free_mask = offered & ~biased
+            choice = self.choose_interpret(word, offered,
+                **{key: value for key, value in options.items() if value is not None})
+            result = {key: torch.where(free_mask[:, None] if value.ndim > 1 else free_mask, choice[key], value)
+                      for key, value in result.items()}
+        else:
+            free = (offered & ~biased).nonzero().flatten()
+            if len(free):
+                choice = self.choose_interpret(word[free], offered[free],
+                    **{key: value[free] for key, value in options.items() if value is not None})
+                result = {key: value.index_copy(0, free, choice[key]) for key, value in result.items()}
         result['biased'] = biased
         return result
 

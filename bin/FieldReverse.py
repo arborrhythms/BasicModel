@@ -443,11 +443,12 @@ def where_match(wires, grid, axes, sharpness):
     return torch.softmax(-sharpness * distance, -1)
 
 
-def drawn(score):
+def drawn(score, *, noise=None):
     """The index of the greatest of ``score`` on its last axis, a draw among
     equals."""
     tied = score == score.amax(-1, keepdim=True)
-    return (tied * torch.rand(score.shape, device=score.device)).argmax(-1)
+    draws = torch.rand(score.shape, device=score.device) if noise is None else noise
+    return (tied * draws).argmax(-1)
 
 
 def spelling_scores(held, kept, spelled):
@@ -457,7 +458,7 @@ def spelling_scores(held, kept, spelled):
     return F.cosine_similarity(what[..., None, :], codes, dim=-1)        # [B, E, P]
 
 
-def reverse(model, sub, field):
+def _reverse_core(model, sub, field, rand_what=None, rand_where=None):
     """The input's reconstruction leaf by leaf (rule 79; §19.133): each
     reading's own concept goes back through the order-zero Sigma and the
     first Pi to the basic percept it recreates; the percept is taken apart;
@@ -504,17 +505,17 @@ def reverse(model, sub, field):
         w = torch.softmax(float(TheXMLConfig.get('architecture.reconstructionWhatSharpness')) * score, -1)
         spelt = F.one_hot(table.clamp_min(0), 256).to(w) * (table >= 0)[..., None].to(w)   # [P, L, 256]
         offsets = torch.einsum('bep,plv->belv', w * presence[..., None], spelt)
-        choice = drawn(score.detach())
+        choice = drawn(score.detach(), noise=rand_what)
     else:
         offsets = value.new_zeros(B, E, L, 256)
         choice = torch.zeros(B, E, dtype=torch.long, device=value.device)
     # The .where wires against the grid; a reading with no wires has no place.
-    t0, t1 = registry.slices['text']
+    t0, t1 = registry._ranges['text']
     grid = registry.grid.to(value.device).float()
     wires = field.wires.to(value.device).float()
     q = where_match(wires, grid, registry.axes, float(TheXMLConfig.get('architecture.reconstructionWhereSharpness')))
     q = (q[..., t0:t1] * wires.ne(0).any(-1)[..., None]).to(value)          # [B, E, A]
-    place = drawn(q.detach())
+    place = drawn(q.detach(), noise=rand_where)
     A = t1 - t0
     # Paste: byte i of a leaf's percept at its place plus i.
     width = A + L
@@ -545,9 +546,13 @@ def reverse(model, sub, field):
         # back is missing at its places, and whatever is pasted beyond it.
         ends = torch.where((field.where[..., 0] >= t0) & (field.where[..., 1] <= t1), field.where[..., 1] - t0, 0)
         extent = emitted_end.maximum(ends.amax()) if ends.numel() else emitted_end
-        span = int(extent)
-    if span >= len(decoder.positions):
-        raise OverflowError('a reconstructed sentence exceeds decoder position capacity')
+        if torch.compiler.is_compiling():
+            torch._assert_async(extent < len(decoder.positions), 'a reconstructed sentence exceeds decoder position capacity')
+            span = min(width, len(decoder.positions) - 1)
+        else:
+            span = int(extent)
+            if span >= len(decoder.positions):
+                raise OverflowError('a reconstructed sentence exceeds decoder position capacity')
     amounts, strength, selected = amounts[:, :span], strength[:, :span], selected[:, :span]
     # The pasted code: each byte's prototype by its amount.
     prototypes = radix._basis.lookup_rows(rows_of.clamp_min(0)).to(value) * (rows_of >= 0)[:, None].to(value)
@@ -568,6 +573,23 @@ def reverse(model, sub, field):
     separators = (positions > first[:, None]) & (positions < last[:, None]) & ~lit
     recovered._radix_activity = NativeActivity(selected, strength, code, separators, amounts)
     return recovered
+
+
+def reverse(model, sub, field, *, _core_fn=None):
+    """The input's reconstruction leaf by leaf (rule 79; §19.133): draw host
+    tie-breakers before entering compiled regions so Inductor preserves host
+    RNG replay order."""
+    if _core_fn is None:
+        return _reverse_core(model, sub, field)
+    cs, registry = model._concept_owner(), model.where_registry
+    basic = cs.basic_percepts
+    B, E = field.where.shape[:2]
+    dev = field.evidence.device
+    P = len(codebook(basic)[1])
+    t0, t1 = registry._ranges['text']
+    rand_what = torch.rand((B, E, P), device=dev) if P else None
+    rand_where = torch.rand((B, E, t1 - t0), device=dev)
+    return _core_fn(model, sub, field, rand_what, rand_where)
 
 
 def word_texts(surface, where):

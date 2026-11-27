@@ -6613,20 +6613,25 @@ class ConceptualAttentionLayer(SparseLayer):
             result = (view._inventory_edges.to(device), targets, columns,
                       view._thing_seats.to(device), view._thing_complete.to(device))
         self.__dict__['_inventory_indices'] = parent_rows, self.symbol_table, self._tensor_rows, stamp, result
+        self.__dict__.pop('_spread_indices', None)
+        self.__dict__.pop('_definition_depth', None)
         return result
 
     def spread_indices(self, size, device):
         """The sparse inventory addresses for expectation, shared across its looks."""
         topology = self.inventory_indices(size, device)
         cached = self.__dict__.get('_spread_indices')
-        if cached is None or cached[0] is not topology:
+        if cached is None or cached[0] is not topology[0]:
             edges, rows, sources, seats, complete = topology
             count = seats.shape[0]
-            columns, members = ((seats >= 0) & complete[:, None]).nonzero(as_tuple=True)
+            flat = ((seats >= 0) & complete[:, None]).reshape(-1).nonzero().flatten()
+            width = seats.shape[1]
+            columns = torch.div(flat, width, rounding_mode='floor')
+            members = flat % width
             live = F.pad(complete, (0, 1))[sources].nonzero().flatten()
             result = (count, size + columns, seats[columns, members], edges.index_select(0, live),
                       rows.index_select(0, live), size + sources.index_select(0, live))
-            cached = self.__dict__['_spread_indices'] = topology, result
+            cached = self.__dict__['_spread_indices'] = topology[0], result
         return cached[1]
 
     def _edge_sources(self, column):

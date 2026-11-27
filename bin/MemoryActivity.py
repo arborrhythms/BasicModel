@@ -45,9 +45,9 @@ def accessed(store, rows):
         rows = sorted(set(rows))
     else:
         rows = torch.as_tensor(rows, device=store.activity.device, dtype=torch.long).reshape(-1).unique().tolist()
-    journal = _reads.get()
+    journal = _reads
     if journal is not None:
-        reads = journal.setdefault(_stream.get(), {})
+        reads = journal.setdefault(_stream, {})
         for row in rows:
             previous = reads.get((store,row),ReadEffect())
             reads[store,row] = ReadEffect(previous.count+1, previous.written)
@@ -62,27 +62,26 @@ def decay(store, rows):
     store.activity[rows] = torch.where(values == 1, values, values * store.activity_config.decay)
 
 
-from contextvars import ContextVar
 from contextlib import contextmanager
 from functools import wraps
 
-_reads = ContextVar('memory_activity_reads', default=None)
-_stream = ContextVar('memory_activity_stream', default=None)
+_reads = None
+_stream = None
 
 
 def deferred():
-    return _reads.get() is not None
+    return _reads is not None
 
 
 def snapshot():
-    journal = _reads.get()
+    journal = _reads
     return None if journal is None else {stream: dict(reads) for stream, reads in journal.items()}
 
 
 def restore(saved):
     if saved is None:
         return
-    journal = _reads.get()
+    journal = _reads
     if journal is None:
         apply(saved)
     else:
@@ -159,12 +158,12 @@ def _promote(store, rows, *, written_now=False):
 
 
 def written_complete(store, rows):
-    journal = _reads.get()
+    journal = _reads
     if journal is None:
         _promote(store, rows, written_now=True)
     else:
         for row in rows:
-            reads = journal.setdefault(_stream.get(), {})
+            reads = journal.setdefault(_stream, {})
             key = store,int(row)
             previous = reads.get(key,ReadEffect())
             reads[key] = ReadEffect(previous.count, True)
@@ -175,14 +174,16 @@ def trial_activity(*, commit=False):
     def decorate(function):
         @wraps(function)
         def run(*args, **kwargs):
+            global _reads
             if deferred():
                 return function(*args, **kwargs)
-            token = _reads.set({})
+            previous = _reads
+            _reads = {}
             try:
                 result = function(*args, **kwargs)
                 selected = snapshot()
             finally:
-                _reads.reset(token)
+                _reads = previous
             if commit:
                 apply(selected)
             return result
@@ -195,11 +196,13 @@ def read_stream(name='row', *, attribute=None):
     def decorate(function):
         @wraps(function)
         def run(*args, **kwargs):
-            stream = getattr(args[0], attribute) if attribute else kwargs.get(name, _stream.get())
-            token = _stream.set(stream)
+            global _stream
+            stream = getattr(args[0], attribute) if attribute else kwargs.get(name, _stream)
+            previous = _stream
+            _stream = stream
             try:
                 return function(*args, **kwargs)
             finally:
-                _stream.reset(token)
+                _stream = previous
         return run
     return decorate

@@ -39,7 +39,7 @@ def seated_names(allocator, size, like):
     return cached[1:]
 
 
-def field_seats(reached, blocks, minimum):
+def field_seats(reached, blocks, minimum, *, live_caps=None):
     """Pack each page's reachable seats in physical order within each block."""
     batch = reached.shape[1]
     offset = 0
@@ -47,11 +47,15 @@ def field_seats(reached, blocks, minimum):
     for width in blocks:
         groups.append(reached[offset:offset + width])
         offset += width
-    counts = [group.long().sum(0).amax() for group in groups] if batch else [
-        reached.new_zeros((), dtype=torch.long) for _ in groups]
-    counts[0] = counts[0].clamp_min(minimum)
-    shared = (reached[:offset] == reached[:offset, :1]).all() if batch else reached.new_tensor(False)
-    *caps, identical = torch.stack([*counts, shared.long()]).tolist()
+    if live_caps is not None:
+        caps = tuple(live_caps)
+        identical = False
+    else:
+        counts = [group.long().sum(0).amax() for group in groups] if batch else [
+            reached.new_zeros((), dtype=torch.long) for _ in groups]
+        counts[0] = counts[0].clamp_min(minimum)
+        shared = (reached[:offset] == reached[:offset, :1]).all() if batch else reached.new_tensor(False)
+        *caps, identical = torch.stack([*counts, shared.long()]).tolist()
     if not batch:
         return reached.new_empty(0, dtype=torch.long), tuple(caps)
     rows, offset = [], 0
@@ -110,8 +114,43 @@ def seated_rung(field, addresses, weights, topology, inventory_size, start, end,
     inverse = ids.new_full((batch, inventory_size + 1), -1).scatter_reduce(
         1, torch.where((ids >= 0) & (ids < inventory_size), ids, inventory_size), seats, 'amax')
     destinations = inverse.index_select(1, targets)
+    if torch.compiler.is_compiling():
+        if width <= 0 or targets.shape[0] == 0:
+            return field.new_zeros(max(width, 0), batch, places, 2)
+        E = targets.shape[0]
+        seat = destinations
+        in_rung = (seat >= start) & (seat < end)
+        is_sym = columns < members.shape[0]
+        bias_lanes = field.new_zeros(batch, E, places, 2)
+        bias_lanes[..., 0] = 1.
+        if members.shape[0] > 0:
+            parents = columns.clamp(0, members.shape[0] - 1)
+            source = members.index_select(0, parents)
+            page_idx = torch.arange(batch, device=field.device)[:, None, None]
+            located = inverse[:, source.clamp_min(0)]
+            sym_active = (complete.index_select(0, parents)[None]
+                          & ((source[None] < 0) | (located >= 0)).all(-1))
+            operands = field[located.clamp_min(0), page_idx]
+            operands = torch.where(source[None, :, :, None, None] >= 0, operands, 1.)
+            sym_lanes = operands.prod(2) * sym_active[..., None, None]
+            lanes = torch.where(is_sym[None, :, None, None], sym_lanes, bias_lanes)
+            valid = in_rung & (~is_sym[None] | sym_active)
+        else:
+            lanes = bias_lanes
+            valid = in_rung
+        value = weights.to(field)[edges][None].expand(batch, E) * valid.to(field)
+        terms = _EntryRead.apply(
+            value.reshape(batch * E, 1).expand(-1, places),
+            NotLayer3.options(lanes.reshape(batch * E, places, 2)))
+        pages_grid = torch.arange(batch, device=field.device)[:, None].expand(batch, E)
+        target = ((seat - start).clamp(0, width - 1) * batch + pages_grid).reshape(-1)
+        total = field.new_zeros(width * batch, places).index_add(0, target, terms)
+        return signed_lanes(total.tanh()).reshape(width, batch, places, 2)
     if entry_plan is None:
-        pages, entries = (destinations >= 0).nonzero(as_tuple=True)
+        flat = (destinations >= 0).reshape(-1).nonzero().flatten()
+        cols = destinations.shape[1]
+        pages = torch.div(flat, cols, rounding_mode='floor')
+        entries = flat % cols
         symbolic = (columns.index_select(0, entries) < len(members)).nonzero().flatten()
     else:
         pages, entries, symbolic = entry_plan

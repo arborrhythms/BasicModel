@@ -406,7 +406,7 @@ def main():
                        ('tolist', 'item', 'cpu', '__bool__', '__int__', '__float__')}
             def counted(name, function):
                 def invoke(*a, **kw):
-                    if inspecting_growth:
+                    if inspecting_growth or torch.compiler.is_compiling():
                         return function(*a, **kw)
                     host[name] += 1
                     if sentence_depth:
@@ -433,6 +433,8 @@ def main():
                 return invoke
             lookup, looks = Codebook.lookup_rows, SentenceLooks.Looks.run
             def rows_read(book, indices, **kw):
+                if torch.compiler.is_compiling():
+                    return lookup(book, indices, **kw)
                 caller = sys._getframe(1)
                 site = (Path(caller.f_code.co_filename).name, caller.f_code.co_name)
                 calls[site] += 1
@@ -613,8 +615,25 @@ def main():
                             return result
                         return func(*args, **kwargs)
 
-                with patch.object(BasicModel, '_execute_input_sentence', measured_sentence), DeviceReads():
-                    step()
+                saved_regions = getattr(model, '_compiled_sentence_regions', None)
+                saved_cs_banks = [(cs, getattr(cs, '_compiled_cs_read_bank', None))
+                                  for cs in (getattr(model, 'conceptualSpaces', None) or ())]
+                try:
+                    # TorchDispatchMode cannot coexist with fullgraph Dynamo tracing;
+                    # temporarily pause compiled regions during the untimed host-dispatch census.
+                    if saved_regions is not None:
+                        model._compiled_sentence_regions = None
+                    for cs, _ in saved_cs_banks:
+                        if getattr(cs, '_compiled_cs_read_bank', None) is not None:
+                            cs._compiled_cs_read_bank = None
+                    with patch.object(BasicModel, '_execute_input_sentence', measured_sentence), DeviceReads():
+                        step()
+                finally:
+                    if saved_regions is not None:
+                        model._compiled_sentence_regions = saved_regions
+                    for cs, prev in saved_cs_banks:
+                        if prev is not None:
+                            cs._compiled_cs_read_bank = prev
                 record['dispatch_census'] = counters
                 # Includes queued device work waited for by these calls. No
                 # extra synchronization is inserted in the measured sentence.

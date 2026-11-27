@@ -742,7 +742,7 @@ class BasicPercepts(nn.Module):
                 raw = self.native.bytes_for(int(part))
             except (IndexError, KeyError, AttributeError):
                 raw = None
-            known[int(part)] = bytes(raw) if raw and not raw.startswith(identity.PREFIX[:1]) else None
+            known[int(part)] = bytes(raw) if raw and raw[:1] != identity.PREFIX[:1] else None
         return known[int(part)]
 
     def felt_of(self, references):
@@ -1826,7 +1826,8 @@ class BasicPercepts(nn.Module):
         for row in rows:
             with_members(row, ordered)
         rows = tuple(ordered)
-        self._refresh_pi()
+        if not torch.compiler.is_compiling():
+            self._refresh_pi()
         # The runs of several parts that the rows hold: where one is found,
         # it is an occurrence of its own.
         keys = tuple(dict.fromkeys(key for row in rows if row not in self.conjunctions
@@ -1853,8 +1854,11 @@ class BasicPercepts(nn.Module):
         # The precise live width preserves attention's draw among equal
         # nominations, including the RNG consumed when the table is over capacity.
         if spans.numel():
-            ends = torch.where(spans[..., 0] < 0, text.shape[1], spans[..., 1])
-            seats, limit = torch.stack((counts.max(), ends.max())).tolist()
+            if torch.compiler.is_compiling():
+                seats, limit = spans.shape[1], text.shape[1]
+            else:
+                ends = torch.where(spans[..., 0] < 0, text.shape[1], spans[..., 1])
+                seats, limit = torch.stack((counts.max(), ends.max())).tolist()
         else:
             seats = limit = 0
         spans, holder = spans[:, :seats], holder[:, :seats]

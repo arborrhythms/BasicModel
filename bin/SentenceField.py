@@ -427,59 +427,87 @@ def charge(model, errors, name, carrier, field, active, *, silent=None, hidden=T
     return wanted
 
 
-def reconstruct(model, record, errors, active, second):
+def _reconstruct_core(recon_percepts, field_where, cost, raw, decoded,
+                      word_values, word_valid, prior, bytes_hidden, sid_tensor, depths_width):
+    """Compute reconstruction error tensors without mutating Python registries."""
+    B, W, D = word_values.shape
+    positions = torch.arange(recon_percepts.shape[1], device=recon_percepts.device)
+    chunk = max(1, (1 << 22) // max(1, recon_percepts.numel()))
+    chunks = []
+    for bounds in field_where.split(chunk, dim=1):
+        begin, end = bounds.unbind(-1)
+        mask = (positions >= begin[..., None]) & (positions < end[..., None])
+        chunks.append(torch.where(mask[..., None], recon_percepts[:, None], 0.).amax(2))
+    ideas = torch.cat(chunks, 1)
+    ideas = (F.pad(ideas, (0, D - ideas.shape[-1])) if ideas.shape[-1] < D else ideas[..., :D])[:, :W]
+    length = min(raw.shape[-1], decoded.shape[-1])
+    dec_pos = torch.arange(length, device=raw.device)
+    scope = ((dec_pos[None, None] >= field_where[..., :1]) &
+             (dec_pos[None, None] < field_where[..., 1:])).any(1)
+    byte_error = ((raw[:, :length] != decoded[:, :length]) & scope).sum(-1) / scope.sum(-1).clamp_min(1)
+    missing = (decoded[:, :length].eq(0) & scope).sum(-1)
+    residual = None
+    residual_debug = None
+    if prior is not None:
+        from Expectation import percept_reconstruction
+        correction, target_residual, rebuilt, squared = percept_reconstruction(
+            ideas[..., :prior.shape[-1]], word_values[..., :prior.shape[-1]], prior)
+        residual_debug = (
+            correction.detach(), target_residual.detach(),
+            rebuilt.detach(), prior.detach(),
+            word_values[..., :prior.shape[-1]].detach(), squared.detach(),
+            (rebuilt - word_values[..., :prior.shape[-1]].detach()).square().detach(),
+        )
+        valid = word_valid
+        if bytes_hidden is not None:
+            hid_pos = torch.arange(bytes_hidden.shape[1], device=bytes_hidden.device)
+            omitted = ((hid_pos[None, None] >= field_where[..., :1]) &
+                       (hid_pos[None, None] < field_where[..., 1:]) & bytes_hidden[:, None]).any(-1)
+            valid = valid & ~omitted[:, :W]
+        residual = (squared * valid[..., None]).sum((1, 2)) / (valid.sum(-1) * prior.shape[-1]).clamp_min(1)
+    truncated = missing > 0
+    sentence_costs = ideas.new_zeros(B, depths_width).scatter(
+        1, sid_tensor.reshape(1, 1).expand(B, 1), cost[:, None])
+    return ideas, ideas.new_zeros(B), cost, truncated, sentence_costs, byte_error, missing, residual, residual_debug
+
+
+def reconstruct(model, record, errors, active, second, *, sentence=None, _core_fn=None):
     """Score the shared opening inverse at this sentence's observed locations."""
     field = record.open_field
     model._sentence_order_zero_field = field
-    B, W, D = record.word_values.shape
     def rows(prefix):
         return sum(term['weight'] * term.get('multiplier', 1.) * errors._value(term)
                    for name, term in errors._terms.items() if name.startswith(prefix + '.'))
     cost = rows('reconstruction_order_zero')
-    # Placeless modalities participate in the field, not in the word ledger.
-    ideas = word_percepts(second, field, D)[:, :W]
     from Omission import target as omission_target
     targets = omission_target(model)
     raw = (model._staged_concepts_in if targets is None else targets['raw'])[:, 0]
     decoded = second.materialize()[:, 0]
-    length = min(raw.shape[-1], decoded.shape[-1])
-    positions = torch.arange(length, device=raw.device)
-    scope = ((positions[None, None] >= field.where[..., :1]) &
-             (positions[None, None] < field.where[..., 1:])).any(1)
-    byte_error = ((raw[:, :length] != decoded[:, :length]) & scope).sum(-1) / scope.sum(-1).clamp_min(1)
-    count = record.word_valid.sum(-1)
+    prior = record.percept_expected
+    bytes_hidden = None if targets is None else targets.get('bytes')
+    sid_tensor = (record.sentence.to(device=record.word_values.device, dtype=torch.long)
+                  if torch.is_tensor(record.sentence)
+                  else torch.tensor(int(record.sentence), device=record.word_values.device, dtype=torch.long))
+    fn = _core_fn if _core_fn is not None else _reconstruct_core
+    ideas, zeros_b, cost, truncated, sentence_costs, byte_error, missing, residual, residual_debug = fn(
+        second._reconstruction_percepts, field.where, cost, raw, decoded,
+        record.word_values, record.word_valid, prior, bytes_hidden, sid_tensor, record.depths.shape[1])
+    scope_sum = ((torch.arange(min(raw.shape[-1], decoded.shape[-1]), device=raw.device)[None, None] >= field.where[..., :1])
+                 & (torch.arange(min(raw.shape[-1], decoded.shape[-1]), device=raw.device)[None, None] < field.where[..., 1:])).any(1).sum(-1)
     model._last_decoder_byte_identity = byte_error.detach()
     errors.error('reconstruction.free_bytes', byte_error.detach(), 1., mask=active,
         weight=model.loss.reconstruction_scale, category='reconstruction', trained=False)
-    missing = (decoded[:, :length].eq(0) & scope).sum(-1)
-    errors.error('reconstruction.coverage', missing.to(cost).detach(), scope.sum(-1), mask=active,
+    errors.error('reconstruction.coverage', missing.to(cost).detach(), scope_sum, mask=active,
         weight=model.loss.reconstruction_scale, category='reconstruction', trained=False)
-    prior = record.percept_expected
     if prior is not None:
-        from Expectation import percept_reconstruction
-        correction, target_residual, rebuilt, squared = percept_reconstruction(ideas[..., :prior.shape[-1]],
-            record.word_values[..., :prior.shape[-1]], prior)
+        corr, targ, rebuilt, exp, obs, rloss, floss = residual_debug
         model._last_percept_reconstruction = (dict(
-            correction=correction.detach(), target=target_residual.detach(),
-            rebuilt=rebuilt.detach(), expected=prior.detach(),
-            observed=record.word_values[..., :prior.shape[-1]].detach(),
-            residual_loss=squared.detach(),
-            full_loss=(rebuilt - record.word_values[..., :prior.shape[-1]].detach()).square().detach()),)
-        valid = record.word_valid
-        hidden = None if targets is None else targets.get('bytes')
-        if hidden is not None:
-            positions = torch.arange(hidden.shape[1], device=hidden.device)
-            omitted = ((positions[None, None] >= field.where[..., :1]) &
-                       (positions[None, None] < field.where[..., 1:]) & hidden[:, None]).any(-1)
-            valid = valid & ~omitted[:, :W]
-        residual = (squared * valid[..., None]).sum((1, 2)) / (valid.sum(-1) * prior.shape[-1]).clamp_min(1)
+            correction=corr, target=targ, rebuilt=rebuilt, expected=exp,
+            observed=obs, residual_loss=rloss, full_loss=floss),)
         errors.error('reconstruction.free_percept', residual, 1., mask=active,
             weight=model.loss.reconstruction_scale, category='reconstruction')
-    truncated = missing > 0
-    sid = int(record.sentence)
-    sentence_costs = ideas.new_zeros(B, record.depths.shape[1])
-    sentence_costs[:, sid] = cost
-    result = (ideas, ideas.new_zeros(B), cost, truncated, sentence_costs)
+    sid = int(sentence) if sentence is not None else int(record.sentence)
+    result = (ideas, zeros_b, cost, truncated, sentence_costs)
     model._input_reconstructions[sid] = InputReconstruction(ideas, second.materialize(), result[1],
         cost, truncated, sentence_costs, second._reconstruction_percepts)
     return result

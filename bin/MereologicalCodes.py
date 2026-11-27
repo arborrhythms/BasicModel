@@ -346,6 +346,8 @@ class MereologicalCodes(nn.Module):
                 tuple(native), basic.revision, None if identity is None else identity.revision, entries)
 
     def _invalidate_forms(self):
+        if torch.compiler.is_compiling():
+            return
         revision = self._form_sources()
         if revision != self._form_revision:
             self._form_valid.zero_()
@@ -449,6 +451,23 @@ class MereologicalCodes(nn.Module):
     def derive(self, indices, b=0):
         owner = self.owner
         cached = owner.similarity_codebook.W
+        if torch.compiler.is_compiling():
+            if isinstance(indices, slice):
+                idx = torch.arange(len(cached), device=cached.device)[indices]
+                shape = idx.shape
+            elif isinstance(indices, int):
+                if not 0 <= indices < len(cached):
+                    raise IndexError('concept row is outside the constructed inventory')
+                idx = torch.tensor(indices, dtype=torch.long, device=cached.device)
+                shape = ()
+            else:
+                idx = torch.as_tensor(indices, dtype=torch.long, device=cached.device)
+                shape = idx.shape
+            out = cached[idx]
+            if self.meaning_pairs:
+                start, k = self.percept_event_width, self.meaning_pairs
+                out = torch.cat((out[..., :start], self.positive_codes(idx), out[..., start + k:]), dim=-1)
+            return out.reshape(*shape, self.code_width)
         # Allocation and reference readers often already hold a Python row
         # address. Validate it before staging it on the accelerator.
         if isinstance(indices, slice):

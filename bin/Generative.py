@@ -577,7 +577,7 @@ def primed_type_families(space, heat, *, limit):
     members = tuple(torch.tensor(group, device=heat.device, dtype=torch.long) for group in grouped)
     rows = primed_family_rows(heat, members, int(limit))
     valid = rows >= 0
-    if bool(valid.any()):
+    if book.W.shape[0] > 0:
         codes = book.lookup_rows(rows.clamp_min(0),streams=True).detach()
         codes = torch.where(valid[..., None], codes, 0.)
     else:

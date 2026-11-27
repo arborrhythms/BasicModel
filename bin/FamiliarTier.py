@@ -509,7 +509,10 @@ def open_sentence(model, sid, present, *, device_rows=False):
     acts = owner.cs_forward_content(field)
     if getattr(owner, '_mereology_raise', False) and owner._percept_field is not None:
         owner._refinement_field = owner.refinement_field(owner._percept_field)
-    opened = open_field(model, sid, acts)
+    regions = getattr(model, '_compiled_sentence_regions', None)
+    open_fn = (regions['sentence_open_field']
+               if regions and not torch.compiler.is_compiling() else open_field)
+    opened = open_fn(model, sid, acts)
     model._definition_fold_field = acts.detach()
     from ConceptEvidence import symbols
     readings = symbols(acts)

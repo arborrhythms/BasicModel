@@ -92,7 +92,7 @@ class IdeaStack(STM0):
         self._tree_sites = sites
         self._tree_root = tree.roots[0]
         self.names_issued.fill_(tree.semantic_start)
-        if not self.names_issued.is_inference():
+        if not torch.compiler.is_compiling() and not self.names_issued.is_inference():
             self._prepared_word_names = self.names_issued, self.names_issued._version, tree.semantic_start
 
     def name_for(self, term, *, sentence, count):
@@ -140,7 +140,8 @@ class IdeaStack(STM0):
                 self._reference_value(None if cid is None else ('sym', cid)) for cid in concepts
             ]).reshape(count, 2)
         prepared = self.__dict__.pop('_prepared_word_names', None)
-        first_name = (prepared[2] if prepared is not None and prepared[0] is self.names_issued
+        first_name = (prepared[2] if not torch.compiler.is_compiling() and prepared is not None
+                      and prepared[0] is self.names_issued
                       and prepared[1] == self.names_issued._version else int(self.names_issued))
         issued = range(first_name, first_name + count)
         seats = torch.arange(start, end, device=self.slots.device)
@@ -151,7 +152,7 @@ class IdeaStack(STM0):
         self.activity[start:end] = self.activity_config.default
         column, _, names, index = self._occupied_names()
         column[start:end] = first_name + seats - start
-        if len(names) == start and not column.is_inference():
+        if len(names) == start and not torch.compiler.is_compiling() and not column.is_inference():
             names.extend(issued)
             for row, name in enumerate(issued, start):
                 index.setdefault(name, row)

@@ -2228,7 +2228,7 @@ class _CountedRows(MemoryStore):
 
     def _remember_count(self, value):
         count = self.count
-        if not count.is_inference():
+        if not torch.compiler.is_compiling() and not count.is_inference():
             self._count_cache = (count, count._version, value)
 
     def _write_count(self, value):
@@ -2237,6 +2237,8 @@ class _CountedRows(MemoryStore):
 
     def _known_count(self):
         """The published extent, if the tensor has not changed since publication."""
+        if torch.compiler.is_compiling():
+            return None
         count = self.count
         cached = self.__dict__.get('_count_cache')
         if not count.is_inference() and cached is not None and cached[0] is count and cached[1] == count._version:
@@ -2301,16 +2303,17 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
 
     def _mark_empty_episodes(self):
         column = self.episodic_concepts
-        self._empty_episode_version = None if column.is_inference() else (weakref.ref(column), column._version)
+        self._empty_episode_version = None if torch.compiler.is_compiling() or column.is_inference() else (weakref.ref(column), column._version)
 
     def _episode_reserves(self, symbol):
         """A freshly cleared episode bank cannot reserve a relation name."""
         if not self.episodic_capacity or not len(self):
             return False
         column = self.episodic_concepts
-        empty = self._empty_episode_version
-        if empty is not None and empty[0]() is column and empty[1] == column._version:
-            return False
+        if not torch.compiler.is_compiling():
+            empty = self._empty_episode_version
+            if empty is not None and empty[0]() is column and empty[1] == column._version:
+                return False
         return bool(column[:len(self)].eq(symbol).any())
 
     def _occupied_names(self):
@@ -2318,21 +2321,21 @@ class IdeaRows(ClauseRows, EntryRead, _CountedRows, Layer):
         column = self.row_names
         cached = self.__dict__.get('_name_cache')
         n = len(self)
-        if (not column.is_inference() and cached is not None and cached[0] is column
-                and cached[1] == column._version and len(cached[2]) >= n):
+        if (not torch.compiler.is_compiling() and not column.is_inference() and cached is not None
+                and cached[0] is column and cached[1] == column._version and len(cached[2]) >= n):
             return cached
         names = column[:n].tolist() if n else []
         index = {}
         for seat, name in enumerate(names):
             index.setdefault(name, seat)
-        cached = (column, None if column.is_inference() else column._version, names, index)
+        cached = (column, None if torch.compiler.is_compiling() or column.is_inference() else column._version, names, index)
         self._name_cache = cached
         return cached
 
     def _write_name(self, row, name):
         column, _, names, index = self._occupied_names()
         column[row] = name
-        if row == len(names) and not column.is_inference():
+        if row == len(names) and not torch.compiler.is_compiling() and not column.is_inference():
             names.append(name)
             index.setdefault(name, row)
             self._name_cache = (column, column._version, names, index)

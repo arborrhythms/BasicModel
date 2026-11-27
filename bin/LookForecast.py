@@ -24,6 +24,50 @@ def locate_evidence(values, rows, width):
     return F.pad(values, (0, 0, 1, 0)).gather(2, gather)
 
 
+def _look_observe_core(field_evidence, rows_tensor, index_map, inv_width, extent, forecast, looked,
+                       basic_count, address, width, latest, old):
+    """Grade one look's forecast against its observed readings without host state mutation."""
+    if rows_tensor.ndim == 1:
+        rows_tensor = rows_tensor[:, None].expand(-1, len(field_evidence))
+    evidence = locate_evidence(field_evidence, index_map[rows_tensor.T], inv_width)
+    w = evidence.shape[1]
+    ext_w = F.pad(extent, (0, max(0, w - extent.shape[1])))[:, :w]
+    pooled = LookForecast._pool(evidence, ext_w[:, None])[:, 0]
+    actual = pooled.new_zeros(pooled.shape[0], width, 2)
+    actual[:, address] = pooled
+    pair = LookForecast.surprise(actual, forecast, extent, looked)
+    live = extent.any(-1) if looked is None else looked
+    new_latest = torch.where(live[:, None], pair, latest)
+    observed = torch.where(ext_w[:, :, None, None], evidence[:, :, :basic_count], 0.)
+    if old.shape[1] < w:
+        old = F.pad(old, (0, 0, 0, 0, 0, w - old.shape[1]), value=-torch.inf)
+    if w < old.shape[1]:
+        observed = F.pad(observed, (0, 0, 0, 0, 0, old.shape[1] - w), value=-torch.inf)
+    return pair, new_latest, torch.maximum(old, observed)
+
+
+def _occurrence_observe_core(observed, bank_span, bank_activity, surface_width, anticipated, span):
+    """Score one anticipated fixation window without appending Python error terms."""
+    from Layers import Error
+    from BasicPercepts import extent_members
+    inside, around = extent_members(bank_span, span[:, None])
+    seen = (inside | around)[:, 0] & (bank_activity[..., 0] > 0)
+    live = seen.any(1)
+    # The fixation limits *both* sides. Its action probability is absent
+    # from this cost. Overlapping events at a byte share the same place.
+    starts = torch.where(seen, bank_span[..., 0], 0)
+    addresses = starts[..., None].expand_as(anticipated)
+    def located(values):
+        # Empty outer cells give identical matches at all coarser
+        # pyramid levels. The opening supplies one size for every look.
+        grid = values.new_zeros(len(values), surface_width, values.shape[-1])
+        return grid.scatter_reduce(1, addresses, values * seen[..., None], 'amax')
+    put, wanted = located(anticipated), located(observed)
+    shared, mass = Error.pyramid_match(put, wanted)
+    error = (put.sum((1, 2)) + mass - 2 * shared).clamp_min(0.)
+    return error, mass, live
+
+
 class LookForecast:
     """A path's observations, each at the reading it was read at, and the
     most recent surprise."""
@@ -117,17 +161,24 @@ class LookForecast:
         """Score both teaching stages against the same observations outside this look."""
         live, inputs = self._outside(extent, looked, compact=False)
         empty = self.observations.new_zeros(live.shape[0])
-        batch = live.nonzero().flatten()
-        if not len(batch):
-            return empty, empty
-        inputs = inputs.index_select(0, batch)
+        compiling = torch.compiler.is_compiling()
+        if not compiling:
+            batch = live.nonzero().flatten()
+            if not len(batch):
+                return empty, empty
+            inputs = inputs.index_select(0, batch)
         evidence = self._located(field)
-        actual = self.read(evidence, extent).index_select(0, batch)
+        actual = self.read(evidence, extent)
+        if not compiling:
+            actual = actual.index_select(0, batch)
         arrived = actual.new_zeros(len(actual), int(self.owner.nVectors), 2)
         arrived[:, self.inventory_rows()] = actual
-        cost = read_streams(self.owner, lambda: ConceptSpread.look_cost(self.owner, inputs, arrived),
-                            axis=0, live=live, seats=batch)
-        concepts = empty.index_add(0, batch, cost)
+        if compiling:
+            concepts = torch.where(live, ConceptSpread.look_cost(self.owner, inputs, arrived), 0.)
+        else:
+            cost = read_streams(self.owner, lambda: ConceptSpread.look_cost(self.owner, inputs, arrived),
+                                axis=0, live=live, seats=batch)
+            concepts = empty.index_add(0, batch, cost)
 
         # The final occurrence supplies a repeated percept address, as in the
         # sequential assignment. Stage the two index arrays in one transfer.
@@ -137,8 +188,13 @@ class LookForecast:
             return concepts, empty
         values = perception.values.detach().amax(2)
         rows, sources = torch.tensor(list(held.items()), device=values.device, dtype=torch.long).T
-        observed = values.new_zeros(len(batch), max(held) + 1, 2)
-        observed[:, rows] = values.index_select(0, sources).index_select(1, batch).transpose(0, 1)
+        observed = values.new_zeros(len(inputs), max(held) + 1, 2)
+        selected = values.index_select(0, sources)
+        if not compiling:
+            selected = selected.index_select(1, batch)
+        observed[:, rows] = selected.transpose(0, 1)
+        if compiling:
+            return concepts, torch.where(live, ConceptSpread.percept_cost(self.owner, inputs, observed), 0.)
         cost = read_streams(self.owner, lambda: ConceptSpread.percept_cost(self.owner, inputs, observed),
                             axis=0, live=live, seats=batch)
         return concepts, empty.index_add(0, batch, cost)
@@ -164,24 +220,13 @@ class LookForecast:
         return torch.stack((field.excess.sum((-1, -2)), field.omission.sum((-1, -2))), -1)
 
     @torch.no_grad()
-    def observe(self, field, extent, forecast, looked=None):
-        evidence = self._located(field)
-        pair = self.surprise(self.read(evidence, extent), forecast, extent, looked)
-        live = extent.any(-1) if looked is None else looked
-        self.latest = torch.where(live[:, None], pair, self.latest)
-        # Every forecast selects entire reading positions, then takes the
-        # greatest evidence on each lane. Maxima at the same position can
-        # be folded as they arrive, once the current forecast has been graded.
-        width = evidence.shape[1]
-        observed = torch.where(
-            F.pad(extent, (0, max(0, width - extent.shape[1])))[:, :width, None, None],
-            evidence[:, :, :self.basic_count], 0.)
-        old = self.observations
-        if old.shape[1] < width:
-            old = F.pad(old, (0, 0, 0, 0, 0, width - old.shape[1]), value=-torch.inf)
-        if width < old.shape[1]:
-            observed = F.pad(observed, (0, 0, 0, 0, 0, old.shape[1] - width), value=-torch.inf)
-        self.observations = torch.maximum(old, observed)
+    def observe(self, field, extent, forecast, looked=None, *, _core_fn=None):
+        fn = _core_fn if _core_fn is not None else _look_observe_core
+        rows = field_rows(self.owner, field)
+        pair, self.latest, self.observations = fn(
+            field.evidence.detach().permute(1, 2, 0, 3), rows, self.index, len(self.rows),
+            extent, forecast, looked, self.basic_count, self.address, self.width,
+            self.latest, self.observations)
         return pair
 
 
@@ -216,30 +261,15 @@ class OccurrenceCredit:
         where = spatial_match(self.bank, request[rows:, :, 0].T, choose_extent=self.choose_extent)
         return what.clamp(0., 1.)[:, None] * where.sigmoid()[..., None]
 
-    def observe(self, anticipated, span):
-        from Layers import Error
+    def observe(self, anticipated, span, *, _core_fn=None):
         bank = self.bank
-        from BasicPercepts import extent_members
         if not bank.surface_width or not anticipated.shape[-1]:
             return
-        inside, around = extent_members(bank.span, span[:, None])
-        seen = (inside | around)[:, 0] & (bank.activity[..., 0] > 0)
-        live = seen.any(1)
-        if not torch.compiler.is_compiling() and not bool(live.any()):
-            return
-        # The fixation limits *both* sides. Its action probability is absent
-        # from this cost. Overlapping events at a byte share the same place.
-        starts = torch.where(seen, bank.span[..., 0], 0)
-        addresses = starts[..., None].expand_as(anticipated)
-        def located(values):
-            # Empty outer cells give identical matches at all coarser
-            # pyramid levels. The opening supplies one size for every look.
-            grid = values.new_zeros(len(values), bank.surface_width, values.shape[-1])
-            return grid.scatter_reduce(1, addresses, values * seen[..., None], 'amax')
-        put, wanted = located(anticipated), located(self.observed)
-        shared, mass = Error.pyramid_match(put, wanted)
-        error = (put.sum((1, 2)) + mass - 2 * shared).clamp_min(0.)
-        self.terms.append((error, mass, live))
+        fn = _core_fn if _core_fn is not None else _occurrence_observe_core
+        error, mass, live = fn(
+            self.observed, bank.span, bank.activity, bank.surface_width, anticipated, span)
+        if torch.compiler.is_compiling() or bool(live.any()):
+            self.terms.append((error, mass, live))
 
     def for_rows(self, rows):
         from copy import copy

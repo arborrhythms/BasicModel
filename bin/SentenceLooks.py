@@ -264,16 +264,19 @@ class WordForecast:
         # column within one look. Each stream has only one arrival at this
         # look. All columns can read the same batch of pre-arrival logits.
         turn = None if self.walk is None else self.walk.taken
-        current = self.reader.step(self.codes[:, index], self.identities[:, index],
-                                   active=rows & self.live[:, index], lanes=lanes,
-                                   forecast=turn is None or turn != self.predicted_look)
+        regions = getattr(self.model, '_compiled_sentence_regions', None)
+        step_fn = (regions['word_arrivals_step']
+                   if regions and not torch.compiler.is_compiling() else type(self.reader).step)
+        current = step_fn(self.reader, self.codes[:, index], self.identities[:, index],
+                          active=rows & self.live[:, index], lanes=lanes,
+                          forecast=turn is None or turn != self.predicted_look)
         self.predicted_look = turn
         mask = (torch.arange(self.live.shape[1],device=rows.device)==index)[None] & fresh[:,None]
         values=[]
-        for item in fields(ExpectedWords):
-            value = getattr(current,item.name)
+        for name in ExpectedWords.__dataclass_fields__:
+            value = getattr(current, name)
             prior = (value.new_zeros(value.shape[0],self.live.shape[1],*value.shape[2:])
-                     if self.expected is None else getattr(self.expected,item.name))
+                     if self.expected is None else getattr(self.expected, name))
             condition = mask.reshape(*mask.shape,*([1]*(value.ndim-2)))
             values.append(torch.where(condition,value,prior))
         self.expected = ExpectedWords(*values)
@@ -312,6 +315,69 @@ class Looks:
         return state.spans.new_tensor([next((w for w in row if not bool(state.accepted[b, w])), -1)
                                        for b, row in enumerate(order)])
 
+    def _look_interpret_and_spread(self, model, owner, bank, state, observation,
+                                   look_field, extent, words, rows, index, found,
+                                   anticipated, request, stop, found_where, found_code,
+                                   own, memory, stream, word_slots, decision):
+        if self.look_credit is not None:
+            self.look_credit.observe(
+                anticipated,
+                torch.where(found[:, None], observation.last_where, -1))
+        word = index.clamp_min(0)
+        allowed = found & (state.known.gather(1, word[:, None])[:, 0]
+                           | torch.isfinite(words.gather(1, word[:, None])[:, 0]))
+        state.descended = state.descended | ((word_slots == word[:, None])
+                                             & (found & ~state.known.gather(1, word[:, None])[:, 0])[:, None])
+        options = {}
+        if self.prior is not None and decision < len(self.prior.decisions):
+            old = self.prior.decisions[decision]
+            if self.kept is not None:
+                replay_grammar = self.present
+            else:
+                at = self.draw.get('interpret_round', torch.full_like(index, -1))
+                replay_grammar = (((self.draw['attention_round'] < 0) | (state.taken < self.draw['attention_round']))
+                                  & ((at < 0) | (decision < at)))
+                options['masked_action'] = torch.where(at == decision, old['action'], -1)
+            options['replay_action'] = torch.where(replay_grammar, old['action'], -1)
+            replay_branch = replay_grammar | (options.get('masked_action', -1) != -1)
+            options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
+        choice = state.chooser.interpret_at_look(state.keys[stream, word], allowed, **options)
+        choice.update(index=index, slot=index.clamp_min(0))
+        taken = index.clamp(0, found_where.shape[1] - 1)
+        choice.update(request=request.detach(),
+                      where=torch.where(found[:, None], found_where[stream, taken].detach(), 0.),
+                      code=torch.where(found[:, None], found_code[stream, taken].detach(), 0.),
+                      stop=stop.detach(), scores=words.detach())
+        interpreted = choice['interpreted'] & found
+        from FragmentRead import take
+        replayed = None
+        if self.prior is not None and decision < len(self.prior.decisions):
+            replayed = self.prior.decisions[decision].get('fragment_taking')
+        fragment = take(model, state, bank, extent, index, interpreted, prior=replayed)
+        if fragment is not None:
+            choice['fragment_taking'] = fragment['taking']
+            choice['fragment'] = fragment['run']
+        state.record(word, interpreted)
+        own = lower(own, bank, index, interpreted)
+        fragment_leaf = None
+        if fragment is not None and fragment['idea'] is not None:
+            others = fragment['run'] & (word_slots != index[:, None])
+            state.accepted = state.accepted | others
+            state.values = torch.where(others[..., None], state.keys, state.values)
+            extra = F.pad(others, (0, 1))
+            token = bank.token
+            W = state.known.shape[1]
+            taken_occurrences = extra.gather(1, torch.where((token >= 0) & (token < W), token, W))
+            own = torch.where(taken_occurrences[..., None], 0., own)
+            fragment_leaf = dict(index=index, taking=fragment['taking'],
+                                 idea=fragment['idea'], classes=fragment['classes'])
+        V = int(owner.nVectors)
+        from SentenceField import inventory
+        memory = torch.where(rows[:, None, None],
+                             spread_once(owner, at_rows(inventory(owner, look_field), look_field, V, len(rows), index)),
+                             memory)
+        return choice, interpreted, own, memory, fragment_leaf
+
     def run(self, arrive):
         model, state = self.model, self.walk
         owner = model._concept_owner()
@@ -335,8 +401,9 @@ class Looks:
         extent = live
         surprise = forecasts.latest if forecasts is not None else None
         from CandidateGrowth import at_look, at_opening
+        nominees = getattr(getattr(owner, 'mtm', None), '_field_nominees', None)
         self.opening_growth = at_opening(model, field, extent, rows,
-            prior=None if self.prior is None else self.prior.opening_growth)
+            prior=None if self.prior is None else self.prior.opening_growth, binding=nominees)
         self.fields.append(dict(field=field, extent=extent.clone(), active=rows.clone(), surprise=surprise))
         if bank is None:
             return state.reading()
@@ -362,7 +429,15 @@ class Looks:
                                 else OccurrenceCredit(owner, bank, choose_extent=False))
         stream = torch.arange(B, device=own.device)
         word_slots = torch.arange(W, device=own.device)[None]
-        while True:
+        compiling = torch.compiler.is_compiling()
+        regions = None if compiling else getattr(model, '_compiled_sentence_regions', None)
+        narrow_fn = regions['narrow'] if regions else narrow
+        look_interpret_fn = regions['look_interpret_and_spread'] if (regions and 'look_interpret_and_spread' in regions) else Looks._look_interpret_and_spread
+        hardwire_reading = bool(getattr(model, 'hardwire_reading', False))
+        look_iters = (
+            (range(max(1, int(model.attention_budget))) if compiling else iter(int, 1))
+            if hardwire_reading else range(1))
+        for _ in look_iters:
             turn = state.taken
             left = self.present & (state.limit > turn) & (live & ~state.accepted).any(-1)
             # Whether anything is left to find (the toy's "found": nothing
@@ -373,32 +448,38 @@ class Looks:
             self.stops.append(stop.detach())
             # The walk ends where nothing is left, or where the read stops it.
             rows = left & ~(stop.detach() > 0)
-            if not bool(rows.any()):
+            if not compiling and not bool(rows.any()):
                 break
+            if regions:
+                from CandidateGrowth import visible_store
+                from ConceptSpread import definition_depth
+                _store = visible_store(owner._concept_allocator.layer(0))
+                _V = int(owner.nVectors)
+                _store.spread_indices(_V, own.device)
+                definition_depth(_store, _V, _store.inventory_indices(_V, own.device))
             target = None
             if self.supplied is not None:
                 target = self._supplied(state)
                 request = word_request(model, concepts, target)
             else:
                 request = attend(model, units)
-            if self.look_credit is not None:
-                anticipated = self.look_credit.forecast(request)
-            prediction = None
+            anticipated = self.look_credit.forecast(request) if self.look_credit is not None else None
             unread = live & ~state.accepted & rows[:, None]
-            look_field, extent, words = narrow(model, bank, request, own, concepts, state.known, unread)
-            nominees = getattr(getattr(owner, 'mtm', None), '_field_nominees', None)
+            look_field, extent, words = narrow_fn(model, bank, request, own, concepts, state.known, unread)
+            prediction = None
             if forecasts is not None:
                 prediction = forecasts.forecast(extent, rows)
-                # What is expected is written anew at each look, before
-                # what the look brings is read.
                 from ConceptSpread import write_look
                 write_look(forecasts.owner, forecasts.inventory_rows(), prediction)
-                surprise = forecasts.observe(look_field, extent, prediction, rows)
+                surprise = forecasts.observe(
+                    look_field, extent, prediction, rows,
+                    _core_fn=regions['look_forecast_observe'] if regions else None)
                 if model.training:
                     perceived = getattr(owner, '_percept_field', None)
                     concept_cost, percept_cost = forecasts.stage_costs(look_field, perceived, extent, rows)
                     model.__dict__.setdefault('_expectation_looks', []).append((concept_cost, rows.clone()))
                     model.__dict__.setdefault('_expectation_percept_looks', []).append((percept_cost, rows.clone()))
+            nominees = getattr(getattr(owner, 'mtm', None), '_field_nominees', None)
             # MTM reads only kind rows. These are views of this look's
             # forecast and stay valid while other paths run.
             kind_forecast = None if prediction is None else (
@@ -425,68 +506,17 @@ class Looks:
             state.record_look(index, (others > 0) & rows & (index >= 0) & (self.supplied is None),
                               probability, torch.where(rows, proposal, 0.))
             found = index >= 0
-            if not bool(found.any()):
+            if not compiling and not bool(found.any()):
                 break
-            if self.look_credit is not None:
-                self.look_credit.observe(anticipated, torch.where(found[:, None], observation.last_where, -1))
-            word = index.clamp_min(0)
-            allowed = found & (state.known.gather(1, word[:, None])[:, 0]
-                               | torch.isfinite(words.gather(1, word[:, None])[:, 0]))
-            state.descended = state.descended | ((word_slots == word[:, None])
-                                                 & (found & ~state.known.gather(1, word[:, None])[:, 0])[:, None])
-            options = {}
             decision = len(self.decisions)
-            if self.prior is not None and decision < len(self.prior.decisions):
-                old = self.prior.decisions[decision]
-                if self.kept is not None:
-                    replay_grammar = self.present
-                else:
-                    # A departure in the reading replays the prefix's grammar
-                    # decisions; a compose departure keeps the reading's.
-                    at = self.draw.get('interpret_round', torch.full_like(index, -1))
-                    replay_grammar = (((self.draw['attention_round'] < 0) | (turn < self.draw['attention_round']))
-                                      & ((at < 0) | (decision < at)))
-                    options['masked_action'] = torch.where(at == decision, old['action'], -1)
-                options['replay_action'] = torch.where(replay_grammar, old['action'], -1)
-                replay_branch = replay_grammar | (options.get('masked_action', -1) != -1)
-                options['replay_bias'] = torch.where(replay_branch, old['biased'].long(), -1)
-            choice = state.chooser.interpret_at_look(state.keys[stream, word],
-                                                     allowed, **options)
-            choice.update(index=index, slot=index.clamp_min(0))
-            # The record of the look (§19.125): the request it was given, and
-            # the .where and the code of the word it took (nothing where none);
-            # the chance of stopping read before the look.
-            taken = index.clamp(0, found_where.shape[1] - 1)
-            choice.update(request=request.detach(),
-                          where=torch.where(found[:, None], found_where[stream, taken].detach(), 0.),
-                          code=torch.where(found[:, None], found_code[stream, taken].detach(), 0.),
-                          stop=stop.detach(), scores=words.detach())
+            choice, interpreted, own, memory, fragment_leaf = look_interpret_fn(
+                self, model, owner, bank, state, observation,
+                look_field, extent, words, rows, index, found,
+                anticipated, request, stop, found_where, found_code,
+                own, memory, stream, word_slots, decision)
             self.decisions.append(choice)
-            interpreted = choice['interpreted'] & found
-            # The grammar's option to take the basic level's read of the
-            # run of words that begins here as one constituent.
-            from FragmentRead import take
-            replayed = None
-            if self.prior is not None and decision < len(self.prior.decisions):
-                replayed = self.prior.decisions[decision].get('fragment_taking')
-            fragment = take(model, state, bank, extent, index, interpreted, prior=replayed)
-            if fragment is not None:
-                choice['fragment_taking'] = fragment['taking']
-                choice['fragment'] = fragment['run']
-            state.record(word, interpreted)
-            own = lower(own, bank, index, interpreted)
-            if fragment is not None and fragment['idea'] is not None:
-                others = fragment['run'] & (word_slots != index[:, None])
-                state.accepted = state.accepted | others
-                state.values = torch.where(others[..., None], state.keys, state.values)
-                extra = F.pad(others, (0, 1))
-                token = bank.token
-                taken_occurrences = extra.gather(1, torch.where((token >= 0) & (token < W), token, W))
-                own = torch.where(taken_occurrences[..., None], 0., own)
-                model._fragment_leaf = dict(index=index, taking=fragment['taking'],
-                                            idea=fragment['idea'], classes=fragment['classes'])
-            # What the next look reads: this look's field spread once.
-            memory = torch.where(rows[:, None, None], spread_once(owner, located(look_field, index)), memory)
+            if fragment_leaf is not None:
+                model._fragment_leaf = fragment_leaf
             handoff_reading(model, state)
             model._sentence_look_fields = dict(getattr(model, '_sentence_look_fields', {}))
             model._sentence_look_fields[self.sid] = tuple(self.fields)
@@ -494,10 +524,14 @@ class Looks:
             try:
                 # Each stream offers at most one source slot per look. Keep
                 # the batch width fixed at the serial grammar handoff.
-                slots = torch.where(interpreted, index, -1).tolist()
-                self._turn_slots.append(slots)
-                for word in sorted(set(slots) - {-1}):
-                    arrive(word, interpreted & (index == word))
+                if compiling:
+                    for word in range(W):
+                        arrive(word, interpreted & (index == word))
+                else:
+                    slots = torch.where(interpreted, index, -1).tolist()
+                    self._turn_slots.append(slots)
+                    for word in sorted(set(slots) - {-1}):
+                        arrive(word, interpreted & (index == word))
             finally:
                 model.__dict__.pop('_fragment_leaf', None)
         return state.reading()

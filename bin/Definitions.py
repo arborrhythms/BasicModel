@@ -33,6 +33,8 @@ class DefinitionIndex:
         return result
 
     def _ensure(self):
+        if torch.compiler.is_compiling():
+            return
         if self._revision != self._store().effective_revision:
             self.rebuild()
 

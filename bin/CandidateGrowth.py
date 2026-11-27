@@ -20,7 +20,6 @@ already in the store, an order, a symbol holding both) is read for those
 from the promoted rows, the store's indices and the symbols' members.
 """
 from contextlib import contextmanager, nullcontext
-from contextvars import ContextVar
 from copy import copy
 
 import torch
@@ -31,7 +30,7 @@ from torch.nn import functional as F
 PRESENT = .5
 
 
-_current_trial = ContextVar('candidate_growth_trial', default=None)
+_current_trial = None
 
 
 class GrowthTrial:
@@ -66,12 +65,14 @@ class GrowthTrial:
 
     @contextmanager
     def active(self, model=None, batch=None):
-        token = _current_trial.set(self)
+        global _current_trial
+        previous = _current_trial
+        _current_trial = self
         if model is None:
             try:
                 yield self
             finally:
-                _current_trial.reset(token)
+                _current_trial = previous
             return
         field = self.owner._expected_knowing[:batch]
         opening = field.detach().clone()
@@ -89,7 +90,7 @@ class GrowthTrial:
             self.opening_forecast = None
             for name, original in prior.items():
                 setattr(model, name, original)
-            _current_trial.reset(token)
+            _current_trial = previous
 
     @staticmethod
     def keep_forecasts(model, trials, selected, indices=None):
@@ -121,7 +122,8 @@ class GrowthTrial:
         added = [edge for edge in self.edges if edge not in store._index]
         if not added:
             return store
-        view = copy(store)
+        view = object.__new__(type(store))
+        view.__dict__.update(store.__dict__)
         view._rows = store._rows + [r for r, _ in added]
         view._cols = store._cols + [c for _, c in added]
         view._index = {**store._index, **{edge: store.nnz + i for i, edge in enumerate(added)}}
@@ -200,7 +202,7 @@ class GrowthTrial:
 
 
 def row_scope(owner, batch):
-    trial = _current_trial.get()
+    trial = _current_trial
     if trial is None or trial.owner is not owner or not trial.streams:
         return nullcontext()
     stream = trial.streams.get(batch)
@@ -213,7 +215,7 @@ def read_streams(owner, read, *, axis, live=None, seats=None):
     The callback returns independent batch rows. A compacted forecast supplies
     its physical stream mask so its first live row keeps its original owner.
     """
-    trial = _current_trial.get()
+    trial = _current_trial
     if trial is None or trial.owner is not owner or not trial.streams:
         return read()
     base = getattr(getattr(owner, 'mtm', None), '_candidate_pairs', None)
@@ -244,18 +246,18 @@ def read_streams(owner, read, *, axis, live=None, seats=None):
 
 
 def speculative(owner):
-    trial = _current_trial.get()
+    trial = _current_trial
     return trial is not None and trial.owner is owner
 
 
 def visible_store(store):
-    trial = _current_trial.get()
+    trial = _current_trial
     return trial.projected_store() if trial is not None and trial.store is store and trial.edges else store
 
 
 def pair_pool(owner):
     """The Pi candidates whose promoted pairs the current trial reads."""
-    trial = _current_trial.get()
+    trial = _current_trial
     if trial is not None and trial.owner is owner and trial.candidates is not None:
         return trial.candidates['pi']
     return getattr(getattr(owner, 'mtm', None), '_candidate_pairs', None)
@@ -272,7 +274,7 @@ def matrices(owner):
     sized by ``architecture.candidateCapacity``."""
     pool = owner.mtm
     held = getattr(pool, 'candidates', None)
-    trial = _current_trial.get()
+    trial = _current_trial
     if trial is not None and trial.owner is owner:
         if trial.candidates is not None:
             return trial.candidates
@@ -600,7 +602,7 @@ def sigma_step(owner, present, expected, batch=None, *, collect=None, things_rea
         observed=torch.where(wanted, observed, 0.), read_pairs=True)
     if occupied == 0 and held.hold > 1:
         return []
-    trial = _current_trial.get()
+    trial = _current_trial
     if collect is not None:
         collect.append((held, promoted, False, trial))
         return []
@@ -732,14 +734,14 @@ def withheld_words(model, extent):
     return held
 
 
-def at_opening(model, field, extent, active, prior=None):
+def at_opening(model, field, extent, active, prior=None, *, binding=None):
     """All departures inherit this observation before their first fixation."""
-    trial = _current_trial.get()
+    trial = _current_trial
     if trial is None:
-        at_look(model, field, extent, active)
+        at_look(model, field, extent, active, binding=binding)
         return None
     if prior is None:
-        at_look(model, field, extent, active)
+        at_look(model, field, extent, active, binding=binding)
         # Paths zero through explore_paths own the writable trial seats.
         # The final reserved set holds the unchanged opening for siblings.
         return trial.from_reading(path=model.explore_paths + 1)
@@ -758,7 +760,7 @@ def at_look(model, field, extent=None, active=None, *, forecast=None, binding=No
     if getattr(owner, 'mtm', None) is None:
         return
     omission = getattr(model, '_omission_targets', None)
-    trial = _current_trial.get()
+    trial = _current_trial
     if forecast is None:
         # The first look shares the opening already retained by its trial.
         expected = getattr(trial, 'opening_forecast', None)

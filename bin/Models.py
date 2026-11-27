@@ -8003,6 +8003,56 @@ class BasicModel(BaseModel):
             fwd["word_part_capacity"] = capacity
         return capacity
 
+    def _enable_sentence_regions(self, compile_backend, device_type):
+        """Compile the 12 verified fullgraph tensor regions for this model."""
+        if compile_backend in ("auto", "inductor"):
+            import torch._functorch.config as _aot_config
+            _aot_config.donated_buffer = False
+            if device_type == "mps":
+                os.environ.setdefault("BASICMODEL_MPS_IOBUF", "24")
+                os.environ.setdefault("BASICMODEL_MPS_FUSE", "64")
+                os.environ.setdefault("BASICMODEL_MPS_REALIZE", "8")
+            from CompilerEffects import compile_inductor, retained_backward_compiler
+            _region_backend = retained_backward_compiler(compile_inductor)
+        else:
+            _region_backend = compile_backend
+        self._compiled_region_backend = _region_backend
+        import FieldReverse
+        import LookForecast
+        import SentenceField
+        import SentenceLooks
+        import SymbolField
+        import WordExpectation
+        first_region = True
+        def _compile_region(fn):
+            nonlocal first_region
+            compiled = _util.compile(fn, verbose=first_region, fullgraph=True, backend=_region_backend)
+            first_region = False
+            return compiled
+        for _cs in (getattr(self, "conceptualSpaces", None) or ()):
+            _alloc = getattr(_cs, "_concept_allocator", None)
+            if _alloc is not None:
+                _tbl = _alloc.symbol_table()
+                _tbl.pi.to(device_type)
+            _cs._compiled_cs_read_bank = _compile_region(type(_cs)._cs_read_bank_impl)
+        self._compiled_sentence_regions = {
+            'narrow': _compile_region(SentenceLooks.narrow),
+            'look_interpret_and_spread': _compile_region(SentenceLooks.Looks._look_interpret_and_spread),
+            'look_forecast_observe': _compile_region(LookForecast._look_observe_core),
+            'occurrence_credit_observe': _compile_region(LookForecast._occurrence_observe_core),
+            'field_reverse': _compile_region(FieldReverse._reverse_core),
+            'sentence_charge': _compile_region(SentenceField.charge),
+            'sentence_reconstruct': _compile_region(SentenceField._reconstruct_core),
+            'sentence_open_field': _compile_region(SentenceField.open_field),
+            'word_arrivals_step': _compile_region(WordExpectation.WordArrivals.step),
+            'symbol_field_anticipate': _compile_region(SymbolField._anticipate_core),
+            'symbol_field_read': _compile_region(SymbolField._read_core),
+            'symbol_field_arrive': _compile_region(SymbolField._arrive_core),
+        }
+        TheMessage(
+            f"Whole-sentence region compile ({compile_backend} on {device_type}): "
+            f"12 fullgraph tensor regions enabled")
+
     def enable_compiled_step(self):
         """Compile the per-batch forward and route runBatch through it.
 
@@ -8128,6 +8178,7 @@ class BasicModel(BaseModel):
             os.environ.get("BASICMODEL_DEBUG_PEER_MUTATION", "0") == "1")
         self._compiled_word_loop_compile = None
         self._compiled_word_loop_fullgraph = False
+        self._compiled_sentence_regions_only = False
         _compiled_device_type = str(TheDevice.get()).split(":", 1)[0]
         _mps_word_boundary = (
             _aligned_serial_stage_bodies
@@ -8162,13 +8213,19 @@ class BasicModel(BaseModel):
             _cuda_fullgraph_word_loop_boundary = False
         if self.concept_order_limit > 0 and not self.word_brackets:
             # This whole-sentence path grows its sparse store, concept
-            # inventory and percept parse at run time. It is declared host
-            # work, not a family of newly admitted compiled tensor shapes.
+            # inventory and percept parse at run time. Compile the 12 verified
+            # fullgraph tensor regions per model while keeping the outer host
+            # scheduler eager (so runBatch must not pre-stage _staged_in_sub).
             self._compiled_word_steps = {}
             self._compiled_step = self.forward
-            TheMessage(
-                "Whole-sentence sparse conceptual forward stays eager: "
-                "the sparse store, inventory and percept parse grow at run time")
+            self._compiled_sentence_regions_only = True
+            _compile_backend = getattr(_util, "TheCompileBackend", "none")
+            if _compile_backend != "none":
+                self._enable_sentence_regions(_compile_backend, _compiled_device_type)
+            else:
+                TheMessage(
+                    "Whole-sentence sparse conceptual forward stays eager: "
+                    "the sparse store, inventory and percept parse grow at run time")
         elif ((_mps_word_boundary and _mps_word_loop)
                 or _cuda_fullgraph_word_loop_boundary):
             # The primary production boundary: one fullgraph encompasses the
@@ -8251,8 +8308,13 @@ class BasicModel(BaseModel):
             # CPU's fallback keeps the scheduler eager and compiles the
             # independent numerical bodies. MPS takes the W-loop branch above,
             # where the same fixed FIFO is part of the fullgraph.
+            _compile_backend = getattr(_util, "TheCompileBackend", "none")
             if _aligned_serial_stage_bodies:
                 self._enable_fullgraph_perception(_compile)
+            else:
+                self._compiled_sentence_regions_only = True
+                if _compile_backend != "none":
+                    self._enable_sentence_regions(_compile_backend, _compiled_device_type)
             self._compiled_step = self.forward
             TheMessage(
                 "Peer pipeline: static PS/WS stage bodies compiled separately; "
@@ -11993,7 +12055,7 @@ class BasicModel(BaseModel):
         """Native word handles for the formula, or a numeric input's handle."""
         isp = getattr(self, 'inputSpace', None)
         rows = self._word_symbol_rows()
-        if rows is None or not bool((rows >= 0).any()):
+        if rows is None or (not torch.compiler.is_compiling() and not bool((rows >= 0).any())):
             return None
         unknown = torch.full_like(rows, -1)
         def addresses(name):
@@ -12023,6 +12085,8 @@ class BasicModel(BaseModel):
             return empty
         from WordSurfaces import WitnessedForms
         if isinstance(resolved, WitnessedForms):
+            if torch.compiler.is_compiling():
+                return resolved.read(rows[:batch, :width], batch=batch, width=width, lazy=True)
             named = resolved.read(rows[:batch, :width])
             return tuple((tuple(named[b]) + (None,) * (width - len(named[b]))) if b < len(named)
                          else empty[b] for b in range(batch))
@@ -13032,7 +13096,8 @@ class BasicModel(BaseModel):
         if complete is not None:
             sizes[:, 0] = torch.where(complete, sizes[:, 0], 0)
         issued = self.symbolSpace.ltm_store.names_issued
-        stamp = issued._version if torch.is_tensor(issued) and not torch.is_inference(issued) else None
+        stamp = (issued._version if not torch.compiler.is_compiling()
+                 and torch.is_tensor(issued) and not torch.is_inference(issued) else None)
         floors = torch.as_tensor(issued, device=positions.device).reshape(1, 1).expand(len(positions), 1)
         identities = torch.zeros_like(floors)
         if chunk_state is not None and transactions is not None:
@@ -13052,9 +13117,24 @@ class BasicModel(BaseModel):
                 part.reshape(value.shape) for value, part in zip(records,
                     packed.split([value.flatten(1).shape[1] for value in records], dim=1))]
             metadata = host_header.tolist()
+            host_actions_list = host_actions.tolist()
+            host_parse_lists = tuple(part.tolist() for part in host_parse)
         else:
             metadata = header.tolist()
         lexical_ids = word_view(getattr(self, 'inputSpace', None), 'concept_ids')
+        concept_owner = self._concept_owner() if torch.is_tensor(concept_ids) else None
+        pool = None if concept_owner is None else concept_owner.mtm
+        transient_replacements = None
+        if pool is not None:
+            transient_replacements = {}
+            for key, entry in pool.entries.items():
+                # Binding an occurrence ends pending status, but an
+                # unpromoted token still names its observed concept.
+                if (entry.transient is not None
+                        and concept_owner._concept_row_of(entry.transient) is None):
+                    name = pool.reading_of(key)
+                    if name is not None:
+                        transient_replacements[entry.transient] = name
         transient_bounds = None
         entries = []
         for b, (n, L, name_floor, may_have_identities, *source_positions) in enumerate(metadata):
@@ -13077,29 +13157,26 @@ class BasicModel(BaseModel):
             # MTM identities travel in the journal; concept references remain
             # their observed lexical rows until a durable object is defined.
             if selected_ids is not None:
-                concept_owner = self._concept_owner()
-                pool = concept_owner.mtm
-                replacements = {}
-                for key, entry in pool.entries.items():
-                    # Binding an occurrence ends pending status, but an
-                    # unpromoted token still names its observed concept.
-                    if (entry.transient is not None
-                            and concept_owner._concept_row_of(entry.transient) is None):
-                        name = pool.reading_of(key)
-                        if name is not None:
-                            replacements[entry.transient] = name
-                for transient, name in replacements.items():
+                for transient, name in transient_replacements.items():
                     selected_ids = torch.where(selected_ids == transient, name, selected_ids)
                 reserved = getattr(pool, 'transient_ids', None)
                 if torch.is_tensor(reserved) and reserved.numel():
                     # A handle introduced by this walk need not have an MTM
                     # entry/name yet. It remains in the identity/operand
                     # journal, never as a supposedly allocated concept ID.
-                    if (transient_bounds is None or transient_bounds[0] is not reserved
-                            or (not reserved.is_inference() and transient_bounds[1] != reserved._version)):
+                    if (not torch.compiler.is_compiling() and (
+                            transient_bounds is None or transient_bounds[0] is not reserved
+                            or (not reserved.is_inference() and transient_bounds[1] != reserved._version))):
                         transient_bounds = (
                             reserved,
                             None if reserved.is_inference() else reserved._version,
+                            int(reserved[0]),
+                            int(reserved[-1]),
+                        )
+                    elif transient_bounds is None or transient_bounds[0] is not reserved:
+                        transient_bounds = (
+                            reserved,
+                            None,
                             int(reserved[0]),
                             int(reserved[-1]),
                         )
@@ -13123,12 +13200,12 @@ class BasicModel(BaseModel):
                 action_index = kept.action_index
             elif parse_roots is not None:
                 from ParseForest import ParseForest
-                pairs, roots, choices = host_parse
-                action_index = ParseForest(acts[:L], host_actions[b, :L].tolist(), source_positions[:n],
-                    pairs[b].tolist(), roots[b].tolist(), choices[b, :L].tolist(), self.languageSpace)
+                pairs, roots, choices = host_parse_lists
+                action_index = ParseForest(acts[:L], host_actions_list[b][:L], source_positions[:n],
+                    pairs[b], roots[b], choices[b][:L], self.languageSpace)
             else:
                 action_index = ReadingIndex(acts[:L], n, self.languageSpace,
-                    records=host_actions[b, :L].tolist())
+                    records=host_actions_list[b][:L])
             reference_ids = reference_orders = None
             resolve = getattr(getattr(self, 'languageSpace', None),
                               'resolve_lexical_references', None)
@@ -13215,7 +13292,7 @@ class BasicModel(BaseModel):
             # An admission callback can write LTM while resolving a page's
             # references. Respect a changed name floor before reserving STM.
             current = self.symbolSpace.ltm_store.names_issued
-            if current is not issued or stamp is None or current._version != stamp:
+            if current is not issued or stamp is None or torch.compiler.is_compiling() or current._version != stamp:
                 name_floor = int(current)
             self.conceptualSpace.stm.strata.capture(entry, self.languageSpace, b, after=name_floor,
                 **({} if kept is None else {'kept_tree': kept.tree}))
@@ -14019,7 +14096,15 @@ class BasicModel(BaseModel):
 
     def _encode_present(self):
         from RowTime import encoder
-        self.when_code.copy_(encoder().encode(self.when_time.to(self.when_code.device)).to(self.when_code))
+        cs = getattr(self, 'conceptualSpace', None)
+        stm = None if cs is None else getattr(cs, 'stm', None)
+        state = None if stm is None else getattr(stm, 'model_state', None)
+        if state is not None and getattr(state, 'when_code', None) is not None:
+            state.when_code = encoder().encode(
+                self.when_time.to(state.when_code.device)).to(state.when_code)
+        else:
+            self.when_code.copy_(encoder().encode(
+                self.when_time.to(self.when_code.device)).to(self.when_code))
 
     def present_code(self):
         """The code of the present, held on the model beside the clock."""
@@ -14656,7 +14741,9 @@ class BasicModel(BaseModel):
             # Keep eager staging immediately beside the compiled invocation:
             # the traced forward only reads these parked tensors.  The eager
             # path intentionally remains unchanged and lexes inline.
-            if self._compiled_step is not None and self.numeric_percepts is None:
+            if (self._compiled_step is not None
+                    and not getattr(self, "_compiled_sentence_regions_only", False)
+                    and self.numeric_percepts is None):
                 if isinstance(inputTensor, torch.Tensor):
                     inputTensor = inputTensor.to(TheDevice.get())
                 self._staged_in_sub = self._lex_embed_stem(inputTensor)
@@ -16527,6 +16614,7 @@ class BasicModel(BaseModel):
         self.bindingDepth = bindingDepth
         self.attention_budget = int(TheXMLConfig.get('architecture.attentionBudget',default=32))
         if self.attention_budget < 0:raise ValueError('attentionBudget must be nonnegative')
+        self.hardwire_reading = bool(int(TheXMLConfig.get('architecture.hardwireReading', default=1)))
         self.concept_order_limit = max(0,int(TheXMLConfig.get('architecture.conceptLayers'))-1)
 
         # Monotonic SigmaLayer weights (W >= 0). Mirrors PiLayer's monotonic
@@ -19930,10 +20018,13 @@ class BasicModel(BaseModel):
         # bucket is eight; a smaller configured capacity remains unchanged.
         # A large packed-row ceiling need not make every sentence's numerical
         # records that large. One closing window serves every packed sentence.
-        needed = max(1, int(torch.where(active, local + 1, 0).amax().item()))
         bounds = sorted({int(W), *(v for v in StaticPeerPipeline.WIDTHS
                                    if 8 <= v <= int(W))})
-        words = next(v for v in bounds if v >= needed)
+        if len(bounds) == 1 or torch.compiler.is_compiling():
+            words = bounds[-1]
+        else:
+            needed = max(1, int(torch.where(active, local + 1, 0).amax().item()))
+            words = next(v for v in bounds if v >= needed)
         rounds = (3 * local[..., None] + torch.arange(3, device=active.device)).flatten(1)
         endings = (3 * words + torch.arange(trace_width - 3 * W,
                                             device=active.device) % closing_width)
@@ -20391,7 +20482,7 @@ class BasicModel(BaseModel):
         # took, is written as silence; its cost is booked, one a sentence.
         from Interpret import SilenceLayer
         silent = SilenceLayer.silent(lang[11][:, sid], active)
-        if bool(silent.any()):
+        if torch.compiler.is_compiling() or bool(silent.any()):
             errors.add('compose.silence', silent.to(root), category='reconstruction',
                        objective='reconstruction', side='R', kind='relative')
         record = observation['record']
@@ -20404,7 +20495,12 @@ class BasicModel(BaseModel):
         if reconstruct:
             from SentenceField import reconstruct as reconstruct_field
             errors.merge(self._opening_errors)
-            reconstruction = reconstruct_field(self, record, errors, active, second=self._sentence_order_zero_reverse)
+            regions = getattr(self, '_compiled_sentence_regions', None)
+            recon_core = (regions['sentence_reconstruct']
+                          if regions and not torch.compiler.is_compiling() else None)
+            reconstruction = reconstruct_field(self, record, errors, active,
+                                               second=self._sentence_order_zero_reverse,
+                                               sentence=int(sid), _core_fn=recon_core)
             observation['input_reconstruction'] = self._input_reconstructions[int(sid)]
             observation['order_zero_field'] = self._sentence_order_zero_field
             observation['order_zero_reverse'] = self._sentence_order_zero_reverse
@@ -21174,7 +21270,7 @@ class BasicModel(BaseModel):
         written = torch.zeros_like(active)
         for sid in range(slots.shape[1]):
             present = slots[:, sid].to(torch.bool)
-            if not bool(present.any()):
+            if not torch.compiler.is_compiling() and not bool(present.any()):
                 continue
             self._sentence_ticks[int(sid)] = self._advance_when_time()
             from Occurrence import stage_position
@@ -21200,7 +21296,7 @@ class BasicModel(BaseModel):
             if not self.grammar_phases.vector:
                 for w in range(W):
                     gate = active[:, w] & (sentence_ids[:, w] == sid)
-                    if not bool(gate.any()):
+                    if not torch.compiler.is_compiling() and not bool(gate.any()):
                         continue
                     index = word_slots[w]
                     from ModelAttention import forecast_percept, observe_percept
@@ -21232,7 +21328,10 @@ class BasicModel(BaseModel):
                              and opened.where.shape == bank.where.shape)
                 text_width = (surface.shape[1] if text_only and surface is not None
                               and native.get('unit_spans') is not None else None)
-                self._sentence_target = charge(self, self._opening_errors, 'reconstruction_order_zero',
+                regions = getattr(self, '_compiled_sentence_regions', None)
+                charge_fn = (regions['sentence_charge']
+                             if regions and not torch.compiler.is_compiling() else charge)
+                self._sentence_target = charge_fn(self, self._opening_errors, 'reconstruction_order_zero',
                     self._sentence_order_zero_reverse, opened, present, hidden=False, text_width=text_width)
                 # A row's image is put back from the field and charged beside it.
                 from ImagePercepts import charge as charge_image
@@ -21384,7 +21483,8 @@ class BasicModel(BaseModel):
                     from SymbolField import SymbolField
                     symbol_field = SymbolField(getattr(self.symbolSpace, 'expectation', None),
                         strength=self.word_expectation_gain, epsilon=self.expectation_epsilon,
-                        saturation=self.expectation_saturation)
+                        saturation=self.expectation_saturation,
+                        _regions=getattr(self, '_compiled_sentence_regions', None))
                     self._sentence_symbol_field = symbol_field
                     if kept is None:
                         field_trials.append(field)
@@ -21397,10 +21497,10 @@ class BasicModel(BaseModel):
                         # inverse field is the whole greedy field, while a compose
                         # fork carries only its own prefix, before the departure.
                         compound_field.restore(compound_trials[0].snapshot(),~(replay | fork.selected))
-                        if bool(fork.selected.any()):
-                            if fork.inverse_prefix is None:
-                                raise RuntimeError('a compose fork lost its inverse candidate prefix')
+                        if fork.inverse_prefix is not None:
                             compound_field.restore(fork.inverse_prefix,fork.selected)
+                        elif not torch.compiler.is_compiling() and bool(fork.selected.any()):
+                            raise RuntimeError('a compose fork lost its inverse candidate prefix')
                     if kept is None:
                         compound_trials.append(compound_field)
                     if fork is not None:
@@ -21442,7 +21542,7 @@ class BasicModel(BaseModel):
                     if field is not None:
                         field.remember(index, payload[7].reshape(B), current_lang, closing=closing)
                     current_stm = symbol_field.arrive(current_stm, payload[7].reshape(B),
-                        lanes=None if field is None else field.slot_lanes().clamp(0,1))
+                        lanes=None if field is None else field.slot_lanes().clamp(0, 1))
                     observe_compounds(payload[7].reshape(B))
                     latches = [latches[1], current_feedback]
                 path_forecast = word_forecast.begin_path(reading_walk)
@@ -21457,7 +21557,7 @@ class BasicModel(BaseModel):
                     path_forecast.arrive(word, rows, lanes)
                     old = cached.get(word)
                     fresh = rows if old is None else rows & ~old[3]
-                    if old is None or bool(fresh.any()):
+                    if old is None or torch.compiler.is_compiling() or bool(fresh.any()):
                         if native_path is None:
                             forecast = forecast_percept(self, fresh)
                         else:
@@ -21531,7 +21631,8 @@ class BasicModel(BaseModel):
                     last = torch.where(active & (sentence_ids==sid),
                         torch.arange(W,device=words.device),-1).amax(-1)
                     D = current_stm[0].shape[-1]
-                    for word in last[present].unique().tolist():
+                    word_indices = range(W) if torch.compiler.is_compiling() else last[present].unique().tolist()
+                    for word in word_indices:
                         rows = present & (last==word)
                         index = torch.tensor(word,device=words.device)
                         payload = (words.new_zeros(B,1,D),torch.zeros(B,1,device=words.device,dtype=torch.long),
@@ -21624,7 +21725,7 @@ class BasicModel(BaseModel):
                         sentence=sid, compose_round=fork.choose(draws), used=draws, **menus)
                     draws.append(draw)
                     self._sentence_departure = draw
-                    reading = bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
+                    reading = True if torch.compiler.is_compiling() else bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
                     with trial_scope(reuse=not reading):
                         if reading:
                             candidate = compose(cache, first)
@@ -24064,8 +24165,11 @@ class BasicModel(BaseModel):
 
     def _reverse_field(self, sub, field):
         """Decode only the supplied order-zero field through basic percepts."""
+        regions = getattr(self, '_compiled_sentence_regions', None)
+        core_fn = (regions['field_reverse']
+                   if regions and not torch.compiler.is_compiling() else None)
         from FieldReverse import reverse
-        return reverse(self, sub, field)
+        return reverse(self, sub, field, _core_fn=core_fn)
 
     def _reverse_body(self, sub, *, field=None):
         """Decode aligned input from its field or undo the dense body stages."""

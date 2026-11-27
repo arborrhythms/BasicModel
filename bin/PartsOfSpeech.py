@@ -281,7 +281,7 @@ class PartsOfSpeech(nn.Module):
         cached = {}
         offset = 0
         for tensor, length in zip(sources, lengths, strict=True):
-            version = None if tensor.is_inference() else tensor._version
+            version = None if torch.compiler.is_compiling() or tensor.is_inference() else tensor._version
             cached[id(tensor)] = (tensor, version, flat[offset:offset + length])
             offset += length
         previous = getattr(self, '_cached_word_ids', None)
@@ -300,7 +300,7 @@ class PartsOfSpeech(nn.Module):
         else:
             cached = getattr(self, '_cached_word_ids', None)
             entry = None if cached is None else cached.get(id(program.word_ids))
-            if (entry is not None and entry[0] is program.word_ids
+            if (not torch.compiler.is_compiling() and entry is not None and entry[0] is program.word_ids
                     and (program.word_ids.is_inference() or entry[1] == program.word_ids._version)):
                 words = entry[2]
             else:

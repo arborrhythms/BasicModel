@@ -2,6 +2,7 @@
 import torch
 from architecture import WHERE_WIRES
 from torch import nn
+from torch.nn import functional as F
 
 WORD_FIELDS = ('concept_ids', 'concept_rows', 'concept_orders', 'object_ids',
                'object_rows', 'object_orders', 'symbol_where', 'symbol_when')
@@ -45,6 +46,22 @@ class SymbolEntries(nn.Module):
 
     def stage_words(self, name, value):
         target = getattr(self, name)
+        if torch.compiler.is_compiling():
+            fill = 0 if target.is_floating_point() else -1
+            if value is None:
+                setattr(self, name, torch.full_like(target, fill))
+                self.extents.pop(name, None)
+                return
+            batch, count = value.shape[:2]
+            if batch > self.streams or count+self.prepend > target.shape[1] or value.shape[2:] != target.shape[2:]:
+                raise ValueError('symbol field exceeds its constructed base + W extent')
+            if target.device != value.device or (target.is_floating_point() and target.dtype != value.dtype):
+                target = target.to(value)
+            pad = (0, 0) * (target.ndim - 2) + (self.prepend, target.shape[1] - (self.prepend + count), 0, target.shape[0] - batch)
+            staged = F.pad(value.to(dtype=target.dtype, device=target.device), pad, value=fill)
+            setattr(self, name, staged)
+            self.extents[name] = (batch, count)
+            return
         if target.requires_grad:
             # An earlier sentence can still own a gather of this bank. A
             # refreshed bank keeps its fixed contiguous shape, but cannot
@@ -94,7 +111,7 @@ def refresh_words(model, sentence):
     active = (source._packed_sentence_ids == sentence) & (words > 0) & (references > 0)
     identities = owner.interpret.sentence_referents(torch.where(active, words, -1))
     changed = active & (identities != references)
-    if not bool(changed.any()):
+    if not torch.compiler.is_compiling() and not bool(changed.any()):
         return
     from Meaning import require_sentence_tensor
     store = owner._concept_allocator.layer(0)
@@ -277,13 +294,19 @@ def stage(model, state, present):
             max((event.when for timeline in pool.entries[key].timelines
                  for event in timeline.events), default=pool.entries[key].when),
             pool.entries[key].when), reverse=True)
-        choices = [(key, timeline) for key in keys for timeline in range(len(pool.entries[key].timelines))]
-        for column, (key, timeline) in enumerate(choices[:entries.prepend]):
+        choices = [(key, timeline) for key in keys for timeline in range(len(pool.entries[key].timelines))][:entries.prepend]
+        if not choices:
+            continue
+        batch_ids, batch_rows, batch_orders = [], [], []
+        batch_values, batch_wheres = [], []
+        gate = torch.arange(len(present), device=state[0].device) == b
+        for column, (key, timeline) in enumerate(choices):
             token = pool.entries[key]
             identity = token.symbol if token.symbol is not None else token.transient
             if identity is None:
                 raise RuntimeError('a prepended identity has neither a transient id nor a symbol')
             row = owner._concept_row_of(identity) if token.symbol is not None else None
+            row_id = -1 if row is None else row
             order = (token.order if token.order is not None else owner._row_order(row) if row is not None
                      else token.refinement['member_order'] if 'member_order' in token.refinement
                      else owner._concept_source_order(token.occurrences[0]))
@@ -293,40 +316,53 @@ def stage(model, state, present):
                 value[store.when_start:store.when_start+4] = stamp
                 if store.when_start >= WHERE_WIRES:
                     value[store.when_start-WHERE_WIRES:store.when_start] = where
-            for field, member in (('concept_ids',identity), ('object_ids',identity),
-                    ('concept_rows',-1 if row is None else row), ('object_rows',-1 if row is None else row),
-                    ('concept_orders',order), ('object_orders',order), ('symbol_where',where), ('symbol_when',stamp),
-                    ('lookup_rows',-1 if row is None else row), ('lookup_atoms',value),
-                    ('lookup_sentence_ids',model._open_sentence_slot)):
-                getattr(entries, field)[b,column] = member
-            entries.timelines[b,column] = timeline
-            gate = torch.arange(len(present),device=state[0].device) == b
-            refs = state[chunks.REFS].new_zeros(len(present),2,2)
-            refs[:,0,0] = chunks.SYMBOL if token.symbol is not None else chunks.IDENTITY_REF
-            refs[:,0,1] = identity
-            refs[:,1,0] = chunks.IDENTITY_REF if token.order is not None else chunks.OCCURRENCE
-            refs[:,1,1] = key[-1]
+            batch_ids.append(identity)
+            batch_rows.append(row_id)
+            batch_orders.append(order)
+            batch_values.append(value)
+            batch_wheres.append(where)
+            refs = state[chunks.REFS].new_zeros(len(present), 2, 2)
+            refs[:, 0, 0] = chunks.SYMBOL if token.symbol is not None else chunks.IDENTITY_REF
+            refs[:, 0, 1] = identity
+            refs[:, 1, 0] = chunks.IDENTITY_REF if token.order is not None else chunks.OCCURRENCE
+            refs[:, 1, 1] = key[-1]
             # Copying the working value from MTM is an arrival/read. Merely
             # enumerating the subsequent bind menu does not read this seat.
             match = ((state[chunks.IDENTITY][b] == identity) & (state[chunks.TIMELINE][b] == timeline)
                      & (state[chunks.STACK][b] < 0)
-                     & ((state[chunks.REFS][b,:,0,0] == chunks.SYMBOL)
-                        | (state[chunks.REFS][b,:,0,0] == chunks.IDENTITY_REF)))
+                     & ((state[chunks.REFS][b, :, 0, 0] == chunks.SYMBOL)
+                        | (state[chunks.REFS][b, :, 0, 0] == chunks.IDENTITY_REF)))
             if bool(match.any()):
                 index = torch.full((len(present),), int(match.long().argmax()), device=state[0].device)
                 result = list(state)
-                for field, member in ((chunks.BUFFER,value), (chunks.WHERE,where), (chunks.WHEN,stamp), (chunks.REFS,refs[b]),
+                for field, member in ((chunks.BUFFER, value), (chunks.WHERE, where), (chunks.WHEN, stamp), (chunks.REFS, refs[b]),
                         (chunks.ORDERS, state[chunks.ORDERS].new_tensor(order)),
-                        (chunks.ROWS, state[chunks.ROWS].new_tensor(-1 if row is None else row))):
-                    result[field] = chunks.write(result[field], index, member.expand(len(present),*member.shape), gate)
+                        (chunks.ROWS, state[chunks.ROWS].new_tensor(row_id))):
+                    result[field] = chunks.write(result[field], index, member.expand(len(present), *member.shape), gate)
                 state = tuple(result)
-                state = chunks.read(state,index,gate)
+                state = chunks.read(state, index, gate)
             else:
-                state, index = chunks.deposit(state, value.expand(len(present),-1), gate,
-                    order=order, row=-1 if row is None else row, refs=refs, identity=identity, timeline=timeline,
+                state, index = chunks.deposit(state, value.expand(len(present), -1), gate,
+                    order=order, row=row_id, refs=refs, identity=identity, timeline=timeline,
                     where=where, when=stamp)
             if int(index[b]) >= 0:
-                staged[b,index[b]] = True
+                staged[b, index[b]] = True
+        width_k = len(choices)
+        ids_t = entries.concept_ids.new_tensor(batch_ids)
+        rows_t = entries.concept_rows.new_tensor(batch_rows)
+        orders_t = entries.concept_orders.new_tensor(batch_orders)
+        entries.concept_ids[b, :width_k] = ids_t
+        entries.object_ids[b, :width_k] = ids_t
+        entries.concept_rows[b, :width_k] = rows_t
+        entries.object_rows[b, :width_k] = rows_t
+        entries.concept_orders[b, :width_k] = orders_t
+        entries.object_orders[b, :width_k] = orders_t
+        entries.lookup_rows[b, :width_k] = rows_t
+        entries.symbol_where[b, :width_k] = torch.stack(batch_wheres, 0)
+        entries.symbol_when[b, :width_k] = stamp
+        entries.lookup_atoms[b, :width_k] = torch.stack(batch_values, 0)
+        entries.lookup_sentence_ids[b, :width_k] = model._open_sentence_slot
+        entries.timelines[b, :width_k] = entries.timelines.new_tensor([tl for _, tl in choices])
     # The leading field arrives at one boundary. Its order in the array is
     # event order, not an artificial sequence of attention reads.
     indices = torch.arange(state[0].shape[1],device=state[0].device)[None].expand_as(staged)

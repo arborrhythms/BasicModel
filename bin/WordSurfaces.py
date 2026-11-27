@@ -308,6 +308,29 @@ def mixing_columns(units, seats, spans, active, witnessed):
     return torch.where(counts[:, :-1] == 1, last[:, :-1], -1)
 
 
+class WitnessedFormRows:
+    """Lazy row view over resolved lexical form labels, deferring .tolist()."""
+    def __init__(self, forms, labels, batch, width):
+        self.forms = forms
+        self.labels = labels
+        self.batch = int(batch)
+        self.width = int(width)
+        self._rows = None
+
+    def __len__(self):
+        return self.batch
+
+    def __getitem__(self, index):
+        if self._rows is None:
+            raw = self.forms.tolist()
+            self._rows = [
+                (tuple(self.labels.get(form) for form in raw[b]) + (None,) * max(0, self.width - len(raw[b])))
+                if b < len(raw) else (None,) * self.width
+                for b in range(self.batch)
+            ]
+        return self._rows[index]
+
+
 class WitnessedForms(Mapping):
     """The actual alias read at each word seat during one presentation."""
     def __init__(self, seats, forms, valid, capacity, labels):
@@ -319,9 +342,12 @@ class WitnessedForms(Mapping):
         self.labels = labels
         self._materialized = None
 
-    def read(self, rows):
+    def read(self, rows, *, batch=None, width=None, lazy=False):
         valid = (rows >= 0) & (rows < len(self.forms))
         forms = F.pad(self.forms, (0, 1), value=-1)[torch.where(valid, rows, len(self.forms))]
+        if lazy:
+            return WitnessedFormRows(forms, self.labels, rows.shape[0] if batch is None else batch,
+                                   rows.shape[1] if width is None else width)
         return [tuple(self.labels.get(form) for form in stream) for stream in forms.tolist()]
 
     def _mapping(self):

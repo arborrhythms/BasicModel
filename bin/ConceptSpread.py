@@ -72,7 +72,7 @@ def rule_order(owner, row):
 def definition_depth(store, size, topology):
     """Upper bound on concept → symbol → member hops, or None for a cycle."""
     cached = store.__dict__.get('_definition_depth')
-    if cached is not None and cached[0] is topology:
+    if cached is not None and cached[0] is topology[0]:
         return cached[1]
     parents, remaining = {}, {}
     for target, column in zip(store._rows, store._cols, strict=True):
@@ -96,7 +96,7 @@ def definition_depth(store, size, topology):
             height += 2
         ready = following
     result = None if remaining else height
-    store.__dict__['_definition_depth'] = topology, result
+    store.__dict__['_definition_depth'] = topology[0], result
     return result
 
 

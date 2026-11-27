@@ -2449,7 +2449,7 @@ class Codebook(Tensor):
         """
         if getattr(self, 'mereology', None) is not None:
             value = self.mereology.derive(idx, b=stream)
-            if not streams and stream == 0:
+            if not streams and stream == 0 and not torch.compiler.is_compiling():
                 with torch.no_grad():
                     address = idx if isinstance(idx, (int, slice)) else torch.as_tensor(idx, device=self.W.device, dtype=torch.long)
                     self.W[address] = value.detach()
@@ -15004,13 +15004,26 @@ class ConceptualSpace(Space):
         reached = reached & live[:, None]
         # Orders above the configured reading depth have no field seat.
         reached[sum(blocks):] = False
-        rows, caps = field_seats(reached, blocks, min(blocks[0], int(self.outputShape[0])))
+        rows, caps = field_seats(
+            reached, blocks, min(blocks[0], int(self.outputShape[0])),
+            live_caps=(tuple(max(min(blocks[0], int(self.outputShape[0])) if i == 0 else 0, width)
+                             for i, width in enumerate(blocks))
+                       if torch.compiler.is_compiling() else None))
         ids = names[torch.where(rows >= 0, rows, S)]
-        nomination_ids = names[:-1][reached.any(1) & (names[:-1] >= 0)].unique()
+        if torch.compiler.is_compiling():
+            pair_pool = getattr(getattr(self, 'mtm', None), '_candidate_pairs', None)
+            if pair_pool is not None and len(ids) <= pair_pool.binding_width:
+                from CandidateGrowth import binding_names
+                nomination_ids = binding_names(ids, max(1, len(ids)))
+            else:
+                nomination_ids = None
+        else:
+            nomination_ids = names[:-1][reached.any(1) & (names[:-1] >= 0)].unique()
         # Retain only the physical addresses used by the field's Sigma.
         # A trial that grows a different store gets its own binding on read.
         parent = visible_store(store)
-        if getattr(parent, '_thing_columns', False) and parent.nnz and not torch.is_inference(rows):
+        if (not torch.compiler.is_compiling() and getattr(parent, '_thing_columns', False)
+                and parent.nnz and not torch.is_inference(rows)):
             topology = parent.inventory_indices(parent.nOutput, device)
             plan = reached_entries(reached, topology)
             self.__dict__['_cs_rung_entries'] = rows, rows._version, topology, B, plan
@@ -15038,6 +15051,7 @@ class ConceptualSpace(Space):
         ``extents``, held on the device (:class:`BasicPercepts.PerceptBank`)."""
         self._refresh_basic_selectors()
         basic = self.basic_percepts
+        basic._refresh_pi()
         rows = sorted(basic.promoted_rows)
         model = self._model
         # Synthetic or externally supplied banks own their own geometry.
@@ -15062,10 +15076,7 @@ class ConceptualSpace(Space):
         meet(self, bank, promoted=rows)
         return basic.prepare(bank)
 
-    def cs_read_bank(self, bank, activity=None, *, publish=True, fixation=None):
-        """The order-zero concepts of a bank's readings, each event present
-        to the degree of ``activity`` ``[B, events, 2]`` (all of them where
-        it is not given)."""
+    def _cs_read_bank_impl(self, bank, activity=None, *, publish=True, fixation=None):
         percepts = (self.basic_percepts.read_bank(bank, activity) if fixation is None
                     else self.basic_percepts.read_bank(bank, activity, fixation=fixation))
         field = self.cs_read_percept_field(percepts, publish=publish)
@@ -15081,6 +15092,15 @@ class ConceptualSpace(Space):
                 wires = torch.where(fixation[:, None] >= 0, wires, 0.)[:, None]
             object.__setattr__(self, '_cs_field_wires', wires)
         return field
+
+    def cs_read_bank(self, bank, activity=None, *, publish=True, fixation=None):
+        """The order-zero concepts of a bank's readings, each event present
+        to the degree of ``activity`` ``[B, events, 2]`` (all of them where
+        it is not given)."""
+        compiled = getattr(self, '_compiled_cs_read_bank', None)
+        if compiled is not None and not torch.compiler.is_compiling():
+            return compiled(self, bank, activity, publish=publish, fixation=fixation)
+        return self._cs_read_bank_impl(bank, activity, publish=publish, fixation=fixation)
 
     def cs_read_percept_field(self, perception, *, publish=True):
         """The order-zero concepts of the current open-attention percept field.
@@ -15428,8 +15448,8 @@ class ConceptualSpace(Space):
             topology = store.inventory_indices(store.nOutput, field.device)
             staged = self.__dict__.get('_cs_rung_entries')
             plan = None
-            if (staged is not None and staged[0] is addresses and staged[1] == addresses._version
-                    and staged[2] is topology and staged[3] == field.shape[1]):
+            if (not torch.compiler.is_compiling() and staged is not None and staged[0] is addresses
+                    and staged[1] == addresses._version and staged[2] is topology and staged[3] == field.shape[1]):
                 plan = staged[4]
             return seated_rung(field, addresses.to(field.device), store.values,
                                topology, store.nOutput, start, end, plan)
@@ -18952,10 +18972,13 @@ def _analysis_property_signature(space, device="cpu"):
     pad_row = int(names['pad']) if 'pad' in names else None
     given_by = getattr(primitives, 'given_by', None)
     given_key = tuple(sorted(given_by.items())) if isinstance(given_by, dict) and given_by else ()
-    try:
-        rev = primitives.revision
-    except (AttributeError, RuntimeError):
+    if torch.compiler.is_compiling():
         rev = None
+    else:
+        try:
+            rev = primitives.revision
+        except (AttributeError, RuntimeError):
+            rev = None
     target_device = torch.device(device)
     dev_key = (target_device.type, 0 if target_device.type == 'mps' and target_device.index is None else target_device.index)
     if rev is not None:

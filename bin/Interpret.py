@@ -415,7 +415,7 @@ class InterpretLayer(GrammarLayer):
             # A free read can use only an unambiguous name of this object.
             mapped = [form_row(row, None) for row in rows.detach().reshape(-1).tolist()]
             mapped = rows.new_tensor([-1 if row is None else row for row in mapped]).reshape_as(rows)
-        if not bool((mapped >= 0).any()):
+        if not torch.compiler.is_compiling() and not bool((mapped >= 0).any()):
             return atoms
         options = (dict(streams=True) if rows.ndim > 1 and stream is None else
                    {} if stream is None else dict(stream=stream))

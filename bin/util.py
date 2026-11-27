@@ -793,7 +793,7 @@ def configure_metal_fusion(config, log):
              + " (Metal 31-buffer kernel-arg limit)")
 
 
-def compile(model, verbose=True, fullgraph=False):
+def compile(model, verbose=True, fullgraph=False, backend=None):
     """Try to torch.compile the model; return the (possibly compiled) model.
 
     ``fullgraph=True`` is the strict no-graph-break gate: any graph
@@ -1253,6 +1253,11 @@ def compile(model, verbose=True, fullgraph=False):
             "MPS: CUDA-graph compile option disabled "
             f"({TheCompileMode} -> {effective_mode}); "
             "real CUDA targets retain the requested mode")
+
+    if backend is not None:
+        return (torch.compile(model, backend=backend, fullgraph=fullgraph)
+                if callable(backend)
+                else torch.compile(model, mode=effective_mode, backend=backend, fullgraph=fullgraph))
 
     from CompileGuard import guarded_compile
     backends = _COMPILE_BACKENDS if TheCompileBackend == "auto" else (TheCompileBackend,)
