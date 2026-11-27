@@ -8708,6 +8708,8 @@ class BasicModel(BaseModel):
                         if not external_start:
                             self._start_spaces_for_forward()
                         self._staged_in_sub = self._lex_embed_stem(input_data)
+                        from PrependedSymbols import prepare_host_stage
+                        prepare_host_stage(self, len(input_data))
                         self._forward_host_prepared = True
                         try:
                             return self._execute_input_sentence(input_data, executor)
