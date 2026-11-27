@@ -148,6 +148,8 @@ def select_paths(paths, winners):
     if len(paths) == 1:
         return first
     if torch.is_tensor(first):
+        if all(p is first for p in paths[1:]):
+            return first
         if first.ndim == 0:
             raise ValueError('sentence state must retain its row dimension')
         return select_streams(paths, winners)
@@ -163,6 +165,8 @@ def select_paths(paths, winners):
 def select_rows(exploit, explore, wins):
     """Swap scratch tensor rows; no blended path and no model snapshot."""
     if torch.is_tensor(exploit):
+        if exploit is explore:
+            return exploit
         if exploit.ndim == 0:
             raise ValueError('sentence state must retain its row dimension')
         return torch.where(wins.reshape((-1,) + (1,) * (exploit.ndim - 1)),

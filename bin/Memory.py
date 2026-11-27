@@ -167,10 +167,14 @@ class STMChunks:
     @staticmethod
     def clear(state, mask):
         result = list(state)
+        masks = {}
         for field, value in enumerate(state):
             if field == STMChunks.DEPTH:
                 continue
-            selected = mask.reshape(*mask.shape, *([1]*(value.ndim-2)))
+            ndim = value.ndim
+            selected = masks.get(ndim)
+            if selected is None:
+                selected = masks[ndim] = mask.reshape(*mask.shape, *([1] * (ndim - 2)))
             result[field] = torch.where(selected, -1 if field in (STMChunks.ORDERS, STMChunks.GRAMMAR, STMChunks.ROWS, STMChunks.IDENTITY, STMChunks.STACK) else 0, value)
         result[STMChunks.DEPTH] = (result[STMChunks.STACK] >= 0).sum(-1)
         return tuple(result)

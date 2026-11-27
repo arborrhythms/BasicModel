@@ -353,12 +353,15 @@ class InterpretLayer(GrammarLayer):
                     pairs.append((row, -1 if word_row is None else word_row))
             signature = tuple(sorted(pairs))
             if cached is None or cached[0] != signature or cached[1].device != seats.device:
-                # Trailing sentinel absorbs absent queries; leading sentinel keeps shape >= 2.
-                table = seats.new_tensor(((-1, -1), *signature, (-1, -1)))
+                # Trailing large sentinels keep objects[:-1] sorted for searchsorted
+                # while keeping a fixed preallocated shape on device.
+                cap = max(32, len(signature) + 2, int(cs.nVectors) + 2)
+                pad_n = cap - 1 - len(signature)
+                sentinel = 1 << 60
+                rows_list = [(-1, -1), *signature, *([(sentinel, -1)] * pad_n)]
+                table = seats.new_tensor(rows_list)
                 objects = table[:, 0].contiguous()
                 words = table[:, 1].contiguous()
-                torch._dynamo.mark_dynamic(objects, 0)
-                torch._dynamo.mark_dynamic(words, 0)
                 cached = signature, objects, words
                 self.__dict__['_spelling_seats'] = cached
             _, objects, words = cached

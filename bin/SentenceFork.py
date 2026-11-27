@@ -56,15 +56,30 @@ class SentenceFork:
         # Algorithm R retains K distinct rounds. A later whole-path draw can
         # choose any remaining member uniformly without replaying a prefix.
         rank = (torch.rand_like(self.count, dtype=torch.float32) * self.count).long()
-        rank = torch.where(self.count <= len(self.reservoir), self.count - 1, rank)
-        places = torch.arange(len(self.reservoir), device=rank.device)
-        take = eligible[:, None] & (rank[:, None] == places)
+        if len(self.reservoir) == 1:
+            take = (eligible & ((self.count <= 1) | (rank == 0)))[:, None]
+        else:
+            rank = torch.where(self.count <= len(self.reservoir), self.count - 1, rank)
+            places = torch.arange(len(self.reservoir), device=rank.device)
+            take = eligible[:, None] & (rank[:, None] == places)
         changed = None
         if not torch.compiler.is_compiling():
             changed = take.any(0).tolist()
             if not any(changed):
                 return
-        state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
+        def _detach_only(value):
+            if torch.is_tensor(value):
+                return value if self.live else value.detach()
+            if isinstance(value, tuple):
+                return tuple(_detach_only(item) for item in value)
+            if isinstance(value, dict):
+                return {key: _detach_only(item) for key, item in value.items()}
+            return value
+        has_all_prior = all(item is not None for item in self.reservoir)
+        if has_all_prior:
+            state, latches = _detach_only(state), _detach_only(tuple(latches))
+        else:
+            state, latches = snapshot(state, live=self.live), snapshot(tuple(latches), live=self.live)
         prefix = None if self.inverse_candidates is None else self.inverse_candidates.snapshot()
         for i, prior in enumerate(self.reservoir):
             if changed is not None and not changed[i]:

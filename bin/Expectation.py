@@ -265,14 +265,15 @@ class ActivationPredictor(nn.Module):
             key_orders = torch.zeros(keys.shape[1], device=keys.device, dtype=torch.long)
         key_orders = key_orders.to(device=keys.device, dtype=torch.long)
         same = torch.arange(count, device=keys.device)[:, None] == key_orders[None]
+        same_f = same.to(keys)
         # Each order's share of each key's lanes, then one product with the
         # keys: a three-operand einsum may hold [B, orders, keys, lanes, D]
         # at once (4.2 GB for the production bank).
-        mix = (activation / norm[..., None])[:, None] * same.to(keys)[None, :, :, None]
+        mix = (activation / norm[..., None])[:, None] * same_f[None, :, :, None]
         field = torch.einsum('bonl,bnd->bold', mix, keys)
         field = torch.cat((field[..., :span.start], field[..., span] + torch.einsum(
             'bonl,bnk->bolk', mix, key_age - stamp), field[..., span.stop:]), -1)
-        mass = torch.einsum('bnl,on->bol', activation, same.to(keys))
+        mass = torch.einsum('bnl,on->bol', activation, same_f)
         field = field / mass.clamp_min(1.)[..., None]
         now = self._empty_now.to(context).expand(keys.shape[0], -1) if now is None else now.detach().to(context)
         if now.ndim == 2:
@@ -300,8 +301,20 @@ class ActivationPredictor(nn.Module):
     @staticmethod
     def context_by_order(values, occupied, orders, count):
         """Contiguous per-order contexts; membership evidence is not a point."""
-        return torch.stack([ActivationPredictor.context_from(values,
-            occupied & (orders == order)) for order in range(count)], 1)
+        values = values.detach()
+        flat = values.flatten(1, -2)
+        if flat.shape[1] == 0:
+            return values.new_zeros(values.shape[0], count, 2 * values.shape[-1])
+        occ = occupied.detach().reshape(values.shape[0], -1)
+        ord_flat = orders.detach().reshape(values.shape[0], -1)
+        order_ids = torch.arange(count, device=values.device)[None, :, None]
+        w = (occ[:, None, :] & (ord_flat[:, None, :] == order_ids)).to(values)
+        mean = torch.einsum('bnd,bon->bod', flat, w) / w.sum(-1, keepdim=True).clamp_min(1.)
+        positions = torch.arange(flat.shape[1], device=values.device)[None, None, :] + 1
+        last = torch.where(w > 0, positions, 0).amax(-1)
+        recent = flat.gather(1, (last - 1).clamp_min(0)[..., None].expand(-1, -1, flat.shape[-1]))
+        recent = torch.where(last[..., None] > 0, recent, 0.)
+        return torch.cat((mean, recent), -1)
 
     @staticmethod
     def context_from(values, occupied=None):

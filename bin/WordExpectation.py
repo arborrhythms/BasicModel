@@ -47,10 +47,11 @@ def prepare_context_host(owner, B, device, dtype):
         rows_v.append(v); rows_m.append(m); rows_p.append(p); rows_h.append(h)
         if v.shape[0] > max_m:
             max_m = int(v.shape[0])
-    values = torch.zeros(B, max_m, D, device=device, dtype=dtype)
-    occupied = torch.zeros(B, max_m, device=device, dtype=torch.bool)
-    pairs = torch.zeros(B, max_m, 2, device=device, dtype=dtype)
-    handles = torch.full((B, max_m), -1, device=device, dtype=torch.long)
+    cap = max(32, 1 << (max_m - 1).bit_length())
+    values = torch.zeros(B, cap, D, device=device, dtype=dtype)
+    occupied = torch.zeros(B, cap, device=device, dtype=torch.bool)
+    pairs = torch.zeros(B, cap, 2, device=device, dtype=dtype)
+    handles = torch.full((B, cap), -1, device=device, dtype=torch.long)
     for b in range(B):
         if rows_v[b] is not None:
             k = rows_v[b].shape[0]
@@ -58,8 +59,6 @@ def prepare_context_host(owner, B, device, dtype):
             occupied[b, :k] = rows_m[b]
             pairs[b, :k] = rows_p[b]
             handles[b, :k] = rows_h[b]
-    for t in (values, occupied, pairs, handles):
-        torch._dynamo.mark_dynamic(t, 1)
     owner._compiled_inter_context = (values, occupied, pairs, handles)
     return owner._compiled_inter_context
 

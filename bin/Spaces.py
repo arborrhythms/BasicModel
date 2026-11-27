@@ -15298,25 +15298,29 @@ class ConceptualSpace(Space):
             for source in parent.column_rows(column):
                 targets.append(row)
                 sources.append(source)
-        while len(standing) < 2:
-            standing.append(S)
-        while len(sources) < 2:
-            sources.append(S)
-            targets.append(S)
+        # Fixed preallocation, so the staged plan keeps one shape between
+        # sentences: a padded entry reads row S, which is never active.
+        cap_s = max(16, int(self.nVectors))
+        if len(standing) < cap_s:
+            standing.extend([S] * (cap_s - len(standing)))
+        cap_e = max(32, 1 << (max(len(sources), 1) - 1).bit_length())
+        if len(sources) < cap_e:
+            pad_e = cap_e - len(sources)
+            sources.extend([S] * pad_e)
+            targets.extend([S] * pad_e)
         delayed = None
         if behind is not None:
-            # The entries on concepts one step back, padded as the others
-            # are: a padded entry reads row S, which is never active.
-            while len(back_sources) < 2:
-                back_sources.append(S)
-                back_targets.append(S)
+            # The entries on concepts one step back, padded as the others are.
+            cap_b = max(32, 1 << (max(len(back_sources), 1) - 1).bit_length())
+            if len(back_sources) < cap_b:
+                pad_b = cap_b - len(back_sources)
+                back_sources.extend([S] * pad_b)
+                back_targets.extend([S] * pad_b)
             delayed = tuple(torch.tensor(held, dtype=torch.long, device=device)
                             for held in (back_sources, back_targets))
         standing_t = torch.tensor(standing, dtype=torch.long, device=device)
         sources_t = torch.tensor(sources, dtype=torch.long, device=device)
         targets_t = torch.tensor(targets, dtype=torch.long, device=device)
-        for t in (standing_t, sources_t, targets_t, *(delayed or ())):
-            torch._dynamo.mark_dynamic(t, 0)
         rounds = max(0, len(self._order_caps()) - 1)
         store.__dict__['_closure_plan'] = (standing_t, sources_t, targets_t, rounds, delayed)
 
