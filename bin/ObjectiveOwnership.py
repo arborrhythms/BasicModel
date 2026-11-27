@@ -51,18 +51,24 @@ def registry_costs(registry, *, reader_rows=None, expectation_rows=None, definit
             if rows is not None:
                 # A discarded trial supplies no Adam step, including no
                 # momentum-only update from a fabricated zero gradient.
-                if rows is reader_rows:
-                    if reader_count is None:
-                        reader_count = int(rows.count_nonzero())
-                    count = reader_count
+                if torch.compiler.is_compiling():
+                    if value.ndim:
+                        value = value * rows.to(value)
+                    else:
+                        value = torch.where(rows.any(), value, value * 0)
                 else:
-                    count = int(rows.count_nonzero())
-                if count == 0:
-                    continue
-                if value.ndim:
-                    value = value * rows.to(value)
-                elif count != rows.numel():
-                    raise ValueError('a trial reader cost must retain its batch rows')
+                    if rows is reader_rows:
+                        if reader_count is None:
+                            reader_count = int(rows.count_nonzero())
+                        count = reader_count
+                    else:
+                        count = int(rows.count_nonzero())
+                    if count == 0:
+                        continue
+                    if value.ndim:
+                        value = value * rows.to(value)
+                    elif count != rows.numel():
+                        raise ValueError('a trial reader cost must retain its batch rows')
             if value.ndim:
                 active = registry.row_mask
                 value = (value.mean() if active is None else

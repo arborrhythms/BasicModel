@@ -86,6 +86,9 @@ def credit_schedule(draws):
     """Which policies each exploration used, plus its host thought record per stream."""
     if not draws:
         return ()
+    if torch.compiler.is_compiling():
+        return [dict(reading=True, bind=True, interpret=True, attention=True, output=True,
+                     thoughts=[-1] * len(draw['thought_round'])) for draw in draws]
     flags = []
     for draw in draws:
         walk = draw['walk']

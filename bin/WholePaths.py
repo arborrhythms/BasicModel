@@ -233,7 +233,7 @@ def load_cost(model, observation, like):
 @trial_activity()
 def finish(model, state, sid, active, *, trust, base=None, draw=None):
     """Run only the suffix after this path's departure, ending before a write."""
-    if base is not None and not bool((draw['walk'] >= 0).any()):
+    if base is not None and not torch.compiler.is_compiling() and not bool((draw['walk'] >= 0).any()):
         from WalkTrials import _copy_containers
         registry = Error(row_mask=base.registry.row_mask)
         registry._terms = _copy_containers(base.registry._terms)
@@ -243,9 +243,10 @@ def finish(model, state, sid, active, *, trust, base=None, draw=None):
     from WalkTrials import ThoughtTrialState
     from SentenceCredit import WALKS, components
     from ThoughtClosing import close
-    reading = base is None or bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
+    compiling = torch.compiler.is_compiling()
+    reading = compiling or base is None or bool(((draw['walk'] >= 0) & (draw['walk'] < 3)).any())
     rethink_rows = active if base is None else active & (draw['walk'] >= 0) & (draw['walk'] <= WALKS.index('thought'))
-    rethink = bool(rethink_rows.any())
+    rethink = compiling or bool(rethink_rows.any())
     before = ThoughtTrialState(model)
     original_errors = getattr(model, '_sentence_close_errors', None)
     original_fields = dict(model._sentence_fields)
@@ -394,12 +395,13 @@ def objectives(paths, parts, active, draws, *, selected=None, active_winners=Non
     from SentenceCredit import costs_and_winner, reader_weights
     from ObjectiveOwnership import registry_costs
     from SentenceTraining import combine
+    compiling = torch.compiler.is_compiling()
     if selected is None:
         _, selected = costs_and_winner(parts, active)
-    if active_winners is None:
+    if active_winners is None and not compiling:
         active_winners = torch.where(active, selected, -1).tolist()
     weights = reader_weights(parts, active, draws, winner=selected)
-    reader_counts = weights.count_nonzero(dim=0).tolist()
+    reader_counts = None if compiling else weights.count_nonzero(dim=0).tolist()
     result = {}
     scale = 2. / len(paths)
     for index, path in enumerate(paths):
@@ -412,16 +414,17 @@ def objectives(paths, parts, active, draws, *, selected=None, active_winners=Non
         for name, term in tuple(registry._terms.items()):
             if term['category'] == 'reconstruction' and term['side'] == 'R':
                 del registry._terms[name]
-                if index in active_winners:
+                if compiling or index in active_winners:
                     final._terms[name] = dict(term, multiplier=term.get('multiplier', 1.) * kept)
             elif name.startswith('output.walk_residual.'):
-                if not reader_counts[index]:
+                if reader_counts is not None and not reader_counts[index]:
                     del registry._terms[name]
                 else:
                     registry._terms[name] = dict(term,
                         multiplier=term.get('multiplier', 1.) * weights[:, index])
         combine(result, registry_costs(final))
-        costs = registry_costs(registry, reader_rows=weights[:, index], reader_count=reader_counts[index])
+        costs = registry_costs(registry, reader_rows=weights[:, index],
+                               reader_count=None if reader_counts is None else reader_counts[index])
         # Every other ordinary path cost has the same exposure, including lessons,
         # attention and regularizers. Answer costs already carry reader rows;
         # answer-side departure credits occur once at their selected walk.
@@ -434,6 +437,9 @@ def objectives(paths, parts, active, draws, *, selected=None, active_winners=Non
 def think_kept(model, paths, selected, sid, active, *, active_winners=None):
     """Without an answer target, only the reconstruction-kept path thinks."""
     from ThoughtClosing import close
+    if torch.compiler.is_compiling() and all(
+            entry is None for path in paths for entry in path.observation['entries']):
+        return
     if active_winners is None:
         active_winners = torch.where(active, selected, -1).tolist()
     for index, path in enumerate(paths):
@@ -461,6 +467,25 @@ def keep_output(model, paths, selected, sid, *, active_winners=None):
     from Output import AnswerConstruction
     from SentenceCompose import select_padded
     previous = getattr(model, '_kept_path_output', None)
+    if torch.compiler.is_compiling():
+        if all(path.construction is None for path in paths) and previous is None:
+            model._kept_path_output = None
+            return
+        outputs = [path.construction for path in paths] + [previous]
+        used = range(len(outputs) if previous is not None else len(paths))
+        owners = selected
+        if previous is not None and sid is not None:
+            mask = model.inputSpace._packed_sentence_slot_mask[:, int(sid)].to(device=owners.device, dtype=torch.bool)
+            owners = torch.where(mask, owners, len(paths))
+        def stack(name):
+            return select_padded([getattr(outputs[i], name) for i in used], owners)
+        base_out = next(out for out in outputs if out is not None)
+        result = AnswerConstruction(actual=stack('actual'), derivation=None,
+            concepts=stack('concepts'), percepts=stack('percepts'), surface=stack('surface'),
+            byte_amounts=stack('byte_amounts') if base_out.byte_amounts is not None else None,
+            trace=base_out.trace, texts=base_out.texts)
+        model._kept_path_output = detached(result)
+        return
     if active_winners is None:
         indices = selected.tolist() if torch.is_tensor(selected) else list(selected)
         if previous is not None and sid is not None:

@@ -248,9 +248,10 @@ class WordForecast:
         template = next((path.expected for path in paths if path.expected is not None), None)
         if template is not None:
             retained.expected = ExpectedWords(*(choose([
-                getattr(path.expected, item.name) if path.expected is not None
-                else torch.zeros_like(getattr(template, item.name)) for path in paths])
-                for item in fields(ExpectedWords)))
+                getattr(path.expected, name) if path.expected is not None
+                else torch.zeros_like(getattr(template, name)) for path in paths])
+                for name in ('probabilities', 'prediction', 'content', 'gain', 'excess',
+                             'omission', 'loss', 'top1', 'reciprocal_rank', 'activation')))
         retained.publish()
 
     def arrive(self, index, rows, lanes):

@@ -19,7 +19,7 @@ def detached(value):
     if isinstance(value, (tuple, list)):
         return type(value)(detached(item) for item in value)
     if is_dataclass(value) and not isinstance(value, type):
-        return replace(value, **{f.name: detached(getattr(value, f.name)) for f in fields(value) if f.init})
+        return replace(value, **{f.name: detached(getattr(value, f.name)) for f in value.__dataclass_fields__.values() if f.init})
     return value
 
 

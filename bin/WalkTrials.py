@@ -174,7 +174,7 @@ class ThoughtTrialState:
             type(self).keep((current, departing), selected)
             return
         if not effects_only:
-            self.model.set_present(int(self.clock))
+            self.model.set_present(self.clock if torch.compiler.is_compiling() else int(self.clock))
             if self.store_names is not None:
                 store, names = self.store_names
                 store.names_issued.copy_(names)
@@ -207,10 +207,16 @@ class ThoughtTrialState:
     @classmethod
     def keep(cls, states, winners, *, indices=None):
         """Restore the selected stream's effects without executing its episode."""
-        indices = winners.tolist() if indices is None else indices
-        if len(set(indices)) == 1:
-            states[indices[0]].restore()
-            return
+        compiling = torch.compiler.is_compiling()
+        if compiling:
+            if len(states) == 1:
+                states[0].restore()
+                return
+        else:
+            indices = winners.tolist() if indices is None else indices
+            if len(set(indices)) == 1:
+                states[indices[0]].restore()
+                return
         from copy import copy
         chosen = copy(states[0])
         batch = len(winners)
@@ -227,8 +233,12 @@ class ThoughtTrialState:
             if name == '_thought_next_id':
                 # Histories are selected per stream; their shared allocator
                 # must remain beyond every selected history's frontier.
+                if indices is None:
+                    return max(values)
                 return max(values[index] for index in set(indices))
             if name == '_cs_field_concept_ids' and torch.is_tensor(first):
+                if compiling and all(value is first for value in values):
+                    return first
                 width = max(len(value) for value in values)
                 missing = torch.iinfo(first.dtype).min
                 banks = [value[None].expand(batch, -1) if value.ndim == 1 else value.T for value in values]
@@ -278,11 +288,17 @@ class ThoughtTrialState:
                 return gather(values)
             if (name in ('_what_slots', '_thought_contents', '_what_closure_pressure') and isinstance(first, (list, tuple))
                     and len(first) >= batch):
+                if indices is None:
+                    return first
                 return type(first)(values[indices[row]][row] if row < batch else value
                                    for row, value in enumerate(first))
             if isinstance(first, (list, tuple)) and len(first) == batch:
+                if indices is None:
+                    return first
                 return type(first)(values[index][row] for row, index in enumerate(indices))
             if isinstance(first, dict):
+                if indices is None:
+                    return first
                 keys = set().union(*(value.keys() for value in values))
                 if all(type(key) is int and 0 <= key < batch for key in keys):
                     return {key: values[indices[key]][key] for key in keys if key in values[indices[key]]}
@@ -291,8 +307,11 @@ class ThoughtTrialState:
         if chosen.store_names is not None:
             chosen.store_names = (chosen.store_names[0],
                 torch.stack([state.store_names[1] for state in states])[winners.to(chosen.store_names[1].device)].amax(0))
-        from MemoryActivity import select
-        chosen.activity = select([state.activity for state in states], indices)
+        if indices is None:
+            chosen.activity = states[0].activity
+        else:
+            from MemoryActivity import select
+            chosen.activity = select([state.activity for state in states], indices)
         chosen.saved = []
         for position, (owner, values, names) in enumerate(states[0].saved):
             alternatives = [state.saved[position][1] for state in states]
@@ -304,9 +323,10 @@ class ThoughtTrialState:
                 for name in values if not (field_carrier and name.startswith('_concept_'))
                 and all(name in item for item in alternatives)}, names))
         if chosen.thought_strata is not None:
-            chosen.thought_strata = (chosen.thought_strata[0],
-                tuple(states[indices[row] if row < batch else 0].thought_strata[1][row]
-                      for row in range(len(chosen.thought_strata[1]))))
+            if indices is not None:
+                chosen.thought_strata = (chosen.thought_strata[0],
+                    tuple(states[indices[row] if row < batch else 0].thought_strata[1][row]
+                          for row in range(len(chosen.thought_strata[1]))))
         chosen.restore()
         from Understanding import ConceptualField
         from SentenceField import select_fields, publish

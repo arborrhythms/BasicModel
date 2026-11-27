@@ -98,7 +98,7 @@ def complete(model, observations, selected, present, registry, sid, looks=()):
     """Teach the read of each kept constituent at the sentence's close. A
     kept path that took a read has no composition of those words to teach
     by, so its stream is not taught."""
-    if bias(model) <= 0.:
+    if torch.compiler.is_compiling() or bias(model) <= 0.:
         return
     owner = model._concept_owner()
     if getattr(owner, 'idea_stack', None) is None:

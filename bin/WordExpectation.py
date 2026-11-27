@@ -143,5 +143,6 @@ def word_distribution(owner, words, bank, valid, targets, *, gain=1., observed_p
     readings = [reader.step(words[:, i], targets[:, i], active=active[:, i],
         arrived=None if observed_prefix is None else observed_prefix[:, i],
         lanes=None if lanes is None else lanes[:, i], forecast=i < forecast_count) for i in range(W)]
-    return ExpectedWords(*(torch.cat([getattr(reading, field.name) for reading in readings], 1)
-                           for field in fields(ExpectedWords)))
+    return ExpectedWords(*(torch.cat([getattr(reading, name) for reading in readings], 1)
+                           for name in ('probabilities', 'prediction', 'content', 'gain', 'excess',
+                                        'omission', 'loss', 'top1', 'reciprocal_rank', 'activation')))

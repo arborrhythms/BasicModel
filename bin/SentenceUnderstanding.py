@@ -185,6 +185,11 @@ class SentenceUnderstanding:
     def idea_depth(self):
         return self.end_depth if self.meaning_depth is None else self.meaning_depth
 
+    _FIELD_NAMES = ('root', 'end_slots', 'end_depth', 'roots', 'depths', 'word_values', 'word_rows',
+                    'word_valid', 'primed', 'sentence', 'constituents', 'constituent_valid',
+                    'constituent_families', 'percept_expected', 'open_field', 'extension',
+                    'understanding_field', 'meaning_root', 'meaning_slots', 'meaning_depth')
+
     def reader_features(self, *, attention=None, live=False):
         """Fixed linear summaries with the selected training boundary.
 
@@ -206,9 +211,9 @@ class SentenceUnderstanding:
 
     def detached(self):
         from SentenceBoundary import detached
-        return type(self)(**{f.name: detached(getattr(self, f.name))
-                            if f.name in ('open_field','extension','understanding_field') or torch.is_tensor(getattr(self, f.name))
-                            else getattr(self, f.name) for f in fields(self)})
+        return type(self)(**{name: detached(getattr(self, name))
+                            if name in ('open_field', 'extension', 'understanding_field') or torch.is_tensor(getattr(self, name))
+                            else getattr(self, name) for name in self._FIELD_NAMES})
 
     @classmethod
     def select_records(cls, paths, winners, indices, *, live):
@@ -220,34 +225,41 @@ class SentenceUnderstanding:
             return first
         if any(path.open_field is not first.open_field or path.primed is not first.primed for path in paths):
             raise RuntimeError('sentence trials must share their opening field and priming')
-        used = sorted(set(indices))
-        if len(used) <= 1:
-            result = paths[used[0]] if used else first
-            return result if live else result.detached()
-        # Exclude unused paths from the backward graph, as with a uniform
-        # winner. The close has already published the tree owners for all rows.
-        choices = [paths[i] for i in used]
-        ranks = {original: new for new, original in enumerate(used)}
-        owners = [ranks[i] for i in indices]
-        selection = winners.new_tensor([ranks.get(i, 0) for i in range(len(paths))])[winners]
+        if torch.compiler.is_compiling() or indices is None:
+            choices = paths
+            selection = winners
+            owners = None
+        else:
+            used = sorted(set(indices))
+            if len(used) <= 1:
+                result = paths[used[0]] if used else first
+                return result if live else result.detached()
+            # Exclude unused paths from the backward graph, as with a uniform
+            # winner. The close has already published the tree owners for all rows.
+            choices = [paths[i] for i in used]
+            ranks = {original: new for new, original in enumerate(used)}
+            owners = [ranks[i] for i in indices]
+            selection = winners.new_tensor([ranks.get(i, 0) for i in range(len(paths))])[winners]
         values = {}
         with torch.set_grad_enabled(live and torch.is_grad_enabled()):
-            for field in fields(cls):
-                columns = [getattr(path, field.name) for path in choices]
+            for name in cls._FIELD_NAMES:
+                columns = [getattr(path, name) for path in choices]
                 value = columns[0]
-                if field.name == 'extension' and value:
-                    value = tuple(columns[i][row] for row, i in enumerate(owners))
-                elif field.name == 'understanding_field' and value is not None:
+                if name == 'extension' and value:
+                    value = None if owners is None else tuple(columns[i][row] for row, i in enumerate(owners))
+                elif name == 'understanding_field' and value is not None:
                     value = select_fields(columns, selection, indices=owners)
                 elif torch.is_tensor(value) and value.ndim:
                     value = select_streams(columns, selection)
-                values[field.name] = value
+                values[name] = value
         return cls(**values)
 
     @classmethod
     def select(cls, greedy, explore, wins, *, live=False, replay=None, indices=None):
         """Keep a complete record. A live mixed record comes from one replay."""
         winners = wins.long()
+        if torch.compiler.is_compiling():
+            return cls.select_records((greedy, explore), winners, None, live=live)
         indices = winners.tolist() if indices is None else indices
         if replay is None or not live or len(set(indices)) <= 1:
             return cls.select_records((greedy, explore), winners, indices, live=live)
@@ -256,10 +268,10 @@ class SentenceUnderstanding:
         if selected.primed is not expected.primed:
             raise RuntimeError('kept sentence replay changed its priming snapshot')
         with torch.no_grad():
-            for field in fields(cls):
-                value, target = getattr(selected, field.name), getattr(expected, field.name)
+            for name in cls._FIELD_NAMES:
+                value, target = getattr(selected, name), getattr(expected, name)
                 if torch.is_tensor(target):
-                    torch._assert_async((value == target).all(), 'kept sentence replay changed ' + field.name)
+                    torch._assert_async((value == target).all(), 'kept sentence replay changed ' + name)
         return selected
 
 

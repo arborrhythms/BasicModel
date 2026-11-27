@@ -10,6 +10,8 @@ def kept_close(method):
     """Scope promotion to active streams and defer the kept word views."""
     @wraps(method)
     def boundary(model, state, sid, active, *args, **kwargs):
+        if torch.compiler.is_compiling():
+            return method(model, state, sid, active, *args, **kwargs)
         owner = model._concept_owner()
         streams = getattr(owner, '_mtm_active_streams', None)
         owner._mtm_active_streams = set(active.nonzero().flatten().tolist())

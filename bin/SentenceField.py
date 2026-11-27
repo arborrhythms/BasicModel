@@ -277,15 +277,34 @@ def select_fields(fields, winners, *, indices=None):
     from SentenceCompose import select_streams
     if not torch.is_tensor(winners):
         winners = torch.as_tensor(winners, device=fields[0].evidence.device, dtype=torch.long)
+    compiling = torch.compiler.is_compiling()
     # These two host schema choices preserve the compact public field shape.
     # All numerical retention below is independent of the number of streams.
-    if indices is None:
+    if indices is None and not compiling:
         indices = winners.tolist()
-    width = max(fields[index].evidence.shape[2] for index in indices)
-    placed = all(fields[index].wires is not None for index in indices)
+    checked = range(len(fields)) if compiling or indices is None else indices
+    width = max(fields[index].evidence.shape[2] for index in checked)
+    placed = all(fields[index].wires is not None for index in checked)
     wire_width = next(field.wires.shape[-1] for field in fields if field.wires is not None) if placed else 0
     batch, count = len(winners), max(len(field.concept_ids) for field in fields)
     sentinel = torch.iinfo(torch.long).min
+    if compiling and fields[0].concept_ids.ndim == 1 and all(
+            f.concept_ids is fields[0].concept_ids or (f.concept_ids.shape[0] == 0 and fields[0].concept_ids.shape[0] == 0)
+            for f in fields):
+        values, where, when, wires = [], [], [], []
+        for field in fields:
+            value = field.evidence.permute(1, 0, 2, 3)[:, :, :width]
+            values.append(F.pad(value, (0, 0, 0, width - value.shape[2])))
+            for source, target in ((field.where, where), (field.when, when)):
+                target.append(F.pad(source[:, :width], (0, 0, 0, max(0, width - source.shape[1]))))
+            if placed:
+                source = field.wires
+                wires.append(field.where.new_zeros(batch, width, wire_width) if source is None else
+                    F.pad(source[:, :width], (0, 0, 0, max(0, width - source.shape[1]))))
+        evidence = select_streams(values, winners).transpose(0, 1)
+        return ConceptualField(fields[0].concept_ids, evidence, select_streams(where, winners),
+                               select_streams(when, winners), None,
+                               select_streams(wires, winners) if placed else None)
     names, values, where, when, wires = [], [], [], [], []
     for field in fields:
         ids = field.concept_ids
@@ -525,25 +544,26 @@ def completed(model):
         torch.stack([v.truncated for v in values]).any(0), torch.stack([v.sentence_costs for v in values]).sum(0), percepts)
 
 
+_RECONSTRUCTION_FIELDS = ('ideas', 'event', 'idea_cost', 'byte_cost', 'truncated', 'sentence_costs', 'percepts')
+
+
 def select_reconstructions(readings, winners):
     """Gather all retained reconstructions, padding their public byte extents."""
-    from dataclasses import fields
     from SentenceCompose import select_padded
     values = {}
-    for item in fields(readings[0]):
-        columns = [getattr(reading, item.name) for reading in readings]
+    for name in _RECONSTRUCTION_FIELDS:
+        columns = [getattr(reading, name) for reading in readings]
         if all(column is None for column in columns):
-            values[item.name] = None
+            values[name] = None
             continue
         if any(column is None for column in columns):
             raise ValueError('sentence reconstructions must share their tensor fields')
-        values[item.name] = select_padded(columns, winners)
+        values[name] = select_padded(columns, winners)
     return InputReconstruction(**values)
 
 
 def selected(first, second, wins):
     """Keep each stream's input result from its selected sentence trial."""
-    from dataclasses import fields
     def choose(a, b):
         if a is None and b is None:
             return None
@@ -553,5 +573,5 @@ def selected(first, second, wins):
             pad = lambda t: F.pad(t, [n for d in reversed(range(t.ndim)) for n in (0, shape[d] - t.shape[d])])
             a, b = pad(a), pad(b)
         return torch.where(wins.reshape((-1,) + (1,) * (a.ndim - 1)), b, a)
-    return InputReconstruction(**{item.name: choose(getattr(first, item.name), getattr(second, item.name))
-                                 for item in fields(InputReconstruction)})
+    return InputReconstruction(**{name: choose(getattr(first, name), getattr(second, name))
+                                 for name in _RECONSTRUCTION_FIELDS})

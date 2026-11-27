@@ -8721,6 +8721,15 @@ class BasicModel(BaseModel):
                         self._forward_host_prepared = True
                         try:
                             out = self._execute_input_sentence(input_data, executor)
+                            deferred_losses = self.__dict__.pop('_deferred_sentence_losses', ())
+                            for sentence_loss in deferred_losses:
+                                self._sentence_train_step(sentence_loss)
+                                self._single_sentence_steps += 1
+                            deferred_native = self.__dict__.pop('_deferred_native_commits', ())
+                            if deferred_native:
+                                from ModelAttention import NativeReading
+                                for native_paths, sel in deferred_native:
+                                    NativeReading.commit(native_paths, sel)
                             if owner is not None:
                                 deferred_looks = owner.__dict__.pop('_deferred_growth_looks', ())
                                 if deferred_looks:
@@ -8732,11 +8741,19 @@ class BasicModel(BaseModel):
                                 from CandidateGrowth import GrowthTrial
                                 for growth_trials, sel in deferred_commits:
                                     GrowthTrial.commit(growth_trials, sel)
+                            deferred_meters = self.__dict__.pop('_deferred_meter_requires', ())
+                            for meters, looks_t in deferred_meters:
+                                for meter, cost in zip(meters, looks_t.tolist()):
+                                    if cost:
+                                        meter.require('look', cost)
                             return out
                         finally:
+                            self.__dict__.pop('_deferred_sentence_losses', None)
+                            self.__dict__.pop('_deferred_native_commits', None)
                             if owner is not None:
                                 owner.__dict__.pop('_deferred_growth_looks', None)
                             self.__dict__.pop('_deferred_growth_commits', None)
+                            self.__dict__.pop('_deferred_meter_requires', None)
                             self._compiled_ref_banks = None
                             self._compiled_ref_types_host = None
                             self._forward_host_prepared = False
@@ -14147,10 +14164,16 @@ class BasicModel(BaseModel):
 
     def _advance_when_time(self):
         """Advance the one clock for a sentence or newly deposited thought."""
+        if torch.compiler.is_compiling():
+            return self.set_present(self.when_time + 1)
         return self.set_present(self.present() + 1)
 
     def set_present(self, tick):
         """Set the one clock and make the code of the present beside it."""
+        if torch.compiler.is_compiling() and torch.is_tensor(tick):
+            self.when_time.copy_(tick.to(self.when_time))
+            self._encode_present()
+            return self.when_time
         from RowTime import HORIZON
         tick = int(tick)
         if not 0 <= tick <= HORIZON:
@@ -20333,6 +20356,37 @@ class BasicModel(BaseModel):
                               kept_rows=None):
         current_stm, lang, _feedback = state
         B, _K, D = current_stm[0].shape
+        if torch.compiler.is_compiling():
+            depths = lang[11][:, sid]
+            mask = active & (depths > 0)
+            owners, word_owners, _ = self._compose_round_owners(lang[15])
+            applied = (lang[28] >= 0) & (owners == sid)
+            arrived = (lang[29][..., 0] >= 0) & (word_owners == sid)
+            parse_costs = dict(application_count=applied.sum(-1) * mask,
+                memory_load=(torch.where(applied, lang[30], 0).sum(-1) +
+                             torch.where(arrived, lang[29][..., 2], 0).sum(-1)) * mask)
+            result = dict(payloads=None, depths=None, mask=mask, entries=(None,) * B,
+                        **parse_costs,
+                        partial=(None,) * B, comprehensions=None,
+                        meanings=(None,) * B, observed=None, observed_depths=None,
+                        layout=None, roles=None, clauses=(None,) * B, symbol_ids=(None,) * B,
+                        reference_plans=())
+            if record is not None:
+                semantic_depth = torch.where(active, depths.clamp_min(0), -1)
+                semantic_slots = record.end_slots * 0
+                semantic_root = semantic_slots[torch.arange(B, device=semantic_slots.device),
+                    (semantic_depth - 1).clamp_min(0)]
+                understanding_field = record.understanding_field
+                if understanding_field is None and record.open_field is not None:
+                    from Understanding import ConceptualField
+                    understanding_field = ConceptualField(
+                        record.open_field.concept_ids[:0], record.open_field.evidence[:0],
+                        record.open_field.where, record.open_field.when, None)
+                result['record'] = replace(record, extension=None,
+                    understanding_field=understanding_field,
+                    meaning_root=semantic_root, meaning_slots=semantic_slots,
+                    meaning_depth=semantic_depth)
+            return result
         kept_entries = (None if kept_rows is None else
                         tuple(source['entries'][b] for b, source in enumerate(kept_rows)))
         _current, programs = self._capture_reading_programs(sentence_slot=sid, admit=admit,
@@ -20592,7 +20646,9 @@ class BasicModel(BaseModel):
             # Keep its value as an audit, as under the restricted backward.
             errors.add('expectation.equal', equal_cost.detach(), weight=self.equality_loss_weight,
                        category='expectation')
-        if getattr(self, '_reading_lesson_enabled', False) and self.grammar_lesson_weight > 0:
+        if (not torch.compiler.is_compiling()
+                and getattr(self, '_reading_lesson_enabled', False)
+                and self.grammar_lesson_weight > 0):
             source_rows = self._reading_lesson_sources
             active_rows = active.tolist()
             for b, program in enumerate(observation['entries']):
@@ -20822,6 +20878,15 @@ class BasicModel(BaseModel):
     def _commit_sentence(self, state, sid, active, observations, wins):
         """Publish only the chosen rows before the next sentence's perception."""
         self._publish_sentence_scratch(state)
+        if torch.compiler.is_compiling():
+            from SentenceField import select_fields, publish
+            from Interpret import SilenceLayer
+            kept_field = select_fields([item['record'].understanding_field for item in observations], wins)
+            publish(self, kept_field)
+            self._last_sentence_understanding = replace(self._last_sentence_understanding,
+                                                       understanding_field=kept_field)
+            self._sentence_silence = SilenceLayer.silent(state[1][11][:, sid], active)
+            return state
         rows = wins.detach().cpu().tolist()
         chosen = [observations[index] for index in rows]
         view = self._sentence_observation(state, sid, active, admit=True, kept_rows=chosen)
@@ -21128,6 +21193,10 @@ class BasicModel(BaseModel):
             mtm._candidate_relations.read_symbols(owner)
         owner.__dict__['_deferred_growth_looks'] = []
         self.__dict__['_deferred_growth_commits'] = []
+        self.__dict__['_deferred_meter_requires'] = []
+        sentence_meters = getattr(self, '_attention_meters', ())
+        self.__dict__['_compiled_attention_spent'] = torch.tensor(
+            [m.spent for m in sentence_meters], device=input_data.device, dtype=torch.long)
         sources = self._word_symbol_concept_ids()
         words = word_view(self.inputSpace, 'concept_rows')
         like = torch.empty(
@@ -21514,10 +21583,15 @@ class BasicModel(BaseModel):
             greedy_attention = getattr(self, '_attention_greedy', None)
             attention_base = getattr(self, '_attention_words', None)
             sentence_meters = getattr(self, '_attention_meters', ())
-            attention_spent = words.new_tensor([m.spent for m in sentence_meters],dtype=torch.long)
+            if torch.compiler.is_compiling() and self.__dict__.get('_compiled_attention_spent') is not None:
+                attention_spent = self._compiled_attention_spent
+            else:
+                attention_spent = words.new_tensor([m.spent for m in sentence_meters],dtype=torch.long)
             greedy_walk = (self._attention_open(sentence=sid,spent_override=attention_spent)
                            if getattr(self, '_attention_open', None) is not None else None)
             def meters_for(reading):
+                if torch.compiler.is_compiling():
+                    return torch.where(present, reading.looks.detach(), 0)
                 from copy import copy
                 meters = tuple(copy(meter) for meter in sentence_meters)
                 costs = torch.where(present, reading.looks, 0).tolist()
@@ -21839,7 +21913,7 @@ class BasicModel(BaseModel):
                 return path
             def score(path, alternative):
                 self._sentence_field = field_trials[-1]
-                if self._sentence_field is None and look_trials[-1] is not None:
+                if not torch.compiler.is_compiling() and self._sentence_field is None and look_trials[-1] is not None:
                     self._sentence_read_order = look_trials[-1].source_orders()
                 paths.append(path[1][15].detach().clone())
                 if not torch.compiler.is_compiling() and alternative and fork is not None:
@@ -21848,23 +21922,35 @@ class BasicModel(BaseModel):
                 if field_trials[-1] is not None:
                     self.inputSpace._ar_grammar_leaf_mask = field_trials[-1].grammar_leaves(source_leaf_mask)
                 meters = sentence_meters if greedy_attention is not None else None
-                if meters is not None:
-                    trial_meters = self._attention_meters
-                    # A thought/output-only departure reuses composition;
-                    # open its own charged meter without rerunning the walk.
-                    if trial_meters is meters:
-                        trial_meters = meters_for(self._attention_words)
-                    self._attention_meters = trial_meters
-                try:
+                if torch.compiler.is_compiling():
+                    if greedy_attention is not None:
+                        trial_looks = self._attention_meters
+                        if not torch.is_tensor(trial_looks):
+                            trial_looks = meters_for(self._attention_words)
+                        attention_work_trials.append(trial_looks)
                     result = finish_path(self, path, sid, present,
                         base=complete_paths[0] if alternative else None,
                         draw=self._sentence_departure if alternative else None, trust=trust)
+                    if greedy_attention is not None:
+                        self._attention_meters = sentence_meters
+                else:
                     if meters is not None:
-                        attention_work_trials.append(tuple({kind: count - original.counts.get(kind, 0)
-                            for kind, count in trial.counts.items()} for original, trial in zip(meters, trial_meters)))
-                finally:
-                    if meters is not None:
-                        self._attention_meters = meters
+                        trial_meters = self._attention_meters
+                        # A thought/output-only departure reuses composition;
+                        # open its own charged meter without rerunning the walk.
+                        if trial_meters is meters:
+                            trial_meters = meters_for(self._attention_words)
+                        self._attention_meters = trial_meters
+                    try:
+                        result = finish_path(self, path, sid, present,
+                            base=complete_paths[0] if alternative else None,
+                            draw=self._sentence_departure if alternative else None, trust=trust)
+                        if meters is not None:
+                            attention_work_trials.append(tuple({kind: count - original.counts.get(kind, 0)
+                                for kind, count in trial.counts.items()} for original, trial in zip(meters, trial_meters)))
+                    finally:
+                        if meters is not None:
+                            self._attention_meters = meters
                 complete_paths.append(result)
                 observations.append(result.observation)
                 cost_parts.append(result.parts)
@@ -21940,8 +22026,11 @@ class BasicModel(BaseModel):
                 # The host readers of retained trees share one publication.
                 # An absent page has no objective or thought and carries the
                 # exploit state through the existing stream interfaces.
-                active_winners = torch.where(present, selected, -1).tolist()
-                winner_indices = [max(0, index) for index in active_winners]
+                if torch.compiler.is_compiling():
+                    active_winners = winner_indices = None
+                else:
+                    active_winners = torch.where(present, selected, -1).tolist()
+                    winner_indices = [max(0, index) for index in active_winners]
                 WordForecast.keep(forecast_paths, selected)
                 if speculative:
                     NativeReading.select(self, native_paths, selected)
@@ -22024,11 +22113,20 @@ class BasicModel(BaseModel):
                     admitted = choose_tensors([field.full_admission() for field in field_trials]).detach() > 0
                     kept = kept._replace(accepted=kept.accepted & (~here | admitted))
                 handoff(self, kept)
-                for b, meter in enumerate(self._attention_meters):
-                    winner = active_winners[b]
-                    if winner >= 0:
-                        for kind, units in attention_work_trials[winner][b].items():
-                            meter.require(kind, units)
+                if torch.compiler.is_compiling():
+                    if attention_work_trials:
+                        won_looks = torch.stack(attention_work_trials, dim=1)[
+                            torch.arange(B, device=selected.device), selected]
+                        self.__dict__.setdefault('_deferred_meter_requires', []).append(
+                            (self._attention_meters, won_looks.detach()))
+                        if self.__dict__.get('_compiled_attention_spent') is not None:
+                            self._compiled_attention_spent = self._compiled_attention_spent + won_looks.detach()
+                else:
+                    for b, meter in enumerate(self._attention_meters):
+                        winner = active_winners[b]
+                        if winner >= 0:
+                            for kind, units in attention_work_trials[winner][b].items():
+                                meter.require(kind, units)
             if field_trials[0] is not None:
                 iterations = choose_tensors([field.iterations for field in field_trials])
                 from functools import partial
@@ -22038,7 +22136,8 @@ class BasicModel(BaseModel):
                     wins.detach(), selected.detach(), iterations.detach())
             if look_trials[0] is not None:
                 self._sentence_look_fields = dict(getattr(self,'_sentence_look_fields',{}))
-                self._sentence_look_fields[sid] = tuple(look_trials[index].fields for index in winner_indices)
+                self._sentence_look_fields[sid] = (tuple(look.fields for look in look_trials)
+                    if winner_indices is None else tuple(look_trials[index].fields for index in winner_indices))
             audit.update(sentence=sid, departure=draws[0] if draws else None, departures=tuple(draws),
                 actions=tuple(paths), readers=tuple(dict(mse=p.parts[:, 2],
                     predictions=p.observation.get('answer_predictions')) for p in complete_paths),
@@ -22085,8 +22184,9 @@ class BasicModel(BaseModel):
             if field_trials[0] is not None:
                 self.inputSpace._ar_grammar_leaf_mask = choose_tensors([
                     field.grammar_leaves(source_leaf_mask) for field in field_trials])
-                self._sentence_read_order = tuple(field_trials[index].source_order(b) for b, index in enumerate(winner_indices))
-            elif look_trials[0] is not None:
+                if winner_indices is not None:
+                    self._sentence_read_order = tuple(field_trials[index].source_order(b) for b, index in enumerate(winner_indices))
+            elif look_trials[0] is not None and not torch.compiler.is_compiling():
                 orders = [looks.source_orders() for looks in look_trials]
                 self._sentence_read_order = tuple(orders[path][b] for b, path in enumerate(winner_indices))
             # The sentence walk owns admission. Close may use trial scratch,
@@ -22121,7 +22221,7 @@ class BasicModel(BaseModel):
                         for index, trial in enumerate(look_trials):
                             if trial is look:
                                 mask |= selected == index
-                        if bool(mask.any()):
+                        if torch.compiler.is_compiling() or bool(mask.any()):
                             look.look_credit.for_rows(mask).register(close_errors)
                 from IntuitionField import complete as complete_intuition
                 complete_intuition(self, present, close_errors)
@@ -22135,8 +22235,12 @@ class BasicModel(BaseModel):
                     self._single_sentence_objectives = single_costs
                     self._sentence_cost_registry = close_errors
                     from SentenceTraining import surrogate
-                    self._sentence_train_step(surrogate(single_costs, self._sentence_reconstruction_strength))
-                    self._single_sentence_steps += 1
+                    sentence_loss = surrogate(single_costs, self._sentence_reconstruction_strength)
+                    if torch.compiler.is_compiling():
+                        self.__dict__.setdefault('_deferred_sentence_losses', []).append(sentence_loss)
+                    else:
+                        self._sentence_train_step(sentence_loss)
+                        self._single_sentence_steps += 1
                     self._single_sentence_objectives = None
                     # The next sentence sees state, never a previous step's graph.
                     self._percept_arrival_loss = self._percept_arrival_loss.detach()
@@ -22153,7 +22257,10 @@ class BasicModel(BaseModel):
             from Meaning import expire_meaning_metadata
             expire_meaning_metadata()
             if speculative:
-                NativeReading.commit(native_paths, selected)
+                if torch.compiler.is_compiling():
+                    self.__dict__.setdefault('_deferred_native_commits', []).append((native_paths, selected.detach()))
+                else:
+                    NativeReading.commit(native_paths, selected)
             if growth:
                 if torch.compiler.is_compiling():
                     self.__dict__.setdefault('_deferred_growth_commits', []).append((growth, selected.detach()))
@@ -23455,10 +23562,13 @@ class BasicModel(BaseModel):
             next_live_roots = torch.where(
                 intermediate_end.reshape(B, 1, 1),
                 live_candidate, current_cs_lang[10])
+            valid_depth = (end_depth <= scope.slots(clause_state, end_depth)) & (end_depth > 0)
+            if not bool(getattr(getattr(self._concept_owner(), 'interpret', None), 'mandatory', False)):
+                from Memory import OCCURRENCE as _STM_OCCURRENCE
+                valid_depth = valid_depth & ~(STMParse.roots(end_stm)[..., 0] == _STM_OCCURRENCE).any(-1)
             depth_candidate = current_cs_lang[11].scatter(
                 1, root_slot.reshape(B, 1),
-                torch.where((end_depth <= scope.slots(clause_state, end_depth)) & (end_depth > 0),
-                            end_depth.to(torch.long), -1).reshape(B, 1))
+                torch.where(valid_depth, end_depth.to(torch.long), -1).reshape(B, 1))
             next_live_depth = torch.where(
                 intermediate_end.reshape(B, 1),
                 depth_candidate, current_cs_lang[11])
