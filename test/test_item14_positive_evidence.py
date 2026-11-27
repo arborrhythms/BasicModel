@@ -323,3 +323,69 @@ def test_the_recorders_leave_the_model_as_it_was():
     with record_events(basic) as events:
         pass
     assert events.looks == 0 and 'read_bank' not in vars(basic)
+
+
+def test_a_recorder_puts_back_what_the_instance_already_had():
+    """Two recorders nested, over a method the instance already overrides:
+    the inner leaves the outer recording, and the outer leaves the
+    instance's own override in place."""
+    class Owner:
+        def order_zero_field(self, lanes, inputs, rows):
+            return lanes
+
+    def mine(lanes, inputs, rows):
+        return lanes
+
+    owner, lanes = Owner(), torch.ones(1, 1, 1, 2)
+    object.__setattr__(owner, 'order_zero_field', mine)
+    with record(owner) as outer:
+        with record(owner) as inner:
+            owner.order_zero_field(lanes, [0], None)
+        assert outer.calls == inner.calls == 1
+        owner.order_zero_field(lanes, [0], None)
+        assert outer.calls == 2 and inner.calls == 1
+    assert vars(owner)['order_zero_field'] is mine
+
+    class Basic:
+        conjunctions = {}
+
+        def read_bank(self, bank):
+            return bank
+
+    basic, kept = Basic(), (lambda bank: bank)
+    object.__setattr__(basic, 'read_bank', kept)
+    with record_events(basic):
+        with record_events(basic):
+            pass
+        assert 'read_bank' in vars(basic)
+    assert vars(basic)['read_bank'] is kept
+
+
+def test_both_above_reads_each_page_by_its_own_bindings(monkeypatch):
+    """Where the field's rows are bound page by page, a concept is read
+    both on a page only across the concepts bound there: with the fork
+    unbound on the second page, nothing on it is both."""
+    from test_cs_sparse_weights import _cs, _mint_row
+    cs = _cs(nS=64, order=3)
+    spoon, fork, knife = (_mint_row(cs, 0, 500 + i) for i in range(3))
+    tableware, cutlery = _mint_row(cs, 1, 600), _mint_row(cs, 1, 601)
+    cs.add_concept_edge(tableware, spoon, 1.)
+    cs.add_concept_edge(tableware, fork, 1.)
+    cs.add_concept_edge(cutlery, knife, 1.)
+    cs.add_concept_edge(cutlery, fork, 1., negated=True)
+    lanes = torch.zeros(sum(cs._order_caps()), 1, 4, 2)
+    lanes[spoon, 0, :3, 0] = 1.
+    lanes[fork, 0, 0, 1] = 1.
+    lanes[fork, 0, 1, 0] = 1.
+    lanes[knife, 0, 3, 0] = 1.
+    lanes[fork, 0, 3, 0] = 1.
+    one = cs.both_above(lanes)
+    addresses = cs._field_inventory_rows(lanes.device)
+    assert addresses.ndim == 1
+    paged = torch.stack((addresses, addresses), 1).clone()
+    slot = int((addresses == fork).nonzero()[0])
+    paged[slot, 1] = -1
+    monkeypatch.setattr(cs, '_field_inventory_rows', lambda device=None: paged)
+    two = cs.both_above(lanes.repeat(1, 2, 1, 1))
+    assert torch.equal(two[:, :1], one)
+    assert one.any() and not two[:, 1].any()

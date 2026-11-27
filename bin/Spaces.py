@@ -15237,36 +15237,48 @@ class ConceptualSpace(Space):
         result = lanes.new_zeros(lanes.shape[:-1])
         if store is None or store.values is None or not len(store._index):
             return result
-        # The entries by row are gathered once for a store as it stands.
-        stamp = (id(store), len(store._index), len(store._tensor_rows), store.symbol_table.revision)
+        # The entries by row are gathered once for a store as it stands, and
+        # kept on the field's device.
+        device = lanes.device
+        stamp = (id(store), len(store._index), len(store._tensor_rows), store.symbol_table.revision, device)
         cached = self.__dict__.get('_both_above_entries')
         if cached is None or cached[0] != stamp:
             targets, sources, positions = [], [], []
             for (row, column), position in store._index.items():
                 for source in store.thing_rows(store.thing_of_column(column)):
                     targets.append(int(row)), sources.append(int(source)), positions.append(int(position))
-            cached = (stamp, targets, sources, positions)
+            cached = (stamp, torch.tensor(targets, dtype=torch.long, device=device),
+                      torch.tensor(sources, dtype=torch.long, device=device),
+                      torch.tensor(positions, dtype=torch.long, device=store.values.device))
             object.__setattr__(self, '_both_above_entries', cached)
         _stamp, targets, sources, positions = cached
-        if not targets:
+        if not len(targets):
             return result
-        device = lanes.device
-        targets, sources = (torch.tensor(x, dtype=torch.long, device=device) for x in (targets, sources))
-        weights = store.values.detach()[torch.tensor(positions, device=store.values.device)].to(device)
+        weights = store.values.detach()[positions].to(device)
         addresses = self._field_inventory_rows(device)
         slots = torch.arange(S, device=device)
-        for batch in range(B if addresses.ndim == 2 else 1):
-            bound = (addresses[:, batch] if addresses.ndim == 2 else addresses)[:S]
-            seat = bound.new_full((int(self.nVectors) + 1,), -1)
-            seat[torch.where(bound >= 0, bound, int(self.nVectors))] = slots[:len(bound)]
-            seat[-1] = -1
-            at, of = seat[targets], seat[sources]
-            held = (at >= 0) & (of >= 0)
-            if not bool(held.any()):
-                continue
-            pages = slice(batch, batch + 1) if addresses.ndim == 2 else slice(None)
-            result[:, pages] = both_on_rows(lanes[:, pages].detach(), slots, at[held], of[held],
-                                            weights[held], slots, n_inputs=S, n_rows=S)
+        paged = addresses.ndim == 2
+        bound = (addresses[:, :B] if paged else addresses[:, None])[:S]
+        # Each concept row's slot in the field on each page, -1 where it has none.
+        seat = bound.new_full((int(self.nVectors) + 1, bound.shape[1]), -1)
+        seat.scatter_(0, torch.where(bound >= 0, bound, int(self.nVectors)),
+                      slots[:len(bound), None].expand(-1, bound.shape[1]))
+        seat[-1] = -1
+        at, of = seat[targets], seat[sources]
+        held = (at >= 0) & (of >= 0)
+        # The entries bound on some page, with one read of how many they are;
+        # after it every page keeps one shape and nothing more is read back.
+        kept = held.any(1).nonzero().flatten()
+        if not len(kept):
+            return result
+        at, of, held, weights = at[kept], of[kept], held[kept], weights[kept]
+        for page in range(bound.shape[1]):
+            pages = slice(page, page + 1) if paged else slice(None)
+            # An entry not bound on this page reads nothing there: its
+            # weight is nothing and it joins the spare row.
+            here = held[:, page]
+            result[:, pages] = both_on_rows(lanes[:, pages].detach(), slots, torch.where(here, at[:, page], S),
+                                            of[:, page].clamp_min(0), weights * here, slots, n_inputs=S, n_rows=S)
         return result
 
     def concept_weights(self, row, *, negated=False):

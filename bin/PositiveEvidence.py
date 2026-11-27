@@ -62,6 +62,26 @@ class Readings:
         return rows, lanes, torch.tensor(list(self.seen.values()))
 
 
+_NONE = object()
+
+
+@contextmanager
+def _hooked(owner, name, hook):
+    """``owner``'s method ``name`` replaced by ``hook`` on the instance, and
+    put back as it stood: an attribute the instance already had of that
+    name (another recorder's, where two are nested) is restored, and
+    removed only where there was none."""
+    before = vars(owner).get(name, _NONE)
+    object.__setattr__(owner, name, hook)
+    try:
+        yield
+    finally:
+        if before is _NONE:
+            object.__delattr__(owner, name)
+        else:
+            object.__setattr__(owner, name, before)
+
+
 @contextmanager
 def record(owner):
     """Record every reading given to ``owner``'s order-zero Sigma."""
@@ -71,11 +91,8 @@ def record(owner):
     def recorded(lanes, inputs, rows):
         readings.add(lanes, inputs)
         return read(lanes, inputs, rows)
-    object.__setattr__(owner, 'order_zero_field', recorded)
-    try:
+    with _hooked(owner, 'order_zero_field', recorded):
         yield readings
-    finally:
-        object.__delattr__(owner, 'order_zero_field')
 
 
 @dataclass
@@ -223,8 +240,5 @@ def record_events(basic):
         with torch.no_grad():
             found.add(basic, bank, percepts)
         return percepts
-    object.__setattr__(basic, 'read_bank', recorded)
-    try:
+    with _hooked(basic, 'read_bank', recorded):
         yield found
-    finally:
-        object.__delattr__(basic, 'read_bank')

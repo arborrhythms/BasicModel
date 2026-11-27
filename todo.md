@@ -98,6 +98,16 @@ Standing rules:
      `test/test_item18_expect.py::test_81_expectation_restores_the_omitted_native_word`: evaluate
      together with the Meta-Concept learning; (c)
      `test/test_item17_word_said_back.py::test_the_answer_depends_on_the_spoken_request`: the same.
+   - Meta-concept learning, to build at the 1.4 integration (Alec, 2026-11-27; plan §15.1): link
+     the word to the object and the object to the word as relations (M1: `STM1`, `MTM1`, `LTM1`) at the conceptual level
+     (presumably by sentence definition, but from any source); each direction causes its own MTM
+     promotion. When `word < object` and `object < word` both hold, the two are improper parts of
+     one another and cannot be ordered: an equivalence class one order up is formed over them.
+     This replaces the meta-concept that `architecture.createMetaConcepts` makes today on a word's
+     first reading.
+     The testpoint is `test/test_item14_meta_concept.py` (plan §15.2): stage A passes; B (the
+     links by conditioning, the intensity as an answer) and C (the class) fail, the mechanism not
+     being built.
    - Open for Alec: the map's two rates; whether to keep the Sigma links between neighbouring
      intensity levels; `OrderZero.read_word` still reads a signed match;
      `test/test_item18_intuit.py::test_84_intuit_reads_once_at_observation_and_no_relation_row`

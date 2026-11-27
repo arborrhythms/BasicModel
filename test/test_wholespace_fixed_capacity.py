@@ -172,3 +172,112 @@ def test_property_pull_history_wrap_preserves_lifetime_moments_and_repeated_byte
     assert pulls.pending(1) == [0]
     pulls.half()
     assert torch.equal(pulls.moments.view(torch.float32)[0, 0], total[0])
+
+
+def _no_host_reads(monkeypatch, allowed=()):
+    """Every read of a tensor's value back to the host raises, except the
+    named ones, which are counted."""
+    counts = {}
+
+    def guard(name):
+        original = getattr(torch.Tensor, name)
+
+        def guarded(self, *args, **kwargs):
+            if name not in allowed:
+                raise AssertionError(f'a tensor was read back to the host by {name}')
+            counts[name] = counts.get(name, 0) + 1
+            return original(self, *args, **kwargs)
+        monkeypatch.setattr(torch.Tensor, name, guarded)
+    for name in ('nonzero', 'item', 'tolist', '__int__', '__bool__', '__float__', '__index__'):
+        guard(name)
+    return counts
+
+
+def _observation(generator, n, rows, held_rows):
+    codes = torch.randn(n, 2, generator=generator)
+    held = torch.zeros(n, rows, dtype=torch.bool)
+    held[:, held_rows] = True
+    bytes_ = torch.randint(0, 256, (n, 3), generator=generator)
+    letters = torch.zeros(n, 256, dtype=torch.int32).scatter_add_(
+        1, bytes_, torch.ones_like(bytes_, dtype=torch.int32))
+    return held, codes, letters
+
+
+def test_an_observation_where_every_row_is_seated_reads_nothing_back_to_the_host(monkeypatch):
+    from PropertyPulls import PropertyPulls
+    weights = torch.randn(6, 2, generator=torch.Generator().manual_seed(3))
+    pulls = PropertyPulls(weights)
+    assert pulls.row_of is None
+    observation = _observation(torch.Generator().manual_seed(5), 9, 6, [1, 4])
+    with monkeypatch.context() as patch:
+        _no_host_reads(patch)
+        pulls.observe(observation[0], observation[1], weights, observation[2])
+    assert pulls.count.tolist() == [0, 9, 0, 0, 9, 0]
+
+
+def test_wide_pull_histories_take_the_seat_observed_longest_ago(monkeypatch):
+    """With more rows than seats, a row takes a seat when it is observed.
+    When none is free, the row observed longest ago gives up its seat and
+    starts again; the rows that keep their seats read as they would with a
+    seat for every row."""
+    from PropertyPulls import PropertyPulls
+
+    class Narrow(PropertyPulls):
+        SEATS = 2
+
+    generator = torch.Generator().manual_seed(11)
+    weights = torch.randn(5, 2, generator=generator)
+    wide, dense = Narrow(weights), PropertyPulls(weights)
+    assert wide.row_of is not None and wide.deltas.shape[0] == 2 and dense.row_of is None
+    direction = torch.tensor([0.5, -1.75])
+
+    def observe(n, rows):
+        observation = _observation(generator, n, 5, rows)
+        with monkeypatch.context() as patch:
+            counts = _no_host_reads(patch, allowed=('nonzero',))
+            wide.observe(observation[0], observation[1], weights, observation[2])
+        # One read of how many rows are held, and no other.
+        assert counts == {'nonzero': 1}
+        dense.observe(observation[0], observation[1], weights, observation[2])
+
+    def same_as_dense(row):
+        n = int(dense.count[row])
+        assert int(wide.count[row]) == n
+        assert torch.equal(wide.moments[:, row], dense.moments[:, row])
+        assert torch.equal(wide.split_bytes(row, n, direction), dense.split_bytes(row, n, direction))
+
+    observe(4, [3])
+    observe(3, [0])
+    observe(5, [3])                      # row 3 again: row 0 is now the longest unobserved
+    assert sorted(wide.row_of.tolist()) == [0, 3]
+    same_as_dense(0), same_as_dense(3)
+    observe(6, [4])                      # no seat is free: row 0 gives up its seat
+    assert sorted(wide.row_of.tolist()) == [3, 4]
+    assert int(wide.seat_of[0]) == -1 and int(wide.count[0]) == 0 and not wide.moments[:, 0].any()
+    assert not wide.split_bytes(0, 3, direction).any()
+    same_as_dense(3), same_as_dense(4)
+    observe(2, [0])                      # row 0 comes back and starts again, on row 3's seat
+    assert sorted(wide.row_of.tolist()) == [0, 4]
+    assert int(wide.count[0]) == 2 and int(wide.count[3]) == 0 and int(wide.seat_of[3]) == -1
+    same_as_dense(4)
+    # More rows held at once than there are seats: the first two are observed.
+    observe(1, [1, 2, 4])
+    assert sorted(wide.row_of.tolist()) == [1, 2]
+    assert wide.count.tolist() == [0, 1, 1, 0, 0]
+
+
+def test_restored_pull_records_keep_their_statistics_when_they_take_a_seat():
+    from PropertyPulls import PropertyPulls
+
+    class Narrow(PropertyPulls):
+        SEATS = 2
+
+    weights = torch.zeros(5, 2)
+    pulls = Narrow(weights)
+    delta = torch.tensor([1., -2.])
+    record = dict(n=3, sum=3 * delta, sq=3 * delta.square(), pulls=[(delta, b'ab')] * 3)
+    pulls.restore_records({4: record})
+    assert int(pulls.count[4]) == 3 and int(pulls.seat_of[4]) >= 0
+    assert torch.equal(pulls.moments.view(torch.float32)[:, 4], torch.stack((3 * delta, 3 * delta.square())))
+    votes = pulls.split_bytes(4, 3, torch.tensor([-1., 0.]))
+    assert votes[ord('a')] and votes[ord('b')] and int(votes.sum()) == 2

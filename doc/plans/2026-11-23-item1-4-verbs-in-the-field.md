@@ -1113,6 +1113,166 @@ The two tests deferred with it are `test_81` (expectation restores the
 omitted word) and the conditional speech of `test_item17_word_said_back.py`
 (§14 and the todo).
 
+### 15.1 The rule, as specified for the integration (Alec, 2026-11-27)
+
+> Add the meta-concept rule to the 1.4 integration notes. we want the word
+> to be linked with the object, and the object to be linked with the word
+> (presumably by sentence definition, but regardless, at the conceptual
+> level).
+>
+> Then when we see that word is a type of object, and object is a type of
+> word, there will be a sorting issue: the resolution of that (two concepts
+> that are improper parts of one another) can only be an equivalence class
+> over them. So the test of that is word < object AND object < word (at the
+> conceptual level, so using M1 relations to link the word and object in
+> both directions, which will cause two MTM promotions).
+
+This settles open question 1 above: the test is mutual parthood at the
+conceptual level, whatever brings each link. What is to be built:
+
+1. *Both links, at the conceptual level.* The word is linked to the object
+   and the object to the word as relations (M1; the shorthand is below),
+   one in each direction. A sentence definition is the expected source of
+   each link, but the rule does not depend on the source.
+2. *Each link promotes.* Each direction, on recurrence, causes its own MTM
+   promotion: word < object (the word a type of the object) and
+   object < word (the object a type of the word). Two promotions, one per
+   direction.
+3. *Both together cannot be ordered.* Two concepts that are each an
+   improper part of the other cannot be placed one above the other. The
+   only resolution is an equivalence class over them: a concept one order
+   up whose members are the two, and which holds what the two share.
+4. *The test.* `word < object` and `object < word`, both read at M1 at
+   the conceptual level, form the class. Either one alone does not.
+
+The shorthand (Alec, 2026-11-27): "M0 = shorthand for idea, LTM0, STM0,
+MTM0. M1 = shorthand for relation, LTM1, STM1, MTM1." So an "M1 relation"
+is a relation in whichever memory holds it, working, medium-term or
+long-term, and not a row of `LTM1` in particular, as this section first
+read it. Alec adds that his own use of the terms above was not exact.
+
+Still open: question 2 (by degree, the class presumably formed when the
+weaker direction passes MTM's count) and question 3 (what becomes of the
+entries each promotion gathered once both are under the class). Today
+`architecture.createMetaConcepts` makes a word's meta-concept on its first
+reading, with a blank object, whatever is observed; this rule is to replace
+that, and the switch is turned off when it is in place. The two deferred
+tests (`test_81`, the spoken request) are evaluated with it.
+
+### 15.2 The testpoint (Alec, 2026-11-27)
+
+> Please try adding a testpoint that creates MetaConcepts by word/object
+> learning. minimally we need to from concepts of those two classes (e.g
+> "Two" as a word and 2 as an intensity). After doing that, we need to link
+> the two concepts in the subjects mind; we can do that in LTM by
+> conditioning (serial presentation should cause one to be a predictor of
+> the other as long as it is relevant, so we would need output error
+> penalty). That should give us enough to make two sequences that form a
+> tight loop.
+
+`test/test_item14_meta_concept.py`, on the naming model of item 1.6 with
+`createMetaConcepts` false, the word `two` and a pixel of intensity 50 steps
+(the band of 2). The stages are lettered A to C, since M0 and M1 name the
+tiers of memory. Run through `make test` on 2026-11-27:
+
+| Stage | Asks | Measured |
+|---|---|---|
+| A | the word and the intensity are each a concept of order zero, of two classes, with no relation at M1 | passes: concepts 93 (`word`) and 158 (`value`) |
+| B | six rounds of serial presentation each way, each direction with its output error (the word the answer to the intensity, the intensity the answer to the word), leave a relation each way at M1, kept in `LTM1` or on trial in MTM | fails: the intensity as an answer is refused, the intensity is answered with nothing, and M1 holds nothing in either memory |
+| C | with both relations written into `LTM1` by the test, the next readings make one class one order up and leave the two at one order | fails: both relations stand (rows 160, 161), both concepts stay at order zero, and no class is made |
+
+What each tier held after stage B's rounds:
+
+| Tier | Before | After |
+|---|---|---|
+| M0, `LTM0`: ideas kept | 10 | 34 |
+| M0: ideas naming the word's concept in a slot | 4 | 16 |
+| M0: ideas naming the intensity's concept in a slot | 0 | 0 |
+| M0, MTM: ideas staged | 0 | 0 |
+| M1, `LTM1`: `word < intensity`, `intensity < word` | none | none |
+| M1, MTM: rows on trial holding both (`MTM1`, pair rows) | 0 | 0 |
+
+`STM0` and `STM1` are a sentence's and are not kept between readings, so
+they were not read. The same holds where the word and the pixel are given
+in one row: nothing at M1.
+
+What the failures say is missing:
+
+- *The ideas are kept, in order, and stop there (M0).* Every reading closes
+  an idea into `LTM0`, so the serial presentation is in long-term memory as
+  rows in the order met. But nothing joins one row to the next, and an idea
+  of the intensity names no concept in its slots (its four slots are
+  empty), so there is nothing at M0 by which the word's idea could come to
+  predict the intensity's.
+- *Nothing is offered at M1.* No relation between the two concepts is put
+  on trial in MTM, in either direction, so there is nothing for MTM to
+  promote. Expectation learns to predict (`Expectation.ActivationPredictor`)
+  but keeps what it learns in its own weights.
+- *The intensity cannot yet be an answer in this model.* The model has a
+  numeric output in the range 0 to 1 (`OutputSpace.read_field`, a linear
+  read of the field; the XOR tests train and test it on the numeric stem),
+  and this model has that head too. But where text is read word by word,
+  the answer that is scored is text: an intensity given as the word's
+  answer is refused ("output trial and supplied answer do not align"). So
+  the direction from the intensity to the word has an output error and the
+  direction from the word to the intensity has none. An earlier note here
+  said that the model has no output of an intensity; that was wrong (Alec:
+  "I thought we had numeric output (0..1) and were testing that in the XOR
+  test"). Intensity input and intensity output are to come (Alec,
+  2026-11-27), and stage B asks for the intensity as an answer.
+- *The resolution (stage C).* `LTM1` accepts a relation in each direction,
+  and nothing reads the pair as a conflict of order. The class raising that
+  exists (`ConceptIndex.index_part_row`) starts from a stated equality with
+  a shared side, not from two parts of one another.
+
+Stage B's last assertion (a relation each way, in `LTM1` or on trial in
+MTM) is Claude's reading of where the conditioned link is to be found, and
+is to be put right when the mechanism is specified.
+
+Stages B and C are left failing, unmarked; `make push` will ask for a
+written ok for each.
+
+### 15.3 The literature review (2026-11-27)
+
+Alec asked whether sequence learning in LTM and conceptual order share an
+equivalent recursive mechanism, "where the use of symbols allows thought to
+replace behavior", and guessed that they do. The review is
+[Sequence learning and conceptual order](../../reports/Sequence%20learning%20and%20conceptual%20order.md),
+with its six sets of notes under `research_notes/`. It is a reading of the
+literature, not a decision, and it marks what it could not verify (the
+searches ran out part way through five of the six strands, so 2025 and 2026
+are thinly covered). What it says of the two rules:
+
+- *One recursion, two operations.* What follows what is joined into a
+  whole (a chunk: parts within wholes); what is met in the same contexts
+  is grouped into a kind. Every system in the review that generalises
+  alternates the two; a learner that only chunks reproduces what it was
+  given.
+- *The rule of §15.1 is a standard construction.* A relation that holds in
+  both directions resolves into a class, with the order holding among the
+  classes (the quotient of a preorder by its symmetric part). It needs the
+  relation to be transitive, and applied a second time it does nothing, so
+  it sorts one order and does not of itself make the next.
+- *What the class means depends on the relation.* Mutual parthood gives
+  coincidence, which is the rule as §15.1 has it. Mutual succession gives a
+  loop, the mark of a composite. So conditioning in both directions is a
+  way to the two relations only if what it leaves is parthood and not
+  succession; the review's test of a class is that the two predict, and
+  are predicted by, the same others, and that what is taught of one is
+  found in the other.
+- *A third code.* In monkeys taught numerals, the cells that answer to the
+  same number as a numeral and as a count of dots are apart from the code
+  of magnitude: the nearest thing found to a meta-concept joins the two
+  and replaces neither.
+- *The direction that carries.* In children, teaching the naming direction
+  (the object, then its word) gives the other direction untaught; the
+  reverse seldom does. And the word is first tied to the magnitude, the
+  magnitude to the word only later.
+- *Symbols.* Thought takes the place of behavior without them (a rat's
+  hippocampus runs down the paths before it chooses). Where one mechanism
+  for sequence and concept is claimed is in making a mastered sequence a
+  thing to be operated on (Piaget), and no experiment found tests it.
+
 ## 16. Known defects, fixed on this branch (Claude, 2026-11-26 and 27)
 
 *Alec: "lets fix all known defects"; "zero known defects"; "Please try
