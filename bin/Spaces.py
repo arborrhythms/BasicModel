@@ -14734,6 +14734,9 @@ class ConceptualSpace(Space):
             return self.order_zero
         from Layers import SparseSigmaLDU
         rows, concepts = int(self.basic_percepts.capacity), int(self._order_caps()[0])
+        # With the unit delay each basic percept has a second input, its
+        # activation one step back (:meth:`delayed_percepts`).
+        rows *= 2 if self.percept_delay else 1
         sigma = SparseSigmaLDU(rows, concepts, self.ORDER_ZERO_ENTRIES * (rows + concepts))
         sigma.to(self.similarity_codebook.W.device)
         self.order_zero = sigma
@@ -14741,6 +14744,64 @@ class ConceptualSpace(Space):
         self.params.append(sigma.value)
         sigma.value.register_hook(self._zero_frozen_entries)
         return sigma
+
+    @property
+    def percept_delay(self):
+        """Whether basic percepts are given to the order-zero Sigma one step
+        back as well as now (``architecture.perceptDelay``; item 1.4)."""
+        held = self.__dict__.get('_percept_delay_on')
+        if held is None:
+            held = bool(TheXMLConfig.get('architecture.perceptDelay', default=False))
+            object.__setattr__(self, '_percept_delay_on', held)
+        return held
+
+    def delayed_input(self, percept):
+        """The order-zero Sigma's input for basic percept ``percept`` one step back."""
+        return int(self.basic_percepts.capacity) + int(percept)
+
+    @torch.no_grad()
+    def step_percept_delay(self):
+        """A step ends: what was found in it becomes what was found one step
+        back, and the present starts from nothing."""
+        state = self.__dict__.get('_percept_delay_state')
+        if state is not None:
+            state['previous'], state['current'] = state['current'], torch.zeros_like(state['current'])
+
+    def delayed_percepts(self, values, inputs, *, publish=True):
+        """The unit delay on basic percepts (Alec, 2026-11-27): ``values``
+        ``[P, B, E, 2]`` of the rows ``inputs`` with, after them, each row's
+        activation one step back as an input of its own
+        (:meth:`delayed_input`), the same at every reading of the present
+        step, since what is kept of a step is each row's greatest
+        activation in it. One step is one tick of the model's clock at
+        which percepts are read; with no model the step is ended by
+        :meth:`step_percept_delay`. Nothing
+        is subtracted: "there now and not before" is an entry above zero
+        on the row and one below zero on its delayed input. Returns the
+        joined values and inputs."""
+        capacity = int(self.basic_percepts.capacity)
+        P, B, E = values.shape[:3]
+        model = getattr(self, '_model', None)
+        tick = None if model is None else int(model.present())
+        state = self.__dict__.get('_percept_delay_state')
+        if (state is None or state['current'].shape[1] != B or state['current'].device != values.device):
+            empty = values.new_zeros(capacity, B, 2).detach()
+            state = dict(tick=tick, current=empty, previous=empty.clone())
+            object.__setattr__(self, '_percept_delay_state', state)
+        elif tick is not None and tick != state['tick']:
+            # A step is a tick at which percepts are read. The clock also
+            # ticks for an answer or a thought, where none are, so one step
+            # back is the last tick that read any.
+            state['previous'] = state['current']
+            state['current'] = torch.zeros_like(state['current'])
+            state['tick'] = tick
+        rows = torch.as_tensor(list(inputs), dtype=torch.long, device=values.device)
+        if publish and P:
+            with torch.no_grad():
+                found = values.detach().amax(2).to(state['current'])
+                state['current'][rows] = torch.maximum(state['current'][rows], found)
+        before = state['previous'].index_select(0, rows).to(values)[:, :, None].expand(P, B, E, 2)
+        return torch.cat((values, before)), [*inputs, *(capacity + int(row) for row in inputs)]
 
     def _zero_frozen_entries(self, grad):
         frozen = [row for row in self._frozen_rows() if row < self.order_zero.nOutput]
@@ -14831,6 +14892,12 @@ class ConceptualSpace(Space):
         _concept_alloc_of(self).brought.setdefault(int(percept), int(row))
         added = self.add_concept_feature(row, 'bp', percept, 1.)
         self.link_holders(percept)
+        if self.percept_delay:
+            # MTM's link to the row one step back, at zero until it is
+            # learned: below zero it reads "now and not before".
+            sigma = self.install_order_zero()
+            if int(row) < sigma.nOutput and sigma.find(int(row), self.delayed_input(percept)) is None:
+                sigma.add(int(row), self.delayed_input(percept), 0.)
         return added
 
     @torch.no_grad()
@@ -15191,6 +15258,8 @@ class ConceptualSpace(Space):
                 [row for row, _, _ in members], dtype=torch.long))
         values = perception.values
         inputs = [key[1] for key in perception.keys]
+        if self.percept_delay:
+            values, inputs = self.delayed_percepts(values, inputs, publish=publish)
         n0 = self._field_caps()[0] if publish else self._order_caps()[0]
         addresses = (self._field_inventory_rows() if publish else
                      torch.arange(self.nVectors, device=values.device))

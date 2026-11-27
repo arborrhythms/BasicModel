@@ -288,6 +288,7 @@
          same alphabet. false lets the levels learn as a linear
          self-organizing map, very slowly, with its ends fixed at 0 and 1. -->
     <intensityLevelsFixed>true</intensityLevelsFixed>
+    <perceptDelay>false</perceptDelay>
     <!-- The width in places of the Gaussian aperture about a part's centre:
          a part of adjacent atoms holds the places nearer its centre than
          this, each weighed by the Gaussian; a value's row is read at no

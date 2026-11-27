@@ -457,6 +457,19 @@ Each on the felt world of item 1.6, whose documents hold successive images:
 
 ## 9. Open, for Alec
 
+Question 1 is decided (Alec, 2026-11-27): "I think we can just have a unit
+delay on percepts (i.e. basic percepts and symbols ...) where we store
+their activations, so that the delayed versions are available for
+conceptual input at subsequent orders." So: neither a second field of
+occurrences nor a relative `.when`. The activations of the basic percepts
+and of the symbols are stored at the end of a step and offered at the next
+as further inputs to the order above ([Glossary](../Glossary.md), *unit
+delay*). Longer runs are LTM's: "LTM for linear and concepts for branching
+is a good dividing line, at least for now" ([Orders](../Orders.md), §13).
+What the trace of 2026-11-27 found for the build: the order-zero Sigma
+reads each row number once, so a delayed activation needs an input of its
+own beside the present one.
+
 1. *How the delayed field is told from the present one.* Either it is its
    own block of the Pi's inputs (a delay on the wires, nothing computed),
    or it lies in the same field one step back on `.when`, with `.when`
@@ -474,6 +487,85 @@ Each on the felt world of item 1.6, whose documents hold successive images:
 Settled since first written: one activation is a sentence (§5.9); how the change reaches the hierarchy (§5.8,
 in place of §5.2 and §5.7); not said is not lost (§5.7, 2: "OK"); the form
 of the difference (learned, §5.8).
+
+### 9.1 The unit delay, first part: basic percepts (Claude, 2026-11-27)
+
+Built, behind `architecture.perceptDelay` (false by default until the
+combined tree has been run with it):
+
+- `ConceptualSpace.delayed_percepts` keeps each basic percept's greatest
+  activation in a step and gives it at the next step as a second input of
+  the order-zero Sigma (`delayed_input`: the row's number plus the percept
+  capacity), the same at every reading. The Sigma is twice as wide.
+- A step is a tick of the clock at which percepts are read. The clock also
+  ticks for an answer or a thought, so "one step back" is the last tick
+  that read any, not the tick before.
+- `bring_concept` links a concept to its own row one step back, at zero.
+- `test/test_item14_unit_delay.py`: gained, lost and kept are each learned
+  by the ordinary Sigma on a row and its delayed input (weights +1/-1,
+  -1/+1, +.5/+.5); on the naming model the Sigma has the second inputs, the
+  links stand at zero, and what one step held is given at the next and not
+  at the one after.
+
+Not built yet: the delay on symbols (the orders above zero); the numeric
+stem, which calls `order_zero_field` itself and so has no delay; a link
+from a concept to another row one step back (a sequence of two different
+things), which MTM would have to offer; what is kept of a step is one
+activation for a row, so where it was is not kept; the measures of §8; and
+anything for the other parts of speech.
+
+### 9.2 The sequence links (Alec, 2026-11-27)
+
+> MTM can hold the sequence links. Basically, I think they are M1
+> relations over M0 ideas. So we can build some simple markoff algorithm
+> over the transition probabilities, and when we see repeats often enough,
+> we can store that chain. The question is where: conceptual memory is not
+> a bad place, but if it interferes with the conceptual hierarchy, then it
+> would be problematic. Perhaps it can exist over the basic level, or be a
+> part of the matrix of spreading activation that has dug a deep groove,
+> and provokes a behavior which leads to the next state (since a behavior
+> (or thought) is saved in STM, which allows the recursion just like
+> storing the last location of attention allows a linear read).
+
+Claude's reading, for his decision:
+
+- *What is counted.* A transition is one idea followed by the next at the
+  following step. MTM keeps a count for each pair it has met, and a
+  probability is a pair's count over the counts of all pairs with that
+  first idea. This is the unit delay's own subject one tier up: the delay
+  gives what was there one step back, and the count says how often this
+  followed that.
+- *When it is kept.* On the count that nominates anything else in MTM
+  (rule 20). A chain is then pairs that each passed, joined end to end.
+- *Where.* Claude proposes the relations of the idea store, `LTM0`'s own
+  `LTM1` (`ltm_store.parts`), and not the concept taxonomy
+  (`_concept_allocator.parts`). They are two stores of one kind already.
+  The first holds nothing today in the models measured (§15.2), and it is
+  where the chain of sigma-pi §19.146 belongs: "LTM1 has a pointer to its
+  LTM0 and a pointer to the next LTM1". Kept there a chain is linear,
+  cannot be read as a part or a kind, and cannot disturb the orders. This
+  is "LTM for linear and concepts for branching".
+- *The groove.* His second thought (a part of the matrix of spreading
+  activation) is how a kept chain would *act*: an idea in STM spreads to
+  its successor by the chain's link and so provokes it. That is a reader of
+  the chain and can come after it is stored; it need not be where it is
+  stored.
+- *What an idea is, for counting.* Two occurrences must be the same idea to
+  be counted together. Today an idea of an intensity alone names no concept
+  in its slots (§15.2), so it could not be recognised again. Episodic
+  memory as percepts (§6) is what gives every idea something to be matched
+  by, and has to come first.
+
+Decided (Alec, 2026-11-27): "Idea store would be fine." And: spreading
+activation "can be a client of M1 sequencing". The Markov count is not
+wanted yet: "links without this are not a behavior because they branch
+arbitrarily", and it waits until the chain is consolidated somewhere,
+probably together with the concepts of temporal difference ("I lack clarity
+in that area"). "The sequencing and Meta-concepts are not in final form: So
+for now, the idea store has a graph of transitions which is not yet mined,
+and we will see how sequence learning looks after TD concepts." So what is
+to be built now is only the graph: each idea's link to the idea that
+followed it, in the idea store's relations, neither counted nor read.
 
 ## 10. Added from item 1.6: evidence at order zero is positive, and the Not is an exchange of lanes (Alec, 2026-11-24)
 

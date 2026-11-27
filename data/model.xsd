@@ -164,6 +164,7 @@
       <!-- The number of levels of the alphabet of intensity. -->
       <xs:element name="intensityPartCardinality" type="xs:positiveInteger" minOccurs="0"/>
       <xs:element name="intensityLevelsFixed" type="xs:boolean" minOccurs="0"/>
+      <xs:element name="perceptDelay" type="xs:boolean" minOccurs="0"/>
       <!-- The width in places of the Gaussian aperture about a part's
            centre; 0 sets no limit. -->
       <xs:element name="intensityPartSigma" type="xs:nonNegativeInteger" minOccurs="0"/>

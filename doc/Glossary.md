@@ -75,6 +75,9 @@ its time. A percept is a discriminant, a thing that is found or not found. It
 bears no meaning. Its *code* lies in *perceptual space*. Percepts are "the
 perceived positive and negative aspects" of concepts, "or more precisely,
 hyperconic regions of them".
+"Percepts" said of what the conceptual layers take in means both *basic
+percepts* and *symbols* (Alec, 2026-11-27): each is found or not found, and
+each has an activation that an order above can read.
 
 **Basic.** Of order zero. A *basic percept* is one row of the first Pi over
 its *parts* and its *properties*. It is an occurrence, an event: "all of
@@ -286,6 +289,14 @@ temporal value a network reads is "sinusoidal (continuous), not incremental
 (ticks)"; the integer is for what is not learned. The
 same holds of any count or position: no learned weight reads an integer, and
 a linear difference is used only as a metric inside a cost.
+
+**Unit delay.** A delay of one step on percepts, which are basic percepts
+and symbols: their activations are stored, "so that the delayed versions
+are available for conceptual input at subsequent orders" (Alec,
+2026-11-27). One step is one sentence. The layers above then read what is
+there now beside what was there one step back, and learn a change (there
+now and not before) or a sequence of two with no operation of their own.
+Nothing is subtracted. Decided for item 1.4; not yet built.
 
 **STM.** Short-term memory: the chunks held while a sentence is read and
 thought about, some of them on a stack. The top of the stack is the most

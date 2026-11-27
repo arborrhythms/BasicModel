@@ -714,3 +714,96 @@ zero length.
 An idea composed of several words has no row. Its order follows from its
 operands and its operators: `lower` drops one, `lift` raises one, and a
 modifier keeps the order of its head.
+
+## 13. Sequence as the order over symbols (Alec and Claude, 2026-11-27; a hypothesis)
+
+Alec asked whether sequence learning in long-term memory and the order of
+concepts share one recursive mechanism, "where the use of symbols allows
+thought to replace behavior", and guessed that they do. This section sets
+down what is proposed, what is speculation, and what the literature says
+([the review](../reports/Sequence%20learning%20and%20conceptual%20order.md)).
+None of it is built.
+
+### Sequencing gives symbols their order
+
+A percept has an order by nature: a magnitude is greater or less, a place
+is left or right, and the order is in the percept's own dimensions. A
+symbol has none. What orders symbols is what follows what: the count words
+are in order because they are said in order, and the letters because they
+are recited so. The proposal is that this is the general case: *the order
+relation over symbols is sequence*, kept as what follows what in memory,
+and a symbol's place in an order is its place in a list.
+
+The literature supports a narrower form of this than "one follows another".
+A list that has been learned is kept as each item bound to its place, not
+as a chain of successors: monkeys that know several lists order items of
+different lists rightly at first sight, which no chain explains, and a code
+with one unit for each pair cannot be reasoned over where a code with a
+rank for each item must be. So the sequence is how the order is *learned*,
+and a rank for each symbol is how it is *held*. Children show the gap
+between the two: the count words are recited in order a year or two before
+the next word means one more.
+
+### Why symbols allow arbitrary lists, and negation (speculation)
+
+A symbol has no dimensions of its own. Three things are supposed to follow
+from that.
+
+- *Any list.* Percepts can be put in an order only where their dimensions
+  allow it: a monkey could not learn the numerosities in the order 3, 1, 4,
+  2, though it learns arbitrary pictures in any order. A symbol, having no
+  dimension to resist, takes whatever order a list gives it. This is why a
+  list of symbols can be arbitrary and a list of magnitudes cannot.
+- *Negation.* A percept is denied only at a place: "we cannot negate what
+  does not exist unless we know exactly where it does not exist"
+  ([Philosophy](Philosophy.md)), and what tells against it is another
+  percept found there. A symbol has no place to be absent from. To deny it
+  is to deny it everywhere at once, by an entry below zero on its row,
+  which is why the Not belongs to concepts and is gone from perception
+  (item 1.4).
+- *Replacing behaviour.* A sequence of acts can be run only by doing them.
+  A sequence of symbols can be run without doing anything, since a symbol
+  is a handle and costs nothing to produce. That is the sense in which
+  symbols let thought replace behaviour. The literature narrows it: animals
+  run paths inwardly without symbols, so what symbols add is not the
+  running but that a mastered sequence becomes one thing that can itself
+  be operated on.
+
+### Are LTM and the taxonomy one structure? (hypothesis)
+
+If sequence is the order over symbols, then LTM, which keeps what followed
+what, and the taxonomy, which keeps what is a kind or a part of what, are
+two readings of one order, and the question is whether they should be one
+structure here, as they may be in a mind.
+
+What is for it: the same part of the brain (the hippocampus and the cortex
+beside it) carries order in space, in time and among concepts, and exposure
+to a sequence alone leaves a map of which items belong together. Formally,
+a relation that holds in both directions between two things resolves into
+a class with the order kept among the classes, which is how a loop of two
+sequences becomes a meta-concept (item 1.4 plan, §15).
+
+What is against it: every system in the review that generalises uses two
+operations, one that joins what follows what into a whole and one that
+groups what is met in the same contexts into a kind, and neither is made
+from the other. Sequence knowledge and concept knowledge are also lost
+apart from one another in patients.
+
+Alec's position, 2026-11-27: "If we are relying on recursion for temporal
+sequencing, we do not want the current ramsified structure which has only
+log(n) depth. But I guess LTM for linear and concepts for branching is a
+good dividing line, at least for now." So, for now:
+
+- *LTM is linear.* A sequence of n things is n steps, each after the last.
+  A structure of depth log(n) cannot hold it step by step.
+- *Concepts branch.* Kinds over members and wholes over parts are a tree,
+  where depth log(n) is what is wanted.
+- *Where they meet.* The unit delay on percepts (item 1.4) gives each order
+  the percepts of one step back, so a sequence of two is learned by the
+  ordinary layers; longer runs are LTM's.
+
+Whether the two should later be one is left open. What would bear on it,
+and can be run here: whether a class is formed by two things predicting
+each other, or only by their predicting, and being predicted by, the same
+others.
+

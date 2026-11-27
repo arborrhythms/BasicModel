@@ -928,6 +928,14 @@ it. Zero is no presence. Reverse returns at each place the centroid of the
 percept a concept of the field reads for there, so an input is put back once
 its regions and places are known. `architecture.intensityPartCardinality` (256) is the number of levels
 of the alphabet of intensity, a codebook over one pixel's value.
+`architecture.perceptDelay` (false) is the unit delay on basic percepts (item
+1.4): true, each basic percept's greatest activation in a step is kept, and at
+the next step it is a second input of the order-zero Sigma beside the row
+itself, which is then twice as wide. A concept brought by a row is linked to
+the row's delayed input at zero; learned below zero it reads "there now and
+not before". One step is one tick of the model's clock at which percepts are
+read. False until the
+combined tree has been run with it.
 `architecture.intensityLevelsFixed` (true) keeps the levels linear and
 fixed, level k of n at k / (n - 1) on 0 to 1, so that a remembered value
 does not drift over a long run and a run compiled in bfloat16 reads the
