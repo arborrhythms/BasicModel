@@ -3,7 +3,7 @@
 
 Run from the repository root with python3 doc/diagrams/fig_data_structures.py.
 The STM and LTM column lists come from bin/Memory.py. The associations follow
-BasicPercepts.py, Understanding.py, Layers.py, SentenceStrata.py and ReadingMemory.py.
+BasicPercepts, Spaces, Layers, Understanding, SentenceStrata, RequestRead and ReadingMemory.
 """
 import ast
 from html import escape
@@ -77,17 +77,19 @@ def make():
     percept_end = class_box(body, LEFT, top, "Percept", "«row» BasicPercepts", BLUE, (
         ("Basic percept identity", ["('bp', row)", "occurrences[row] = (parts, wholes)", "promoted[row]"]),
         ("Location-bound occurrences · PerceptBank", ["table: what | where | when", "two evidence lanes per channel", "span, token, time, activity"]),
-        ("Code read from the row", ["lanes(row)"]),
+        ("Percept input to order-zero Sigma", ["lanes(row)", "current and one-step-back activity", "when perceptDelay is enabled"]),
     ))
     concept_end = class_box(body, MIDDLE, top, "Concept", "«row» addressed by concept ID", PURP, (
         ("Identity · ConceptAllocator", ["('sym', cid)", "concepts, order_zero_members"]),
         ("Constituents · ConceptualAttentionLayer", ["constituents(cid)"]),
-        ("Located evidence · ConceptualField", ["concept_ids, evidence", "where, when, wires"]),
+        ("Located evidence · ConceptualField", ["concept_ids, evidence", "where, when, percepts, wires"]),
+        ("Unit delay · ConceptualSpace", ["current and previous observations", "kept priming trace → next request"]),
     ))
     relation_end = class_box(body, RIGHT, top, "LTM · relation", "LTM1", BLUE_DK, (
         ("Relation columns", columns["LTM1"]),
         ("Ordered pair of tagged endpoints", ["SYMBOL | OCCURRENCE | RELATION"]),
         ("Sequence of three occurrences", ["head = (A, tail)", "tail = (B, C)"]),
+        ("Transitions · ideaTransitions (default off)", ["add_transition(before, after)", "marked pair of occurrence names"]),
         ("Find incoming references", ["rows_referencing(kind, value)"]),
     ))
 
@@ -96,17 +98,21 @@ def make():
     bottom = middle_y + 55
     stm_end = class_box(body, LEFT, bottom, "STM", "ShortTermMemory", BLUE, (
         ("Working set · STMChunks", columns["STMChunks"]),
-        ("Working ideas and ordered relations", ["strata.idea_stores → IdeaStack (STM0)", "_thought_stores → STM0", "STM0.parts → STM1"]),
-        ("Attention state · ModelState", ["last_where: last native span", "when_time, when_code"]),
+        ("Working ideas and ordered relations", ["strata.idea_stores → IdeaStack (STM0)", "strata.recent_stores → STM0",
+          "_thought_stores → STM0", "STM0.parts → STM1"]),
+        ("Attention state · ModelState", ["last_where: last native span", "when_time, when_code", "root_at(stream, tick) → kept head"]),
+        ("Whole stack read by attend", ["STMChunks.request_view(state)", "newest first, followed by depth"]),
     ))
     mtm_end = class_box(body, MIDDLE, bottom, "MTM", "MediumTermMemory", TEAL, (
         ("Retained identities", ["entries → Token", "names → Name", "capacity, horizon"]),
         ("Token references", ["occurrences, symbol, transient", "timelines → Timeline → Event"]),
+        ("Candidate stores", ["MTM1, MTMPairRows"]),
         ("Read occurrences under one head", ["read_occurrences(store, head)", "token_of(occurrence)"]),
     ))
     ltm_end = class_box(body, RIGHT, bottom, "LTM · occurrence", "LTM0 extends IdeaRows", BLUE_DK, (
         ("Occurrence columns · IdeaRows", columns["IdeaRows"]),
         ("Stable occurrence address", ["('ltm', 'name-v1', row_name)"]),
+        ("Transitions within a stream", ["keep_transitions(stream, before)"]),
         ("Read by row", ["referent_of(index)", "meaning_of(index)"]),
     ))
 
@@ -132,7 +138,7 @@ def make():
     commit_y = max(stm_end, mtm_end, ltm_end) + 38
     association(body, [(left_centre, stm_end), (left_centre, commit_y),
                        (relation_x, commit_y), (relation_x, ltm_end)],
-                "ReadingMemory.commit translates STM0 ideas and STM1 links into LTM0 and LTM1",
+                "ReadingMemory.commit retains the STM0 ideas and STM1 pairs reachable from each selected head",
                 WIDTH / 2, commit_y - 9, dependency=True)
     height = commit_y + 20
     drawing = figure(WIDTH, height,

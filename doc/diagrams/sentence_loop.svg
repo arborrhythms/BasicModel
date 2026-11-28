@@ -1,72 +1,71 @@
-<svg width='1332' height='668' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
-  <rect width='1332' height='668' fill='#fafafa'/>
+<svg viewBox="0 0 1180 682" width='1180' height='682' xmlns='http://www.w3.org/2000/svg' font-family='Georgia, serif' >
+  <rect width='1180' height='682' fill='#fafafa'/>
 <defs><marker id='arrd' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2c3e50'/></marker><marker id='arrb' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#2980b9'/></marker><marker id='arrg' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#27ae60'/></marker><marker id='arro' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#ca6f1e'/></marker><marker id='arrp' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#8e44ad'/></marker><marker id='arrr' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#c0392b'/></marker><marker id='arrt' markerWidth='8' markerHeight='5.6' refX='7' refY='2.8' orient='auto'><polygon points='0 0, 8 2.8, 0 5.6' fill='#16a085'/></marker></defs>
-<rect x='0' y='0' width='1332' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
-<text x='666' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>The sentence loop of one path</text>
-<text x='666' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Architecture.md: Whole paths and concept episodes · each stream keeps its cheapest R + A path</text>
-<rect x='200' y='96' width='850' height='262' fill='#d6eaf8' fill-opacity='0.45' rx='12' stroke='#2980b9' stroke-width='1.5'/>
-<text x='216' y='118' text-anchor='start' font-size='14' fill='#2980b9' font-weight='bold'>System 1: order zero</text>
-<rect x='200' y='404' width='850' height='176' fill='#e8daef' fill-opacity='0.45' rx='12' stroke='#8e44ad' stroke-width='1.5'/>
-<text x='216' y='426' text-anchor='start' font-size='14' fill='#8e44ad' font-weight='bold'>System 2: symbols and higher orders</text>
-<rect x='30' y='353' width='130' height='44' fill='#f2f3f4' fill-opacity='1.0' rx='8' stroke='#2c3e50' stroke-width='1.8'/>
-<text x='95.0' y='379.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>input words</text>
-<rect x='230' y='130' width='220' height='52' fill='#fff' fill-opacity='1.0' rx='8' stroke='#2980b9' stroke-width='1.8'/>
-<text x='340.0' y='152.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>observed field a_0</text>
-<text x='340.0' y='168.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>(open attention pass)</text>
-<rect x='610' y='136' width='120' height='40' fill='#d1f2eb' fill-opacity='1.0' rx='8' stroke='#16a085' stroke-width='1.8'/>
-<text x='670.0' y='160.5' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-family='Menlo, monospace'>reverse</text>
-<rect x='810' y='205' width='120' height='40' fill='#d1f2eb' fill-opacity='1.0' rx='8' stroke='#16a085' stroke-width='1.8'/>
-<text x='870.0' y='229.5' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-family='Menlo, monospace'>reverse</text>
-<rect x='480' y='282' width='230' height='52' fill='#fff' fill-opacity='1.0' rx='8' stroke='#2980b9' stroke-width='1.8'/>
-<text x='595.0' y='304.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>knowing: the generated</text>
-<text x='595.0' y='320.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>order-zero field</text>
-<rect x='900' y='288' width='120' height='40' fill='#d1f2eb' fill-opacity='1.0' rx='8' stroke='#16a085' stroke-width='1.8'/>
-<text x='960.0' y='312.5' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-family='Menlo, monospace'>reverse</text>
-<rect x='230' y='465' width='140' height='52' fill='#fff' fill-opacity='1.0' rx='8' stroke='#8e44ad' stroke-width='1.8'/>
-<text x='300.0' y='495.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>compose</text>
-<rect x='420' y='461' width='190' height='60' fill='#fdebd0' fill-opacity='1.0' rx='8' stroke='#ca6f1e' stroke-width='1.8'/>
-<text x='515.0' y='487.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>generate walk +</text>
-<text x='515.0' y='503.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>occurrence writer</text>
-<rect x='665' y='465' width='150' height='52' fill='#fff' fill-opacity='1.0' rx='8' stroke='#8e44ad' stroke-width='1.8'/>
-<text x='740.0' y='495.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>closing thought</text>
-<rect x='855' y='461' width='190' height='60' fill='#fdebd0' fill-opacity='1.0' rx='8' stroke='#ca6f1e' stroke-width='1.8'/>
-<text x='950.0' y='487.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>generate walk +</text>
-<text x='950.0' y='503.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>occurrence writer</text>
-<rect x='1090' y='128' width='200' height='60' fill='#d5f5e3' fill-opacity='1.0' rx='28' stroke='#1a7a38' stroke-width='1.8'/>
-<text x='1190.0' y='154.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>R: reconstruction_reverse</text>
-<text x='1190.0' y='170.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>+ reconstruction_order_zero</text>
-<rect x='1090' y='280' width='200' height='56' fill='#d5f5e3' fill-opacity='1.0' rx='28' stroke='#1a7a38' stroke-width='1.8'/>
-<text x='1190.0' y='312.5' text-anchor='middle' font-size='12.5' fill='#2c3e50'>A: answer</text>
-<polygon points='1190,433.0 1298.0,491 1190,549.0 1082.0,491' fill='#fff' stroke='#2c3e50' stroke-width='1.8'/><text x='1190' y='496' text-anchor='middle' font-size='13' fill='#2c3e50' font-weight='bold'></text>
-<text x='1190' y='487' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-weight='bold'>keep the cheapest</text>
-<text x='1190' y='504' text-anchor='middle' font-size='12.5' fill='#2c3e50' font-weight='bold'>R + A path</text>
-<path d='M 160 365 L 180 365 L 180 156 L 230 156' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 160 385 L 180 385 L 180 491 L 230 491' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 450 156 L 610 156' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 730 156 L 1090 156' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 370 491 L 420 491' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
-<text x='395' y='452' text-anchor='middle' font-size='11.5' fill='#8e44ad' font-style='italic'>end slots</text>
-<path d='M 515 461 L 515 334' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
-<path d='M 710 298 L 770 298 L 770 225 L 810 225' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 930 225 L 1062 225 L 1062 174 L 1090 174' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 300 517 L 300 556 L 740 556 L 740 517' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
-<text x='410' y='572' text-anchor='middle' font-size='11.5' fill='#8e44ad' font-style='italic'>understanding</text>
-<path d='M 655 334 L 655 440 L 712 440 L 712 465' fill='none' stroke='#2980b9' stroke-width='1.8' marker-end='url(#arrb)'/>
-<text x='647' y='392' text-anchor='end' font-size='11.5' fill='#2980b9' font-style='italic'>read</text>
-<path d='M 768 465 L 768 378 L 690 378 L 690 334' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
-<text x='776' y='420' text-anchor='start' font-size='11.5' fill='#8e44ad' font-style='italic'>intuit deposits</text>
-<path d='M 815 491 L 855 491' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
-<text x='835' y='452' text-anchor='middle' font-size='11.5' fill='#8e44ad' font-style='italic'>conclusion</text>
-<path d='M 960 461 L 960 328' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
-<path d='M 1020 308 L 1090 308' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 1290 158 L 1306 158 L 1306 491 L 1298 491' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 1190 336 L 1190 433' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
-<path d='M 670 176 L 670 192 L 870 192 L 870 205' fill='none' stroke='#16a085' stroke-width='1.4' stroke-dasharray='3,4'/>
-<text x='770' y='187' text-anchor='middle' font-size='11.5' fill='#16a085' font-style='italic'>one decoder</text>
-<path d='M 900 245 L 940 288' fill='none' stroke='#16a085' stroke-width='1.4' stroke-dasharray='3,4'/>
-<text x='930' y='266' text-anchor='start' font-size='11.5' fill='#16a085' font-style='italic'>one decoder</text>
-<path d='M 515 521 L 515 538 L 950 538 L 950 521' fill='none' stroke='#ca6f1e' stroke-width='1.4' stroke-dasharray='3,4'/>
-<text x='840' y='533' text-anchor='middle' font-size='11.5' fill='#ca6f1e' font-style='italic'>one walk</text>
-<text x='666' y='622' text-anchor='middle' font-size='12.5' fill='#626567' font-style='italic'>Solid arrows carry values. Dotted links join calls of one set of parameters:</text>
-<text x='666' y='642' text-anchor='middle' font-size='12.5' fill='#626567' font-style='italic'>one reverse decoder (SentenceField.reconstruct, OutputOccurrences.realize) and one generate walk (BasicModel.generate).</text>
+<rect x='0' y='0' width='1180' height='44' fill='#2c3e50' fill-opacity='1.0' rx='0'/>
+<text x='590' y='29' text-anchor='middle' font-size='18' fill='white' font-weight='bold'>The sentence loop of one path</text>
+<text x='590' y='66' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Grammar reading with supervised output · attention, composition, thought and the per-stream choice</text>
+<rect x='28' y='144' width='224' height='94' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
+<text x='42' y='168' text-anchor='start' font-size='15' fill='#2980b9' font-weight='bold'>Open attention · look zero</text>
+<text x='42' y='192' text-anchor='start' font-size='12.5' fill='#2c3e50'>Locate percepts across the input.</text>
+<text x='42' y='211' text-anchor='start' font-size='12.5' fill='#2c3e50'>Read the opening conceptual field.</text>
+<rect x='323' y='144' width='206' height='94' fill='#d6eaf8' fill-opacity='1.0' rx='10' stroke='#2980b9' stroke-width='1.8'/>
+<text x='337' y='168' text-anchor='start' font-size='15' fill='#2980b9' font-weight='bold'>Request the next look</text>
+<text x='337' y='192' text-anchor='start' font-size='12.5' fill='#2c3e50'>Read the opening, kept trace,</text>
+<text x='337' y='211' text-anchor='start' font-size='12.5' fill='#2c3e50'>place and whole STM stack.</text>
+<rect x='601' y='144' width='256' height='94' fill='#d1f2eb' fill-opacity='1.0' rx='10' stroke='#16a085' stroke-width='1.8'/>
+<text x='615' y='168' text-anchor='start' font-size='15' fill='#16a085' font-weight='bold'>Update the field at the fixation</text>
+<text x='615' y='192' text-anchor='start' font-size='12.5' fill='#2c3e50'>Decay the trace. Apply expectation</text>
+<text x='615' y='211' text-anchor='start' font-size='12.5' fill='#2c3e50'>on ascent and attention on descent.</text>
+<rect x='927' y='144' width='224' height='94' fill='#e8daef' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='1.8'/>
+<text x='941' y='168' text-anchor='start' font-size='15' fill='#8e44ad' font-weight='bold'>Compose in STM</text>
+<text x='941' y='192' text-anchor='start' font-size='12.5' fill='#2c3e50'>Shift the word that arrived.</text>
+<text x='941' y='211' text-anchor='start' font-size='12.5' fill='#2c3e50'>Reduce the stack.</text>
+<path d='M 252 188 L 323 188' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 529 188 L 601 188' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 857 188 L 927 188' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 1040 144 L 1040 112 L 426 112 L 426 144' fill='none' stroke='#8e44ad' stroke-width='1.8' marker-end='url(#arrp)'/>
+<text x='730' y='103' text-anchor='middle' font-size='13' fill='#8e44ad'>Next look reads the kept trace and the updated stack</text>
+<rect x='28' y='321' width='224' height='94' fill='#d1f2eb' fill-opacity='1.0' rx='10' stroke='#16a085' stroke-width='1.8'/>
+<text x='42' y='345' text-anchor='start' font-size='15' fill='#16a085' font-weight='bold'>Reverse the opening field</text>
+<text x='42' y='369' text-anchor='start' font-size='12.5' fill='#2c3e50'>Decode once at observed places</text>
+<text x='42' y='388' text-anchor='start' font-size='12.5' fill='#2c3e50'>and reuse across candidate paths.</text>
+<path d='M 140 238 L 140 321' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='150' y='280' text-anchor='start' font-size='12' fill='#626567'>shared opening</text>
+<rect x='323' y='321' width='206' height='94' fill='#e8daef' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='1.8'/>
+<text x='337' y='345' text-anchor='start' font-size='15' fill='#8e44ad' font-weight='bold'>Publish understanding</text>
+<text x='337' y='369' text-anchor='start' font-size='12.5' fill='#2c3e50'>Read the composed meaning</text>
+<text x='337' y='388' text-anchor='start' font-size='12.5' fill='#2c3e50'>and its conceptual field.</text>
+<path d='M 426 238 L 426 321' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<text x='436' y='280' text-anchor='start' font-size='12' fill='#626567'>reading ends</text>
+<rect x='601' y='321' width='256' height='94' fill='#e8daef' fill-opacity='1.0' rx='10' stroke='#8e44ad' stroke-width='1.8'/>
+<text x='615' y='345' text-anchor='start' font-size='15' fill='#8e44ad' font-weight='bold'>Closing thought</text>
+<text x='615' y='369' text-anchor='start' font-size='12.5' fill='#2c3e50'>Read this path’s understanding</text>
+<text x='615' y='388' text-anchor='start' font-size='12.5' fill='#2c3e50'>and resolve its answer.</text>
+<path d='M 529 367 L 601 367' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<rect x='927' y='321' width='224' height='94' fill='#fdebd0' fill-opacity='1.0' rx='10' stroke='#ca6f1e' stroke-width='1.8'/>
+<text x='941' y='345' text-anchor='start' font-size='15' fill='#ca6f1e' font-weight='bold'>Generate the text answer</text>
+<text x='941' y='369' text-anchor='start' font-size='12.5' fill='#2c3e50'>Write terminal occurrences and</text>
+<text x='941' y='388' text-anchor='start' font-size='12.5' fill='#2c3e50'>realize them through reverse.</text>
+<path d='M 857 367 L 927 367' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<rect x='28' y='500' width='224' height='92' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#1a7a38' stroke-width='1.8'/>
+<text x='42' y='524' text-anchor='start' font-size='15' fill='#1a7a38' font-weight='bold'>Reconstruction cost · R</text>
+<text x='42' y='548' text-anchor='start' font-size='12.5' fill='#2c3e50'>Score the opening inverse and</text>
+<text x='42' y='567' text-anchor='start' font-size='12.5' fill='#2c3e50'>the path’s reconstruction terms.</text>
+<path d='M 140 415 L 140 500' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 360 415 L 360 475 L 222 475 L 222 500' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<rect x='927' y='500' width='224' height='92' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#1a7a38' stroke-width='1.8'/>
+<text x='941' y='524' text-anchor='start' font-size='15' fill='#1a7a38' font-weight='bold'>Answer cost · A</text>
+<text x='941' y='548' text-anchor='start' font-size='12.5' fill='#2c3e50'>Score the supervised output,</text>
+<text x='941' y='567' text-anchor='start' font-size='12.5' fill='#2c3e50'>including a target of silence.</text>
+<path d='M 1040 415 L 1040 500' fill='none' stroke='#2c3e50' stroke-width='1.8' marker-end='url(#arrd)'/>
+<path d='M 426 415 L 426 457 L 970 457 L 970 500' fill='none' stroke='#ca6f1e' stroke-width='1.8' marker-end='url(#arro)'/>
+<text x='697' y='448' text-anchor='middle' font-size='13' fill='#ca6f1e'>Numeric output reads the composed state through an affine head</text>
+<rect x='413' y='500' width='354' height='92' fill='#d5f5e3' fill-opacity='1.0' rx='10' stroke='#1a7a38' stroke-width='1.8'/>
+<text x='590.0' y='524' text-anchor='middle' font-size='15' fill='#1a7a38' font-weight='bold'>Keep one complete path per stream</text>
+<text x='590.0' y='548' text-anchor='middle' font-size='12.5' fill='#2c3e50'>Minimize R + A. The greedy path wins a tie.</text>
+<text x='590.0' y='567' text-anchor='middle' font-size='12.5' fill='#2c3e50'>Commit the winning reading and effects.</text>
+<path d='M 252 546 L 413 546' fill='none' stroke='#1a7a38' stroke-width='1.8' marker-end='url(#arrg)'/>
+<path d='M 927 546 L 767 546' fill='none' stroke='#1a7a38' stroke-width='1.8' marker-end='url(#arrg)'/>
+<text x='590.0' y='633' text-anchor='middle' font-size='13' fill='#2c3e50'>With the unit delay enabled, each look can read percepts and concepts observed one step earlier. The opening has no attention mask.</text>
+<text x='590.0' y='656' text-anchor='middle' font-size='13' fill='#626567' font-style='italic'>Without output supervision, R selects the path first. Only the kept path runs closing thought.</text>
 </svg>
